@@ -1,0 +1,11 @@
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.bbl
+*.blg
+*.lot
+*.lof
+*.out
+*.toc
+thesis.pdf

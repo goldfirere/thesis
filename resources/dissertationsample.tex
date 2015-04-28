@@ -1,0 +1,182 @@
+% Here is a sample format for dissertation in math.  You need to check
+% University of Pennsylvania Doctoral Dissertation Manual to adjust
+% any changes they made at the webpage:
+
+% http://www.upenn.edu/grad/DissManual.html.
+
+% This style file was used in connection with printing from printer 3one.
+% (Different printers could give you different margins.)
+
+% This sample can also be used for masters thesis, but you need to make
+% some slight changes.
+
+\documentclass[12pt]{report}
+\usepackage{latexsym}
+%\usepackage{amsfonts}
+\usepackage{amssymb}
+%\usepackage{theorem}
+\usepackage{amsmath}
+\usepackage{amscd}
+%\usepackage{array}
+\usepackage{amsthm}
+% \usepackage{epsfig}
+
+%\setlength{\topmargin}{1in}
+\setlength{\headheight}{0in}
+\setlength{\textheight}{8.5in}
+\setlength{\oddsidemargin}{0.55in}
+%\setlength{\evensidemargin}{-0.25in}
+\setlength{\textwidth}{5.87in}
+\setlength{\headsep}{-.19in}
+
+\pagestyle{plain}
+\newcommand{\doublespaced}{\renewcommand{\baselinestretch}{2}\normalfont}
+\newcommand{\singlespaced}{\renewcommand{\baselinestretch}{1}\normalfont}
+%\newcommand{\draftspaced}{\singlespaced} %for draft only
+\newcommand{\draftspaced}{\doublespaced} %for final version
+
+%\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+%\newtheorem*{main}{Main~Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+\numberwithin{equation}{section}
+
+\newcommand{\f}{\mathfrak}
+\newcommand{\mb}{\mathbb}
+\newcommand{\mr}{\mathrm}
+\newcommand{\mf}{\mathbf}
+\newcommand{\mc}{\mathcal}
+\newcommand{\e}{\emph}
+\newcommand{\vp}{\varphi}
+\newcommand{\Diff}{\textrm{Diff}}
+\newcommand{\Norm}{\textrm{Norm}}
+\newcommand{\Hom}{\textrm{Hom}}
+\newcommand{\ch}{\textrm{char}}
+\newcommand{\lcm}{\textrm{lcm}}
+%\newcommand{\ca}{\mathcal}
+\newcommand{\wt}{\widetilde}
+%\newcommand{\ol}{\overline}
+
+%\doublespaced
+\def\thetitle{TITLE OF THESIS}
+\def\theauthor{Author's Name}
+\def\theadvisor{Advisor's Name, Advisor}
+\def\THEAUTHOR  {Author's Name}
+\def\THEADVISOR {Advisor's Name}
+\def\theyear{The year you are graduating}
+
+
+\begin{document}
+
+\pagenumbering{roman}
+%\doublespaced
+\large\newlength{\oldparskip}\setlength\oldparskip{\parskip}\parskip=.3in
+\thispagestyle{empty}
+\begin{center}
+%\vspace*{\fill}
+\thetitle
+
+\theauthor
+
+
+A DISSERTATION
+
+in
+
+Mathematics
+\end{center}
+
+
+\noindent\singlespaced\large
+Presented to the Faculties of the University of Pennsylvania in Partial
+Fulfillment of the Requirements for the Degree of Doctor of Philosophy
+
+
+%\doublespaced
+%\large
+\begin{center}
+\theyear
+\end{center}
+
+\noindent Supervisor of Dissertation
+
+\bigskip
+\noindent\makebox[-0.06in][l]{\rule[2ex]{3in}{.3mm}}
+\singlespaced
+Advisor's Name, Advisor's Title (e.g. Professor of Mathematics)\\
+
+\noindent Graduate Group Chairperson
+
+\bigskip
+\noindent\makebox[-0.06in][l]{\rule[2ex]{3in}{.3mm}}
+\singlespaced
+Graduate Chair's Name, Graduate Chair's Faculty Title\\
+
+
+\noindent
+\singlespaced
+Dissertation Committee:\\
+Member 1, Title\\
+Member 2, Title\\
+Member 3, Title
+\vspace*{\fill}
+
+\normalsize\parskip=\oldparskip
+
+
+\newpage
+\doublespaced
+
+\chapter*{Acknowledgments}
+I would like to thank:
+
+\newpage
+%\vspace*{\fill}
+\begin{center}
+  ABSTRACT\\
+\thetitle\\
+\vspace{.5in}
+  \theauthor\\
+  \theadvisor
+\end{center}
+
+\doublespaced
+\noindent
+
+% Put the content of the abstract here
+
+\vspace*{\fill}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+\draftspaced
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+
+
+
+
+
+\begin{thebibliography}{99}
+
+% An alphabetical listing of all references must be used.
+\end{thebibliography}
+
+
+\end{document}

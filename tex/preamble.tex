@@ -1,0 +1,60 @@
+% LaTeX preamble
+
+\usepackage{xcolor}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\usepackage{setspace}
+
+\usepackage[top=1in, bottom=1in, left=1.5in, right=1in,includefoot,paperwidth=8.5in,paperheight=11in]{geometry}
+
+\usepackage[pdftex]{hyperref}
+\hypersetup{
+    pdftitle={\Title},
+    pdfauthor={\Author},
+    bookmarksnumbered=true,
+    bookmarksopen=true,
+    bookmarksopenlevel=1,
+    hidelinks,
+    naturalnames=true,
+    pdfstartview=Fit,
+    pdfpagemode=UseOutlines,
+    pdfpagelayout=TwoPageRight
+}
+
+\usepackage{fancyhdr}
+\lfoot[\fancyplain{}{}]{\fancyplain{}{}}
+\rfoot[\fancyplain{}{}]{\fancyplain{}{}}
+\cfoot[\fancyplain{}{\footnotesize\thepage}]{\fancyplain{}{\footnotesize\thepage}}
+\lhead[\fancyplain{}{}]{\fancyplain{}{}}
+\rhead[\fancyplain{}{}]{\fancyplain{}{}}
+\ifdraft
+\chead[\fancyplain{}{\textbf{DRAFT ---
+    \today}}]{\fancyplain{}{\textbf{DRAFT --- \today}}}
+\fi
+\renewcommand{\headrulewidth}{0pt}
+\setlength{\headheight}{15pt}
+
+\newcommand{\signature}{~ \\ \underline{\hspace{20em}}}
+
+\newenvironment{pagecentered}{%
+\vspace*{\stretch{2}}%
+\begin{center}%
+\begin{minipage}{.8\textwidth}%
+}{%
+\end{minipage}%
+\end{center}%
+\vspace*{\stretch{3}}\clearpage}
+
+\newcommand{\nochapter}[1]{%
+  \refstepcounter{chapter}%
+  \addcontentsline{toc}{chapter}{#1}%
+  \markright{#1}}
+
+\ifdraft
+\newcommand{\rae}[1]{\textcolor{red}{RAE: #1}}
+\else
+\newcommand{\rae}[1]{}
+\fi
+

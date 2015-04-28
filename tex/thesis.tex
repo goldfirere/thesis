@@ -1,0 +1,61 @@
+\newif \ifdraft \drafttrue
+\documentclass[12pt,oneside]{book}
+
+\newcommand{\Title}{DEPENDENT TYPES IN HASKELL: THEORY AND PRACTICE}
+\newcommand{\Author}{Richard A.~Eisenberg}
+\newcommand{\Advisor}{Stephanie Weirich}
+\newcommand{\Year}{2016}
+
+\input{preamble}
+
+\title{\Title}
+\author{\Author}
+
+\begin{document}
+
+\hypersetup{pageanchor=false}
+\pagenumbering{roman}
+\pagestyle{fancy}
+\frenchspacing
+\numberwithin{equation}{section}
+
+\newcommand{\doublespaced}{\renewcommand{\baselinestretch}{2}\normalfont}
+\newcommand{\singlespaced}{\renewcommand{\baselinestretch}{1}\normalfont}
+
+\include{titlepage}
+\include{copyright}
+\include{acks}
+\include{abstract}
+
+\tableofcontents
+
+\newpage
+
+\listoftables
+
+\listoffigures
+
+\newpage
+\setcounter{page}{1}
+\pagenumbering{arabic}
+\hypersetup{pageanchor=true}
+
+\setcounter{chapter}{-1}
+
+Main text
+
+\appendix
+
+Appendix
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\nochapter{Bibliography}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bibliographystyle{plainnat}
+\bibliography{thesis}
+
+\end{document}
