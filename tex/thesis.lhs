@@ -1,5 +1,10 @@
+%% -*- mode: LaTeX -*-
+
 \newif \ifdraft \drafttrue
+\newif \ifproposal \proposaltrue
 \documentclass[12pt,oneside]{book}
+
+%include rae.fmt
 
 \newcommand{\Title}{DEPENDENT TYPES IN HASKELL: THEORY AND PRACTICE}
 \newcommand{\Author}{Richard A.~Eisenberg}
@@ -23,17 +28,23 @@
 \newcommand{\singlespaced}{\renewcommand{\baselinestretch}{1}\normalfont}
 
 \include{titlepage}
+\ifproposal\else
 \include{copyright}
 \include{acks}
 \include{abstract}
+\fi
+
+\singlespaced
 
 \tableofcontents
 
+\ifproposal\else
 \newpage
 
 \listoftables
 
 \listoffigures
+\fi
 
 \newpage
 \setcounter{page}{1}
@@ -42,7 +53,8 @@
 
 \setcounter{chapter}{-1}
 
-Main text
+\include{intro}
+%include motivation.lhs
 
 \appendix
 

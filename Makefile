@@ -6,16 +6,17 @@ FMT_FILES_BASE = rae
 
 OTT_FILES_FULL = $(OTT_FILES_BASE:%=ott/%.ott)
 OTT_OUTPUT_BASE = tycls-ott
-OTT_OUTPUT_FULL = # tex/$(OTT_OUTPUT_BASE).tex
+OTT_OUTPUT_FULL = # aux/$(OTT_OUTPUT_BASE).tex
 BIB_FILES_FULL = $(BIB_FILES_BASE:%=tex/%.bib)
 FMT_FILES_FULL = $(FMT_FILES_BASE:%=tex/%.fmt)
-MNG_FILES_BASE = 
+MNG_FILES_BASE =
 OTT_DUMP_BASE = ott
 OTT_OPTS = -tex_show_meta false -tex_wrap false -picky_multiple_parses $(OTT_PICKY)
-ALL_TEX_FILES = $(wildcard tex/*.tex) $(patsubst %.lhs,%.tex,$(wildcard tex/*.lhs)) $(patsubst %.tex.mng,%.tex,$(wildcard tex/*.tex.mng)) $(patsubst %.lhs.mng,%.tex,$(wildcard tex/*.lhs.mng))
-
+ALL_TEX_FILES = $(wildcard tex/*.tex) $(patsubst %.tex.mng,%.tex,$(wildcard tex/*.tex.mng))
+ALL_LHS_FILES = $(filter-out thesis.lhs,$(wildcard tex/*.lhs) $(patsubst %.lhs.mng,%.lhs,$(wildcard tex/*.lhs.mng)))
 
 PDF_DIR_MARKER = pdf/.dir_exists
+AUX_DIR_MARKER = aux/.dir_exists
 
 default: thesis
 all: default
@@ -25,31 +26,37 @@ ott: pdf/$(OTT_DUMP_BASE).pdf
 
 $(PDF_DIR_MARKER):
 	mkdir pdf
-	touch $(PDF_DIR_MARKER)
+	touch $@
+$(AUX_DIR_MARKER):
+	mkdir aux
+	touch $@
 
 $(OTT_OUTPUT_FULL): $(OTT_FILES_FULL)
 	ott $(OTT_OPTS) -o $@ $^
 
-tex/$(PAPER_BASE).pdf: $(ALL_TEX_FILES)
+aux/$(PAPER_BASE).tex: $(ALL_LHS_FILES:tex/%=aux/%)
 
-tex/%.pdf: tex/%.tex $(OTT_OUTPUT_FULL) $(PDF_DIR_MARKER) $(BIB_FILES_FULL)
+aux/%.pdf: aux/%.tex $(OTT_OUTPUT_FULL) $(BIB_FILES_FULL:tex/%=aux/%) $(AUX_DIR_MARKER) $(ALL_TEX_FILES:tex/%=aux/%)
 	latexmk -pdf -cd $<
 
-pdf/%.pdf: tex/%.pdf
-	cp tex/$*.pdf pdf/$*.pdf
+aux/%: tex/% $(AUX_DIR_MARKER)
+	cp $< $@
+
+pdf/%.pdf: aux/%.pdf $(PDF_DIR_MARKER)
+	cp aux/$*.pdf pdf/$*.pdf
 
 tex/%: tex/%.mng $(OTT_FILES_FULL)
 	ott $(OTT_OPTS) -tex_filter $< $@ $(OTT_FILES_FULL)
 
-tex/%.tex: tex/%.lhs $(FMT_FILES_FULL)
-	cd $(TEX_DIR); lhs2TeX --poly -o $*.tex $*.lhs
+aux/%.tex: aux/%.lhs $(FMT_FILES_FULL:tex/%=aux/%)
+	cd aux && lhs2TeX --poly -o $*.tex $*.lhs
 
 clean:
-	rm -rf tex/*.{fdb_latexmk,fls,log,aux,bbl,blg,pdf,ptb}
 	rm -rf $(OTT_OUTPUT_FULL)
 	rm -rf $(patsubst %.lhs,%.tex,$(wildcard tex/*.lhs))
 	rm -rf $(patsubst %.mng,%,$(wildcard tex/*.mng))
 	rm -rf pdf
+	rm -rf aux
 
 .PHONY: clean all ott default thesis
-.SECONDARY: tex/$(PAPER_BASE).tex
+.SECONDARY:

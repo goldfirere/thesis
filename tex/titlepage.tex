@@ -6,6 +6,9 @@
   \vfill
   {\Huge \Title} \\
   \Author \\
+  \ifproposal
+  {\vspace{2in}\LARGE DISSERTATION PROPOSAL} \\
+  \else
   A DISSERTATION \\
   in \\
   Computer and Information Sciences
@@ -17,8 +20,10 @@
   Degree of Doctor of Philosophy \\
   \doublespaced\large
   \Year \\
+  \fi
 \end{centering}
 
+\ifproposal\else
 \vfill
 \singlespaced
 
@@ -44,5 +49,5 @@ Simon Peyton Jones (Principal Researcher, Microsoft Research) \\
 Benjamin Pierce (Professor of CIS; Committee Chair) \\
 Steve Zdancewic (Professor of CIS)
 }
-
+\fi
 \normalsize\parskip=\oldparskip
