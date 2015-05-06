@@ -53,12 +53,20 @@
 
 \setcounter{chapter}{-1}
 
-\include{intro}
-%include motivation.lhs
+%include 0-intro.lhs
+%include 1-motivation.lhs
+%include 2-today-haskell.lhs
+\include{3-today-fc}
+\include{4-dep-haskell}
+\include{5-dep-fc}
+\include{6-formal-haskell}
+\include{7-type-inference}
+\include{8-implementation}
 
 \appendix
 
-Appendix
+\include{a-fc}
+\include{b-inference}
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,0 +1,2 @@
+Longo and Moggi. Constructive natural deduction and its ‘ω-set’ interpretation. Mat. Struct. in CS, July 1991.
+  - cited by Barendregt at the System F + dependent types corner of the lambda cube. Can't seem to find. Requested from Penn on 5/6/15.

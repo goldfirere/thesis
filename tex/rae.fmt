@@ -1,10 +1,12 @@
 %include polycode.fmt
 
 %if style == poly
-%format !! = "\;\text{\textquoteright\textquoteright}"
-%format ! = "\;\text{\textquoteright}"
-%format nil = []
-%format !: = "\;\text{\textquoteright}\!\!:"
+%format !! = "\;\tick\tick"
+%format ! = "\;\tick"
+%format nil = "\tick" []
+%format !: = "\mathop{\tick{:}}"
+%format !:~> = "\mathop{\tick{{:}{\rightsquigarrow}}}"
+%format :~> = "\mathop{{:}{\rightsquigarrow}}"
 %format KK = "\kappa"
 %subst conid a = "\id{" a "}"
 %subst varid a = "\id{" a "}"
@@ -50,9 +52,19 @@
 %format \* = *
 %format ! =
 %format !: = `Cons`
+%format !:~> = :~>
 %format nil = PromotedNil
 %format dollar = $
 %format begin_comment = "{-"
 %format end_comment = "-}"
 %format th_d_open = "[d|"
+
+\begin{code}
+{-# LANGUAGE GADTs, DataKinds, TypeOperators, PolyKinds, EmptyCase #-}
+
+module Chapter where
+
+import ThesisPreamble
+\end{code}
+
 %endif
