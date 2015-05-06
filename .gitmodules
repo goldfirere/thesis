@@ -1,0 +1,3 @@
+[submodule "formatting/byorgey"]
+	path = formatting/byorgey
+	url = ssh://git@github.com/byorgey/thesis.git
