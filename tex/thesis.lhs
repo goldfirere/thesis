@@ -51,17 +51,15 @@
 \pagenumbering{arabic}
 \hypersetup{pageanchor=true}
 
-\setcounter{chapter}{-1}
-
-%include 0-intro.lhs
-%include 1-motivation.lhs
-%include 2-today-haskell.lhs
-\include{3-today-fc}
-\include{4-dep-haskell}
-\include{5-dep-fc}
-\include{6-formal-haskell}
-\include{7-type-inference}
-\include{8-implementation}
+%include 1-intro.lhs
+%include 2-motivation.lhs
+%include 3-today-haskell.lhs
+\include{4-today-fc}
+\include{5-dep-haskell}
+\include{6-dep-fc}
+\include{7-formal-haskell}
+\include{8-type-inference}
+\include{9-implementation}
 
 \appendix
 
