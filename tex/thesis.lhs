@@ -51,21 +51,21 @@
 \pagenumbering{arabic}
 \hypersetup{pageanchor=true}
 
-%include 1-intro.lhs
-%include 2-motivation.lhs
-%include 3-todays-haskell.lhs
-\include{4-system-fc}
-\include{5-dep-haskell}
-\include{6-fcd}
-\include{7-haskell-spec}
-\include{8-type-inference}
-\include{9-implementation}
-\include{10-related}
+%include intro.lhs
+%include motivation.lhs
+%include todays-haskell.lhs
+\include{system-fc}
+\include{dep-haskell}
+\include{fcd}
+\include{haskell-spec}
+\include{type-inference}
+\include{implementation}
+\include{related}
 
 \appendix
 
-\include{a-fc}
-\include{b-inference}
+\include{fc}
+\include{inference}
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
