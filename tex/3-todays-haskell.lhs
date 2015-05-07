@@ -5,6 +5,7 @@
 %endif
 
 \chapter{Haskell in 2015}
+\label{cha:todays-haskell}
 
 \begin{proposal}
 This section will contain an in-depth description of the various features

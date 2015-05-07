@@ -1,4 +1,4 @@
-%% -*- mode: LaTeX -*-
+%% -*- mode: LaTeX; compile-command: "cd ..; make compile" -*-
 
 %if style == newcode
 %include rae.fmt
@@ -6,6 +6,7 @@
 
 
 \chapter{Motivation}
+\label{cha:motivation}
 
 Functional programmers use dependent types in two primary ways: in order
 to eliminate erroneous programs from being accepted, and in order to write
@@ -27,10 +28,32 @@ proper.
 \subsection{A strongly typed simply typed lambda calculus interpreter}
 \label{sec:stlc}
 
-It is straightforward to write an interpreter for the simply typed lambda calculus (STLC)
-in Haskell. However, how can we be sure that our interpreter is written correctly?
-Using some features of dependent types -- notably, generalized algebraic datatypes,
-or GADTs -- we can incorporate the STLC's type discipline into our interpreter.
+It is straightforward to write an interpreter for the simply typed lambda
+calculus (STLC) in Haskell. However, how can we be sure that our interpreter
+is written correctly? Using some features of dependent types -- notably,
+generalized algebraic datatypes, or GADTs -- we can incorporate the STLC's
+type discipline into our interpreter. Using the extra features in Dependent
+Haskell, we can then write both a large-step semantics and a small-step
+semantics and have GHC check that they correspond.
+
+Our first step is to write a type to represent the types in our lambda-calculus:
+\begin{code}
+data Ty = Unit | Ty :~> Ty
+infixr 0 :~>
+\end{code}
+I choose |Unit| as our one and only base type, for simplicity. This calculus
+is clearly not suitable for computation, but it demonstrates the use of GADTs
+well. The model described here scaled up to a more featureful
+lambda-calculus.\footnote{For example, see my work on \package{glambda} at
+  \url{https://github.com/goldfirere/glambda}.}
+The |infixr| declaration declares that the constructor |:~>| is right-associative,
+as usual.
+
+We are then confronted quickly with the decision of how to encode bound
+variables. Let's choose de Bruijn indices~\cite{de-bruijn}, as these are well-known
+and conceptually simple. However, instead of using natural numbers to
+represent our variables, we'll use a custom |Elem| type. A value of type
+
 
 
 \subsection{Units-of-measure}

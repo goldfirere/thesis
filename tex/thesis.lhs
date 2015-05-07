@@ -53,13 +53,14 @@
 
 %include 1-intro.lhs
 %include 2-motivation.lhs
-%include 3-today-haskell.lhs
-\include{4-today-fc}
+%include 3-todays-haskell.lhs
+\include{4-system-fc}
 \include{5-dep-haskell}
-\include{6-dep-fc}
-\include{7-formal-haskell}
+\include{6-fcd}
+\include{7-haskell-spec}
 \include{8-type-inference}
 \include{9-implementation}
+\include{10-related}
 
 \appendix
 

@@ -45,23 +45,23 @@ to work with the GHC implementation and futher features of Haskell.
 
 Specifically, I offer the following contributions:
 \begin{itemize}
-\item \Pref{chap:motivation} includes a series of examples of dependently
+\item \pref{cha:motivation} includes a series of examples of dependently
   typed programming in Haskell. Though a fine line is hard to draw, these
   examples are divided into two categories: programs where rich types give a
   programmer more compile-time checks of her algorithms, and programs where
   rich types allow a programmer to express a more intricate algorithm that
-  may not be well-typed under a simpler system. \Pref{sec:why-haskell} then
+  may not be well-typed under a simpler system. \pref{sec:why-haskell} then
   argues why dependent types in Haskell, in particular, are an interesting
   and worthwhile subject of study.
 
-Although no new results, as such, are presented in \pref{chap:motivation},
+Although no new results, as such, are presented in \pref{cha:motivation},
 gathering these examples together is a true contribution of this dissertation.
 At the time of writing, dependent types are still rather esoteric in the
 functional programming community, and examples of how dependent types can
 do real work (outside of theorem-proving, which is beyond the scope of
 dependent types in Haskell -- see \pref{sec:no-proofs}) are hard to come by.
 
-\item \Pref{chap:system-fc} is a thorough treatment of System FC, as it
+\item \pref{cha:system-fc} is a thorough treatment of System FC, as it
 has inspired today's GHC. Though there are many publications on System
 FC~\cite{system-fc,etc}, it has evolved much over the years and benefits
 from a solid, full treatment. Having a record of today's System FC also
@@ -71,13 +71,13 @@ This chapter, however, does not prove
 type safety of this language, deferring the proof to the system that
 includes dependent types.
 
-\item \Pref{chap:dependent-haskell} presents Dependent Haskell, the language
+\item \pref{cha:dep-haskell} presents Dependent Haskell, the language
 I have designed in this dissertation. This chapter is written to be useful
 to practitioners, being a user manual of sorts of the new features. In
-combination with \pref{chap:motivation}, this chapter could serve to educate
+combination with \pref{cha:motivation}, this chapter could serve to educate
 Haskellers on how to use the new features.
 
-\item \Pref{chap:fcd} describes System FC with dependent types,
+\item \pref{cha:fcd} describes System FC with dependent types,
 which I have named System FCD. System FCD is an extension on System FC,
 with two major changes:
 \begin{enumerate}
@@ -95,13 +95,13 @@ This chapter contains the full prose and technical description of System FCD
 and well as a proof of type safety (though the details of many proofs are
 relegated to \pref{app:fc}).
 
-\item \Pref{chap:haskell-spec} introduces a specification of the Dependent Haskell
+\item \pref{cha:haskell-spec} introduces a specification of the Dependent Haskell
 surface language. Though much formal work has been done on System FC --
 the \emph{internal} language -- there is much less formal work done on
 Haskell itself. This chapter builds a specification of the surface language,
 to be used when discussing type inference and elaboration into System FCD.
 
-\item \Pref{chap:type-inference} presents the type inference and elaboration
+\item \pref{cha:type-inference} presents the type inference and elaboration
   algorithm from Dependent Haskell to System FCD. As compared to Gundry's
   work~\cite{gundry-thesis}, the chief novelty here is that it adapts the type
   inference algorithm to work with (a slight variant of) the \outsidein/
@@ -112,14 +112,14 @@ to be used when discussing type inference and elaboration into System FCD.
   lack of completeness of \outsidein/. See \pref{sec:incomplete} for more
   details.
 
-\item \Pref{chap:implementation} considers some of the implementation
+\item \pref{cha:implementation} considers some of the implementation
 challenges inherent in building Dependent Haskell for wide distribution.
 
-\item \Pref{chap:related} puts this work in context by comparing it to
+\item \pref{cha:related} puts this work in context by comparing it to
 several other dependently typed systems, both theories and implementations.
 \end{itemize}
 
-Though not a new contribution, \pref{chap:todays-haskell} contains a thorough
+Though not a new contribution, \pref{cha:todays-haskell} contains a thorough
 review of features available in today's Haskell that support dependently typed
 programming. This is included as a counterpoint to the features discussed as
 parts of Dependent Haskell.
