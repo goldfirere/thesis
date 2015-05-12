@@ -1,8 +1,8 @@
 %include polycode.fmt
 
 %if style == poly
-%format !! = "\;\tick\tick"
-%format ! = "\;\tick"
+%format !! = "\mathop{}\tick\tick"
+%format ! = "\mathop{}\tick"
 %format nil = "\tick" []
 %format !: = "\mathop{\tick{:}}"
 %format !:~> = "\mathop{\tick{{:}{\rightsquigarrow}}}"
@@ -40,7 +40,6 @@
 %format not = "\id{not}"
 %format == = "\mathop{==}"
 %format /= = "\mathop{{/}{=}}"
-%format ++ = "\mathop{\texttt{++}}"
 %format undefined = "\id{undefined}"
 %format && = "\mathop{\&\&}"
 
@@ -50,17 +49,22 @@
 %format qquad =
 %format com = --
 %format \* = *
-%format ! =
-%format !: = `Cons`
-%format !:~> = :~>
-%format nil = PromotedNil
+%format ! = "TICK "
+%format !: = TICK :
+%format !:~> = TICK :~>
+%format nil = TICK []
 %format dollar = $
 %format begin_comment = "{-"
 %format end_comment = "-}"
 %format th_d_open = "[d|"
 
 \begin{code}
-{-# LANGUAGE GADTs, DataKinds, TypeOperators, PolyKinds, EmptyCase #-}
+{-# LANGUAGE GADTs, DataKinds, TypeOperators, PolyKinds, EmptyCase,
+             TypeFamilies, CPP, ConstraintKinds, RankNTypes,
+	     StandaloneDeriving, ScopedTypeVariables,
+	     MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances,
+	     UndecidableInstances #-}
+{-# OPTIONS_GHC -Wall -fno-warn-unused-imports #-}
 
 module Chapter where
 

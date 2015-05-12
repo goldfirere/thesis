@@ -8,20 +8,20 @@
 \chapter{Motivation}
 \label{cha:motivation}
 
-Functional programmers use dependent types in two primary ways: in order
-to eliminate erroneous programs from being accepted, and in order to write
-intricate programs that a simply-typed language cannot accept. In this chapter,
-we will motivate the use of dependent types from both of these angles. The
-chapter concludes with a section motivating why Haskell, in particular, is
-ripe for dependent types.
-
-\section{Eliminating erroneous programs}
+Functional programmers use dependent types in two primary ways, broadly
+speaking: in order to eliminate erroneous programs from being accepted, and in
+order to write intricate programs that a simply-typed language cannot accept.
+In this chapter, we will motivate the use of dependent types from both of
+these angles. The chapter concludes with a section motivating why Haskell, in
+particular, is ripe for dependent types.
 
 \begin{proposal}
 In this proposal, I elide the details of the motivating examples. Instead,
 I list them as stubs to be filled out later, when writing the dissertation
 proper.
 \end{proposal}
+
+\section{Eliminating erroneous programs}
 
 \subsection{Simple example: Length-indexed vectors}
 
@@ -43,16 +43,21 @@ infixr 0 :~>
 \end{code}
 I choose |Unit| as our one and only base type, for simplicity. This calculus
 is clearly not suitable for computation, but it demonstrates the use of GADTs
-well. The model described here scaled up to a more featureful
+well. The model described here scales up to a more featureful
 lambda-calculus.\footnote{For example, see my work on \package{glambda} at
   \url{https://github.com/goldfirere/glambda}.}
 The |infixr| declaration declares that the constructor |:~>| is right-associative,
 as usual.
 
 We are then confronted quickly with the decision of how to encode bound
-variables. Let's choose de Bruijn indices~\cite{de-bruijn}, as these are well-known
+variables. Let's choose de Bruijn indices~\cite{debruijn}, as these are well-known
 and conceptually simple. However, instead of using natural numbers to
-represent our variables, we'll use a custom |Elem| type. A value of type
+represent our variables, we'll use a custom |Elem| type:
+\begin{code}
+data Elem :: [Ty] -> Ty -> * ^^ where
+  EZ :: Elem (x ': xs) x
+  ES :: Elem xs x -> Elem (y ': xs) x
+\end{code}
 
 
 
@@ -100,3 +105,6 @@ available in Haskell will further our knowledge about dependent types, as more
 people can experiment with them.
 \end{itemize}
 \end{proposal}
+
+\subsection{No termination checking}
+\label{sec:termination}

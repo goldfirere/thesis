@@ -17,23 +17,23 @@ Haskell has become a wonderful and rich playground for type system
 experimentation. Despite its relative longevity -- at 25 years
 old~\cite{history-of-haskell} \rae{check!} -- type theorists still turn to
 Haskell as a place to build new type system ideas and see how they work in a
-practical setting~\cite{functional-dependencies, type-families, arrows, syb,
+practical setting~\cite{fundeps, chak1, chak2, arrows, syb,
   closed-type-families, generics-with-closed-type-families, safe-coercions,
-  pattern-match-and-gadts, helium-type-errors, etc}. As a result, Haskell's type system has grown
+  pattern-match-and-gadts, helium, etc}. As a result, Haskell's type system has grown
 ever more intricate over the years. As the power of types in Haskell has
 increased, Haskellers have started to integrate dependent types into their
-programs~\cite{singletons, hasochism, she, clash, vinyl}, despite the fact
+programs~\cite{singletons, hasochism, she, clash}, despite the fact
 that today's Haskell\footnote{Throughout this dissertation, a reference to
   ``today's Haskell'' refers to the language implemented by the Glasgow
   Haskell Compiler (GHC), version 7.10, released in 2015.} does not internally
 support dependent types. Indeed, the desire to program in Haskell but with
-support for dependent types influenced the creation of Agda~\cite{agda} and
+support for dependent types influenced the creation of Agda~\cite{norell-thesis} and
 Idris~\cite{idris}; both are Haskell-like languages with support for full dependent
 types.
 
 This dissertation closes the gap, by adding support for dependent types into
 Haskell directly. In this work, I detail both the changes to GHC's internal
-language, known as System FC~\cite{system-fc}, and explain the changes to the
+language, known as System FC~\cite{systemfc}, and explain the changes to the
 surface language necessary to support dependent types. Naturally, I must also
 describe the elaboration from the surface language to the internal language,
 including type inference. Along with the textual description contained in this
@@ -119,10 +119,11 @@ challenges inherent in building Dependent Haskell for wide distribution.
 several other dependently typed systems, both theories and implementations.
 \end{itemize}
 
-Though not a new contribution, \pref{cha:todays-haskell} contains a thorough
-review of features available in today's Haskell that support dependently typed
-programming. This is included as a counterpoint to the features discussed as
-parts of Dependent Haskell.
+Though not a new contribution, \pref{cha:prelim} contains a review of features
+available in today's Haskell that support dependently typed programming. This
+is included as a primer to these features for readers less experienced in
+Haskell, and also as a counterpoint to the features discussed as parts of
+Dependent Haskell.
 
 With an implementation of dependent types in Haskell available, I look forward
 to seeing how the Haskell community builds on top of my work and discovers

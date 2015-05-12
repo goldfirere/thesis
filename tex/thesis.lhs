@@ -52,6 +52,7 @@
 \hypersetup{pageanchor=true}
 
 %include intro.lhs
+%include prelim.lhs
 %include motivation.lhs
 %include todays-haskell.lhs
 \include{system-fc}
@@ -75,6 +76,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \bibliographystyle{plainnat}
-\bibliography{thesis}
+\bibliography{../../etc/rae}
 
 \end{document}
