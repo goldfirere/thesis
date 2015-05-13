@@ -6,6 +6,7 @@
 %format nil = "\tick" []
 %format !: = "\mathop{\tick{:}}"
 %format !:~> = "\mathop{\tick{{:}{\rightsquigarrow}}}"
+%format !++ = "\mathop{\tick{" ++ "}}"
 %format :~> = "\mathop{{:}{\rightsquigarrow}}"
 %format KK = "\kappa"
 %subst conid a = "\id{" a "}"
@@ -35,12 +36,12 @@
 %format ghci = "\lambda\!"
 %format /\ = "\Lambda"
 %format |> = "\triangleright"
+%format pi = "\Pi"
 
 % suppress some built-in formatting of lhs2TeX:
 %format not = "\id{not}"
 %format == = "\mathop{==}"
 %format /= = "\mathop{{/}{=}}"
-%format undefined = "\id{undefined}"
 %format && = "\mathop{\&\&}"
 
 %else
@@ -64,7 +65,7 @@
 	     StandaloneDeriving, ScopedTypeVariables,
 	     MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances,
 	     UndecidableInstances #-}
-{-# OPTIONS_GHC -Wall -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -Wall -fno-warn-unused-imports -fno-warn-name-shadowing #-}
 
 module Chapter where
 

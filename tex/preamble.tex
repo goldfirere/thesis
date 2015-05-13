@@ -1,6 +1,7 @@
 % LaTeX preamble
 
-\usepackage{xcolor}
+% package inclusion
+\usepackage[usenames,dvipsnames,svgnames]{xcolor}
 \usepackage{amsthm}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -11,6 +12,7 @@
 \usepackage{prettyref}
 \usepackage{verbatim}
 \usepackage[greek,english]{babel}
+\usepackage{mdframed}
 
 \usepackage[top=1in, bottom=1in, left=1.5in, right=1in,includefoot,paperwidth=8.5in,paperheight=11in]{geometry}
 
@@ -28,6 +30,7 @@
     pdfpagelayout=TwoPageRight
 }
 
+% some cool stuff inherited from Brent
 \usepackage{fancyhdr}
 \lfoot[\fancyplain{}{}]{\fancyplain{}{}}
 \rfoot[\fancyplain{}{}]{\fancyplain{}{}}
@@ -58,12 +61,14 @@
   \addcontentsline{toc}{chapter}{#1}%
   \markright{#1}}
 
+% notes to self
 \ifdraft
 \newcommand{\rae}[1]{\textcolor{red}{RAE: #1}}
 \else
 \newcommand{\rae}[1]{}
 \fi
 
+% formatting macros
 \newcommand{\keyword}[1]{\textsf{\textbf{#1}}}
 \newcommand{\id}[1]{\textsf{\textsl{#1}}}
 \newcommand{\tick}{\text{\textquoteright}}
@@ -71,11 +76,31 @@
 \newcommand{\ext}[1]{\texttt{#1}}
 \newcommand{\flag}[1]{\texttt{#1}}
 
+% write proposal-only stuff in blue
 \newenvironment{proposal}%
 {\ifproposal\color{blue}\else\comment\fi}%
 {\ifproposal\else\endcomment\fi}
 
+% that trailing / prevents the macro from gobbling up a space
 \def\outsidein/{\textsc{OutsideIn}}
 
+% more formatting
 \newcommand{\bnfeq}{\ensuremath{\mathop{{:}{:}{=}}}}
 \newcommand{\bnfor}{\ensuremath{\mathop{|}}}
+
+% colorboxes
+\definecolor{notyet}{rgb}{1,1,0.85}
+\newmdenv[hidealllines=true,backgroundcolor=notyet,innerleftmargin=0pt,innerrightmargin=0pt,innertopmargin=-3pt,innerbottommargin=-3pt,skipabove=3pt]{notyet}
+\newcommand{\notyetcolorname}{light yellow}
+
+\definecolor{working}{rgb}{0.9,1,0.9}
+\newmdenv[hidealllines=true,backgroundcolor=working,innerleftmargin=0pt,innerrightmargin=0pt,innertopmargin=-3pt,innerbottommargin=-3pt,skipabove=3pt]{working}
+\newcommand{\workingcolorname}{light green}
+
+\definecolor{noway}{1,0.9,0.9}
+\newmdenv[hidealllines=true,backgroundcolor=noway,innerleftmargin=0pt,innerrightmargin=0pt,innertopmargin=-3pt,innerbottommargin=-3pt,skipabove=3pt]{noway}
+\newcommand{\nowaycolorname}{light red}
+
+
+% enable numbering of subsubsections
+\setcounter{secnumdepth}{3}

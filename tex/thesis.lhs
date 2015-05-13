@@ -54,7 +54,6 @@
 %include intro.lhs
 %include prelim.lhs
 %include motivation.lhs
-%include todays-haskell.lhs
 \include{system-fc}
 \include{dep-haskell}
 \include{fcd}
