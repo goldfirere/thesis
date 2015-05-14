@@ -26,6 +26,8 @@ all: default
 compile: $(ALL_LHS_FILES:tex/%.lhs=aux/%.o)
 
 thesis: pdf/$(PAPER_BASE).pdf
+	@echo '**** THESIS BUILT ****'
+
 ott: pdf/$(OTT_DUMP_BASE).pdf
 
 $(PDF_DIR_MARKER):

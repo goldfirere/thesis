@@ -8,6 +8,7 @@
 %format !:~> = "\mathop{\tick{{:}{\rightsquigarrow}}}"
 %format !++ = "\mathop{\tick{" ++ "}}"
 %format :~> = "\mathop{{:}{\rightsquigarrow}}"
+%format :~: = "\mathop{{:}{\sim}{:}}"
 %format KK = "\kappa"
 %subst conid a = "\id{" a "}"
 %subst varid a = "\id{" a "}"
@@ -37,6 +38,8 @@
 %format /\ = "\Lambda"
 %format |> = "\triangleright"
 %format pi = "\Pi"
+%format tau = "\tau"
+%format sigma = "\sigma"
 
 % suppress some built-in formatting of lhs2TeX:
 %format not = "\id{not}"

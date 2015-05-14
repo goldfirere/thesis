@@ -51,6 +51,10 @@ shiftElem _ _ LEZ e = ES e
 shiftElem _ _ (LES _) EZ = EZ
 shiftElem p1 p2 (LES l) (ES e) = ES (shiftElem p1 p2 l e)
 
+type family ShiftElem (xs1 :: [Ty]) (e :: Elem (xs1 ++ xs2) x) :: Elem (xs1 ++ y ': xs2) x where
+  ShiftElem '[] e = 'ES e
+  ShiftElem (h ': t) ('EZ :: foo) = 'EZ
+
 shift :: Proxy x -> Proxy ts2 -> LengthEv ts1
       -> Expr (ts1 ++ ts2) ty -> Expr (ts1 ++ x ': ts2) ty
 shift p1 p2 len (Var v)    = Var (shiftElem p1 p2 len v)

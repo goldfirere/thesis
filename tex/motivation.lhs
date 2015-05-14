@@ -255,7 +255,49 @@ a value. But we want better than this.
 
 Instead, we want to ensure that the small-step semantics respects the big-step
 semantics. That is, after every step, we want the value -- as given by the
-big-step semantics -- to remain the same.
+big-step semantics -- to remain the same. We thus want the small-step stepper
+to return a pair: the new expression (or value), and evidence that the value
+of the expression (as given by the big-step evaluator) remains the same.
+
+To pull this off, we will need a dependent pair, or $\Sigma$-type:
+%format :&: = "\mathop{{:}{\&}{:}}"
+\begin{notyet}
+\begin{spec}
+data Sigma (s :: *) (t :: s -> *) where
+  (:&:) :: pi (fst :: s) -> t fst -> Sigma s t
+
+proj1 :: Sigma s t -> s
+proj1 (a :&: _) = a
+
+proj2 :: pi (sig :: Sigma s t) -> t (!proj1 sig)
+proj2 (_ :&: b) = b
+\end{spec}
+\end{notyet}
+A $\Sigma$-type |Sigma s t| is similar to an ordinary pair |(s, t)| except
+that the type |t| is a function that depends on the chosen value of the first
+element, called |fst| above. Note that |fst| is $\Pi$-quantified, making it
+available both in types and at runtime. In our case, here is the type we will
+want to use for |t|:
+%
+\begin{noway}
+\begin{spec}
+data SameValue (e1 :: Expr ![] ty) (e2 :: Expr ![] ty) where
+  SameValue :: (!eval e1 ~ !eval e2) => SameValue e1 e2
+\end{spec}
+\end{noway}
+%
+Putting all of this together, here is the type we get for |step|:
+\begin{noway}
+\begin{spec}
+step :: pi (e :: Expr ![] ty) -> Either  (Sigma (Expr  ![] ty) (SameValue e))
+                                         (Sigma (Val   ![] ty) ((:~:) (!eval e)))
+\end{spec}
+\end{noway}
+This says that, for every closed expression |e| of type |ty|, we can either
+produce another expression of type |ty| such that the new expression has the
+same value as the original one, or we produce a value of type |ty| that
+is indeed the value of the original expression.
+
 
 \subsection{Units-of-measure}
 
