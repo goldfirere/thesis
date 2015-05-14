@@ -134,19 +134,19 @@ data Sg (t :: s -> *) :: * where
 
 type HList = Sg Stk
 
-data Inst :: Rel (Sg Stk) where
+data Inst :: Stk ts -> Stk ts' -> *  where
   PUSH :: -- forall (t :: *) (ts :: [*]) (v :: t) (vs :: Stk ts).
-          Sing v -> Inst ('And vs) ('And ('StkCons v vs))
+          Sing v -> Inst vs ('StkCons v vs)
 
 
   ADD  :: -- forall (ts :: [*]) (y :: Nat) (x :: Nat) (vs :: Stk ts).
-          Inst ('And ('StkCons y ('StkCons x vs)))
-               ('And ('StkCons (x :+ y) vs))
+          Inst ('StkCons y ('StkCons x vs))
+               ('StkCons (x :+ y) vs)
 
-  IFPOP :: List Inst ('And vs)  ('And vst) 
+  IFPOP :: List Inst  ('And vs) ('And vst) 
         -> List Inst  ('And vs) ('And vsf)
-        -> Inst ('And ('StkCons b vs))
-                ('And (If b vst vsf))
+        -> Inst ('StkCons b vs)
+                (If b vst vsf)
 
 
 fact :: -- forall (ty :: *)(sc :: SC) (b :: Bool) (t :: ty) (f :: ty) (s :: Stk sc).
@@ -157,7 +157,7 @@ fact SFalse _ _ _ = Refl
 
 compile :: -- forall (t :: *) (e :: Expr t) (ts :: [*]) (vs :: Stk ts).  -- cannot remove. Need vs in proxy.
            forall t e ts vs.
-           Sing e -> List Inst ('And vs) ('And ('StkCons (Eval e) vs)) 
+           Sing e -> List Inst vs ('StkCons (Eval e) vs) 
 compile (SVal y)        = PUSH y ::: Nil
 compile (e1 `SPlus` e2) = compile e1 ++ compile e2 ++ ADD ::: Nil
 compile (SCond se0 (se1 :: Sing e1) (se2 :: Sing e2))  =
@@ -172,7 +172,7 @@ compile (SCond se0 (se1 :: Sing e1) (se2 :: Sing e2))  =
    
 
 run :: -- forall (ts :: [*]) (ts' :: [*]) (vs :: Stk ts) (vs' :: Stk ts'). 
-         List Inst ('And vs) ('And vs')  -> Sing vs -> Sing vs'
+         List Inst vs vs'  -> Sing vs -> Sing vs'
 run Nil vs = vs  
 run (PUSH v ::: is) vs                             = run is (SStkCons v vs)
 run (ADD    ::: is) (v2 `SStkCons` (v1 `SStkCons` vs)) = run is ((v1 %:+ v2) `SStkCons` vs)
