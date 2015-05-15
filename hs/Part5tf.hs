@@ -4,7 +4,8 @@
              FlexibleInstances #-}
 {-# OPTIONS_GHC -fwarn-unticked-promoted-constructors #-}
 
--- Stephanie's version, with the strange order of arguments to List
+-- Stephanie's version: uses the type families and proxies in the Sigma to keep the list arguments in the
+-- correct order.
 
 module Part5 where
 
@@ -52,12 +53,13 @@ sEval (SCond e0 e1 e2) = sIf (sEval e0) (sEval e1) (sEval e2)
 
 type Rel i = i -> i -> *
 
+
 data List (x :: Rel i) :: Rel i where
   Nil   :: List x i i
-  (:::) :: x i j -> List x k j -> List x k i
+  (:::) :: x i j -> List x j k -> List x i k
 infixr 5 :::
 
-(++) :: List x j i -> List x k j -> List x k i 
+(++) :: List x i j -> List x j k -> List x i k
 Nil ++ ys = ys
 (x ::: xs) ++ ys = x ::: (xs ++ ys)
 infixr 5 ++
@@ -67,33 +69,41 @@ type SC = [*]
 data Elt :: Rel SC where
   E :: t -> Elt (t ': ts) ts
 
-type Stk = List Elt '[]
+type Stk i = List Elt i '[]
+
+data TyFun :: * -> * -> *
+type a ~> b = TyFun a b -> *
+data StkSym0 :: SC ~> *
+type family (f :: a ~> b) @@ (x :: a) :: b
+type instance StkSym0 @@ x = Stk x
+
+
+$(return [])
 
 -- a sigma type. Second component depends on the first
 -- according to some type function
 
--- SCW: made s invisible argument to Sg, made t be a type constructor
--- not type function argument
--- Note also that the first component of the pair is also invisible
-data Sg (t :: s -> *) :: * where
-  And :: -- forall (s :: *) (t :: s -> *) (fst :: s).
-         t fst -> Sg t
+data Sg (t :: s ~> *) :: * where
+  And :: Proxy fst -> t @@ fst -> Sg t
 
-data Inst :: Rel (Sg Stk) where
-  PUSH :: -- forall (t :: *) (ts :: [*]) (v :: t) (vs :: Stk ts).
-          Sing v -> Inst ('And vs) ('And ('E v '::: vs))
+data Inst :: Rel (Sg StkSym0) where
+  PUSH :: forall (t :: *) (ts :: [*]) (v :: t) (vs :: Stk ts).
+          Sing v -> Inst ('And ('Proxy :: Proxy ts) vs) 
+                         ('And ('Proxy :: Proxy (t ': ts)) ('E v '::: vs))
 
+  ADD  :: forall (ts :: [*]) (y :: Nat) (x :: Nat) (vs :: Stk ts).
+          Inst ('And ('Proxy :: Proxy (Nat ': Nat ': ts)) ('E y '::: 'E x '::: vs))
+               ('And ('Proxy :: Proxy (Nat ': ts))        ('E (x :+ y) '::: vs))
 
-  ADD  :: -- forall (ts :: [*]) (y :: Nat) (x :: Nat) (vs :: Stk ts).
-          Inst ('And ('E y '::: 'E x '::: vs))
-               ('And ('E (x :+ y) '::: vs))
+  IFPOP :: forall ts ts' vs vst vsf b.
+           List Inst ('And ('Proxy :: Proxy ts) vs) 
+                     ('And ('Proxy :: Proxy ts') vst) 
+        -> List Inst ('And ('Proxy :: Proxy ts) vs) 
+                     ('And ('Proxy :: Proxy ts') vsf) 
+        -> Inst ('And ('Proxy :: Proxy (Bool ': ts)) ('E b '::: vs))
+                ('And ('Proxy :: Proxy ts') (If b vst vsf))
 
-  IFPOP :: List Inst ('And vst) ('And vs) 
-        -> List Inst ('And vsf) ('And vs) 
-        -> Inst ('And ('E b '::: vs))
-                ('And (If b vst vsf))
-
--- SCW: switched t and f arguments to proxies so that compilation of if
+-- SCW: switched t and f arguments to proxies so that it is clear that compilation of if
 -- doesn't need to evaluate them
 fact :: -- forall (ty :: *)(sc :: SC) (b :: Bool) (t :: ty) (f :: ty) (s :: Stk sc).
         Sing b -> Proxy t -> Proxy f -> Proxy s
@@ -101,9 +111,10 @@ fact :: -- forall (ty :: *)(sc :: SC) (b :: Bool) (t :: ty) (f :: ty) (s :: Stk 
 fact STrue  _ _ _ = Refl
 fact SFalse _ _ _ = Refl
 
-compile :: -- forall (t :: *) (e :: Expr t) (ts :: [*]) (vs :: Stk ts).  -- cannot remove. Need vs in proxy.
+compile :: -- forall (t :: *) (e :: Expr t) (ts :: [*]) (vs :: Stk ts).  
            forall t e ts vs.
-           Sing e -> List Inst ('And ('E (Eval e) '::: vs)) ('And vs)
+           Sing e -> List Inst ('And ('Proxy :: Proxy ts) vs) 
+                               ('And ('Proxy :: Proxy (t ': ts)) ('E (Eval e) '::: vs)) 
 compile (SVal y)        = PUSH y ::: Nil
 compile (e1 `SPlus` e2) = compile e1 ++ compile e2 ++ ADD ::: Nil
 compile (SCond se0 (se1 :: Sing e1) (se2 :: Sing e2))  =
@@ -123,12 +134,13 @@ data SStk (vs :: Stk ts) where
 
 
 run :: -- forall (ts :: [*]) (ts' :: [*]) (vs :: Stk ts) (vs' :: Stk ts'). 
-         List Inst ('And vs') ('And vs) -> SStk vs -> SStk vs'
+         List Inst ('And ('Proxy :: Proxy ts) vs) ('And ('Proxy :: Proxy ts') vs') -> SStk vs -> SStk vs'
 run Nil vs = vs  
 run (PUSH v ::: is) vs                             = run is (SSCons v vs)
 run (ADD    ::: is) (v2 `SSCons` (v1 `SSCons` vs)) = run is ((v1 %:+ v2) `SSCons` vs)
 run (IFPOP is1 is2 ::: is) (STrue `SSCons` vs)     = run is (run is1 vs)
 run (IFPOP is1 is2 ::: is) (SFalse `SSCons` vs)    = run is (run is2 vs)
+
 
 
 
