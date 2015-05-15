@@ -28,10 +28,6 @@ data instance Sing (n :: Nat) where
   SZero :: Sing 'Zero
   SSucc :: Sing n -> Sing ('Succ n)
 
-data instance Sing (t :: *) where
-  SNat  :: Sing Nat
-  SBool :: Sing Bool
-
 (+) :: Nat -> Nat -> Nat
 Zero   + m = m
 Succ n + m = Succ (n + m)
@@ -148,7 +144,7 @@ fact SFalse _ _ _ = Refl
 
 compile :: -- forall (t :: *) (e :: Expr t) (ts :: [*]) (vs :: Stk ts).  -- cannot remove. Need vs in proxy.
            forall t e ts vs.
-           Sing e -> List Inst  ('And ('E (Eval e) '::: vs)) ('And vs)
+           Sing e -> List Inst ('And ('E (Eval e) '::: vs)) ('And vs)
 compile (SVal y)        = PUSH y ::: Nil
 compile (e1 `SPlus` e2) = compile e1 ++ compile e2 ++ ADD ::: Nil
 compile (SCond se0 (se1 :: Sing e1) (se2 :: Sing e2))  =
