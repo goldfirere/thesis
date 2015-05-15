@@ -95,13 +95,17 @@ sEval (SCond e0 e1 e2) = sIf (sEval e0) (sEval e1) (sEval e2)
 
 -- Plan: Index by final and initial stack configuration
 
-type Rel i = i -> i -> *
+-- a heterogenously-typed relation
+type Rel = forall (ti :: *) (tj :: *). ti -> tj -> *
 
-data List (x :: Rel i) :: Rel i where
+
+data List (x :: Rel) :: ti -> tj -> * where
   Nil   :: List x i i
-  (:::) :: x i j -> List x j k -> List x i k
+  (:::) :: forall (x :: Rel) (ti :: *) (tj :: *) (tk :: *) (i :: ti) (j :: tj) (k :: tk) .
+             x i j -> List x j k -> List x i k
 infixr 5 :::
 
+{-
 (++) :: List x i j -> List x j k -> List x i k 
 Nil ++ ys = ys
 (x ::: xs) ++ ys = x ::: (xs ++ ys)
@@ -143,8 +147,8 @@ data Inst :: Stk ts -> Stk ts' -> *  where
           Inst ('StkCons y ('StkCons x vs))
                ('StkCons (x :+ y) vs)
 
-  IFPOP :: List Inst  ('And vs) ('And vst) 
-        -> List Inst  ('And vs) ('And vsf)
+  IFPOP :: List Inst  vs vst 
+        -> List Inst  vs vsf
         -> Inst ('StkCons b vs)
                 (If b vst vsf)
 
@@ -157,13 +161,14 @@ fact SFalse _ _ _ = Refl
 
 compile :: -- forall (t :: *) (e :: Expr t) (ts :: [*]) (vs :: Stk ts).  -- cannot remove. Need vs in proxy.
            forall t e ts vs.
-           Sing e -> List Inst vs ('StkCons (Eval e) vs) 
+           Sing e -> List Inst vs ('StkCons (Eval e) vs)
 compile (SVal y)        = PUSH y ::: Nil
 compile (e1 `SPlus` e2) = compile e1 ++ compile e2 ++ ADD ::: Nil
+{-
 compile (SCond se0 (se1 :: Sing e1) (se2 :: Sing e2))  =
   case fact (sEval se0) (Proxy :: Proxy (Eval e1)) (Proxy :: Proxy (Eval e2)) (Proxy :: Proxy vs) of
    Refl -> compile se0 ++ IFPOP (compile se1) (compile se2) ::: Nil
-
+-}
 
 -- The run function. The type of the list of instructions tells you exactly what should happen
 -- when you run the machine. Conor's stack overflow version is not as strongly typed as the one
@@ -176,8 +181,10 @@ run :: -- forall (ts :: [*]) (ts' :: [*]) (vs :: Stk ts) (vs' :: Stk ts').
 run Nil vs = vs  
 run (PUSH v ::: is) vs                             = run is (SStkCons v vs)
 run (ADD    ::: is) (v2 `SStkCons` (v1 `SStkCons` vs)) = run is ((v1 %:+ v2) `SStkCons` vs)
+{-
 run (IFPOP is1 is2 ::: is) (STrue `SStkCons` vs)     = run is (run is1 vs)
 run (IFPOP is1 is2 ::: is) (SFalse `SStkCons` vs)    = run is (run is2 vs)
+-}
 
 
-
+-}

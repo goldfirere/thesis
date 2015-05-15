@@ -1,8 +1,8 @@
 {-# LANGUAGE GADTs, PolyKinds, TypeOperators, TemplateHaskell,
              DataKinds, TypeFamilies, UndecidableInstances,
              FlexibleContexts, RankNTypes, ScopedTypeVariables,
-             FlexibleInstances #-}
-{-# OPTIONS_GHC -fwarn-unticked-promoted-constructors #-}
+             FlexibleInstances, AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -fwarn-unticked-promoted-constructors -fprint-explicit-kinds #-}
 
 module Wg28 where
 
@@ -127,7 +127,7 @@ d1 = Dyn (TApp (TCon (TTyperep (TCon TStar))) (TCon TBool)) (TCon TBool)
 data ((a :: k1) :~~: (b :: k2)) where
   HRefl :: a :~~: a  
 
-eqtycon :: forall (k1 :: *) (k2:: *) (a :: k1) (b :: k2). Tycon a -> Tycon b -> Maybe (a :~~: b)
+eqtycon :: Tycon a -> Tycon b -> Maybe (a :~~: b)
 eqtycon TBool TBool       = Just HRefl
 eqtycon TFun  TFun        = Just HRefl
 eqtycon TProd TProd       = Just HRefl
@@ -167,7 +167,7 @@ optimize :: Expr t -> Expr t
 optimize (Val x) = Val x
 optimize (Plus (Val Zero) e) = optimize e
 optimize (Plus e (Val Zero)) = optimize e
-optimize (Plus e1 e2)     = Plus (optimize e1) (optimize e2)
+optimize (Plus e1 e2) = Plus (optimize e1) (optimize e2)
 optimize (Cond (Val True) e1 e2) = optimize e1
 optimize (Cond (Val False) e1 e2) = optimize e2
 optimize (Cond e1 e2 e3) = Cond (optimize e1) (optimize e2) (optimize e3)
@@ -188,7 +188,7 @@ data instance Sing (e :: Expr t) where
 
 sEval :: Sing e -> Sing (Eval e)
 sEval (SVal n) = n
-sEval (e1 `SPlus` e2) = sEval e1 %:+ sEval e2
+sEval (e1 `SPlus` e2) = (sEval e1) %:+ (sEval e2)
 sEval (SCond e0 e1 e2) = sIf (sEval e0) (sEval e1) (sEval e2)                                                 
 
 data Equivalent e where
@@ -200,17 +200,31 @@ lemma SZero = Refl
 lemma (SSucc x) = case lemma x of
   Refl -> Refl
 
+
+-- these two lemmas require "allow ambiguous types"
+lemma2 :: (Eval e1 ~ Eval e1', Eval e2 ~ Eval e2')
+          => Eval (Plus e1 e2) :~: Eval (Plus e1' e2')
+lemma2 = Refl
+
+lemma3 :: (Eval e0 ~ Eval e0', Eval e1 ~ Eval e1', Eval e2 ~ Eval e2')
+          => Eval (Cond e0 e1 e2) :~: Eval (Cond e0' e1' e2')
+lemma3 = Refl
+
+
 sOpt :: Sing e -> Equivalent e
 sOpt (SVal x) = Result (SVal x) Refl
 sOpt (SPlus (SVal SZero) se) = case sOpt se of
   Result se' Refl -> Result se' Refl
-sOpt (SPlus se (SVal SZero)) = case (sOpt se) of
-  (Result se' Refl) -> case lemma (sEval se') of
-                          Refl -> Result se' Refl 
-    
--- sOpt (SPlus e0 e1) = case (sOpt e0, sOpt e1) of
---  (Result e0' Refl, Result e1' Refl) -> Result (SPlus e0' e1') Refl
-
+-- this lemma is super annoying  
+-- sOpt (SPlus se (SVal SZero)) = case (sOpt se) of
+--  (Result se' Refl) -> case lemma (sEval se') of
+--                          Refl -> Result se' Refl
+-- why is this next case an error?                          
+sOpt (SPlus e0 e1) = case (sOpt e0, sOpt e1) of
+   (Result e0' Refl, Result e1' Refl) -> Result (SPlus e0' e1') Refl
+                          
+sOpt (SCond (SVal STrue)  e1 e2) = Result e1 Refl
+sOpt (SCond (SVal SFalse) e1 e2) = Result e2 Refl
 sOpt (SCond e0 e1 e2) = case (sOpt e0, sOpt e1, sOpt e2) of
   (Result e0' Refl, Result e1' Refl, Result e2' Refl) -> Result (SCond e0' e1' e2') Refl
 
