@@ -1,15 +1,19 @@
+
+
 module Lam where
 
-open import Data.List
+open import Data.List hiding ( [_] )
 open import Data.Product
-open import Relation.Binary.HeterogeneousEquality using ( _≅_; refl )
+open import Relation.Binary.PropositionalEquality hiding ( subst )
+open import Function
+open import Level using ( Level )
 
 data Ty : Set where
   Unit : Ty
   _:~>_ : Ty → Ty → Ty
 infixr 0 _:~>_
 
-data Elem : ∀ {a} → List a → a → Set1 where
+data Elem : ∀ {a : Set} → List a → a → Set1 where
   EZ : ∀ {a} {x : a} {xs : List a} → Elem (x ∷ xs) x
   ES : ∀ {a} {x y : a} {xs : List a} → Elem xs x → Elem (y ∷ xs) x
 
@@ -60,11 +64,15 @@ apply : ∀ {arg res : Ty} {ctx : List Ty} → Val ctx (arg :~> res)
                                          → Expr ctx res
 apply (LamVal body) arg = subst arg body
 
+{-# NO_TERMINATION_CHECK #-}
 eval : ∀ {ty : Ty} → Expr [] ty → Val [] ty
 eval (Var ())
-eval (Lam e) = LamVal e
+eval (Lam {t1}{t2}{.[]} e) = LamVal {t1}{t2}{[]} e
 eval (App e1 e2) = eval (apply (eval e1) e2)
 eval TT = TTVal
+
+x : ∀ { arg res e} -> eval (Lam {arg}{res} e) ≡ LamVal {arg}{res} e
+x = refl
 
 data Either : Set1 → Set1 → Set2 where
   Left : ∀ {a b} → a → Either a b
@@ -76,13 +84,33 @@ val TTVal         = TT
 
 evalE : ∀ {ty : Ty} → Either (Expr [] ty) (Val [] ty) → Val [] ty
 evalE (Left x) = eval x
-evalE (Right x) = eval (val x)
+evalE (Right x) = x
+
+-- remove if in standard library
+cong-app : ∀ {ℓ : Level} {a b : Set ℓ} {f g : a → b}
+         → f ≡ g → (x : a) → f x ≡ g x
+cong-app refl x = refl
+
 
 step : ∀ {ty : Ty} → (e : Expr [] ty) → Σ (Either (Expr [] ty) (Val [] ty))
-                                          (λ e' → eval e ≅ evalE e')
+                                          (λ e' → eval e ≡ evalE e')
 step (Var ())
 step (Lam e) = (Right (LamVal e)) , refl
 step (App e e₁) with step e
-step (App e e₁) | Left x , refl = {!!} -- (Left (App x e₁)) , {!!}
-step (App e e₁) | Right x , proj₂ = {!!}
-step TT = {!!}
+step (App e e₁) | Left x , eq = Left (App x e₁) , (let eq₁ = cong apply eq in
+                                                   let eq₂ = cong-app eq₁ e₁ in
+                                                   cong eval eq₂)
+step (App e e₁) | Right x , eq = Left (apply x e₁) , (let eq₁ = cong apply eq in
+                                                       let eq₂ = cong-app eq₁ e₁ in
+                                                      cong eval eq₂)
+step TT = Right TTVal , refl
+
+data SameValue {ty : Ty} (e₁ : Expr [] ty) (e₂ : Expr [] ty) : Set1 where
+  same : eval e₁ ≡ eval e₂ → SameValue e₁ e₂
+
+step' : ∀ {ty : Ty} → (e : Expr [] ty)
+      → Either (Σ (Expr [] ty) (SameValue e))
+               (Σ (Val  [] ty) (_≡_ (eval e)))
+step' e with step e
+step' e | Left x , proj₂ = Left (x , (same proj₂))
+step' e | Right x , proj₂ = Right (x , proj₂)

@@ -266,7 +266,65 @@ deriving instance Show Bool
 Generalized algebraic datatypes (or GADTs) are a powerful feature that allows
 term-level pattern matches to refine information about types. They undergird much
 of the programming we will see in the examples in \pref{cha:motivation}, and so
-I defer the discussion of GADTs to that chapter.
+I defer most of the discussion of GADTs to that chapter.
+
+Here, I introduce one particularly important GADT: propositional equality.
+The following definition appears now as part of the standard library shipped
+with GHC, in the |Data.Type.Equality| module:
+%
+\begin{code}
+data (a :: k) ^^ :~: ^^ (b :: k) where
+  Refl :: a :~: a
+\end{code}
+%
+The idea here is that a value of type |tau :~: sigma| (for some |tau| and
+|sigma|) represents evidence that the type |tau| is in fact equal to the
+type |sigma|. Here is a (trivial) use of this type, also from |Data.Type.Equality|:
+%
+\begin{code}
+castWith :: (a :~: b) -> a -> b
+castWith Refl x = x
+\end{code}
+%
+Here, the |castWith| function takes a term of type |a :~: b| -- evidence
+that |a| equals |b| -- and a term of type |a|. It can immediately return
+this term, |x|, because GHC knows that |a| and |b| are the same type. Thus,
+|x| also has type |b| and the function is well typed.
+
+Note that |castWith| must pattern-match against |Refl|. The reason this is
+necessary becomes more apparent if we look at an alternate, entirely
+equivalent way of defining
+|(:~:)|:
+%{
+%if style == newcode
+%format :~: = ":~::"
+%format Refl = "Refll"
+%endif
+\begin{code}
+data (a :: k) ^^ :~: ^^ (b :: k) =
+  (a ~ b) => Refl
+\end{code}
+%}
+In this variant, I define the type using the Haskell98-style syntax for
+datatypes. This says that the |Refl| constructor takes no arguments, but
+does require the constraint that |a ~ b|. The constraint |(~)| is GHC's
+notation for a proper type equality constraint. Accordingly, to use
+|Refl| at a type |tau :~: sigma|, GHC must know that |tau ~ sigma| -- in
+other words, that |tau| and |sigma| are the same type. When |Refl| is matched
+against, this constraint |tau ~ sigma| becomes available for use in the
+body of the pattern match.
+
+Returning to |castWith|, pattern-matching against |Refl| brings |a ~ b| into
+the context, and GHC can apply this equality in the right-hand side of the
+equation to say that |x| has type |b|.
+
+Operationally, the pattern-match against |Refl| is also important. This
+match is what forces the equality evidence to be reduced to a value. As
+Haskell is a lazy language, it is possible to pass around equality evidence
+that is |undefined|. Matching evaluates the argument, making sure that the
+evidence is real. The fact that type equality evidence must exist and be
+executed at runtime is somewhat unfortunate. See \pref{sec:no-termination-checker}
+for some discussion.
 
 \section{Higher-rank types}
 Standard ML and Haskell98 both use, essentially, the Hindley-Milner (HM) type
