@@ -6,39 +6,44 @@
 
 module Singletons where
 
+-- A version of singletons designed to work with kind equalities
+-- and with typelits
 
-import Prelude ( Bool(..), undefined, return )
-import GHC.TypeLits ( type (-) )
 import Data.Type.Equality
 import GHC.Exts
 import Data.Type.Bool
 import Data.Proxy
 
+import GHC.TypeLits
+import Unsafe.Coerce
 
--- standard definition of natural numbers and their
--- singletons
-data Nat :: * where
-  Zero :: Nat
-  Succ :: Nat -> Nat
+-- basic singletons stuff
 
 data family Sing (a :: k)
 
-data instance Sing (n :: Nat) where
-  SZero :: Sing 'Zero
-  SSucc :: Sing n -> Sing ('Succ n)
+class SingKind k where
+  type DemoteRep k :: *
+  fromSing :: Sing (x :: k) -> DemoteRep k
 
-(+) :: Nat -> Nat -> Nat
-Zero   + m = m
-Succ n + m = Succ (n + m)
-infixl 6 +
+-- singletons and type-lit natural numbers 
 
-type family a :+ b where
-  'Zero :+ m = m
-  'Succ n :+ m = 'Succ (n :+ m)
+data instance Sing (n :: Nat) = KnownNat n => SNat
 
-(%:+) :: Sing a -> Sing b -> Sing (a :+ b)
-SZero %:+ m = m
-SSucc n %:+ m = SSucc (n %:+ m)
+instance SingKind Nat where
+  type DemoteRep Nat = Integer
+  fromSing (SNat :: Sing n) = natVal (Proxy :: Proxy n)
+  
+
+(%:+) :: forall a b . Sing a -> Sing b -> Sing (a + b)
+sa %:+ sb =
+    let a = fromSing sa
+        b = fromSing sb
+        ex = someNatVal (a + b)
+    in
+    case ex of
+      Just (SomeNat (_ :: Proxy ab)) -> unsafeCoerce (SNat :: Sing ab)
+      Nothing                        -> error "Two naturals added to a negative?"
+
 
 -- singletons for lists and booleans
 data instance Sing (a :: [k]) where
