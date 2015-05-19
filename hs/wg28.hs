@@ -25,7 +25,7 @@ import Data.Type.Equality
 import GHC.Exts
 import Data.Type.Bool
 import Data.Proxy
-import Singletons
+import Singletons (Sing(..), (%:+), sIf)
 import GHC.TypeLits
 
 {- Part I: Dynamic Typing in a Statically Typed Language -}
@@ -33,8 +33,6 @@ import GHC.TypeLits
 -- Old and (somewhat) boring
 
 {-
-
-
 
 data Dynamic where
    Dyn :: Typerep a -> a -> Dynamic
@@ -163,17 +161,17 @@ eqtype _ _ = Nothing
 -- first parameter is the type of literal numbers, second is the type of the
 -- entire expression
 data Expr :: * -> * -> * where
-  Val  :: t -> Expr a t
-  Plus :: Expr a a -> Expr a a -> Expr a a 
-  Cond :: Expr a Bool -> Expr a t -> Expr a t -> Expr a t
+  Val  :: t -> Expr n t
+  Plus :: Expr n n -> Expr n n -> Expr n n 
+  Cond :: Expr n Bool -> Expr n t -> Expr n t -> Expr n t
   
-eval :: Expr Integer t -> t
+eval :: Num n => Expr n t -> t
 eval (Val n)        = n
 eval (e1 `Plus` e2) = eval e1 + eval e2
 eval (Cond e0 e1 e2)  = if eval e0 then eval e1 else eval e2
 
 -- constant folding function. GADT tells us that it preserves types.
-optimize :: Expr Integer t -> Expr Integer t
+optimize :: (Eq n, Num n) => Expr n t -> Expr n t
 optimize (Val x) = Val x
 optimize (Plus (Val 0) e) = optimize e
 optimize (Plus e (Val 0)) = optimize e
@@ -190,24 +188,33 @@ type family Eval (x :: Expr Nat t) :: t where
   Eval ('Plus e1 e2) = Eval e1 + Eval e2
   Eval ('Cond e0 e1 e2) = If (Eval e0) (Eval e1) (Eval e2)
 
--- a Singleton for that GADT (i.e. a GADT indexed by a GADT)
-
+-- a Singleton for that promoted GADT (i.e. a GADT indexed by a GADT)
+-- Sing is a data family for singleton types
+        
+-- NOTE that GHC.TypeLits uses Integers as the runtime representation of type-level Nats        
 data instance Sing (e :: Expr Nat t) where
   SVal  :: Sing (u :: t) -> Sing ('Val u :: Expr Nat t)
   SPlus :: Sing a -> Sing b -> Sing ('Plus a b :: Expr Nat Nat)
   SCond :: Sing a -> Sing b -> Sing c -> Sing ('Cond a b c :: Expr Nat t)
 
-                                       
+-- An evaluator for the singletons; in lock-step with the type level
 sEval :: Sing e -> Sing (Eval e)
 sEval (SVal n) = n
 sEval (e1 `SPlus` e2) = (sEval e1) %:+ (sEval e2)
 sEval (SCond e0 e1 e2) = sIf (sEval e0) (sEval e1) (sEval e2)                                                 
+
+-- The optimizer should produce an equivalent expression
 
 data Equivalent e where
   Result :: Sing e' -> (Eval e :~: Eval e') -> Equivalent e
 
 sOpt :: Sing e -> Equivalent e
 sOpt (SVal x) = Result (SVal x) Refl
+
+sOpt (SCond (SVal STrue)  e1 e2) = Result e1 Refl
+sOpt (SCond (SVal SFalse) e1 e2) = Result e2 Refl
+sOpt (SCond e0 e1 e2) = case (sOpt e0, sOpt e1, sOpt e2) of
+  (Result e0' Refl, Result e1' Refl, Result e2' Refl) -> Result (SCond e0' e1' e2') Refl
 
 -- uses TypeNat equality (0 + n) ~ n
 sOpt e@(SPlus (SVal (SNat :: Sing n0)) se) =
@@ -226,10 +233,6 @@ sOpt e@(SPlus se (SVal (SNat :: Sing n0))) =
 sOpt (SPlus e0 e1) = case (sOpt e0, sOpt e1) of
    (Result e0' Refl, Result e1' Refl) -> Result (SPlus e0' e1') Refl
                           
-sOpt (SCond (SVal STrue)  e1 e2) = Result e1 Refl
-sOpt (SCond (SVal SFalse) e1 e2) = Result e2 Refl
-sOpt (SCond e0 e1 e2) = case (sOpt e0, sOpt e1, sOpt e2) of
-  (Result e0' Refl, Result e1' Refl, Result e2' Refl) -> Result (SCond e0' e1' e2') Refl
 
 
 {- Part III: What's next -}
