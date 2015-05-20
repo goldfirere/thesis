@@ -25,14 +25,12 @@ import Data.Type.Equality
 import GHC.Exts
 import Data.Type.Bool
 import Data.Proxy
-import Singletons (Sing(..), (%:+), sIf)
 import GHC.TypeLits
+import Singletons (Sing(..), (%:+), sIf)
 
 {- Part I: Dynamic Typing in a Statically Typed Language -}
 
 -- Old and (somewhat) boring
-
-{-
 
 data Dynamic where
    Dyn :: Typerep a -> a -> Dynamic
@@ -61,7 +59,7 @@ dynApply (Dyn _ _) _ = error "runtime type error"
 
 dynFst :: Dynamic -> Dynamic
 dynFst (Dyn (TProd t1 t2) (x1,_)) = Dyn t1 x1
-dynFst (Dyn TDynamic d1) d2 = dynFst d1 d2
+dynFst (Dyn TDynamic d1) = dynFst d1 
 dynFst (Dyn _ _) = error "runtime type error"
 
 eqtype :: Typerep a -> Typerep b -> Maybe (a :~: b)
@@ -76,16 +74,13 @@ eqtype (TProd a1 b1) (TProd a2 b2) = case eqtype a1 a2 of
      Just Refl -> Just Refl
      Nothing -> Nothing
   Nothing -> Nothing
-eqtype (TMaybe a1) (TMaybe a2) = case eqtype a1 a2 of 
-  Just Refl -> Just Refl
-  Nothing -> Nothing
 eqtype TDynamic TDynamic = Just Refl
 eqtype (TTyperep a1) (TTyperep a2) = case eqtype a1 a2 of 
   Just Refl -> Just Refl
   Nothing -> Nothing
 eqtype _ _ = Nothing
 
--}
+
 
 
 -- New! Improved!  And quite crazy.
@@ -166,19 +161,19 @@ data Expr :: * -> * -> * where
   Cond :: Expr n Bool -> Expr n t -> Expr n t -> Expr n t
   
 eval :: Num n => Expr n t -> t
-eval (Val n)        = n
-eval (e1 `Plus` e2) = eval e1 + eval e2
-eval (Cond e0 e1 e2)  = if eval e0 then eval e1 else eval e2
+eval (Val n)         = n
+eval (e1 `Plus` e2)  = eval e1 + eval e2
+eval (Cond e0 e1 e2) = if eval e0 then eval e1 else eval e2
 
 -- constant folding function. GADT tells us that it preserves types.
 optimize :: (Eq n, Num n) => Expr n t -> Expr n t
 optimize (Val x) = Val x
-optimize (Plus (Val 0) e) = optimize e
-optimize (Plus e (Val 0)) = optimize e
-optimize (Plus e1 e2) = Plus (optimize e1) (optimize e2)
 optimize (Cond (Val True) e1 e2) = optimize e1
 optimize (Cond (Val False) e1 e2) = optimize e2
 optimize (Cond e1 e2 e3) = Cond (optimize e1) (optimize e2) (optimize e3)
+optimize (Plus (Val 0) e) = optimize e
+optimize (Plus e (Val 0)) = optimize e
+optimize (Plus e1 e2) = Plus (optimize e1) (optimize e2)
 
 -- New! Improved!  (Type family for a promoted GADT)
 
@@ -206,33 +201,35 @@ sEval (SCond e0 e1 e2) = sIf (sEval e0) (sEval e1) (sEval e2)
 -- The optimizer should produce an equivalent expression
 
 data Equivalent e where
-  Result :: Sing e' -> (Eval e :~: Eval e') -> Equivalent e
+  Result :: (Eval e ~ Eval e') => Sing e' -> Equivalent e
 
 sOpt :: Sing e -> Equivalent e
-sOpt (SVal x) = Result (SVal x) Refl
+sOpt (SVal x) = Result (SVal x) 
 
-sOpt (SCond (SVal STrue)  e1 e2) = Result e1 Refl
-sOpt (SCond (SVal SFalse) e1 e2) = Result e2 Refl
+sOpt (SCond (SVal STrue)  e1 e2) = Result e1
+sOpt (SCond (SVal SFalse) e1 e2) = Result e2
 sOpt (SCond e0 e1 e2) = case (sOpt e0, sOpt e1, sOpt e2) of
-  (Result e0' Refl, Result e1' Refl, Result e2' Refl) -> Result (SCond e0' e1' e2') Refl
+  (Result e0', Result e1', Result e2') -> Result (SCond e0' e1' e2')
 
 -- uses TypeNat equality (0 + n) ~ n
 sOpt e@(SPlus (SVal (SNat :: Sing n0)) se) =
   case sameNat (Proxy :: Proxy n0) (Proxy :: Proxy 0) of
      Just Refl -> case sOpt se of
-       Result se' Refl -> Result se' Refl
-     Nothing   -> Result e Refl
+       Result se' -> Result se' 
+     Nothing   -> Result e
      
 -- uses TypeNat equality (n + 0) ~ n
 sOpt e@(SPlus se (SVal (SNat :: Sing n0))) =
   case sameNat (Proxy :: Proxy n0) (Proxy :: Proxy 0) of
      Just Refl -> case sOpt se of
-       Result se' Refl -> Result se' Refl
-     Nothing   -> Result e Refl
+       Result se' -> Result se'
+     Nothing   -> Result e
 
 sOpt (SPlus e0 e1) = case (sOpt e0, sOpt e1) of
-   (Result e0' Refl, Result e1' Refl) -> Result (SPlus e0' e1') Refl
-                          
+   (Result e0', Result e1') -> Result (SPlus e0' e1')
+
+
+
 
 
 {- Part III: What's next -}
@@ -242,24 +239,75 @@ sOpt (SPlus e0 e1) = case (sOpt e0, sOpt e1) of
 -- replace  "forall e. Sing e ->"  with "pi e -> " in types
   
 -- no need for type family as eval/Eval available from single definition
--- no need for sEval, pi does both
 
-
-{-  
+{-
 data Equivalent e where
-  Result :: pi e' -> (Eval e :~: Eval e') -> Equivalent e
+  Result :: pi e -> (Eval e ~ Eval e') => Equivalent e
 
 opt :: pi e -> Equivalent e
-opt (Val x) = Result (Val x) Refl
-opt (Plus (Val 0) e) = case opt e of
-  Result e' Refl -> Result e' Refl
-opt (Plus e (Val 0)) = case (opt e) of
-  (Result e' Refl) ->  Result e' Refl
+opt (Val x) = Result (Val x) 
 opt (Plus e0 e1) = case (opt e0, opt e1) of
-   (Result e0' Refl, Result e1' Refl) -> Result (Plus e0' e1') Refl                          
-opt (Cond (Val True)  e1 e2) = Result e1 Refl
-opt (Cond (Val False) e1 e2) = Result e2 Refl
+   (Result e0', Result e1') -> Result (Plus e0' e1')                           
+opt (Cond (Val True)  e1 e2) = Result e1 
+opt (Cond (Val False) e1 e2) = Result e2 
 opt (Cond e0 e1 e2) = case (opt e0, opt e1, opt e2) of
-  (Result e0' Refl, Result e1' Refl, Result e2' Refl) -> Result (Cond e0' e1' e2') Refl
+  (Result e0', Result e1' , Result e2') -> Result (Cond e0' e1' e2') 
+opt (Plus (Val 0) e) = case opt e of
+  Result e' -> Result e' 
+opt (Plus e (Val 0)) = case (opt e) of
+  (Result e') ->  Result e' 
+
+-}
+
+
+-- Sigma! 
+
+-- Equivalent e is a (refined) Sigma type.
+-- What if we had such types without having to predeclare them?
+-- i.e. something like  { e' | Eval e ~ Eval e' }
+
+{-
+opt :: pi e -> { e' | Eval e ~ Eval e' }
+opt (Val x) = (Val x) 
+opt (Plus e0 e1) = Plus e0' e1' where
+  e0' = opt e0
+  e1' = opt e1
+opt (Cond (Val True)  e1 e2) = e1
+opt (Cond (Val False) e1 e2) = e2
+opt (Cond e0 e1 e2) = Cond e0' e1' e2' where
+  e0' = opt e0
+  e1' = opt e1
+  e2' = opt e2
+opt (Plus (Val 0) e) = e' where
+  e' = opt e
+opt (Plus e (Val 0)) = e' where
+  e' = opt e 
+-}
+
+{- Part IV: References -}
+
+{-   
+
+Available from http://www.cis.upenn.edu/~eir/pubs.html
+
+Kind equalities, theory and practice:
+
+Stephanie Weirich, Justin Hsu, and Richard A. Eisenberg.
+System FC with explicit kind equality. In Proceedings of The 18th
+ACM SIGPLAN International Conference on Functional Programming,
+ICFP '13, pages 275-286, Boston, MA, September 2013.
+
+An overabundance of equality: Implementing kind equalities into
+Haskell. Richard A. Eisenberg.
+Submitted to Haskell Symposium.
+
+Singletons:
+
+Dependently Typed Programming with Singletons. Richard A. Eisenberg and
+Stephanie Weirich. Haskell Symposium 2012, Copenhagen, Denmark.
+
+Promoting Functions to Type Families in Haskell. Richard A. Eisenberg and Jan
+Stolarek. Haskell Symposium 2014, Gothenburg, Sweden.
+
 
 -}
