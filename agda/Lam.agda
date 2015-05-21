@@ -67,12 +67,9 @@ apply (LamVal body) arg = subst arg body
 {-# NO_TERMINATION_CHECK #-}
 eval : ∀ {ty : Ty} → Expr [] ty → Val [] ty
 eval (Var ())
-eval (Lam {t1}{t2}{.[]} e) = LamVal {t1}{t2}{[]} e
+eval (Lam e) = LamVal e
 eval (App e1 e2) = eval (apply (eval e1) e2)
 eval TT = TTVal
-
-x : ∀ { arg res e} -> eval (Lam {arg}{res} e) ≡ LamVal {arg}{res} e
-x = refl
 
 data Either : Set1 → Set1 → Set2 where
   Left : ∀ {a b} → a → Either a b
@@ -86,23 +83,13 @@ evalE : ∀ {ty : Ty} → Either (Expr [] ty) (Val [] ty) → Val [] ty
 evalE (Left x) = eval x
 evalE (Right x) = x
 
--- remove if in standard library
-cong-app : ∀ {ℓ : Level} {a b : Set ℓ} {f g : a → b}
-         → f ≡ g → (x : a) → f x ≡ g x
-cong-app refl x = refl
-
-
 step : ∀ {ty : Ty} → (e : Expr [] ty) → Σ (Either (Expr [] ty) (Val [] ty))
                                           (λ e' → eval e ≡ evalE e')
 step (Var ())
 step (Lam e) = (Right (LamVal e)) , refl
 step (App e e₁) with step e
-step (App e e₁) | Left x , eq = Left (App x e₁) , (let eq₁ = cong apply eq in
-                                                   let eq₂ = cong-app eq₁ e₁ in
-                                                   cong eval eq₂)
-step (App e e₁) | Right x , eq = Left (apply x e₁) , (let eq₁ = cong apply eq in
-                                                       let eq₂ = cong-app eq₁ e₁ in
-                                                      cong eval eq₂)
+step (App e e₁) | Left x , eq rewrite eq = (Left (App x e₁)) , refl
+step (App e e₁) | Right x , eq rewrite eq = Left (apply x e₁) , refl
 step TT = Right TTVal , refl
 
 data SameValue {ty : Ty} (e₁ : Expr [] ty) (e₂ : Expr [] ty) : Set1 where
