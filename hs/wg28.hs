@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs, PolyKinds, TypeOperators, TemplateHaskell,
              DataKinds, TypeFamilies, UndecidableInstances,
              FlexibleContexts, RankNTypes, ScopedTypeVariables,
-             FlexibleInstances #-}
+             FlexibleInstances, ImpredicativeTypes #-}
 {-# OPTIONS_GHC -fwarn-unticked-promoted-constructors -Wall -fprint-explicit-kinds #-}
 
 
@@ -14,7 +14,11 @@ module Wg28 where
    Stephanie Weirich, University of Pennsylvania
    joint work with Richard Eisenberg
 
-   this code requires Richard's fork of GHC
+   this code is available on github:
+   https://github.com/goldfirere/thesis/blob/master/hs/wg28.hs
+
+   however, it requires Richard's fork of GHC
+   to compile
 
    https://github.com/goldfirere/ghc
 
@@ -31,67 +35,19 @@ import Singletons (Sing(..), (%:+), sIf, SingI(..), sEqNat)
 -- ROAD MAP:
 --    
 
+{- Part 0: Trivial examples -}
+
+-- a list of types, and "radical impredicativity"
+
+type Example = [ Int, *, Bool, forall (a :: *). a -> a] 
+
+-- kind-indexed GADT
+
+-- promoted GADT
+
+
 
 {- Part I: Dynamic Typing in a Statically Typed Language -}
-
--- Old and (somewhat) boring
-
-{-
-data Dynamic where
-   Dyn :: TypeRep a -> a -> Dynamic
-
-data TypeRep (a :: *) where
-  TBool  :: TypeRep Bool
-  TFun   :: TypeRep t1 -> TypeRep t2 -> TypeRep (t1 -> t2)
-  TProd  :: TypeRep t1 -> TypeRep t2 -> TypeRep (t1, t2)
-  -- let's get fancy!
-  TDynamic :: TypeRep Dynamic
-  TTypeRep :: TypeRep a -> TypeRep (TypeRep a)
-  -- Note: can't do MaybeT m a 
-  -- TMaybeT :: TypeRep m -> TypeRep a -> TypeRep (MaybeT m a)
-
-dynIf :: Dynamic -> a -> a -> a
-dynIf (Dyn TBool True) t _   = t
-dynIf (Dyn TBool False) _ f  = f
-dynIf (Dyn TDynamic d) t f   = dynIf d t f
-dynIf (Dyn _ _) _ _ = error "runtime type error"
-
-dynApply :: Dynamic -> Dynamic -> Dynamic
-dynApply (Dyn (TFun t1 t2) f) (Dyn t3 x) = case eqT t1 t3 of
-  Just Refl -> Dyn t2 (f x)
-  Nothing   -> error "runtime type error"
-dynApply (Dyn TDynamic d1) d2 = dynApply d1 d2
-dynApply (Dyn _ _) _ = error "runtime type error"
-
-dynFst :: Dynamic -> Dynamic
-dynFst (Dyn (TProd t1 _) (x1,_)) = Dyn t1 x1
-dynFst (Dyn TDynamic d1) = dynFst d1
-dynFst (Dyn _ _) = error "runtime type error"
-
-eqT :: TypeRep a -> TypeRep b -> Maybe (a :~: b)
-eqT TBool TBool = Just Refl
-eqT (TFun a1 b1) (TFun a2 b2) = case eqT a1 a2 of 
-  Just Refl -> case eqT b1 b2 of
-     Just Refl -> Just Refl
-     Nothing -> Nothing
-  Nothing -> Nothing
-eqT (TProd a1 b1) (TProd a2 b2) = case eqT a1 a2 of 
-  Just Refl -> case eqT b1 b2 of
-     Just Refl -> Just Refl
-     Nothing -> Nothing
-  Nothing -> Nothing
-eqT TDynamic TDynamic = Just Refl
-eqT (TTypeRep a1) (TTypeRep a2) = case eqT a1 a2 of 
-  Just Refl -> Just Refl
-  Nothing -> Nothing
-eqT _ _ = Nothing
-
--}
-
-
--- New! Improved!  And quite crazy.
-
--- Watch for: kind-indexed GADT,  star :: star
 
 
 data Tycon (a :: k) where
@@ -157,11 +113,11 @@ eqT _ _ = Nothing
 
 {- Part II: DTH-curious? -}
 
--- Old and (somewhat) boring
+-- Old version (works with GHC 7.8.3)
 
--- first parameter is the type of literal numbers, second is the type of the
+-- first parameter is the type for numbers, second is the type of the
 -- entire expression
-data Expr :: * -> * -> * where
+data Expr (n :: *) :: * -> * where
   Val  :: t -> Expr n t
   Plus :: Expr n n -> Expr n n -> Expr n n 
   Cond :: Expr n Bool -> Expr n t -> Expr n t -> Expr n t
@@ -183,7 +139,9 @@ optimize (Plus e1 e2) = Plus (optimize e1) (optimize e2)
 
 -- New! Improved!  (Type family for a promoted GADT)
 
--- When we promote this datatype, we'll use GHC.TypeLit's Nat type for numbers
+-- We promote this datatype using GHC.TypeLit's "Nat" kind for type-level
+-- numbers
+
 type family Eval (x :: Expr Nat t) :: t where
   Eval ('Val n) = n
   Eval ('Plus e1 e2) = Eval e1 + Eval e2
@@ -192,8 +150,9 @@ type family Eval (x :: Expr Nat t) :: t where
 -- a Singleton for that promoted GADT (i.e. a GADT indexed by a GADT)
 -- Sing is a data family for singleton types
         
--- NOTE that GHC.TypeLits uses Integers as the runtime representation
--- of type-level Nats        
+-- NOTE that we have defined (Sing u :: Nat) to use Integers as the
+-- runtime representation of type-level Nats (see singletons.hs)
+        
 data instance Sing (e :: Expr Nat t) where
   SVal  :: Sing (u :: t) -> Sing ('Val u :: Expr Nat t)
   SPlus :: Sing a -> Sing b -> Sing ('Plus a b :: Expr Nat Nat)

@@ -6,8 +6,19 @@
 
 module Singletons where
 
--- A version of singletons designed to work with kind equalities
--- and with typelits
+{-
+   A version of singletons designed to work with kind equalities
+   and with typelits
+
+   This file has just enough definitions for wg28.hs to work.
+
+   It is available at
+   https://github.com/goldfirere/thesis/blob/master/hs/singletons.hs
+
+   This file requires Richard's fork of GHC to compile
+   https://github.com/goldfirere/ghc
+
+-}
 
 import Data.Type.Equality
 import GHC.Exts
@@ -37,6 +48,7 @@ class SingKind k where
 data instance Sing (n :: Nat) = KnownNat n => SNat
 
 instance KnownNat n => SingI n where sing = SNat
+
 
 instance SingKind Nat where
   type DemoteRep Nat = Integer
