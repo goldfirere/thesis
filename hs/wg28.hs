@@ -1,72 +1,135 @@
-{-# LANGUAGE GADTs, PolyKinds, TypeOperators, TemplateHaskell,
-             DataKinds, TypeFamilies, UndecidableInstances,
-             FlexibleContexts, RankNTypes, ScopedTypeVariables,
-             FlexibleInstances, ImpredicativeTypes #-}
-{-# OPTIONS_GHC -fwarn-unticked-promoted-constructors -Wall -fprint-explicit-kinds #-}
+{-# LANGUAGE GADTs, PolyKinds, TypeOperators, 
+             DataKinds, TypeFamilies, ImpredicativeTypes,
+             RankNTypes, ScopedTypeVariables,
+             UndecidableInstances, FlexibleContexts, 
+             FlexibleInstances #-}
+{-# OPTIONS_GHC -fprint-explicit-kinds #-}
 
 
 module Wg28 where
 
 {-
 
-   Towards Dependently-typed Haskell 
+   Towards Dependently Typed Haskell 
+   =================================
 
    Stephanie Weirich, University of Pennsylvania
    joint work with Richard Eisenberg
 
+
    this code is available on github:
-   https://github.com/goldfirere/thesis/blob/master/hs/wg28.hs
+   https://github.com/goldfirere/thesis/hs/wg28.hs
 
-   however, it requires Richard's fork of GHC
-   to compile
-
+   however, it requires Richard's fork of GHC to compile:
    https://github.com/goldfirere/ghc
 
 
 -}
 
 
-import Data.Type.Equality ((:~:)(..))
-import Data.Type.Bool (If)
 import GHC.TypeLits
-
+import Data.Type.Bool (If)
 import Singletons (Sing(..), (%:+), sIf, SingI(..), sEqNat)
 
--- ROAD MAP:
---    
+
+{-
+
+GOAL:
+
+   GHC can act like a dependently-typed language using a
+   number of features such as:
+
+        GADTs, type families, datatype promotion,
+        kind polymorphism
+
+   These features are based on two key ideas:
+
+     - Type-level computation: Making the type-level like a
+       functional programming language
+
+     - Equality constraint abstraction: ( tau1 ~ tau2 ) => tau3 
+       and existential quantification. 
+
+-}
+
+
+
+
+
+{-
+
+  But there is a key limitation: equality constraints are only
+  between types, not kinds. 
+
+     - GADTs only indexed by types, not kinds
+
+     - only vanilla ADTs can be promoted, not GADTs
+
+-}
+
+
+
+
+
+{-
+
+Solution:  combine types and kinds together!
+
+Today: two(?) examples showing why you might want to do this.
+
+-}
+
+
+
+
+
 
 {- Part 0: Trivial examples -}
 
--- a list of types, and "radical impredicativity"
+-- types with kind signatures
+type W = (Int :: *)
 
-type Example = [ Int, *, Bool, forall (a :: *). a -> a] 
+-- type level numbers
+type X = (0 :: Nat)
 
--- kind-indexed GADT
+-- type level list
+type Y = ([Int, Bool, Nat] :: [*])
 
--- promoted GADT
+type W1 = (* :: *)
+
+type Y1 = [Int, *, * -> *, forall (a :: *). a -> a]
 
 
 
-{- Part I: Dynamic Typing in a Statically Typed Language -}
 
+
+
+
+
+
+
+
+{- Part 1: Dynamic Typing in a Statically Typed Language -}
+
+-- see wg28current.hs first
+
+
+
+
+
+
+
+data Dynamic where
+   Dyn :: TypeRep a -> a -> Dynamic
 
 data Tycon (a :: k) where
   TBool    :: Tycon Bool
   TFun     :: Tycon (->)
   TProd    :: Tycon (,)
-  TMaybe   :: Tycon Maybe
-  TDynamic :: Tycon Dynamic
-  -- Note: typerep is now kind-polymorphic. We'll represent the instances
-  TTypeRep :: TypeRep k -> Tycon (TypeRep :: k -> *)
-  TStar    :: Tycon *
   
 data TypeRep (a :: k) where
   TCon  :: Tycon c -> TypeRep c
   TApp  :: TypeRep a -> TypeRep b -> TypeRep (a b)
-
-d1 :: Dynamic
-d1 = Dyn (TApp (TCon (TTypeRep (TCon TStar))) (TCon TBool)) (TCon TBool)
-
 
 dynIf :: Dynamic -> a -> a -> a
 dynIf (Dyn (TCon TBool) True) t _ = t
@@ -74,7 +137,7 @@ dynIf (Dyn (TCon TBool) False) _ f = f
 dynIf (Dyn _ _) _ _ = error "runtime type error"
 
 dynApply :: Dynamic -> Dynamic -> Dynamic
-dynApply (Dyn (TApp (TApp (TCon TFun) t1) t2) f) (Dyn t3 x)
+dynApply (Dyn (TApp (TApp (TCon TFun) t1) t2) f) (Dyn t3 x)  
   | Just HRefl <- eqT t1 t3 = Dyn t2 (f x)
 dynApply (Dyn _ _) _ = error "runtime type error"
 
@@ -82,24 +145,22 @@ dynFst :: Dynamic -> Dynamic
 dynFst (Dyn (TApp (TApp (TCon TProd) t1) _) (x1,_)) = Dyn t1 x1
 dynFst (Dyn _ _) = error "runtime type error"
 
-data Dynamic where
-   Dyn :: TypeRep a -> a -> Dynamic
+
+
+data ((a :: k) :~: (b :: k)) where
+  Refl :: (a ~ b) => a :~: b
 
 
 data ((a :: k1) :~~: (b :: k2)) where
-  HRefl :: a :~~: a  
+  HRefl :: (k1 ~ k2, a ~ b) => a :~~: b  
+
 
 eqtycon :: Tycon a -> Tycon b -> Maybe (a :~~: b)
 eqtycon TBool TBool       = Just HRefl
 eqtycon TFun  TFun        = Just HRefl
 eqtycon TProd TProd       = Just HRefl
-eqtycon TMaybe TMaybe     = Just HRefl
-eqtycon TDynamic TDynamic = Just HRefl
-eqtycon (TTypeRep k1) (TTypeRep k2) = case eqT k1 k2 of
-  Just HRefl -> Just HRefl
-  Nothing    -> Nothing 
-eqtycon TStar TStar       = Just HRefl  
 eqtycon _ _ = Nothing
+
 
 eqT :: TypeRep a -> TypeRep b -> Maybe (a :~~: b)
 eqT (TCon c1) (TCon c2) = eqtycon c1 c2
@@ -107,11 +168,11 @@ eqT (TApp a1 b1) (TApp a2 b2) = case eqT a1 a2 of
   Just HRefl -> case eqT b1 b2 of
      Just HRefl -> Just HRefl
      Nothing -> Nothing
-  Nothing -> Nothing
+  Nothing -> Nothing 
 eqT _ _ = Nothing
 
 
-{- Part II: DTH-curious? -}
+{- Part 2: DTH -}
 
 -- Old version (works with GHC 7.8.3)
 
@@ -137,7 +198,7 @@ optimize (Plus (Val 0) e) = optimize e
 optimize (Plus e (Val 0)) = optimize e
 optimize (Plus e1 e2) = Plus (optimize e1) (optimize e2)
 
--- New! Improved!  (Type family for a promoted GADT)
+-- New! Type family for a promoted GADT
 
 -- We promote this datatype using GHC.TypeLit's "Nat" kind for type-level
 -- numbers
@@ -170,6 +231,7 @@ sEval (SCond e0 e1 e2) = sIf (sEval e0) (sEval e1) (sEval e2)
 
 data Equivalent e where
   Result :: (Eval e ~ Eval e') => Sing e' -> Equivalent e
+
 
 sOpt :: Sing e -> Equivalent e
 sOpt (SVal x) = Result (SVal x) 
@@ -209,6 +271,7 @@ sOpt (SPlus e0 e1) = case (sOpt e0, sOpt e1) of
 -- no need for type family as eval/Eval available from single definition
 
 {-
+
 data Equivalent e where
   Result :: pi e' -> (Eval e ~ Eval e') => Equivalent e
 

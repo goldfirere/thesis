@@ -16,11 +16,10 @@ module Wg28current where
 
 -}
 
+import Control.Monad.List
 
-import Data.Type.Equality ((:~:)(..))
 import Data.Type.Bool (If)
 import GHC.TypeLits
-
 import Data.Singletons.Prelude 
 import Data.Singletons.TypeLits
 
@@ -30,33 +29,33 @@ import Data.Singletons.TypeLits
 data Dynamic where
    Dyn :: TypeRep a -> a -> Dynamic
 
-data TypeRep (a :: *) where
-  TBool  :: TypeRep Bool
-  TFun   :: TypeRep t1 -> TypeRep t2 -> TypeRep (t1 -> t2)
-  TProd  :: TypeRep t1 -> TypeRep t2 -> TypeRep (t1, t2)
-  -- let's get fancy!
-  TDynamic :: TypeRep Dynamic
-  TTypeRep :: TypeRep a -> TypeRep (TypeRep a)
-  -- Note: can't do MaybeT m a 
-  -- TMaybeT :: TypeRep m -> TypeRep a -> TypeRep (MaybeT m a)
+data Tycon (a :: k) where
+  TBool :: Tycon Bool
+  TInt  :: Tycon Int
+  TFun  :: Tycon (->)
+  TProd :: Tycon (,)
+  
+data TypeRep (a :: k) where
+  TCon :: Tycon a -> TypeRep a
+  TApp :: TypeRep a -> TypeRep b -> TypeRep (a b)
+
 
 dynIf :: Dynamic -> a -> a -> a
 dynIf (Dyn TBool True) t _   = t
 dynIf (Dyn TBool False) _ f  = f
-dynIf (Dyn TDynamic d) t f   = dynIf d t f
 dynIf (Dyn _ _) _ _ = error "runtime type error"
 
 dynApply :: Dynamic -> Dynamic -> Dynamic
-dynApply (Dyn (TFun t1 t2) f) (Dyn t3 x) = case eqT t1 t3 of
-  Just Refl -> Dyn t2 (f x)
-  Nothing   -> error "runtime type error"
-dynApply (Dyn TDynamic d1) d2 = dynApply d1 d2
+dynApply (Dyn (TFun t1 t2) f) (Dyn t3 x)
+  | Just Refl <- eqT t1 t3 = Dyn t2 (f x)
 dynApply (Dyn _ _) _ = error "runtime type error"
 
 dynFst :: Dynamic -> Dynamic
 dynFst (Dyn (TProd t1 _) (x1,_)) = Dyn t1 x1
-dynFst (Dyn TDynamic d1) = dynFst d1
 dynFst (Dyn _ _) = error "runtime type error"
+
+data (a :: k) :~: (b :: k) where
+  Refl :: (a ~ b) => a :~: b
 
 eqT :: TypeRep a -> TypeRep b -> Maybe (a :~: b)
 eqT TBool TBool = Just Refl
@@ -70,13 +69,23 @@ eqT (TProd a1 b1) (TProd a2 b2) = case eqT a1 a2 of
      Just Refl -> Just Refl
      Nothing -> Nothing
   Nothing -> Nothing
-eqT TDynamic TDynamic = Just Refl
-eqT (TTypeRep a1) (TTypeRep a2) = case eqT a1 a2 of 
-  Just Refl -> Just Refl
-  Nothing -> Nothing
 eqT _ _ = Nothing
 
-{- Part II: DTH-curious? -}
+cast :: TypeRep a -> TypeRep b -> Maybe (a -> b)
+cast t1 t2 = case eqT t1 t2 of
+  Just Refl -> Just id
+  Nothing -> Nothing
+
+
+
+
+
+
+
+
+
+
+{- Part II: DTH? -}
 
 -- A type safe evaluator and optimizer
 
@@ -104,7 +113,6 @@ optimize (Plus e1 e2) = Plus (optimize e1) (optimize e2)
 
 
 {-
--- When we promote this datatype, we'll use GHC.TypeLit's Nat type for numbers
 type family Eval (x :: Expr Nat t) :: t where
   Eval ('Val n) = n
   Eval ('Plus e1 e2) = Eval e1 + Eval e2
