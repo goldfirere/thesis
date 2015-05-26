@@ -1,0 +1,17 @@
+These ideas for FC simplification are mostly from discussions with
+the Sr project students about formalizing FC
+
+- Data constructors should be saturated. This simplifies the presentation
+with no loss in expressivity. Anything dealing with "values" is much easier.
+
+- Patterns should just be constructor names, with lambdas on the RHS. Much,
+much simpler than the current story.
+
+- The signature elements corresponding to datatypes and data constructors
+should be pared down. Currently, they look like (T : k) and (K : t), but
+the structure of k and t, respectively, is quite constrained. Instead, just
+store the interesting bits, and have the kinding/typing rules extract
+these bits and fill out the type. Much easier this way.
+
+- (~) should be a type again. This is a little silly, but it removes several
+now-redundant coercion forms.

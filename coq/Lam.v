@@ -4,6 +4,8 @@ Require Import Coq.Logic.JMeq.
 Require Import Coq.Program.Equality.
 
 Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
 
 Definition undefined {A} : A. Admitted.
 
@@ -13,12 +15,14 @@ Inductive Ty : Type :=
 
 Notation "ty1 :~> ty2" := (Arr ty1 ty2) (at level 11, right associativity).
 
-Inductive Elem : forall A, list A -> A -> Type :=
-| EZ : forall {A} {x : A} {xs}, Elem (x :: xs) x
-| ES : forall {A} {x : A} {y xs}, Elem xs x -> Elem (y :: xs) x.
+Inductive Elem A x : list A -> Type :=
+| EZ : forall {xs}, Elem x (x :: xs)
+| ES : forall {y xs}, Elem x xs -> Elem x (y :: xs).
+
+Arguments EZ {A x xs}.
 
 Inductive Expr : list Ty -> Ty -> Type :=
-| Var : forall ctx ty, Elem ctx ty -> Expr ctx ty
+| Var : forall ctx ty, Elem ty ctx -> Expr ctx ty
 | Lam : forall arg res ctx, Expr (arg :: ctx) res -> Expr ctx (arg :~> res)
 | App : forall arg res ctx, Expr ctx (arg :~> res) -> Expr ctx arg -> Expr ctx res
 | TT  : forall ctx, Expr ctx Unit.
@@ -27,8 +31,39 @@ Inductive Val : list Ty -> Ty -> Type :=
 | LamVal : forall arg res ctx, Expr (arg :: ctx) res -> Val ctx (arg :~> res)
 | TTVal : forall ctx, Val ctx Unit.
 
-Lemma shift_elem : forall {x y : Ty} {ctx : list Ty} ctx0,
-                     Elem (ctx0 ++ ctx) y -> Elem (ctx0 ++ x :: ctx) y.
+Definition elem_case {A y x} {xs : list A} (v : Elem y (x :: xs)) :
+  forall (T : forall x, Elem y (x :: xs) -> Type)
+         (HZ : T y EZ)
+         (HS : forall (v : Elem y xs), T x (ES v)),
+    T x v :=
+  match v with
+    | EZ xs => fun T HZ HS => HZ
+    | ES x xs v' => fun T HZ HS => HS v'
+  end.
+
+Fixpoint shift_elem {x y : Ty} {ctx : list Ty} ctx0
+                    : Elem y (ctx0 ++ ctx) ->
+                      Elem y (ctx0 ++ x :: ctx) :=
+  match ctx0 with
+    | nil => fun v => undefined
+    | ty :: tys => fun v : Elem y ((ty :: tys) ++ ctx) =>
+                     @elem_case Ty y ty (tys ++ ctx) v
+                                (fun _ _ => Elem y (ty :: tys ++ x :: ctx))
+                               (@EZ _ y (tys ++ x :: ctx))
+                               (fun v' => ES (shift_elem tys v'))
+  end.
+  match ctx0
+
+Fixpoint shift_elem {x y : Ty} {ctx : list Ty} ctx0 (v : Elem (ctx0 ++ ctx) y)
+                       : Elem (ctx0 ++ x :: ctx) y :=
+  match ctx0 as ctx0' return ctx0 = ctx0' -> Elem (ctx0 ++ x :: ctx) y with
+    | nil => fun pf =>
+               eq_rect nil (fun ctx0'' => Elem (ctx0'' ++ x :: ctx) y) (
+                         eq_rect ctx0 (fun ctx0'' => Elem (x :: ctx0'' ++ ctx) y) (ES v) nil pf
+               ) ctx0 (eq_sym pf)
+    | ty :: tys => fun pf => undefined
+  end eq_refl.
+
 Proof.
   intros x y ctx ctx0. induction ctx0; simpl.
   * exact ES.

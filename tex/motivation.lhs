@@ -103,14 +103,14 @@ impossible to create an ill-typed |Expr| (ignoring the possibility of
 We now wish to write both small-step and big-step operational semantics
 for our expressions. First, we'll need a way to denote values in our language:
 \begin{code}
-data Val :: [Ty] -> Ty -> * where
-  LamVal  :: Expr (arg !: ctx) res ->  Val ctx (arg !:~> res)
-  TTVal   ::                           Val ctx !Unit
+data Val :: Ty -> * where
+  LamVal  :: Expr ![arg] res ->  Val (arg !:~> res)
+  TTVal   ::                     Val !Unit
 \end{code}
 
 Our big-step evaluator has a straightforward type:
 \begin{code}
-eval :: Expr ![] ty -> Val ![] ty
+eval :: Expr ![] ty -> Val ty
 \end{code}
 This type says that a well-typed, closed expression (that is, the context
 is empty) can evaluate to a well-typed, closed value, of the same type |ty|.
@@ -127,7 +127,7 @@ shift :: forall ctx ty x. Expr ctx ty -> Expr (x !: ctx) ty
 subst :: forall ctx s ty. Expr ctx s -> Expr (s !: ctx) ty -> Expr ctx ty
 
 -- Perform $\beta$-reduction
-apply :: Val ctx (arg !:~> res) -> Expr ctx arg -> Expr ctx res
+apply :: Val (arg !:~> res) -> Expr ![] arg -> Expr ![] res
 \end{code}
 The type of |shift| is precisely the content of a weakening lemma: that
 we can add a type to a context without changing the type of a well-typed
@@ -236,7 +236,7 @@ The implementation of these functions is fiddly and uninteresting, and is
 omitted from this text. However, writing this implementation is made much
 easier by the precise types. If I were to make a mistake in the delicate
 de Bruijn shifting operation, I would learn of my mistake immediately, without
-any testing. In such a fiddly operation, this is wonderful, indeed.
+any testing. In such a delicate operation, this is wonderful, indeed.
 
 With all of these supporting functions written, the evaluator itself is
 dead simple:
@@ -259,45 +259,122 @@ big-step semantics -- to remain the same. We thus want the small-step stepper
 to return a pair: the new expression (or value), and evidence that the value
 of the expression (as given by the big-step evaluator) remains the same.
 
-To pull this off, we will need a dependent pair, or $\Sigma$-type:
-%format :&: = "\mathop{{:}{\&}{:}}"
-\begin{notyet}
-\begin{spec}
-data Sigma (s :: *) (t :: s -> *) where
-  (:&:) :: pi (fst :: s) -> t fst -> Sigma s t
-
-proj1 :: Sigma s t -> s
-proj1 (a :&: _) = a
-
-proj2 :: pi (sig :: Sigma s t) -> t (!proj1 sig)
-proj2 (_ :&: b) = b
-\end{spec}
-\end{notyet}
-A $\Sigma$-type |Sigma s t| is similar to an ordinary pair |(s, t)| except
-that the type |t| is a function that depends on the chosen value of the first
-element, called |fst| above. Note that |fst| is $\Pi$-quantified, making it
-available both in types and at runtime. In our case, here is the type we will
-want to use for |t|:
-%
+We thus need a |StepResult| datatype:
 \begin{noway}
 \begin{spec}
-data SameValue (e1 :: Expr ![] ty) (e2 :: Expr ![] ty) where
-  SameValue :: (!eval e1 ~ !eval e2) => SameValue e1 e2
+data StepResult :: Expr ![] ty -> * where
+  Stepped  :: pi (e'  :: Expr ![]  ty) -> (!eval e ~ !eval e')  => StepResult e
+  Value    :: pi (v   :: Val       ty) -> (!eval e ~ v)         => StepResult e
 \end{spec}
 \end{noway}
-%
-Putting all of this together, here is the type we get for |step|:
+A |StepResult e| is the result of stepping an expression |e|. It either contains
+a new expression |e'| whose value equals |e|'s value, or it contains the value
+|v| that is the result of evaluating |e|.
+
+An interesting detail about these constructors is that they feature an equality
+constraint \emph{after} a runtime argument. Currently, GHC requires that all
+data constructors take a sequence of type arguments, followed by constraints,
+followed by regular arguments. Generalizing this form does not provide any
+real difficulty, however.
+
+With this in hand, the |step| function is remarkably easy to write:
 \begin{noway}
 \begin{spec}
-step :: pi (e :: Expr ![] ty) -> Either  (Sigma (Expr  ![] ty) (SameValue e))
-                                         (Sigma (Val   ![] ty) ((:~:) (!eval e)))
+step :: pi (e :: Expr ![] ty) -> StepResult e
+step (Var v)      = case v of {}  -- no variables in an empty context
+step (Lam body)   = Value (LamVal body)
+step (App e1 e2)  = case step e1 of
+  Stepped e1'  -> Stepped (App e1' e2)
+  Value v      -> Stepped (apply v e2)
+step TT           = Value TTVal
 \end{spec}
 \end{noway}
-This says that, for every closed expression |e| of type |ty|, we can either
-produce another expression of type |ty| such that the new expression has the
-same value as the original one, or we produce a value of type |ty| that
-is indeed the value of the original expression.
+Due to GHC's ability to freely use assumed equality assumptions, |step|
+requires no explicit manipulation of equality proofs. Let's look at the |App|
+case above. We first check whether or not |e1| can take a step. If it can,
+we get the result of the step |e1'|, \emph{and} a proof that |!eval e1 ~ !eval e1'|.
+This proof enters into the typechecking context and is invisible in the program
+text. On the right-hand side of the match, we conclude that |App e1 e2| steps to
+|App e1' e2|. This requires a proof that |!eval (App e1 e2) ~ !eval (App e1' e2)|.
+Reducing |!eval| on both sides of that equality gives us
+|!eval (!apply (!eval e1) e2) ~ !eval (!apply (!eval e1') e2)|. Since we know
+|!eval e1 ~ !eval e1'|, however, this equality is easily solvable; GHC does the
+heavy lifting for us. Similar reasoning proves the equality in the second branch
+of the |case|, and the other clauses of |step| are straightforward.
 
+The ease in which these equalities are solved is unique to Haskell. I have
+translated this example to Coq, Agda, and Idris; each has its shortcomings:
+\begin{itemize}
+\item Coq deals quite poorly with indexed types, such as |Expr|. The problem appears
+to stem from Coq's weak support for dependent pattern matching. For example, if we
+inspect a |ctx| to discover that it is empty, Coq, by default, forgets the
+equality |ctx = []|. It then, naturally, fails to use the equality to rewrite
+the types of the right-hand sides of the pattern match. This can be overcome through
+various tricks, but it is far from easy.
+
+\item Agda does a better job with indexed types, but it is not designed around
+implicit proof search. A key part of Haskell's elegance in this example is that
+pattern-matching on a |StepResult| reveals an equality proof to the type-checker,
+and this proof is then used to rewrite types in the body of the pattern match. This
+all happens without any direction from the programmer. In Agda, on the other hand,
+the equality proofs must be unpacked and used with Agda's \keyword{rewrite} tactic.
+
+\item Idris also runs aground with this example. The |eval| function is indeed a total
+function -- it does not fail for any arguments, and it is guaranteed to terminate.
+However, proving that |eval| terminates is not easy: it amounts to proving that
+the simply-typed lambda calculus has normal forms (and that |eval| finds those
+normal forms). Without such a proof encoded in the program, Idris treats |eval| as
+a partial function and refuses to reduce it in types.
+\end{itemize}
+
+\begin{proposal}
+The above limitations in Coq, Agda, and Idris are from my experimentation. I am
+not an expert in any of these languages, and I will consult experts before the
+final dissertation.
+\end{proposal}
+
+
+
+%% To pull this off, we will need a dependent pair, or $\Sigma$-type:
+%% %format :&: = "\mathop{{:}{\&}{:}}"
+%% \begin{notyet}
+%% \begin{spec}
+%% data Sigma (s :: *) (t :: s -> *) where
+%%   (:&:) :: pi (fst :: s) -> t fst -> Sigma s t
+
+%% proj1 :: Sigma s t -> s
+%% proj1 (a :&: _) = a
+
+%% proj2 :: pi (sig :: Sigma s t) -> t (!proj1 sig)
+%% proj2 (_ :&: b) = b
+%% \end{spec}
+%% \end{notyet}
+%% A $\Sigma$-type |Sigma s t| is similar to an ordinary pair |(s, t)| except
+%% that the type |t| is a function that depends on the chosen value of the first
+%% element, called |fst| above. Note that |fst| is $\Pi$-quantified, making it
+%% available both in types and at runtime. In our case, here is the type we will
+%% want to use for |t|:
+%% %
+%% \begin{noway}
+%% \begin{spec}
+%% data SameValue (e1 :: Expr ![] ty) (e2 :: Expr ![] ty) where
+%%   SameValue :: (!eval e1 ~ !eval e2) => SameValue e1 e2
+%% \end{spec}
+%% \end{noway}
+%% %
+%% Putting all of this together, here is the type we get for |step|:
+%% \begin{noway}
+%% \begin{spec}
+%% step :: pi (e :: Expr ![] ty) -> Either  (Sigma (Expr  ![]  ty) (SameValue e))
+%%                                          (Sigma (Val        ty) ((:~:) (!eval e)))
+%% \end{spec}
+%% \end{noway}
+%% This says that, for every closed expression |e| of type |ty|, we can either
+%% produce another expression of type |ty| such that the new expression has the
+%% same value as the original one, or we produce a value of type |ty| that
+%% is indeed the value of the original expression.
+
+%% This function is remarkably easy to implement:
 
 \subsection{Units-of-measure}
 
