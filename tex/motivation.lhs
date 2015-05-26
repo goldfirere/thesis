@@ -333,7 +333,17 @@ not an expert in any of these languages, and I will consult experts before the
 final dissertation.
 \end{proposal}
 
+\subsubsection{Conclusion}
 
+We have built up a small-step stepper whose behavior is verified against a
+big-step evaluator. Despite this extra checking, the |step| function will run
+in an identical manner to one that is unchecked -- there is no runtime effect
+of the extra verification. We can be sure of this because we can audit the
+types involved and see that only the expression itself is around at runtime;
+the rest of the arguments (the indices and the equality proofs) are erased.
+Furthermore, getting this all done is easier and more straightforward in
+Dependent Haskell than in the other three dependently typed languages I
+tried.
 
 %% To pull this off, we will need a dependent pair, or $\Sigma$-type:
 %% %format :&: = "\mathop{{:}{\&}{:}}"
