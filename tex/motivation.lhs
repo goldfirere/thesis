@@ -400,6 +400,145 @@ See also other examples in \citet{power-of-pi} and \citet{hasochism}.
 
 \subsection{Deconstructing runtime types}
 
+With more expressiveness in types, we can achieve a better mixture between
+static type checking and dynamic type checking. A key ingredient missing in today's
+Haskell is \emph{kind equalities}, which allow pattern-matching to discover
+information about kinds, not just types. With kind equalities, we can define
+\emph{heterogeneous propositional equality}, a natural extension to the
+propositional equality described in \pref{sec:prop-equality}:
+\begin{code}
+data (a :: k1) :~~: (b :: k2) where
+  HRefl :: a :~~: a
+\end{code}
+
+Cloud Haskell~\cite{cloud-haskell} is an ongoing project, aiming to support
+writing a Haskell program that can operate on several machines in parallel,
+communicating over a network. Naturally, we would like to do so in a type-safe
+manner. To do so, we need a way of communicating types over a wire -- a runtime
+type representation. Here is our desired representation:
+%
+\begin{code}
+data TyCon (a :: k)
+  -- abstract; |Int| is represented by a |TyCon Int|
+data TypeRep (a :: k) where
+  TyCon  :: TyCon a -> TypeRep a
+  TyApp  :: TypeRep a -> TypeRep b -> TypeRep (a b)
+\end{code}
+%
+For every new type declared, the compiler would supply an appropriate value of
+the |TyCon| datatype. The type representation library would supply also the
+following function, which computes equality over |TyCon|s, returning the
+heterogeneous equality from the introduction:
+%
+\begin{code}
+eqTyCon ::  forall (a :: k1) (b :: k2).
+            TyCon a -> TyCon b -> Maybe (a :~~: b)
+\end{code}
+%if style == newcode
+\begin{code}
+eqTyCon = undefined
+tyCon :: TyCon a
+tyCon = undefined
+\end{code}
+%endif
+%
+It is critical that this function returns |(:~~:)|, not |(:~:)|. This is
+because |TyCon|s exist at many different kinds. For example, |Int| is at
+kind |*|, and |Maybe| is at kind |* -> *|. Thus, when comparing two
+|TyCon| representations for equality, we want to learn whether the types
+\emph{and the kinds} are equal. If we used |(:~:)| here, then the |eqTyCon|
+could be used only when we know, from some other source, that the kinds
+are equal.
+
+We can now easily write an equality test over these type representations:
+%
+\begin{code}
+eqT ::  forall (a :: k1) (b :: k2).
+        TypeRep a -> TypeRep b -> Maybe (a :~~: b)
+eqT (TyCon t1)     (TyCon t2)     = eqTyCon t1 t2
+eqT (TyApp a1 b1)  (TyApp a2 b2)  ^^
+  |  Just HRefl <- eqT a1 a2
+  ,  Just HRefl <- eqT b1 b2      = Just HRefl
+eqT _              _              = Nothing
+\end{code}
+
+Now that we have a type representation with computable equality, we
+can package that representation with a chunk of data, and so form a
+dynamically typed package:
+%
+\begin{code}
+data Dyn where
+  Dyn :: forall (a :: *). TypeRep a -> a -> Dyn
+\end{code}
+
+The |a| type variable there is an \emph{existential} type variable. We can
+think of this type as being part of the data payload of the |Dyn| constructor;
+it is chosen at construction time and unpacked at pattern-match time.
+Because of the |TypeRep a| argument, we can learn more about |a| after
+unpacking. (Without the |TypeRep a| or some other type-level information
+about |a|, the unpacking code must treat |a| as an
+unknown type and must be parametric in the choice of type for |a|.)
+
+Using |Dyn|, we can pack up arbitrary
+data along with its type, and push that data across a network. The receiving
+program can then make use of the data, without needing to subvert Haskell's
+type system. The type representation library must be trusted to recreate
+the |TypeRep| on the far end of the wire, but the equality tests above
+and other functions below can live outside the trusted code base.
+
+Suppose we were to send an
+object with a function type, say |Bool -> Int| over the network. For the time
+being, let's ignore the complexities of actually serializing a function --
+there is a solution to that
+problem\footnote{\url{https://ghc.haskell.org/trac/ghc/wiki/StaticPointers}},
+but here we are concerned only with the types. We would want to apply the
+received function to some argument. What we want is this:
+%
+\begin{code}
+dynApply :: Dyn -> Dyn -> Maybe Dyn
+\end{code}
+%
+The function |dynApply| applies its first argument to the second, as long as the
+types line up. The definition of this function is fairly straightforward:
+%
+\begin{code}
+dynApply  (Dyn  (TyApp
+                  (TyApp (TyCon tarrow) targ)
+                  tres)
+                fun)
+          (Dyn targ' arg)
+  |  Just HRefl <- eqTyCon tarrow (tyCon :: TyCon (->))
+  ,  Just HRefl <- eqT targ targ'
+  =  Just (Dyn tres (fun arg))
+dynApply _ _ = Nothing
+\end{code}
+%
+We first match against the expected type structure -- the first |Dyn| argument
+must be a function type. We then confirm that the |TyCon| |tarrow| is indeed
+the representation for |(->)| (the construct |tyCon :: TyCon (->)| retrieves
+the compiler-generated representation for |(->)|) and that the actual
+argument type matches the expected argument type. If everything is good so
+far, we succeed, applying the function in |fun arg|.
+
+Heterogeneous equality is necessary throughout this example. It first is
+necessary in the definition of |eqT|. In the |TyApp| case, we compare |a1|
+to |a2|. If we had only homogeneous equality, it would be necessary that
+the types represented by |a1| and |a2| be of the same kind. Yet, we can't
+know this here! Even if the types represented by |TyApp a1 b1| and
+|TyApp a2 b2| have the same kind, it is possible that |a1| and |a2| would
+not. (For example, maybe the type represented by |a1| has kind |* -> *|
+and the type represented by |a2| has kind |Bool -> *|.) With only
+homogeneous equality, we cannot even write an equality function over
+this form of type representation. The problem repeats itself in the
+definition of |dynApply|, when calling |eqTyCon tarrow TArrow|. The
+call to |eqT| in |dynApply|, on the other hand, \emph{could} be homogeneous,
+as we would know at that point that the types represented by |targ| and
+|targ'| are both of kind |*|.
+
+In today's Haskell, the lack of heterogeneous equality means that |dynApply|
+must rely critically on |unsafeCoerce|. With heterogeneous equality, we can
+see that |dynApply| can remain safely outside the trusted code base.
+
 \subsection{Inferred algebraic effects}
 
 \cite{algebraic-effects}

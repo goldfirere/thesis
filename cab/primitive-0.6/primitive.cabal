@@ -1,0 +1,67 @@
+Name:           primitive
+Version:        0.6
+License:        BSD3
+License-File:   LICENSE
+
+Author:         Roman Leshchinskiy <rl@cse.unsw.edu.au>
+Maintainer:     libraries@haskell.org
+Copyright:      (c) Roman Leshchinskiy 2009-2012
+Homepage:       https://github.com/haskell/primitive
+Bug-Reports:    https://github.com/haskell/primitive/issues
+Category:       Data
+Synopsis:       Primitive memory-related operations
+Cabal-Version:  >= 1.10
+Build-Type:     Simple
+Description:    This package provides various primitive memory-related operations.
+
+Extra-Source-Files: changelog.md
+
+Library
+  Default-Language: Haskell2010
+  Other-Extensions:
+        BangPatterns, CPP, DeriveDataTypeable,
+        MagicHash, TypeFamilies, UnboxedTuples, UnliftedFFITypes
+
+  Exposed-Modules:
+        Control.Monad.Primitive
+        Data.Primitive
+        Data.Primitive.MachDeps
+        Data.Primitive.Types
+        Data.Primitive.Array
+        Data.Primitive.ByteArray
+        Data.Primitive.Addr
+        Data.Primitive.MutVar
+
+  Other-Modules:
+        Data.Primitive.Internal.Compat
+        Data.Primitive.Internal.Operations
+
+  Build-Depends: base >= 4.3 && < 4.9
+               , ghc-prim >= 0.2 && < 0.5
+               , transformers >= 0.2 && < 0.5
+
+  Ghc-Options: -O2 -Wall
+
+  Include-Dirs: cbits
+  Install-Includes: primitive-memops.h
+  includes: primitive-memops.h
+  c-sources: cbits/primitive-memops.c
+  cc-options: -O3 -fomit-frame-pointer -Wall
+  if !os(solaris)
+      cc-options: -ftree-vectorize
+  if arch(i386) || arch(x86_64)
+      cc-options: -msse2
+
+test-suite test
+  Default-Language: Haskell2010
+  hs-source-dirs: test
+  main-is: main.hs
+  type: exitcode-stdio-1.0
+  build-depends: base
+               , ghc-prim
+               , primitive
+  ghc-options: -O2
+
+source-repository head
+  type:     git
+  location: https://github.com/haskell/primitive
