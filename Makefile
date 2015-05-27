@@ -5,7 +5,7 @@ BIB_FILES_FULL = ../etc/rae.bib
 FMT_FILES_BASE = rae
 HS_FILES_BASE = ThesisPreamble
 GHC_OPTS = -Werror -Wall
-GHC = ./bin/ghc
+GHC = ghc-nokinds
 
 OTT_FILES_FULL = $(OTT_FILES_BASE:%=ott/%.ott)
 OTT_OUTPUT_BASE = tycls-ott
@@ -41,9 +41,6 @@ $(O_DIR_MARKER):
 	mkdir o
 	touch $@
 
-$(GHC):
-	@echo "Please make ./bin/ghc point to the implementation of Dependent Haskell."
-
 $(OTT_OUTPUT_FULL): $(OTT_FILES_FULL)
 	ott $(OTT_OPTS) -o $@ $^
 
@@ -64,11 +61,11 @@ tex/%: tex/%.mng $(OTT_FILES_FULL)
 aux/%.tex: aux/%.lhs $(FMT_FILES_FULL:tex/%=aux/%)
 	cd aux && lhs2TeX --poly -o $*.tex $*.lhs
 
-aux/%.o: aux/%.hs $(HS_FILES_BASE:%=o/%.o) $(GHC)
+aux/%.o: aux/%.hs $(HS_FILES_BASE:%=o/%.o)
 	perl -pi -e "s/TICK/\'/g" $<
 	$(GHC) $(GHC_OPTS) -io -o $@ -c $<
 
-o/%.o: hs/%.hs $(O_DIR_MARKER) $(GHC)
+o/%.o: hs/%.hs $(O_DIR_MARKER)
 	$(GHC) $(GHC_OPTS) -c $< -odir o -hidir o
 
 aux/%.hs: aux/%.lhs $(FMT_FILES_FULL:tex/%=aux/%)

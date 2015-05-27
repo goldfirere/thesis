@@ -2,6 +2,7 @@
 pdf
 .#*
 aux
+*.ibc
 o
 *.agdai
 bin

@@ -310,7 +310,10 @@ to stem from Coq's weak support for dependent pattern matching. For example, if 
 inspect a |ctx| to discover that it is empty, Coq, by default, forgets the
 equality |ctx = []|. It then, naturally, fails to use the equality to rewrite
 the types of the right-hand sides of the pattern match. This can be overcome through
-various tricks, but it is far from easy.
+various tricks, but it is far from easy. Furthermore, even once these challenges
+are surmounted, it is necessary to prove that |eval| terminates -- a non-trivial
+task -- for Coq to
+accept the function.
 
 \item Agda does a better job with indexed types, but it is not designed around
 implicit proof search. A key part of Haskell's elegance in this example is that
@@ -318,13 +321,17 @@ pattern-matching on a |StepResult| reveals an equality proof to the type-checker
 and this proof is then used to rewrite types in the body of the pattern match. This
 all happens without any direction from the programmer. In Agda, on the other hand,
 the equality proofs must be unpacked and used with Agda's \keyword{rewrite} tactic.
+In Agda, disabling the termination checker for |eval| is easy: simply use the
+|{-# NO_TERMINATION_CHECK #-}| directive.
 
-\item Idris also runs aground with this example. The |eval| function is indeed a total
-function -- it does not fail for any arguments, and it is guaranteed to terminate.
-However, proving that |eval| terminates is not easy: it amounts to proving that
-the simply-typed lambda calculus has normal forms (and that |eval| finds those
-normal forms). Without such a proof encoded in the program, Idris treats |eval| as
-a partial function and refuses to reduce it in types.
+\item Idris also runs into some trouble with this example. Like Agda, Idris
+works well with indexed types. The |eval| function is unsurprisingly inferred
+to be partial, but this is easy enough to fix with a well-placed
+|assert_total|. However, Idris's proof search mechanism appears to be unable
+to find proofs that |step| is correct in the |App| cases. (Using an \keyword{auto}
+variable, Idris is able to find the proofs automatically in the other |step|
+clauses.) Idris comes the closest to Haskell's brevity in this example, but
+it still requires two explicit, if short, proof scripts.
 \end{itemize}
 
 \begin{proposal}
@@ -343,7 +350,9 @@ types involved and see that only the expression itself is around at runtime;
 the rest of the arguments (the indices and the equality proofs) are erased.
 Furthermore, getting this all done is easier and more straightforward in
 Dependent Haskell than in the other three dependently typed languages I
-tried.
+tried. Key to the ease of encoding in Haskell is that Haskell does not worry
+about termination (more discussion in \pref{sec:no-termination-check}) and
+has an aggressive rewriting engine used to solve equality predicates.
 
 %% To pull this off, we will need a dependent pair, or $\Sigma$-type:
 %% %format :&: = "\mathop{{:}{\&}{:}}"

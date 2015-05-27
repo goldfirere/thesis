@@ -53,13 +53,36 @@ subst {s} {ctx} e = go []
 apply : Val (arg :~> res) -> Expr [] arg -> Expr [] res
 apply (LamVal x) x1 = subst x1 x
 
-partial
-eval : [static] Expr [] ty -> Val ty
+eval : Expr [] ty -> Val ty
 eval (Var EZ) impossible
 eval (Var (ES _)) impossible
 eval (Lam x) = LamVal x
-eval (App x y) = eval (apply (eval x) y)
+eval (App x y) = assert_total (eval (apply (eval x) y))
 eval TT = TTVal
 
 data StepResult : Expr [] ty -> Type where
-  Stepped : {e : Expr [] ty} -> (e' : Expr [] ty) -> {solve pf : eval e = eval e'} -> StepResult e
+  Stepped : (e' : Expr [] ty) -> {auto pf : eval e = eval e'} -> StepResult e
+  Value   : (v  : Val     ty) -> {auto pf : eval e = v}       -> StepResult e
+
+step : (e : Expr [] ty) -> StepResult e
+step (Var EZ) impossible
+step (Var (ES _)) impossible
+step {ty = arg :~> res} (Lam x) = Value (LamVal x)
+step (App x y) with (step x)
+  | (Stepped e') = Stepped (App e' y) {pf = ?cong_app_pf}
+  | (Value v) = Stepped (apply v y) {pf = ?val_app_pf}
+step {ty = Unit} TT = Value TTVal
+
+---------- Proofs ----------
+Lam.val_app_pf = proof
+  intros
+  compute
+  rewrite pf
+  trivial
+
+
+Lam.cong_app_pf = proof
+  intros
+  compute
+  rewrite pf
+  trivial
