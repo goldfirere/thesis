@@ -9,6 +9,7 @@
 %format !++ = "\mathop{\tick{" ++ "}}"
 %format :~> = "\mathop{{:}{\rightsquigarrow}}"
 %format :~: = "\mathop{{:}{\sim}{:}}"
+%format :~~: = "\mathop{{:}{\approx}{:}}"
 %format KK = "\kappa"
 %subst conid a = "\id{" a "}"
 %subst varid a = "\id{" a "}"

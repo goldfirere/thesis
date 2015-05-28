@@ -15,26 +15,27 @@ In this chapter, we will motivate the use of dependent types from both of
 these angles. The chapter concludes with a section motivating why Haskell, in
 particular, is ripe for dependent types.
 
-As a check for accuracy in these examples, all the indented, typeset code
-throughout this dissertation is type-checked against my implementation
+As a check for accuracy in these examples and examples throughout this
+dissertation, all the indented, typeset code
+is type-checked against my implementation
 every time the text is typeset.
 
 \begin{proposal}
-In this proposal, I elide the details of the motivating examples. Instead,
+In this proposal, I elide the details of some of the motivating examples. Instead,
 I list them as stubs to be filled out later, when writing the dissertation
 proper.
 
-The code snippets throughout this dissertation are presented on a variety
-of background colors. A \colorbox{working}{\workingcolorname} background
-highlights code that does not work in today's Haskell but does currently
-(May 2015) work in my implementation. A \colorbox{notyet}{\notyetcolorname}
-background indicates code that does not work in my implementation, but could
-still be implemented via the use of singletons~\cite{singletons}
-and similar workarounds. A \colorbox{noway}{\nowaycolorname}
-background marks code that does not currently work in my implementation
-due to bugs and incompleteness in my implementation. To my knowledge,
-there is nothing more than engineering (and perhaps the use of singletons)
-to get these examples working.
+The code snippets throughout this proposal are presented on a variety of
+background colors. A \colorbox{working}{\workingcolorname} background
+highlights code that does not work in today's Haskell but does currently (May
+2015) work in my implementation. A \colorbox{notyet}{\notyetcolorname}
+background indicates code that does not work verbatim in my implementation,
+but could still be implemented via the use of singletons~\cite{singletons} and
+similar workarounds. A \colorbox{noway}{\nowaycolorname} background marks code
+that does not currently work in my implementation due to bugs and
+incompleteness in my implementation. To my knowledge, there is nothing more
+than engineering (and perhaps the use of singletons) to get these examples
+working.
 \end{proposal}
 
 \section{Eliminating erroneous programs}
@@ -322,7 +323,7 @@ and this proof is then used to rewrite types in the body of the pattern match. T
 all happens without any direction from the programmer. In Agda, on the other hand,
 the equality proofs must be unpacked and used with Agda's \keyword{rewrite} tactic.
 In Agda, disabling the termination checker for |eval| is easy: simply use the
-|{-# NO_TERMINATION_CHECK #-}| directive.
+@{-# NO_TERMINATION_CHECK #-}@ directive.
 
 \item Idris also runs into some trouble with this example. Like Agda, Idris
 works well with indexed types. The |eval| function is unsurprisingly inferred
@@ -331,7 +332,8 @@ to be partial, but this is easy enough to fix with a well-placed
 to find proofs that |step| is correct in the |App| cases. (Using an \keyword{auto}
 variable, Idris is able to find the proofs automatically in the other |step|
 clauses.) Idris comes the closest to Haskell's brevity in this example, but
-it still requires two explicit, if short, proof scripts.
+it still requires two explicit, if short, places where equality proofs must
+be explicitly manipulated.
 \end{itemize}
 
 \begin{proposal}
@@ -407,24 +409,56 @@ See also other examples in \citet{power-of-pi} and \citet{hasochism}.
 
 \subsection{Variable-arity |zipWith|}
 
-\subsection{Deconstructing runtime types}
+\begin{proposal}
+This will be adapted from previous work~\cite{closed-type-families-extended}.
+\end{proposal}
 
-With more expressiveness in types, we can achieve a better mixture between
-static type checking and dynamic type checking. A key ingredient missing in today's
-Haskell is \emph{kind equalities}, which allow pattern-matching to discover
-information about kinds, not just types. With kind equalities, we can define
+\subsection{Typed reflection}
+
+\emph{Reflection} is the act of reasoning about a programming language from
+within programs written in that language.\footnote{Many passages in this
+  example come verbatim from a draft paper of mine~\cite{equalities}.} In
+Haskell, we are naturally concerned with reflecting Haskell types. A
+reflection facility such as the one described here will be immediately
+applicable in the context of Cloud Haskell. Cloud Haskell~\cite{cloud-haskell}
+is an ongoing project, aiming to support writing a Haskell program that can
+operate on several machines in parallel, communicating over a network. To
+achieve this goal, we need a way of communicating data of all types over a
+wire -- in other words, we need dynamic types. On the receiving end, we would
+like to be able to inspect a dynamically typed datum, figure out its type, and
+then use it at the encoded type. For more information about how kind
+equalities fit into Cloud Haskell, please see the GHC wiki at
+\url{https://ghc.haskell.org/trac/ghc/wiki/DistributedHaskell}.
+
+Reflection of this sort has been possible for some
+time using the |Typeable| mechanism~\cite{syb}. However, the lack of kind
+equalities -- the ability to learn about a type's kind via pattern matching
+-- has hindered some of the usefulness of Haskell's reflection facility.
+In this section, we explore how this is the case and how the problem is fixed.
+
+\subsubsection{Heterogeneous propositional equality}
+
+Kind equalities allow for the definition of
 \emph{heterogeneous propositional equality}, a natural extension to the
 propositional equality described in \pref{sec:prop-equality}:
+%if style == poly
+%format k1
+%format k2
+%endif
+\begin{working}
 \begin{code}
 data (a :: k1) :~~: (b :: k2) where
   HRefl :: a :~~: a
 \end{code}
+\end{working}
+Pattern-matching on a value of type |a :~~: b| to get |HRefl|, where |a :: k1|
+and |b :: k2|, tells us both that |k1 ~ k2| and that |a ~ b|. As we'll see below,
+this more powerful form of equality is essential in building the typed reflection
+facility we want.
 
-Cloud Haskell~\cite{cloud-haskell} is an ongoing project, aiming to support
-writing a Haskell program that can operate on several machines in parallel,
-communicating over a network. Naturally, we would like to do so in a type-safe
-manner. To do so, we need a way of communicating types over a wire -- a runtime
-type representation. Here is our desired representation:
+\subsubsection{Type representation}
+
+Here is our desired representation:
 %
 \begin{code}
 data TyCon (a :: k)
@@ -437,12 +471,14 @@ data TypeRep (a :: k) where
 For every new type declared, the compiler would supply an appropriate value of
 the |TyCon| datatype. The type representation library would supply also the
 following function, which computes equality over |TyCon|s, returning the
-heterogeneous equality from the introduction:
+heterogeneous equality witness:
 %
+\begin{working}
 \begin{code}
 eqTyCon ::  forall (a :: k1) (b :: k2).
             TyCon a -> TyCon b -> Maybe (a :~~: b)
 \end{code}
+\end{working}
 %if style == newcode
 \begin{code}
 eqTyCon = undefined
@@ -461,6 +497,7 @@ are equal.
 
 We can now easily write an equality test over these type representations:
 %
+\begin{working}
 \begin{code}
 eqT ::  forall (a :: k1) (b :: k2).
         TypeRep a -> TypeRep b -> Maybe (a :~~: b)
@@ -470,6 +507,14 @@ eqT (TyApp a1 b1)  (TyApp a2 b2)  ^^
   ,  Just HRefl <- eqT b1 b2      = Just HRefl
 eqT _              _              = Nothing
 \end{code}
+\end{working}
+
+Note the extra power we get by returning |Maybe (a :~~: b)| instead of just
+a |Bool|. When the types indeed equal, we get evidence that GHC can use to
+be away of this type equality during type-checking. A simple return type of
+|Bool| would not give the type-checker any information.
+
+\subsubsection{Dynamic typing}
 
 Now that we have a type representation with computable equality, we
 can package that representation with a chunk of data, and so form a
@@ -510,6 +555,7 @@ dynApply :: Dyn -> Dyn -> Maybe Dyn
 The function |dynApply| applies its first argument to the second, as long as the
 types line up. The definition of this function is fairly straightforward:
 %
+\begin{working}
 \begin{code}
 dynApply  (Dyn  (TyApp
                   (TyApp (TyCon tarrow) targ)
@@ -521,6 +567,7 @@ dynApply  (Dyn  (TyApp
   =  Just (Dyn tres (fun arg))
 dynApply _ _ = Nothing
 \end{code}
+\end{working}
 %
 We first match against the expected type structure -- the first |Dyn| argument
 must be a function type. We then confirm that the |TyCon| |tarrow| is indeed
@@ -528,6 +575,8 @@ the representation for |(->)| (the construct |tyCon :: TyCon (->)| retrieves
 the compiler-generated representation for |(->)|) and that the actual
 argument type matches the expected argument type. If everything is good so
 far, we succeed, applying the function in |fun arg|.
+
+\subsubsection{Discussion}
 
 Heterogeneous equality is necessary throughout this example. It first is
 necessary in the definition of |eqT|. In the |TyApp| case, we compare |a1|
@@ -550,34 +599,163 @@ see that |dynApply| can remain safely outside the trusted code base.
 
 \subsection{Inferred algebraic effects}
 
-\cite{algebraic-effects}
-
-\section{Why Haskell?}
-
 \begin{proposal}
-This section will be an expansion of the issues raised in the introduction, citing
-community interest in dependent types, and the plethora of attempts to encode
-dependent types in today's Haskell.
-
-A further part of this section will counter a common argument along the lines of
-``If we want Haskell with dependent types, why not just use Agda or Idris?'' There
-will be several main points:
-
-\begin{itemize}
-\item Haskell is a richer language than Idris or Agda. Studying the interaction
-between dependent types and Haskell's other features is illuminating.
-
-\item Implementing dependent types in Haskell requires backward compatibility.
-Since my work is intended to be merged with the main releases of GHC, all current
-programs must continue to be accepted and retain their meanings. This requirement
-puts interesting constraints on type inference, and it will not allow me to take
-any shortcuts around pre-existing code.
-
-\item Haskell has more users than Agda or Idris, and having dependent types
-available in Haskell will further our knowledge about dependent types, as more
-people can experiment with them.
-\end{itemize}
+This section will contain a Haskell translation of Idris's implementation of
+algebraic effects~\cite{algebraic-effects}. The algebraic effects library
+allows Idris code to compose effects in a more modular way than can be done
+with Haskell's monad transformers. It relies critically on dependent types.
 \end{proposal}
 
-\subsection{No termination checking}
-\label{sec:termination}
+\section{Why Haskell?}
+\label{sec:why-haskell}
+
+There already exist several dependently typed languages. Why do we need
+another? This section presents several reasons why I believe the work
+described in this dissertation will have impact.
+
+\subsection{Increased reach}
+
+Haskell currently has some level of adoption in industry.\footnote{At the
+time of writing, \url{https://wiki.haskell.org/Haskell_in_industry}
+lists 81 companies who use Haskell to some degree. That page, of course,
+is world-editable and is not authoritative. However, I am personally aware
+of Haskell's (growing) use in several industrial settings, and I have seen
+quite a few job postings looking for Haskell programmers in industry.}
+Haskell is also used as the language of choice in several academic
+programs used to teach functional programming. There is also the ongoing
+success of the Haskell Symposium. These facts all indicate that the
+Haskell community is active and sizeable. If GHC, the primary Haskell
+compiler, offers dependent types, more users will have immediate
+access to dependent types than ever before.
+
+The existing dependently typed languages were all created, more or less, as
+playgrounds for dependently typed programming. For a programmer to choose to
+write her program in an existing dependently typed language, she would have to
+be thinking about dependent types (or the possibility of dependent types) from
+the start. However, Haskell is, first and foremost, a general purpose
+functional programming language. A programmer might start his work in Haskell
+without even being aware of dependent types, and then as his experience grows,
+decide to add rich typing to a portion of his program.
+
+With the increased exposure GHC would offer to dependent types, the academic
+community will gain more insight into dependent types and their practical
+use in programs meant to get work done.
+
+\subsection{Backward-compatible type inference}
+
+Working in the context of Haskell gives me a stringent, immovable constraint:
+my work must be backward compatible. In the new version of GHC that supports
+dependent types, all current programs must continue to compile. In particular,
+this means that type inference must remain able to infer all the types it does
+today, including types for definitions with no top-level annotation. Agda and
+Idris require a top-level type annotation for every function; Coq uses
+inference where possible for top-level definitions but is sometimes
+unpredictable. Furthermore, Haskellers expect the type inference engine
+to work hard on their behalf and should rarely resort to manual proving
+techniques.
+
+Although it is conceivable that dependent types are available only with
+the new \ext{DependentTypes} extension that is not backward compatible, this
+is not I have done. Instead, with two exceptions, all programs that compile
+without \ext{DependentTypes} continue to compile with that extension enabled.
+The two exceptions are as follows:
+\begin{itemize}
+\item There is now a parsing ambiguity around the glyph @*@. Today's Haskell
+treats @*@ in a kind as the kind of types. It is parsed just like an
+alphanumeric identifier. On the other hand, @*@ in types is an infix binary
+operator with a user-assigned fixity. This leads to an ambiguity: is @Foo * Int@
+the operator @*@ applied to @Foo@ and @Int@ or is it @Foo@ applied to @*@ and
+@Int@? The resolution to this problem is detailed in \pref{sec:parsing-star}
+but it is not backward-compatible in all cases.
+
+\item The \ext{DependentTypes} extension implies the \ext{MonoLocalBinds}
+  extension, which disables |let|-generalization when the |let|-bound
+  definition is not closed. This is described in the work of
+  \citet{let-should-not-be-generalised}. This restriction does not bite
+  often in practice, as discussed in the cited work.
+\end{itemize}
+Other than these two trouble spots, all programs that compiled previously
+continue to do so.
+
+The requirement of backward compability ``keeps me honest'' in my design of
+type inference -- I cannot cheat by asking the user for more information. The
+technical content of this statement is discussed in \pref{cha:type-inference}
+by comparison with the work of \citet{outsidein}. A further advantage of
+working in Haskell is that the type inference of Haskell is well-studied in
+the literature. This dissertation continues this tradition in
+\pref{cha:type-inference}.
+
+\subsection{No termination or totality checking}
+\label{sec:no-termination-check}
+\label{sec:no-proofs}
+
+Existing dependently typed languages strive to be proof systems as well
+as programming languages. (A notable exception is Cayenne~\cite{cayenne},
+which also omits termination checking,
+but that language seems to have faded into history.) They care deeply about
+totality: that all pattern matches consider all possibilities and that
+every function can be proved to terminate. Coq does not accept a function
+until it is proved to terminate. Agda behaves likewise, although the
+termination checker can be disabled on a per-function basis. Idris
+embraces partiality, but then refuses to evaluate partial functions during
+type-checking. Dependent Haskell, on the other hand, does not care
+about totality.
+
+Dependent Haskell emphatically does \emph{not} strive to be a proof system.
+In a proof system, whether or not a type is inhabited is equivalent to whether
+or not a proposition holds. Yet, in Haskell, \emph{all} types are inhabited,
+by |undefined| and other looping terms, at a minimum. Even at the type level,
+all kinds are inhabited by the following type family, defined in GHC's
+standard library:
+\begin{code}
+type family Any :: k  -- no instances
+\end{code}
+The type family |Any| can be used at any kind, and so inhabits all kinds.
+
+Furthermore, Dependent Haskell has the |* :: *| axiom, meaning that instead of
+having an infinite hierarchy of universes characteristic of Coq, Agda, and
+Idris, Dependent Haskell has just one universe which contains itself. It is
+well-known that self-containment of this form leads to logical inconsistency
+by enabling the construction of a looping term~\cite{girard-thesis}, but we are
+unbothered by this. By allowing ourselves to have |* :: *|, the type system
+is much simpler than in systems with a hierarchy of universes.
+
+There two clear downsides of the lack of totality:
+\begin{itemize}
+\item What appears to be a proof might not be. Suppose we need to prove
+that type |tau| equals type |sigma| in order to type-check a program.
+We can always use $|undefined :: tau :~~: sigma|$ to prove this equality,
+and then the program will type-check. The problem will be discovered only
+at runtime. Another way to see this problem is that equality proofs must
+be run, having an impact on performance.
+
+This drawback is indeed serious, and important future work includes
+designing and implementing a totality checker for Haskell. (See
+the work of \citet{liquid-haskell} for one approach toward this goal.)
+Unlike in other languages, though, the totality checker would be chiefly
+used in order to optimize away proofs, rather than to keep the language
+safe. Once the checker were working, we could also add compiler flags to
+give programmers compile-time warnings or errors about partial functions,
+if requested.
+
+\item Lack of termination in functions used at the type level might
+conceivably cause GHC to loop. This is not a great concern, however,
+because the loop is directly caused by a user's type-level program.
+In practice, GHC counts steps it uses in reducing types and reports
+an error after too many steps are taken. The user can, via a compiler
+flag, increase the limit or disable the check.
+\end{itemize}
+
+The advantages to the lack of totality checking are that Dependent Haskell
+is simpler for not worrying about totality, and also that by using
+Dependent Haskell, we will learn more about dependent types in the presence
+of partiality.
+
+\subsection{Language feature interaction}
+
+Haskell is a very rich language, with a long history of extensions. Adding
+dependent types to Haskell requires working out the interaction between
+dependent types and all of these extensions. These interactions lead
+to new insights about dependent types and the other features. In particular,
+the interaction between roles and dependent types is subtle. See \pref{sec:roles-and-dependent-types}
+for the details.

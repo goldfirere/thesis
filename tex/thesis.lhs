@@ -55,7 +55,7 @@
 %include prelim.lhs
 %include motivation.lhs
 \include{system-fc}
-\include{dep-haskell}
+%include dep-haskell.lhs
 \include{fcd}
 \include{haskell-spec}
 \include{type-inference}
@@ -64,6 +64,7 @@
 
 \appendix
 
+%include typo.lhs
 \include{fc}
 \include{inference}
 

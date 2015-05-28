@@ -69,20 +69,6 @@ step (Var EZ) impossible
 step (Var (ES _)) impossible
 step {ty = arg :~> res} (Lam x) = Value (LamVal x)
 step (App x y) with (step x)
-  | (Stepped e') = Stepped (App e' y) {pf = ?cong_app_pf}
-  | (Value v) = Stepped (apply v y) {pf = ?val_app_pf}
+  | (Stepped e' {pf}) = Stepped (App e' y) {pf = rewrite pf in Refl}
+  | (Value v {pf}) = Stepped (apply v y) {pf = rewrite pf in Refl}
 step {ty = Unit} TT = Value TTVal
-
----------- Proofs ----------
-Lam.val_app_pf = proof
-  intros
-  compute
-  rewrite pf
-  trivial
-
-
-Lam.cong_app_pf = proof
-  intros
-  compute
-  rewrite pf
-  trivial

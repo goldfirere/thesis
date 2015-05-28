@@ -19,7 +19,7 @@ old~\cite{history-of-haskell} \rae{check!} -- type theorists still turn to
 Haskell as a place to build new type system ideas and see how they work in a
 practical setting~\cite{fundeps, chak1, chak2, arrows, syb,
   closed-type-families, generics-with-closed-type-families, safe-coercions,
-  pattern-match-and-gadts, helium, etc}. As a result, Haskell's type system has grown
+  gadts-meet-their-match, helium}. As a result, Haskell's type system has grown
 ever more intricate over the years. As the power of types in Haskell has
 increased, Haskellers have started to integrate dependent types into their
 programs~\cite{singletons, hasochism, she, clash}, despite the fact
@@ -63,7 +63,7 @@ dependent types in Haskell -- see \pref{sec:no-proofs}) are hard to come by.
 
 \item \pref{cha:system-fc} is a thorough treatment of System FC, as it
 has inspired today's GHC. Though there are many publications on System
-FC~\cite{system-fc,etc}, it has evolved much over the years and benefits
+FC~\cite{systemfc,promotion,nokinds,closed-type-families,safe-coercions}, it has evolved much over the years and benefits
 from a solid, full treatment. Having a record of today's System FC also
 allows readers to understand the extensions I add in context.
 

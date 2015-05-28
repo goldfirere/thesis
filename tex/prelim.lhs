@@ -16,13 +16,15 @@ import Data.List ( intercalate )
 %endif
 
 \chapter{Preliminaries}
+\label{cha:prelim}
 
 This chapter is a primer of type-level programming facilities that exist
 in today's Haskell. It serves both as a way for readers less experienced
 in Haskell to understand the remainder of the dissertation, and as a point
 of comparison against the Dependent Haskell language I describe in
 \pref{cha:dep-haskell}. Those more experienced with Haskell may easily
-skip this chapter.
+skip this chapter. However, all readers may wish to consult \pref{app:typo}
+to learn the typographical conventions used throughout this dissertation.
 
 I assume that the reader is comfortable with a typed functional programming
 language, such as Haskell98 or a variant of ML.
@@ -35,6 +37,7 @@ is simply a function on types. (I sometimes use ``type function''
 and ``type family'' interchangeably.) Here is an uninteresting example:
 %if style == poly
 %format F1
+%format F2
 %format useF1
 %endif
 \begin{code}
@@ -93,24 +96,39 @@ instance Collection' (Set a) where
 Associated type families are essentially syntactic sugar for regular
 open type families.
 
+\paragraph{Partiality in type families}
+A type family may be \emph{partial}, in that it is not defined over
+all possible inputs. This poses no direct problems in the theory or
+practice of type families. If a type family is used at a type for
+which it is not defined, the type family application is considered
+to be \emph{stuck}. For example:
+\begin{code}
+type family F2 a
+type instance F2 Int = Bool
+\end{code}
+Suppose there are no further instances of |F2|. Then, the type |F2 Char|
+is stuck. It does not evaluate, and is equal only to itself.
+
+Because type family applications cannot be used on the left-hand side
+of type family equations, it is impossible for a Haskell program to
+detect whether or not a type is stuck. This is correct behavior, because
+a stuck open type family might become unstuck with the inclusion of more
+modules, defining more type family instances.
+
 \subsection{Data families}
 
 A \emph{data family} defines a family of datatypes. An example shows
 best how this works:
 \begin{code}
 data family Array a   -- compact storage of elements of type |a|
-data instance Array Bool
-  = MkArrayBool ByteArray
-data instance Array Int
-  = MkArrayInt (Vector Int)
+data instance Array Bool  = MkArrayBool  ByteArray
+data instance Array Int   = MkArrayInt   (Vector Int)
 \end{code}
 With such a definition, we can have a different runtime representation
 for an |Array Bool| as we do for an |Array Int|, something not possible
 with more traditional parameterized types.
 
-Data families do not play a large role in this dissertation, but they do serve
-an important function in the implementation of
-\package{singletons}~\cite{singletons}, as discussed in \pref{sec:singletons}.
+Data families do not play a large role in this dissertation.
 
 \section{Rich kinds}
 
@@ -177,7 +195,6 @@ data family (a :: Nat) + (b :: Nat) :: Nat where ...
 
 \citet{promotion} detail certain restrictions in what datatypes can be promoted.
 A chief contribution of this dissertation is lifting these restrictions.
-See \pref{sec:lifting-promotion-restrictions}.
 
 \subsection{Kind polymorphism}
 
@@ -324,7 +341,7 @@ match is what forces the equality evidence to be reduced to a value. As
 Haskell is a lazy language, it is possible to pass around equality evidence
 that is |undefined|. Matching evaluates the argument, making sure that the
 evidence is real. The fact that type equality evidence must exist and be
-executed at runtime is somewhat unfortunate. See \pref{sec:no-termination-checker}
+executed at runtime is somewhat unfortunate. See \pref{sec:no-termination-check}
 for some discussion.
 
 \section{Higher-rank types}
@@ -434,8 +451,8 @@ Functional dependencies are, in some ways, more powerful than type families. For
 example, consider this definition of |Plus|:
 \begin{code}
 class Plus (a :: Nat) (b :: Nat) (r :: Nat) | a b -> r, r a -> b
-instance Plus !Zero b b
-instance Plus a b r => Plus (!Succ a) b (!Succ r)
+instance                Plus  !Zero      b  b
+instance Plus a b r =>  Plus  (!Succ a)  b  (!Succ r)
 \end{code}
 The functional dependencies for |Plus| are more expressive than what we can do
 for type families. (However, see \citet{injective-type-families}, which attempts
