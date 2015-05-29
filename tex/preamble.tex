@@ -8,7 +8,7 @@
 \usepackage{stmaryrd}
 \usepackage{setspace}
 \usepackage{amstext}
-\usepackage[numbers]{natbib}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{prettyref}
 \usepackage{verbatim}
 \usepackage[greek,english]{babel}
@@ -77,9 +77,16 @@
 \newcommand{\flag}[1]{\texttt{#1}}
 
 % write proposal-only stuff in blue
-\newenvironment{proposal}%
-{\ifproposal\color{blue}\else\comment\fi}%
-{\ifproposal\else\endcomment\fi}
+\ifproposal
+
+\definecolor{proposal}{rgb}{0,0,0.5}
+
+\newenvironment{proposal}{\color{proposal}}{}
+\newenvironment{noproposal}{\comment}{\endcomment}
+\else
+\newenvironment{propopsal}{\comment}{\endcomment}
+\newenvironment{noproposal}{}{}
+\fi
 
 % that trailing / prevents the macro from gobbling up a space
 \def\outsidein/{\textsc{OutsideIn}}
@@ -107,3 +114,4 @@
 
 
 \newrefformat{app}{Appendix \ref{#1}}
+\newrefformat{tab}{Table \ref{#1}}

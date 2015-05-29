@@ -31,3 +31,7 @@ dissertation:
 \end{center}
 \caption{Typesetting of Haskell constructs}
 \end{table}
+
+In addition to the special formatting above, I assume a liberal overloading
+of number literals, including in types. For example, I write |2| where I
+really mean |Succ (Succ Zero)|, depending on the context.

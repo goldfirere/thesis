@@ -19,17 +19,19 @@ old~\cite{history-of-haskell} \rae{check!} -- type theorists still turn to
 Haskell as a place to build new type system ideas and see how they work in a
 practical setting~\cite{fundeps, chak1, chak2, arrows, syb,
   closed-type-families, generics-with-closed-type-families, safe-coercions,
-  gadts-meet-their-match, helium}. As a result, Haskell's type system has grown
-ever more intricate over the years. As the power of types in Haskell has
+  gadts-meet-their-match, helium}. As a result, Haskell's type system has
+grown ever more intricate over the years. As the power of types in Haskell has
 increased, Haskellers have started to integrate dependent types into their
-programs~\cite{singletons, hasochism, she, clash}, despite the fact
-that today's Haskell\footnote{Throughout this dissertation, a reference to
+programs~\cite{singletons, hasochism, she, clash}, despite the fact that
+today's Haskell\footnote{Throughout this dissertation, a reference to
   ``today's Haskell'' refers to the language implemented by the Glasgow
   Haskell Compiler (GHC), version 7.10, released in 2015.} does not internally
 support dependent types. Indeed, the desire to program in Haskell but with
-support for dependent types influenced the creation of Agda~\cite{norell-thesis} and
-Idris~\cite{idris}; both are Haskell-like languages with support for full dependent
-types.
+support for dependent types influenced the creation of
+Agda~\cite{norell-thesis} and Idris~\cite{idris}; both are Haskell-like
+languages with support for full dependent types. I draw comparisons between my
+work and these two languages, as well as Coq~\cite{coq}, throughout this
+dissertation.
 
 This dissertation closes the gap, by adding support for dependent types into
 Haskell directly. In this work, I detail both the changes to GHC's internal

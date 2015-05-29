@@ -1,3 +1,7 @@
-{-# LANGUAGE TypeOperators, DataKinds, PolyKinds #-}
+{-# LANGUAGE TypeOperators, DataKinds, PolyKinds, TypeFamilies #-}
 
-module ThesisPreamble where
+module ThesisPreamble ( FromNat ) where
+
+import GHC.TypeLits
+
+type family FromNat (n :: Nat) :: k

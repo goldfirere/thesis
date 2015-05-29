@@ -41,6 +41,8 @@ working.
 \section{Eliminating erroneous programs}
 
 \subsection{Simple example: Length-indexed vectors}
+\label{sec:length-indexed-vectors}
+\rae{Make sure |replicate| is here. It's referenced later.}
 
 \subsection{A strongly typed simply typed lambda calculus interpreter}
 \label{sec:stlc}
@@ -720,7 +722,7 @@ by enabling the construction of a looping term~\cite{girard-thesis}, but we are
 unbothered by this. By allowing ourselves to have |* :: *|, the type system
 is much simpler than in systems with a hierarchy of universes.
 
-There two clear downsides of the lack of totality:
+There are two clear downsides of the lack of totality:
 \begin{itemize}
 \item What appears to be a proof might not be. Suppose we need to prove
 that type |tau| equals type |sigma| in order to type-check a program.
@@ -751,11 +753,31 @@ is simpler for not worrying about totality, and also that by using
 Dependent Haskell, we will learn more about dependent types in the presence
 of partiality.
 
-\subsection{Language feature interaction}
+\subsection{GHC is an industrial-strength compiler}
 
-Haskell is a very rich language, with a long history of extensions. Adding
-dependent types to Haskell requires working out the interaction between
-dependent types and all of these extensions. These interactions lead
-to new insights about dependent types and the other features. In particular,
-the interaction between roles and dependent types is subtle. See \pref{sec:roles-and-dependent-types}
-for the details.
+Hosting dependent types within GHC is likely to reveal new insights about
+dependent types due to all of the features that GHC offers. Not only are
+there many surface language extensions that must be made to work with
+dependent types, but the back end must also be adapted. A dependently typed
+intermediate language must, for example, allow for optimizations. Working
+in the context of an industrial-strength compiler also forces the implementation
+to be more than just ``research quality'', but ready for a broad audience.
+
+\subsection{Manifest type erasure properties}
+
+A critical property of Haskell is that it can erase types. Despite all the
+machinery available in Haskell's type system, all type information can be
+dropped during compilation. In Dependent Haskell, this does not change.
+However, dependent types certainly blur the line between term and type, and
+so what, precisely, gets erased can be less clear. Dependent Haskell,
+in a way different from other dependently typed languages, makes clear which
+arguments to functions (and data constructors) get erased. This is through
+the user's choice of relevant vs.~irrelevant quantifiers, as explored in
+\pref{sec:relevance}. Because erasure properties are manifestly available
+in types, a performance-conscious user can audit a Dependent Haskell program
+and see exactly what will be removed at runtime, aiming to meet any particular
+performance goals the user has.
+
+It is possible that, with practice, this ability will become burdensome, in
+that the user has to figure out what to keep and what to discard. Idris's
+progress toward type erasure analysis~\cite{erasing-indices,practical-erasure} may benefit Dependent Haskell as well.

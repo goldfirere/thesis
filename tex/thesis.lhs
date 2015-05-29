@@ -57,10 +57,11 @@
 \include{system-fc}
 %include dep-haskell.lhs
 \include{fcd}
-\include{haskell-spec}
+%include haskell-spec.lhs
 \include{type-inference}
 \include{implementation}
 \include{related}
+\include{proposal}
 
 \appendix
 

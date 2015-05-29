@@ -1,0 +1,66 @@
+\begin{proposal}
+
+\chapter{\color{proposal}Timeline}
+
+Much of the work described in this proposal has already taken place:
+\begin{enumerate}
+\item The entirety of \pref{cha:system-fc} is simply collecting together previous
+work on System FC.
+\item Although some details have yet to be worked out (such as import/export lists
+and the concrete syntax around promoting functions), much of the design of
+Dependent Haskell has been worked out, as well.
+\item The system described in previous work~\cite{nokinds} will form the
+basis of System FCD.
+\item I have an implementation\footnote{\url{https://github.com/goldfirere/ghc/},
+the \texttt{nokinds} branch} available of GHC with merged types and kinds and
+full kind equalities. This implementation successfully compiles itself and all
+of GHC's standard libraries, as well as some examples testing the power of
+kind equalities.
+\end{enumerate}
+
+Here are the major remaining tasks to complete:
+\begin{enumerate}
+\item System FCD will need to include dependent types
+  This addition
+  will be strongly influenced by the work of \citet{gundry-thesis}.
+  There is some work to be done here, for sure, but no more than a solid
+  month's worth, I estimate.
+\item The surface language specification and type inference algorithm are
+  already in draft form (though it is not in a state ready to share), with an
+  attempt at a proof started. This area is surely the murkiest area of this
+  dissertation. However, given the previous work in this area~\cite{gundry-thesis},
+  I am confident that this will work out. I hope to finish the bulk of this work
+  in a 2-month timeframe.
+\item I need to finish polishing my existing implementation of kind equalities
+  and merge with GHC's master branch. This will take 2 months, I estimate.
+\item I need to implement $\Pi$ into GHC. I estimate this will take 3 months.
+\item I will need to write up the dissertation. Given that some of this writing
+  will happen concurrently with achieving the tasks above, I estimate this will
+  take 1 further month.
+\end{enumerate}
+
+These estimates total to 9 months. Given that something is sure to fall behind,
+and that I will take time off from this schedule to write a paper or two during
+the next year, I think this is all reasonable to complete for late spring of 2016.
+
+Here is a specific timeline of goals and dates:
+\begin{enumerate}
+\item Submit a POPL paper by July~10, 2015.
+\item Merge current implementation of kind equalities by Sept.~15, 2015.
+\item Write \pref{cha:fcd} and \pref{app:fc} by Oct.~15, 2015.
+\item Implement $\Pi$ into GHC by Jan.~15, 2016. This implementation will
+be functional, but perhaps unpolished.
+\item Submit an ICFP paper by Mar.~1, 2016.
+\item Write \pref{cha:type-inference} and \pref{app:inference} by May~1, 2016.
+\item Write remaining parts of dissertation by June~1, 2016.
+\item Defend dissertation by July~1, 2016.
+\end{enumerate}
+
+Note that I do \emph{not} expect to merge my implementation of Dependent
+Haskell with GHC's master branch before defending the dissertation. While this
+would be wonderful to achieve, I do not want to place all of the engineering
+such a goal would entail on my critical path toward finishing the
+dissertation. I expect to spend time during the summer of 2016 polishing the
+implementation and hopefully to merge later in 2016.
+
+\end{proposal}

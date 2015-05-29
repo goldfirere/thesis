@@ -29,6 +29,69 @@ to learn the typographical conventions used throughout this dissertation.
 I assume that the reader is comfortable with a typed functional programming
 language, such as Haskell98 or a variant of ML.
 
+\section{Type classes and dictionaries}
+\label{sec:type-classes}
+
+Haskell supports type classes~\cite{type-classes}. An example is worth
+a thousand words:
+%{
+%if style == poly
+%format MyShow = Show
+%format myShow = show
+%endif
+\begin{code}
+class MyShow a where
+  myShow :: a -> String
+instance MyShow Bool where
+  myShow True   = "True"
+  myShow False  = "False"
+\end{code}
+This declares the class |MyShow|, parameterized over a type variable |a|,
+with one method |myShow|. The class is then instantiated at the type |Bool|,
+with a custom implementation of |myShow| for |Bool|s. Note that, in the
+|MyShow Bool| instance, the |myShow| function can use the fact that
+|a| is now |Bool|: the one argument to |myShow| can be pattern-matched
+against |True| and |False|. This is in stark contrast to the usual
+parametric polymorphism of a function |show' :: a -> String|, where the
+body of |show'| \emph{cannot} assume any particular instantiation for |a|.
+
+With |MyShow| declared, we can now use this as a constraint on types. For
+example:
+\begin{code}
+smooshList :: MyShow a => [a] -> String
+smooshList xs = concat (map myShow xs)
+\end{code}
+The type of |smooshList| says that it can be called at any type |a|, as
+long as there exists an instance |MyShow a|. The body of |smooshList|
+can then make use of the |MyShow a| constraint by calling the |myShow|
+method. If we leave out the |MyShow a| constraint, then the call to |myShow|
+does not type-check. This is a direct result of the fact that the full
+type of |myShow| is really |MyShow a => a -> String|. (The |MyShow a| constraint
+on |myShow| is implicit, as the method is declared within the |MyShow| class
+declaration.) Thus, we need to know that the instance |MyShow a| exists
+before calling |myShow| at type |a|.
+
+Operationally, type classes work by passing
+\emph{dictionaries}~\cite{type-classes-impl}. A type class dictionary is
+simply a record containing all of the methods defined in the type class.
+It is as if we had these definitions:
+\begin{code}
+data ShowDict a = MkShowDict { showMethod :: a -> String }
+
+showBool :: Bool -> String
+showBool True   = "True"
+showBool False  = "False"
+
+showDictBool :: ShowDict Bool
+showDictBool = MkShowDict showBool
+\end{code}
+Then, whenever a constraint |MyShow Bool| must be satisfied, GHC produces
+the |showDictBool| dictionary. This dictionary actually becomes a runtime
+argument to functions with a |MyShow| constraint. Thus, in a running program,
+the |smooshList| function actually takes 2 arguments: the dictionary
+corresponding to |MyShow a| and the list |[a]|.
+%}
+
 \section{Families}
 
 \subsection{Type families}
@@ -57,7 +120,7 @@ are given in one place. This most closely corresponds to what functional
 programmers expect from their functions. Today's Haskell also supports
 \emph{open} type families, where the set of defining equations can be
 extended arbitrarily. Open type families interact particularly well
-with Haskell's type classes~\cite{typeclasses}, which can also be
+with Haskell's type classes~\cite{type-classes}, which can also be
 extended arbitrarily. Here is a more interesting example than the one above:
 %
 \begin{code}
@@ -383,7 +446,7 @@ does the trick nicely.
 
 Type inference in the presence of higher-rank types is well studied, and can
 be made practical via bidirectional type-checking~\cite{practical-type-inference,
-bidirectional-type-checking}.
+simple-bidirectional}.
 
 \section{Scoped type variables}
 A modest, but subtle, extension in GHC is \ext{ScopedTypeVariables}, which allows
