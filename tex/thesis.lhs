@@ -1,6 +1,6 @@
 %% -*- mode: LaTeX -*-
 
-\newif \ifdraft \drafttrue
+\newif \ifdraft \draftfalse
 \newif \ifproposal \proposaltrue
 \documentclass[12pt,oneside]{book}
 
@@ -80,3 +80,5 @@
 \bibliography{../../etc/rae}
 
 \end{document}
+
+%%  LocalWords:  pageanchor lhs prelim dep

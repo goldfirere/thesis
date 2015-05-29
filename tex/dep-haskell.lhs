@@ -48,7 +48,7 @@ pred :: Int -> Int
 The |Int| quantifiee is not named in the type, nor is it mentioned in the
 quantifier body.
 
-Dependent Haskell adds a new dependent quantifer, |pi|, as discussed below.
+Dependent Haskell adds a new dependent quantifier, |pi|, as discussed below.
 
 A key requirement of dependent arguments -- that is, concrete choices of
 instantiations of dependent quantifiees -- is that they are expressible
@@ -65,10 +65,10 @@ that relevance talks about usage in the function quantified over, not the
 type quantified over (which is covered by the \emph{dependency}
 property).
 
-Relevance is very closely tied to type erasure. Relevent arguments in terms
+Relevance is very closely tied to type erasure. Relevant arguments in terms
 are precisely those arguments that are not erased. However, the \emph{relevance}
 property applies equally to type-level functions, where erasure does not
-make sense, as all types are erased. For gaining an intution about relevance,
+make sense, as all types are erased. For gaining an intuition about relevance,
 thinking about type erasure is a very good guide.
 
 Today's Haskell uses |(->)| for relevant quantification. For example, here
@@ -141,6 +141,7 @@ All arguments are always ``visible'' in System FCD.
 
 \subsubsection{Invisibility in other languages}
 
+\begin{noproposal}
 \begin{itemize}
 %{
 %format dbo = "\{\!\{"
@@ -176,7 +177,7 @@ common, Idris offers an abbreviation |auto| which means |default proof { trivial
 %}
 \item
 Coq has quite a different view of invisible arguments than do Dependent Haskell,
-Agda, or Idris. In all three of those languages, the visibility of an arugment
+Agda, or Idris. In all three of those languages, the visibility of an argument
 is part of a type. In Coq, top-level directives allow the programmer to change
 the visibility of arguments to already-defined functions. For example, if we
 have the definition
@@ -223,9 +224,10 @@ the details.
 %}
 
 \end{itemize}
-
+\end{noproposal}
 \subsubsection{Visibility overrides}
 
+\begin{noproposal}
 It is often desirable when using rich types to override a declared visibility
 specification. That is, when a function is declared to have an invisible
 parameter |a|, a call site may wish to instantiate |a| visibly. Conversely,
@@ -324,7 +326,7 @@ program. (This is not unlike Agda's \emph{sheds} feature or Idris's
 \emph{metavariables} feature.) However, this is not a true conflict, as an
 uninferrable omitted visible parameter is indeed an error and should be
 reported; the error report is that of a typed hole.
-
+\end{noproposal}
 
 \subsection{The six quantifiers of Dependent Haskell}
 
@@ -442,6 +444,7 @@ in this section.
 \label{sec:parsing-star}
 
 \subsection{Visible kind variables}
+\label{sec:visible-kinds}
 
 \begin{proposal}
 Today's Haskell requires that all kind parameters always be invisible.
@@ -459,3 +462,8 @@ the full definition allows, also, compile-time reduction in types. Supporting
 the choice between these export modes will require a small change to export
 and import lists, as will be detailed here.
 \end{proposal}
+
+%%  LocalWords:  newcode rae fmt TypeLits endif quantifiee pred outsidein FCD
+%%  LocalWords:  mytrue bool Vec theSimons FromNat Succ infixr SNat SZero Num
+%%  LocalWords:  SSucc fromInteger unsafeCoerce abs signum MkAge newtype frob
+%%  LocalWords:  gundry

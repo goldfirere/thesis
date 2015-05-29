@@ -120,7 +120,7 @@ are given in one place. This most closely corresponds to what functional
 programmers expect from their functions. Today's Haskell also supports
 \emph{open} type families, where the set of defining equations can be
 extended arbitrarily. Open type families interact particularly well
-with Haskell's type classes~\cite{type-classes}, which can also be
+with Haskell's type classes, which can also be
 extended arbitrarily. Here is a more interesting example than the one above:
 %
 \begin{code}
@@ -140,7 +140,7 @@ instance Collection (Set a) where
 Because the type family |Element| is open, it can be extended whenever a
 programmer creates a new collection type.
 
-Often, open type families are extended in close correspondance with a type
+Often, open type families are extended in close correspondence with a type
 class, as we see here. For this reason, GHC supports \emph{associated}
 open type families, using this syntax:
 \begin{code}
@@ -217,7 +217,7 @@ and |Maybe Bool| are types, but |Maybe| is not. The type-level constant
 |*| contains proper types, like |Int| and |Bool|. Thus, |Maybe| has kind
 |* -> *|.
 
-Thus, Haskell's kind system accepts |Maybe Int| and |Element [Bool]|, but
+Accordingly, Haskell's kind system accepts |Maybe Int| and |Element [Bool]|, but
 rejects |Maybe Maybe| and |Bool Int| as ill-kinded.
 
 \subsection{Promoted datatypes}
@@ -289,7 +289,9 @@ program contains the type |T Maybe Bool| and GHC needs to print this type
 with \flag{-fprint-explicit-kinds}, it will print |T * Maybe Bool|, making
 the |*| kind parameter visible. Today's Haskell makes an inflexible choice
 that kind arguments are always invisible, which is relaxed in Dependent
-Haskell. See \pref{sec:visibility} for more information.
+Haskell. See \pref{sec:visibility} for more information on visibility in
+Dependent Haskell and \pref{sec:visible-kinds} for more information on visible
+kind arguments.
 
 \subsection{Constraint kinds}
 
@@ -518,18 +520,26 @@ instance                Plus  !Zero      b  b
 instance Plus a b r =>  Plus  (!Succ a)  b  (!Succ r)
 \end{code}
 The functional dependencies for |Plus| are more expressive than what we can do
-for type families. (However, see \citet{injective-type-families}, which attempts
-to close this gap.) They say that |a| and |b| determine |r|, just like the arguments
-to a type family determine the result, but also that |r| and |a| determine |b|.
-Using this second declared functional dependency, if we know |Plus a b r| and
-|Plus a b' r|, we can conclude $|b| = |b'|$. Although the functional dependency
-|r b -> a| also holds, GHC is unable to prove this.
+for type families. (However, see the work of\citet{injective-type-families},
+which attempts to close this gap.) They say that |a| and |b| determine |r|,
+just like the arguments to a type family determine the result, but also that
+|r| and |a| determine |b|. Using this second declared functional dependency,
+if we know |Plus a b r| and |Plus a b' r|, we can conclude $|b| = |b'|$.
+Although the functional dependency |r b -> a| also holds, GHC is unable to
+prove this.
 
 Functional dependencies have enjoyed a rich history of aiding type-level programming~\cite{faking-it, hlist, instant-insanity}. Yet, they require a different paradigm to much of
 functional programming. When writing term-level definitions, functional programmers
 think in terms of functions that take a set of arguments and produce a result. Functional
-dependencies, however, encode type-level programming through logical relations, not
+dependencies, however, encode type-level programming through relations, not
 proper functions. Though both functional dependencies and type families have their
 proper place in the Haskell ecosystem, I have followed the path taken by other
 dependently typed languages and use type-level functions as the main building blocks
 of Dependent Haskell, as opposed to functional dependencies.
+
+%%  LocalWords:  newcode rae fmt ByteArray Exts endif cha app MyShow myShow
+%%  LocalWords:  smooshList xs ShowDict MkShowDict showMethod showBool poly
+%%  LocalWords:  showDictBool useF MkArrayBool MkArrayInt unityped Succ MkT
+%%  LocalWords:  PolyKinds fprint showSomething heteroList printList ghci HM
+%%  LocalWords:  putStrLn Refl syb higherRank ScopedTypeVariables foldl lgo
+%%  LocalWords:  Pred

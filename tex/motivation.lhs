@@ -106,7 +106,7 @@ impossible to create an ill-typed |Expr| (ignoring the possibility of
 We now wish to write both small-step and big-step operational semantics
 for our expressions. First, we'll need a way to denote values in our language:
 \begin{code}
-data Val :: Ty -> * where
+data Val :: Ty -> * ^^ where
   LamVal  :: Expr ![arg] res ->  Val (arg !:~> res)
   TTVal   ::                     Val !Unit
 \end{code}
@@ -158,7 +158,7 @@ shift = go []
 
 subst e = go []
   where
-    go :: forall ty. pi ctx0 -> Expr (ctx0 !++ s !: ctx) ty -> Exp (ctx0 !++ ctx) ty
+    go :: forall ty. pi ctx0 -> Expr (ctx0 !++ s !: ctx) ty -> Expr (ctx0 !++ ctx) ty
     go = ...
 \end{spec}
 \end{notyet}
@@ -229,7 +229,7 @@ at runtime, in order to know how to shift or substitute. Note also the
 syntax |pi ctx0 ->|, where the $\Pi$-bound variable is followed by an |->|.
 The use of an arrow here (as opposed to a |.|) indicates that the parameter
 is \emph{visible} in source programs; the empty list is passed in visibly
-in the invocation of |go|. The final interesting
+in the invocation of |go|. (See also \pref{sec:visibility}.) The final interesting
 feature of these types is that they re-quantify |ty|. This is necessary because
 the recursive invocations of the functions may be at a different type than the
 outer invocation. The other type variables in the types are lexically bound
@@ -259,13 +259,11 @@ a value. But we want better than this.
 Instead, we want to ensure that the small-step semantics respects the big-step
 semantics. That is, after every step, we want the value -- as given by the
 big-step semantics -- to remain the same. We thus want the small-step stepper
-to return a pair: the new expression (or value), and evidence that the value
-of the expression (as given by the big-step evaluator) remains the same.
-
-We thus need a |StepResult| datatype:
+to return a custom datatype, marrying the result of stepping with evidence
+that the value of this result agrees with the value of the original expression:
 \begin{noway}
 \begin{spec}
-data StepResult :: Expr ![] ty -> * where
+data StepResult :: Expr ![] ty -> * ^^ where
   Stepped  :: pi (e'  :: Expr ![]  ty) -> (!eval e ~ !eval e')  => StepResult e
   Value    :: pi (v   :: Val       ty) -> (!eval e ~ v)         => StepResult e
 \end{spec}
@@ -296,7 +294,7 @@ Due to GHC's ability to freely use assumed equality assumptions, |step|
 requires no explicit manipulation of equality proofs. Let's look at the |App|
 case above. We first check whether or not |e1| can take a step. If it can,
 we get the result of the step |e1'|, \emph{and} a proof that |!eval e1 ~ !eval e1'|.
-This proof enters into the typechecking context and is invisible in the program
+This proof enters into the type-checking context and is invisible in the program
 text. On the right-hand side of the match, we conclude that |App e1 e2| steps to
 |App e1' e2|. This requires a proof that |!eval (App e1 e2) ~ !eval (App e1' e2)|.
 Reducing |!eval| on both sides of that equality gives us
@@ -327,6 +325,8 @@ the equality proofs must be unpacked and used with Agda's \keyword{rewrite} tact
 In Agda, disabling the termination checker for |eval| is easy: simply use the
 @{-# NO_TERMINATION_CHECK #-}@ directive.
 
+%{
+%format assert_total = "\keyword{assert\_total}"
 \item Idris also runs into some trouble with this example. Like Agda, Idris
 works well with indexed types. The |eval| function is unsurprisingly inferred
 to be partial, but this is easy enough to fix with a well-placed
@@ -336,6 +336,7 @@ variable, Idris is able to find the proofs automatically in the other |step|
 clauses.) Idris comes the closest to Haskell's brevity in this example, but
 it still requires two explicit, if short, places where equality proofs must
 be explicitly manipulated.
+%}
 \end{itemize}
 
 \begin{proposal}
@@ -405,7 +406,7 @@ has an aggressive rewriting engine used to solve equality predicates.
 
 \subsection{Type-safe database access}
 
-See also other examples in \citet{power-of-pi} and \citet{hasochism}.
+See also other examples in the work of \citet{power-of-pi} and \citet{hasochism}.
 
 \section{Encoding hard-to-type programs}
 
@@ -622,7 +623,8 @@ time of writing, \url{https://wiki.haskell.org/Haskell_in_industry}
 lists 81 companies who use Haskell to some degree. That page, of course,
 is world-editable and is not authoritative. However, I am personally aware
 of Haskell's (growing) use in several industrial settings, and I have seen
-quite a few job postings looking for Haskell programmers in industry.}
+quite a few job postings looking for Haskell programmers in industry. For
+example, see \url{http://functionaljobs.com/jobs/search/?q=haskell}.}
 Haskell is also used as the language of choice in several academic
 programs used to teach functional programming. There is also the ongoing
 success of the Haskell Symposium. These facts all indicate that the
@@ -658,7 +660,7 @@ techniques.
 
 Although it is conceivable that dependent types are available only with
 the new \ext{DependentTypes} extension that is not backward compatible, this
-is not I have done. Instead, with two exceptions, all programs that compile
+is not what I have done. Instead, with two exceptions, all programs that compile
 without \ext{DependentTypes} continue to compile with that extension enabled.
 The two exceptions are as follows:
 \begin{itemize}
@@ -679,7 +681,7 @@ but it is not backward-compatible in all cases.
 Other than these two trouble spots, all programs that compiled previously
 continue to do so.
 
-The requirement of backward compability ``keeps me honest'' in my design of
+The requirement of backward compatibility ``keeps me honest'' in my design of
 type inference -- I cannot cheat by asking the user for more information. The
 technical content of this statement is discussed in \pref{cha:type-inference}
 by comparison with the work of \citet{outsidein}. A further advantage of
@@ -733,7 +735,8 @@ be run, having an impact on performance.
 
 This drawback is indeed serious, and important future work includes
 designing and implementing a totality checker for Haskell. (See
-the work of \citet{liquid-haskell} for one approach toward this goal.)
+the work of \citet{liquid-haskell} for one approach toward this goal.
+Recent work by \citet{gadts-meet-their-match} is another key building block.)
 Unlike in other languages, though, the totality checker would be chiefly
 used in order to optimize away proofs, rather than to keep the language
 safe. Once the checker were working, we could also add compiler flags to
@@ -781,3 +784,21 @@ performance goals the user has.
 It is possible that, with practice, this ability will become burdensome, in
 that the user has to figure out what to keep and what to discard. Idris's
 progress toward type erasure analysis~\cite{erasing-indices,practical-erasure} may benefit Dependent Haskell as well.
+
+\subsection{Haskellers want dependent types}
+
+The design of Haskell has slowly been marching toward having dependent types.
+Haskellers have enthusiastically taken advantage of the new features. For
+example, over 1,000 packages published at \url{hackage.haskell.org} use type
+families~\cite{injective-type-families}. Anecdotally, Haskellers are excited
+about getting full dependent types, instead of just faking
+them~\cite{faking-it,she,singletons}. Furthermore, with all of the type-level
+programming features that exist in Haskell today, it is a reasonable step
+to go to full dependency.
+
+%%  LocalWords:  newcode rae fmt endif STLC STLC's Ty infixr featureful Elem
+%%  LocalWords:  glambda Bruijn EZ xs ES Expr Var ctx ty Lam arg App TT elt
+%%  LocalWords:  Val LamVal TTVal eval de subst poly LZ LS ys len StepResult
+%%  LocalWords:  SameValue hasochism zipWith Typeable HRefl TyCon TypeRep eqT
+%%  LocalWords:  TyApp eqTyCon tyCon Dyn dynApply TArrow unsafeCoerce Foo cha
+%%  LocalWords:  editable DependentTypes MonoLocalBinds outsidein

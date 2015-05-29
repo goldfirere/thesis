@@ -14,8 +14,8 @@ in the proposal.
 \end{proposal}
 
 Haskell has become a wonderful and rich playground for type system
-experimentation. Despite its relative longevity -- at 25 years
-old~\cite{history-of-haskell} \rae{check!} -- type theorists still turn to
+experimentation. Despite its relative longevity -- at roughly 25 years
+old~\cite{history-of-haskell} -- type theorists still turn to
 Haskell as a place to build new type system ideas and see how they work in a
 practical setting~\cite{fundeps, chak1, chak2, arrows, syb,
   closed-type-families, generics-with-closed-type-families, safe-coercions,
@@ -34,7 +34,7 @@ work and these two languages, as well as Coq~\cite{coq}, throughout this
 dissertation.
 
 This dissertation closes the gap, by adding support for dependent types into
-Haskell directly. In this work, I detail both the changes to GHC's internal
+Haskell. In this work, I detail both the changes to GHC's internal
 language, known as System FC~\cite{systemfc}, and explain the changes to the
 surface language necessary to support dependent types. Naturally, I must also
 describe the elaboration from the surface language to the internal language,
@@ -43,7 +43,7 @@ dissertation, I have also implemented support for dependent types in GHC directl
 I expect a future release of the software to include this support.
 Much of my work builds upon the critical work of
 \citet{gundry-thesis}; one of my chief contributions is adapting his work
-to work with the GHC implementation and futher features of Haskell.
+to work with the GHC implementation and further features of Haskell.
 
 Specifically, I offer the following contributions:
 \begin{itemize}
@@ -87,7 +87,7 @@ with two major changes:
 the system's types, whereas System FC supports only \emph{type} equalities.
 Adding kind equalities is made simpler by also adding the \emph{Type-in-Type}
 axiom (or |* :: *|) and merging the grammar of types and kinds. This aspect
-of System FCD was originally presented in \citet{nokinds}.
+of System FCD was originally presented in the work of \citet{nokinds}.
 \item System FCD also contains a proper $\Pi$-type, which quantifies over
 an argument made available in both a type and a term. It is the existence
 of $\Pi$-types that enables me to claim that the language is dependently
@@ -127,6 +127,13 @@ is included as a primer to these features for readers less experienced in
 Haskell, and also as a counterpoint to the features discussed as parts of
 Dependent Haskell.
 
+\begin{proposal}
+\pref{cha:proposal} contains a timeline of the work remaining toward completing
+this dissertation.
+\end{proposal}
+
 With an implementation of dependent types in Haskell available, I look forward
 to seeing how the Haskell community builds on top of my work and discovers
 more and more applications of dependent types.
+
+%%  LocalWords:  newcode rae fmt endif cha FCD

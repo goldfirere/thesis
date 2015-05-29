@@ -7,9 +7,9 @@
 
 \begin{proposal}
 Although I compare Dependent Haskell against Coq, Agda, and Idris throughout
-this proposal, I plan on focusing on comparing just against Idris in this
-section, as my work is closest to what has been done in Idris, and I think
-this comparison will be the most illuminating.
+this proposal, I plan on writing a more detailed comparison against just Idris
+in this section, as my work is closest to what has been done in Idris, and I
+think this comparison will be the most illuminating.
 \end{proposal}
 
 \section{Comparison to Liquid Haskell}
@@ -21,13 +21,13 @@ The knowledge gained in adding dependent types to Haskell will translate
 to other environments as well. A key example will be the thought of adding
 dependent types to a variant of ML. Going the other way, I will examine
 adding more programmatic features to existing dependently typed languages
-(in particular, Haskell's |newtype| construct).
+(in particular, Haskell's \keyword{newtype} construct).
 \end{proposal}
 
 \section{Future work}
 
 \begin{proposal}
-Though this dissertation will deliver |pi|, that's not the end of the story.
+Though this dissertation will deliver $\Pi$, that's not the end of the story.
 Here are some questions I have that I do not expect will be answered in the
 course of writing this work.
 \begin{itemize}
@@ -45,7 +45,7 @@ be made to work in types?
 
 \item How do we optimize a dependently typed program? Ideally, a program should
 be optimized to the same level whether an argument is dependent or not. However,
-optimizing |pi|-quantified arguments will amount to proving the optimizations
+optimizing $\Pi$-quantified arguments will amount to proving the optimizations
 correct! How do we retain runtime performance in the face of dependent types?
 
 \item How will dependent types interact with type-checker
@@ -56,3 +56,5 @@ correct! How do we retain runtime performance in the face of dependent types?
   Is it worth introducing new syntax to support these useful constructs directly?
 \end{itemize}
 \end{proposal}
+
+%%  LocalWords:  gundry newtype SMT

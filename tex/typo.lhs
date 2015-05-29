@@ -35,3 +35,5 @@ dissertation:
 In addition to the special formatting above, I assume a liberal overloading
 of number literals, including in types. For example, I write |2| where I
 really mean |Succ (Succ Zero)|, depending on the context.
+
+%%  LocalWords:  newcode rae fmt endif lhs stlc Succ
