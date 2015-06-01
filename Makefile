@@ -1,7 +1,7 @@
 OTT_FILES_BASE =
 PAPER_BASE = thesis
 OTT_PICKY = false
-BIB_FILES_FULL = ../etc/rae.bib
+BIB_FILES_FULL = bib/rae.bib
 FMT_FILES_BASE = rae
 HS_FILES_BASE = ThesisPreamble
 GHC_OPTS = -Werror -Wall

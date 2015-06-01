@@ -77,7 +77,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \bibliographystyle{plainnat}
-\bibliography{../../etc/rae}
+\bibliography{../bib/rae}
 
 \end{document}
 
