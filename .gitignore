@@ -6,3 +6,5 @@ aux
 o
 *.agdai
 bin
+*.o
+*.hi

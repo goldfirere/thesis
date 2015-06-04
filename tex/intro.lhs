@@ -78,6 +78,7 @@ I have designed in this dissertation. This chapter is written to be useful
 to practitioners, being a user manual of sorts of the new features. In
 combination with \pref{cha:motivation}, this chapter could serve to educate
 Haskellers on how to use the new features.
+\rae{Unique to Dependent Haskell is having two different dependent quantifiers.}
 
 \item \pref{cha:fcd} describes System FC with dependent types,
 which I have named System FCD. System FCD is an extension on System FC,

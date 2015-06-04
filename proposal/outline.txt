@@ -1,0 +1,14 @@
+Big question:
+  - do I assume committee has read proposal?   Yes. but proceed anyway.
+
+things to cover:
+motivating example: glambda
+why Haskell
+quantifiers
+challenges
+  - type inference details: proofs, completeness characterization
+  - implementation (nec. for claim of "complete enough")
+  - expanding shared subset (promoting functions? how? desaturation?)
+  - roles
+  - erasure
+timeline
