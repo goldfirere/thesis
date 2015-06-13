@@ -21,8 +21,11 @@ PDF_DIR_MARKER = pdf/.dir_exists
 AUX_DIR_MARKER = aux/.dir_exists
 O_DIR_MARKER = o/.dir_exists
 
-default: thesis compile
+default: submodules thesis compile
 all: default
+
+submodules:
+	git submodules update --init --recursive
 
 compile: $(ALL_LHS_FILES:tex/%.lhs=aux/%.o)
 
