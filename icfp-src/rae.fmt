@@ -1,0 +1,80 @@
+%include polycode.fmt
+
+%if style == poly
+%format !! = "\mathop{}\tick\tick"
+%format ! = "\mathop{}\tick"
+%format nil = "\tick" []
+%format !: = "\mathop{\tick{:}}"
+%format !:~> = "\mathop{\tick{{:}{\rightsquigarrow}}}"
+%format !++ = "\mathop{\tick{" ++ "}}"
+%format :~> = "\mathop{{:}{\rightsquigarrow}}"
+%format :~: = "\mathop{{:}{\sim}{:}}"
+%format :~~: = "\mathop{{:}{\approx}{:}}"
+%format KK = "\kappa"
+%subst conid a = "\id{" a "}"
+%subst varid a = "\id{" a "}"
+%subst keyword a = "\keyword{" a "}"
+%format ^^ = "\;"
+%format ## = "\!"
+%format . = ".\;"
+%format (FromNat x) = x
+%format forall = "\forall"
+%format BOX = "\square"
+%format ~ = "\,\sim\,"
+%format qquad = "\qquad"
+%format com = "\text{-}\text{-}"
+%format bang = "!"
+%format family = "\keyword{family}"
+%format /~ = "\not\sim"
+%format * = "\star"
+%format \* = "*"
+%format =-> = "\mapsto"
+%format dollar = $
+%format ~> = "\twoheadrightarrow"
+%format th_d_open = "[\id{d}|\;"
+%format th_d_close = |]
+   % the above one is unnecessary, but included for completeness
+%format @@ = "\mathop{\texttt{@@}}"
+%format kind = "\keyword{kind}"
+%format ghci = "\lambda\!"
+%format /\ = "\Lambda"
+%format |> = "\triangleright"
+%format pi = "\Pi"
+%format tau = "\tau"
+%format sigma = "\sigma"
+
+% suppress some built-in formatting of lhs2TeX:
+%format not = "\id{not}"
+%format == = "\mathop{==}"
+%format /= = "\mathop{{/}{=}}"
+%format && = "\mathop{\&\&}"
+
+%else
+%format KK = k
+%format ^^ =
+%format qquad =
+%format com = --
+%format \* = *
+%format ! = "TICK "
+%format !: = TICK :
+%format !:~> = TICK :~>
+%format nil = TICK []
+%format dollar = $
+%format begin_comment = "{-"
+%format end_comment = "-}"
+%format th_d_open = "[d|"
+
+\begin{code}
+{-# LANGUAGE GADTs, DataKinds, TypeOperators, PolyKinds, EmptyCase,
+             TypeFamilies, CPP, ConstraintKinds, RankNTypes,
+	     StandaloneDeriving, ScopedTypeVariables,
+	     MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances,
+	     UndecidableInstances #-}
+{-# OPTIONS_GHC -Wall -fno-warn-unused-imports -fno-warn-name-shadowing #-}
+
+module Chapter where
+
+import ThesisPreamble
+\end{code}
+
+%endif
