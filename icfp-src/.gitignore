@@ -7,3 +7,4 @@
 src.pdf
 *.synctex.gz
 src.tex
+*.out
