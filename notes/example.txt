@@ -1,0 +1,2 @@
+"Reducing the Slippery Surface of Failure with Dependent Types" Jon Pretty at CodeMesh (Scala): using dep types to track int'lization strings
+github.com/propensive/rapture-i18n

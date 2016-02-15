@@ -1,0 +1,23 @@
+- Ryan Trinkle may have use case. (!)
+
+- Ziliani/Sozeau ICFP'15 paper has a nice HO unification algorithm that I won't be implementing.
+
+- export rhs of function in types with foo(..) syntax
+
+- Swamy et al. paper on dependent F* (ML'15) deals with effects
+
+- Lennart's suggestion about
+    TypeError :: Symbol -> k
+    (<>) :: Symbol -> Symbol -> Symbol
+    ShowType :: k -> Symbol
+
+- pretty-printer plugin
+
+- bikeshedding:
+  - should there be an intermediate extension?
+  - if no: -XDependentTypes? -XPolyKinds?
+  - if yes: what's its name?
+
+  - deprecate * in favor of type?
+
+  -
