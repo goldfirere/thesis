@@ -1,4 +1,3 @@
-
 Require Import List.
 Require Import Coq.Logic.JMeq.
 Require Import Coq.Program.Equality.
@@ -41,36 +40,21 @@ Definition elem_case {A y x} {xs : list A} (v : Elem y (x :: xs)) :
     | ES x xs v' => fun T HZ HS => HS v'
   end.
 
-Fixpoint shift_elem {x y : Ty} {ctx : list Ty} ctx0
+Definition shift_elem {x y : Ty} {ctx : list Ty} ctx0
                     : Elem y (ctx0 ++ ctx) ->
-                      Elem y (ctx0 ++ x :: ctx) :=
-  match ctx0 with
-    | nil => fun v => undefined
-    | ty :: tys => fun v : Elem y ((ty :: tys) ++ ctx) =>
-                     @elem_case Ty y ty (tys ++ ctx) v
-                                (fun _ _ => Elem y (ty :: tys ++ x :: ctx))
-                               (@EZ _ y (tys ++ x :: ctx))
-                               (fun v' => ES (shift_elem tys v'))
-  end.
-  match ctx0
-
-Fixpoint shift_elem {x y : Ty} {ctx : list Ty} ctx0 (v : Elem (ctx0 ++ ctx) y)
-                       : Elem (ctx0 ++ x :: ctx) y :=
-  match ctx0 as ctx0' return ctx0 = ctx0' -> Elem (ctx0 ++ x :: ctx) y with
-    | nil => fun pf =>
-               eq_rect nil (fun ctx0'' => Elem (ctx0'' ++ x :: ctx) y) (
-                         eq_rect ctx0 (fun ctx0'' => Elem (x :: ctx0'' ++ ctx) y) (ES v) nil pf
-               ) ctx0 (eq_sym pf)
-    | ty :: tys => fun pf => undefined
-  end eq_refl.
-
+                      Elem y (ctx0 ++ x :: ctx).
 Proof.
-  intros x y ctx ctx0. induction ctx0; simpl.
-  * exact ES.
-  * intro e. dependent destruction e.
-    - exact EZ.
-    - apply ES. apply IHctx0. assumption.
-Qed.
+  generalize dependent ctx.
+  generalize dependent x.
+  induction ctx0; intros; simpl in *.
+  * constructor.
+    exact H.
+  * inversion H; subst.
+      constructor.
+    constructor.
+    apply IHctx0.
+    exact H1.
+Defined.
 
 Lemma shift_go : forall {x ty : Ty} {ctx : list Ty} (ctx0 : list Ty)
                         (e : Expr (ctx0 ++ ctx) ty), Expr (ctx0 ++ x :: ctx) ty.
@@ -88,7 +72,7 @@ Proof.
 Qed.
 
 Lemma subst_var : forall {s t : Ty} {ctx : list Ty} (ctx0 : list Ty)
-                         (e : Expr ctx s) (v : Elem (ctx0 ++ s :: ctx) t),
+                         (e : Expr ctx s) (v : Elem t (ctx0 ++ s :: ctx)),
                     Expr (ctx0 ++ ctx) t.
 Proof.
   induction ctx0; intros e v; simpl.
@@ -115,5 +99,5 @@ Qed.
 Lemma subst : forall {s t : Ty} {ctx : list Ty},
                 Expr ctx s -> Expr (s :: ctx) t -> Expr ctx t.
 Proof.
-  intros. apply (@subst_go s) with (ctx0 := nil). exact X. exact X0.
-Qed.`
+  intros. apply (@subst_go s) with (ctx0 := nil). exact H. exact H0.
+Qed.
