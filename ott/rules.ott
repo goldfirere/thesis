@@ -1,0 +1,189 @@
+%% Semantic for FCD
+
+defns
+JTyCo :: '' ::=
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Type constants  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+P : k :: :: Prim :: 'Prim_'
+  {{ com Type primitive kinds }}
+by
+
+----------- :: Type
+Type : Type
+
+defn
+S |-tc H : k :: :: Tc :: 'Tc_'
+  {{ com Type constant kinds }}
+by
+
+T : (as:ks) \in S
+------------ :: ADT
+S |-tc T : MPI as :Rel ks. Type
+
+K : (D; T) \in S  // T : (as:ks) \in S
+----------------------------- :: DataCon
+S |-tc K : MPI as :Irrel ks, D. T as
+
+P : k
+--------------- :: Prim
+S |-tc P : k
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S ; G |-ty t : k :: :: Ty :: 'Ty_'
+  {{ com Type formation }}
+by
+
+S |-ctx G  //  a :Rel k \in G
+-------------- :: Var
+S;G |-ty a : k
+
+S |-tc H : k  //  S |-ctx G
+-------------- :: Con
+S;G |-ty H : k
+
+S;G |-ty t1 : PI a :rel k1. k2  //  S;-rel(G) |-ty t2 : k1
+------------------ :: App
+S;G |-ty t1 t2 : k2[t2/a]
+
+S;G |-ty t : PI c : phi. k //  S;Rel(G) |-co g : phi
+------------------ :: CApp
+S;G |-ty t g : k[g/c]
+
+S;G, a:rel k1 |-ty k2 : Type
+-------------------------------- :: Pi
+S;G |-ty PI a :rel k1. k2 : Type
+
+S;G |-co g : k1 ~ k2
+S;G |-ty t : k1   //  S;G |-ty k2 : Type
+-------------------- :: Cast
+S;G |-ty t |> g : k2
+
+S;G |-co g : t1 ~ t2
+S;G |-ty t1 : k1 // S;G |-ty t2 : k2
+---------------------------- :: Coercion
+S;G |-ty g : (~) k1 k2 t1 t2
+
+S;G |-ty k : Type  //  S;G |-ty t : s
+forall i: S;G;s;t |-alt alti : k
+alts are exhaustive for s
+------------------------------ :: Case
+S;G |-ty case_k t of alts : k
+
+S;G,d |-ty t : k  //  d = a:rel s
+------------------------ :: Lam
+S;G |-ty \d.t : UPI d. k
+
+S;G |-ty t : UPI _:Rel k.k
+------------------ :: Fix
+S;G |-ty fix t : k
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Case  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
+  {{ com Case alternatives }}
+  {{ tex [[S]];[[G]];[[s]] [[|-alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
+by
+
+T : (bs:ks) \in S   //  as = prefix(bs)  // ss = prefix(ks)
+S;G,as:Rel ss |-ty T as : s0
+S;G,as:Rel ss, c : t0 ~ T as |-ty t : k
+---------------------------- :: TyCon
+S;G;s0;t0 |-alt T as -> c. t : k
+
+K : (D; T) \in S  //  s0 = T ss  // T : (as:ks) \in S  // xs = dom(D)
+S;G,D[ss/as], c : t0 ~ K ss xs |-ty t : k
+------------------------------- :: DataCon
+S;G;s0;t0 |-alt K xs -> c. t : k
+
+P : s0  //   S;G,c:t0 ~ P |-ty t : k
+-------------------------------- :: Prim
+S;G;s0;t0 |-alt P blank -> c. t : k
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S ; G |-co g : phi :: :: Co :: 'Co_'
+  {{ com Coercion formation }}
+by
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Propositions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S ; G |-prop phi :: :: Prop :: 'Prop_'
+  {{ com Proposition formation }}
+by
+
+S;G |-ty t1 : k1
+S;G |-ty t2 : k2
+------------------ :: Equality
+S;G |-prop t1 ~ t2
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Telescopes  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S ; G |-tel D :: :: Tel :: 'Tel_'
+  {{ com Telescope formation }}
+by
+
+S |-ctx G,D
+----------- :: Binders
+S;G |-tel D
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Signatures  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+|-sig S :: :: Sig :: 'Sig_'
+  {{ com Signature formation }}
+by
+
+----------- :: Nil
+|-sig S0
+
+S; empty |-tel as :Irrel ks  // T # S
+----------------- :: ADT
+|-sig S, T : (as:ks)
+
+T : (as:ks) \in S   //  S;as:Irrel ks |-tel D  // K # S
+------------------- :: DataCon
+|-sig S, K : (D; T)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S |-ctx G :: :: Ctx :: 'Ctx_'
+  {{ com Context formation }}
+by
+
+|-sig S
+-------------- :: Nil
+S |-ctx empty
+
+S;Rel(G) |-ty k : Type  //  a # G
+-------------- :: TyVar
+S |-ctx G, a:rel k
+
+S;Rel(G) |-prop phi  // c # G
+---------------- :: CoVar
+S |-ctx G, c:phi

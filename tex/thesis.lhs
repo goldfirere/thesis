@@ -1,7 +1,7 @@
 %% -*- mode: LaTeX -*-
 
 \newif \ifdraft \draftfalse
-\newif \ifproposal \proposaltrue
+\newif \ifproposal \proposalfalse
 \documentclass[12pt,oneside]{book}
 
 %include rae.fmt
@@ -61,7 +61,10 @@
 \include{type-inference}
 \include{implementation}
 \include{related}
+%
+\ifproposal
 \include{proposal}
+\fi
 
 \appendix
 

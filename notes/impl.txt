@@ -1,0 +1,18 @@
+Interesting aspects of implementation:
+
+- eqType
+
+We want eqType to be the largest convenient relation that is no larger than ~.
+Why? See Note [Non-trivial definitional equality] in TyCoRep. I believe examples
+of the nightmare can be found in the pure unifier.
+
+- The pure unifier algorithm. Note [Kind coercions in Unify] in Unify.
+
+- The asymmetrical ForAllCo. See Note [Forall coercions] in TyCoRep, and think
+about the fact that kinds are stored with tyvars. Also about the inefficiency
+of mapping over a coercion with this representation.
+
+- Dropping coercions with -dno-core-lint for efficiency.
+
+- Related: the quadratic size of coercions with chains of T.F. reduction.
+

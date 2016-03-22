@@ -1,0 +1,56 @@
+We have five annotations on tycon binders:
+relevance (Re)
+dependence (De)
+visibility (Vi)
+rigidity (Ri)
+role (Ro)
+
+Rel Dep Vis Rig Nom:
+> data T1 k (a :: k) = P -- the k, but only because kind coercions are nominal
+
+Rel Dep Vis Rig Rep: impossible, due to nominal kind coercions (possible otherwise)
+
+Rel Dep Vis Rig Pha: (must be degenerate)
+> data T2 :: forall k -> *
+
+Rel Dep Vis Rig _:
+> data T3 a where
+>   MkT3 :: pi (n :: Nat) -> Vec a n -> T3 a   -- the n
+
+Rel Dep Vis Free Nom:
+> type family F1 k (a :: k) where   -- the k
+>   F1 Bool True  = Int
+>   F1 Nat  Zero  = Int
+>   F1 Bool False = Double
+
+Rel Dep Vis Free Rep: we don't support this today, but we could:
+> type family F2 :: pi k (a :: k) -> k where   -- the k, but its relevance is degenerate
+>   F2 k a = a
+
+  -- Free and non-degenerately relevant seems to imply nominal
+
+Rel Dep Vis Free Pha: as above
+
+Rel Dep Vis Free _:
+> \ (n :: Nat) -> case n of { Zero -> Nil; Succ n' -> () `Cons` replicate n () }
+
+Rel Dep Invis: As in Vis cases
+
+Rel Nondep Vis Rig Nom:
+> data T4 a where MkT4 :: T4 Int
+
+Rel Nondep Vis Rig Rep:
+> data T5 a = MkT5 a
+
+Rel Nondep Vis Rig Pha:
+> data T6 a = MkT6
+
+Rel Nondep Vis Rig _:
+> data T7 = MkT7 Int   -- the Int!
+
+Rel Nondep Vis Free Nom:
+> type family F3 a where
+>   F3 Int    = Bool
+>   F3 Double = Float
+
+Rel Nondep Vis Free Rep: non supported

@@ -1,0 +1,16 @@
+Differences from Gundry's thesis.
+
+- Two arrows
+- I support Case analysis on *
+- Gundry has lambdas (only at term level) and first-order, always-applied functions
+  (shared).
+- Gundry includes axioms, but they are only for magical things like commutativity.
+  Not for type families.
+- Gundry's "Good" is not straightforward to establish. It is *not* syntactic.
+- No roles, closed type families
+
+- I think I'm going to skip non-deterministic elaboration, but instead have
+  a type system. Or maybe they're the same thing.
+- My source-level type system will be bidirectional
+- Only one `case` in the source language
+

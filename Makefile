@@ -1,4 +1,4 @@
-OTT_FILES_BASE =
+OTT_FILES_BASE = syn rules
 PAPER_BASE = thesis
 OTT_PICKY = false
 BIB_FILES_FULL = bib/rae.bib
@@ -8,11 +8,11 @@ GHC_OPTS = -Werror -Wall
 GHC = ghc-nokinds
 
 OTT_FILES_FULL = $(OTT_FILES_BASE:%=ott/%.ott)
-OTT_OUTPUT_BASE = tycls-ott
-OTT_OUTPUT_FULL = # aux/$(OTT_OUTPUT_BASE).tex
+OTT_OUTPUT_BASE = ottdefns
+OTT_OUTPUT_FULL = aux/$(OTT_OUTPUT_BASE).tex
 FMT_FILES_FULL = $(FMT_FILES_BASE:%=tex/%.fmt)
 MNG_FILES_BASE =
-OTT_DUMP_BASE = ott
+OTT_DUMP_BASE = ottdump
 OTT_OPTS = -tex_show_meta false -tex_wrap false -picky_multiple_parses $(OTT_PICKY)
 ALL_TEX_FILES = $(wildcard tex/*.tex) $(patsubst %.tex.mng,%.tex,$(wildcard tex/*.tex.mng))
 ALL_LHS_FILES = $(filter-out tex/thesis.lhs,$(wildcard tex/*.lhs) $(patsubst %.lhs.mng,%.lhs,$(wildcard tex/*.lhs.mng)))

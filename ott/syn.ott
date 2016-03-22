@@ -1,0 +1,288 @@
+%% System FCD
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Preamble  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+embed {{ tex-preamble
+\newcommand{\vdashy}[1]{\vdash_{\!\!\!\mathsf{#1} } }
+}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Metavariables  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+metavar c                                     ::=   {{ com Coercion variables }}
+metavar K                                     ::=   {{ com Data constructors }}
+
+indexvar i, j ::= {{ com Indices }}
+
+grammar
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Constants  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Prim, P :: 'PrimTyCon_' ::=
+| Type             ::   :: Type
+
+ADT, T :: 'ADT_' ::=
+| ( ~ )            ::   :: Twiddle
+
+tycon, H :: 'TyCon_' ::=
+| T                ::   :: ADT
+| K                ::   :: DataCon
+| P                ::   :: Primitive
+
+adt_kind {{ tex ( \overline{\ottmv{a} } {:} \overline{\kappa} ) }} :: 'AdtKi_' ::=
+| ( as : ks )          ::   :: Telescope
+  {{ tex ([[as]]{:}[[ks]]) }}
+
+con_type {{ tex ( \Delta, \ottmv{T} ) }} :: 'ConTy_' ::=
+| ( D ; T )       ::   :: Pair
+  {{ tex ([[D]]; [[T]]) }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Variables  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+var, a, b, x :: 'Var_' ::= {{ com Variables }}
+| _                     :: M :: Blank
+
+vars, as {{ tex \overline{\ottnt{a} } }}, bs {{ tex \overline{\ottnt{b} } }},
+  xs {{ tex \overline{\ottnt{x} } }} :: 'Vars_' ::=
+| a                     ::   :: One
+| as1 , .... , asi      ::   :: Many
+| nil                   :: M :: Nil
+| dom ( G )             :: M :: DomCtx
+  {{ tex [[dom]]([[G]]) }}
+| prefix ( as )         :: M :: Prefix
+  {{ tex [[prefix]]([[as]]) }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Binders  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+relevance, rel {{ tex \mathsf{r} }} :: 'Rel_' ::=
+| Rel              ::   :: Rel
+  {{ tex \mathsf{Rel} }}
+| Irrel            ::   :: Irrel
+  {{ tex \mathsf{Irrel} }}
+| - rel            :: M :: Inverse
+  {{ tex \neg[[rel]] }}
+
+% visibility, vis {{ tex \mathsf{v} }} :: 'Vis_' ::=
+% | Vis              ::   :: Vis
+%   {{ tex \mathsf{Vis} }}
+% | Invis            ::   :: Invis
+%   {{ tex \mathsf{Invis} }}
+
+colon {{ tex {:}^\mathsf{r} }} :: 'Colon_' ::=
+| : rel                       ::   :: Colon
+  {{ tex {:}^{[[rel]]} }}
+
+bnd, d {{ tex \delta }} :: 'Bnd_' ::=
+| a colon t                        ::   :: Type
+  {{ tex [[a]] [[colon]] [[t]] }}
+| c : phi                          ::   :: Coercion
+  {{ tex [[c]] {:} [[phi]] }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Pis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+PI {{ tex \Pi }} :: 'Pi_' ::=
+| MPI       ::   :: Matchable
+| UPI       ::   :: Unmatchable
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}
+  :: 'Type_' ::=
+| a                            ::   :: Var
+| H                            ::   :: TyCon
+| !!! t1 t2                    ::   :: App
+| !!! PI d . t                 ::   :: Pi
+  {{ tex [[PI]] [[d]] .\, [[t]] }}
+| t |> g                       ::   :: Cast
+| g                            ::   :: Coercion
+| case _ k t of alts           ::   :: Case
+  {{ tex \ottkw{case}_{[[k]]}\, [[t]]\, \ottkw{of}\, [[alts]] }}
+| \ d . t                      ::   :: Lam
+| fix t                        ::   :: Fix
+
+| t ts                         :: M :: Apps
+| PI D .  t                    :: M :: Pis
+  {{ tex [[PI]] [[D]].\, [[t]] }}
+| t1 -> t2                     :: M :: Arrow
+| t1 ~> t2                     :: M :: FFArrow
+
+| t [ theta ]                  :: M :: Subst
+
+typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
+  ks {{ tex \overline{\kappa} }}
+  :: 'Types_' ::=
+| t                       ::   :: One
+| ts1 , .... , tsi        ::   :: Many
+| nil                     :: M :: Nil  
+| as                      :: M :: Vars
+| prefix ( ts )           :: M :: Prefix
+  {{ tex [[prefix]]([[ts]]) }}
+
+alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
+| alt                    ::   :: One
+| alt1 ; .... ; alti     ::   :: Many
+| nil                    ::   :: Nil  
+
+alt :: 'Alt_' ::=
+| p -> c . t             ::   :: Alt
+  {{ tex [[p]] [[->]] [[c]]. \, [[t]] }}
+
+pattern, p {{ tex \pi }} :: 'Pat_' ::=
+| H as                ::   :: Con
+| _                   ::   :: Blank
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Proposition  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+prop, phi {{ tex \phi }} :: 'Phi_' ::=
+| t1 ~ t2                      ::   :: Equality
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+coercion, g {{ tex \gamma }}, h {{ tex \eta }}
+  :: 'Co_' ::=
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Signatures  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+sig, S {{ tex \Sigma }} :: 'Sig_' ::=
+| sig_bnd                      ::   :: One
+| S1 , .... , Si               ::   :: Many
+| nil                          :: M :: Nil  
+
+sig_bnd :: 'SigBnd_' ::=
+| T : adt_kind                 ::   :: ADT
+  {{ tex [[T]]{:}[[adt_kind]] }}
+| K : con_type                 ::   :: Con
+  {{ tex [[K]]{:}[[con_type]] }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'Ctx_' ::=
+| d                            ::   :: One
+| G1 , .... , Gi               ::   :: Many
+| nil                          :: M :: Nil
+| G [ theta ]                  :: M :: Subst
+| as : rel ks                  :: M :: ZipKs
+  {{ tex [[as]]{:}^{[[rel]]} [[ks]] }}
+| as : rel D                   :: M :: Telescope
+  {{ tex [[as]]{:}^{[[rel]]} [[D]] }}
+| ( G )                        :: M :: Parens
+| rel ( G )                    :: M :: ApplyRel
+  {{ tex [[rel]]([[G]]) }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Substitutions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+substs, theta {{ tex \theta }} :: 'Substs_' ::=
+| subst                             ::   :: One
+| substs1 , .... , substsi          ::   :: Many
+| nil                               :: M :: Nil  
+| ts / as                           :: M :: Telescope
+
+subst :: 'Subst_' ::=
+| t / a                  ::   :: TyVar
+| g / c                  ::   :: CoVar
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Utility  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+eq :: 'Eq_' ::=
+| =                         ::   :: Equal
+
+nil :: 'Nil_' ::=
+| empty                     ::   :: Empty
+| blank                     ::   :: Omitted
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+terminals :: 'terminals_' ::=
+| \                                    ::   :: Lam     {{ tex \lambda }}
+| ->                                   ::   :: Arrow   {{ tex \to }}
+| ~>                                   ::   :: FFArrow {{ tex \rightsquigarrow }}
+| '//'                                 ::   :: sep     {{ tex \quad }}
+| MPI                                  ::   :: Pi      {{ tex \bar{\Pi} }}
+| UPI                                  ::   :: Upi     {{ tex \tilde{\Pi} }}
+| |>                                   ::   :: Cast    {{ tex \triangleright }}
+| |-                                   ::   :: Entails {{ tex \vdash }}
+| empty                                ::   :: Empty   {{ tex \varnothing }}
+| \in                                  ::   :: in      {{ tex \in }}
+| !!!                                  ::   :: internal {{ tex }}
+| ~                                    ::   :: twid    {{ tex \sim }}
+| #                                    ::   :: fresh   {{ tex \mathrel{\#} }}
+| ;;                                   ::   :: semi    {{ tex \fatsemi }}
+| forall                               ::   :: forall  {{ tex \forall }}
+| blank                                ::   :: blank   {{ tex \! }}
+| dom                                  ::   :: dom     {{ tex \mathsf{dom} }}
+| prefix                               ::   :: prefix  {{ tex \mathsf{prefix} }}
+
+| |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
+| |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
+| |-ctx                                ::   :: Ctx_ent {{ tex \vdashy{ctx} }}
+| |-tc                                 ::   :: Tc_ent  {{ tex \vdashy{tc} }}
+| |-sig                                ::   :: Sig_ent {{ tex \vdashy{sig} }}
+| |-tel                                ::   :: Tel_ent {{ tex \vdashy{tel} }}
+| |-alt                                ::   :: Alt_ent {{ tex \vdashy{alt} }}
+| |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+formula :: 'formula_' ::=
+  | judgement                          ::   :: judgement
+  | </ formulai // '//' // i />        ::   :: dots
+  | forall i : formula                 ::   :: forall
+    {{ tex [[forall]] [[i]]{:}\; [[formula]] }}
+  | bnd \in G                          ::   :: ctx_in
+  | sig_bnd \in S                      ::   :: sig_in
+  | ts1 eq ts2                         ::   :: ts_rewrite
+  | G1 eq G2                           ::   :: G_rewrite
+  | as1 eq as2                         ::   :: Vars_rewrite
+  | T # S                              ::   :: T_fresh
+  | K # S                              ::   :: K_fresh
+  | a # G                              ::   :: a_fresh
+  | c # G                              ::   :: c_fresh
+  | alts are exhaustive for s          ::   :: exhaustive
+    {{ tex [[alts]] \text{ are exhaustive for } [[s]] }}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+parsing
+
+Type_Pis <= Type_Apps
+Type_Arrow right Type_Arrow
+Type_Pis right Type_Arrow
+Ctx_Many <= Ctx_Subst
+Ctx_Telescope <= Ctx_Subst
+Ctx_Many <= Ctx_Telescope
+
+Vars_One <= Ctx_ZipKs

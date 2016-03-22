@@ -1,0 +1,63 @@
+TO PROVE:
+ - Preservation
+ - Progress
+ - Type erasure vis-a-vis relevance
+ - 'twould be fun to relate relevance and roles.
+
+Binders store the following flags:
+ - relevance
+ - matchability
+
+ - BUT NOT visibility
+ - OR dependency
+
+
+Features missing:
+ - levity polymorphism (would need to generalize Ty_Pi)
+
+Notation:
+ - a -> b means (_ :(Nondep,Rel,Vis,Mat) a. b)
+ - a ~> b means (_ :(Nondep,Rel,Vis,Unm) a. b)
+ - We can use binders \delta in place of types and telescopes \Delta in place
+   of lists of types.
+ - dom(D) can be used as a list of types. See Tc_DataCon.
+ - Notation as:prefix(D) means to zip the as with the D, doing telescopy
+   substitution, and dropping any unmatched suffix
+ - Notation as:D means the lengths must match exactly
+ - \tilde{\Pi} is the unmatchable Pi.
+ - Rel(G) makes all bindings in G relevant.
+ - Irrel(G) is a no-op.
+ - Thus, rel(G) (with a metavariable rel) is well-defined.
+ - \neg rel is the opposite of rel.
+
+TysWiredIn:
+S0 = (~) : (x1 :Irrel Type, x2 :Irrel Type, a1 :Rel x1, a2 :Rel x2)
+
+Generativity/injectivity:
+ - A generative/injective thing is called "matchable".
+ - The opposite of "matchable" is "unmatchable".
+
+
+Relevance:
+ - The negation in the App rule is just contravariance. Clearly.
+
+
+Example:
+
+  Replicate.
+
+  Σ = Σ₀, Nat : (·)
+        , Zero : (·; Nat)
+	, Succ : (_ :R Nat; Nat)
+	, Vec : (a : Type, n : Nat)
+	, Nil : (c : n ~ Zero; Vec)
+	, Cons : (n' :I Nat, c : n ~ Succ n', _ :R a, _:R Vec a n'; Vec)
+
+  rep : Π~(a :I Type) (n :R Nat). a → Vec a n
+  rep = λ(a :I Type).
+        fix λ(r :R Π~(n :R Nat). a → Vec a n).
+	    λ(n :R Nat).
+	    λ(x :R a).
+	    case_(Vec a n) n of
+	      Zero → c. Nil a n c
+	      Succ n' → c. Cons a n n' c x (r n' x)
