@@ -99,7 +99,7 @@ PI {{ tex \Pi }} :: 'Pi_' ::=
 %%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}
+typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v
   :: 'Type_' ::=
 | a                            ::   :: Var
 | H                            ::   :: TyCon
@@ -118,6 +118,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}
   {{ tex [[PI]] [[D]].\, [[t]] }}
 | t1 -> t2                     :: M :: Arrow
 | t1 ~> t2                     :: M :: FFArrow
+| ( t )                        :: M :: Parens
+| phi                          :: M :: Prop
 
 | t [ theta ]                  :: M :: Subst
 
@@ -130,6 +132,8 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 | as                      :: M :: Vars
 | prefix ( ts )           :: M :: Prefix
   {{ tex [[prefix]]([[ts]]) }}
+| ts _{ I1 '..' I2 }        :: M :: IndexPrefix
+  {{ tex {[[ts]]}_{[[I1]] \ldots [[I2]]} }}
 
 alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
 | alt                    ::   :: One
@@ -157,6 +161,37 @@ prop, phi {{ tex \phi }} :: 'Phi_' ::=
 
 coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   :: 'Co_' ::=
+| c                            ::   :: Var
+| < t >                        ::   :: Refl
+  {{ tex \langle [[t]] \rangle }}
+| sym g                        ::   :: Sym
+| g1 ;; g2                     ::   :: Trans
+| g1 <|| g2                     ::   :: Coherence
+| < g1 , g2 >I^ g3             ::   :: ProofIrrel
+  {{ tex \langle [[g1]], [[g2]] \rangle_{\mathrm{I} }^{[[g3]]} }}
+| PI a colon h . g             ::   :: Pi
+  {{ tex [[PI]] [[a]] [[colon]] [[h]]. \, [[g]] }}
+% | PI c : h . g                 ::   :: CPi
+%   {{ tex [[PI]] [[c]] {:} [[h]]. \, [[g]] }}
+| !!! g1 @ g2                  ::   :: Inst
+| argk g                       ::   :: ArgK
+| nth I g                      ::   :: Nth
+  {{ tex {[[nth]]}^{[[I]]}\,[[g]] }}
+
+| ( g )                        :: M :: Parens
+
+| g1 ||> g2                    :: M :: CoherenceRight
+| g1 @ gs                      :: M :: Insts
+| let c := h in g              :: M :: Let  
+
+coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
+  :: 'Cos_' ::=
+| g                            ::   :: One
+| gs1 , .... , gsi             ::   :: Many
+| empty                        :: M :: Empty
+| nths g                       :: M :: nths
+  {{ tex \overline{\ottkw{nth}\,[[g]]} }}
+| ( gs )                       :: M :: Parens
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Signatures  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -215,6 +250,14 @@ nil :: 'Nil_' ::=
 | empty                     ::   :: Empty
 | blank                     ::   :: Omitted
 
+nat, I {{ tex \ottnt{i} }}  :: 'Nat_' ::=
+| i                         ::   :: Index
+| 0                         ::   :: Zero
+| 1                         ::   :: One
+| 2                         ::   :: Two
+| 3                         ::   :: Three
+| I1 - I2                   :: M :: Sub
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -226,7 +269,9 @@ terminals :: 'terminals_' ::=
 | '//'                                 ::   :: sep     {{ tex \quad }}
 | MPI                                  ::   :: Pi      {{ tex \bar{\Pi} }}
 | UPI                                  ::   :: Upi     {{ tex \tilde{\Pi} }}
-| |>                                   ::   :: Cast    {{ tex \triangleright }}
+| |>                                   ::   :: Cast    {{ tex \rhd }}
+| ||>                                  ::   :: RCast   {{ tex \unrhd }}
+| <||                                  ::   :: LCast   {{ tex \unlhd }}
 | |-                                   ::   :: Entails {{ tex \vdash }}
 | empty                                ::   :: Empty   {{ tex \varnothing }}
 | \in                                  ::   :: in      {{ tex \in }}
@@ -238,6 +283,9 @@ terminals :: 'terminals_' ::=
 | blank                                ::   :: blank   {{ tex \! }}
 | dom                                  ::   :: dom     {{ tex \mathsf{dom} }}
 | prefix                               ::   :: prefix  {{ tex \mathsf{prefix} }}
+| nth                                  ::   :: nth     {{ tex \ottkw{nth} }}
+| -->                                  ::   :: step    {{ tex \longrightarrow }}
+| :=                                   ::   :: assign  {{ tex \mathrel{ {:}{=} } }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -247,6 +295,7 @@ terminals :: 'terminals_' ::=
 | |-tel                                ::   :: Tel_ent {{ tex \vdashy{tel} }}
 | |-alt                                ::   :: Alt_ent {{ tex \vdashy{alt} }}
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
+| |-s                                  ::   :: S_ent {{ tex \vdashy{s} }}
 
 
 
@@ -264,6 +313,7 @@ formula :: 'formula_' ::=
   | ts1 eq ts2                         ::   :: ts_rewrite
   | G1 eq G2                           ::   :: G_rewrite
   | as1 eq as2                         ::   :: Vars_rewrite
+  | alts1 eq alts2                     ::   :: alts_rewrite
   | T # S                              ::   :: T_fresh
   | K # S                              ::   :: K_fresh
   | a # G                              ::   :: a_fresh
@@ -271,6 +321,20 @@ formula :: 'formula_' ::=
   | alts are exhaustive for s          ::   :: exhaustive
     {{ tex [[alts]] \text{ are exhaustive for } [[s]] }}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+funs
+Co ::=
+
+fun
+build_kpush_co ( g ; ts ) :: h :: build_kpush_co
+  {{ tex \mathsf{build\_kpush\_co}([[g]];[[ts]]) }}
+
+by
+build_kpush_co ( g ; empty ) === g
+build_kpush_co ( g ; ts, t ) === let c := build_kpush_co(g; ts) in c@(<t> ||> argk c)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

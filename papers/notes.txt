@@ -1,0 +1,4 @@
+practical-erasure (2015) (by Tejiščák & Brady) describes Idris's whole program
+analysis erasure technique
+
+erasure-pure-type-systems (2008) (by Mishra-Linger & Sheard) does basically exactly what I'm doing. More in Mishra-Linger's thesis.

@@ -1,6 +1,10 @@
+PROBLEMS:
+ - ambiguity in grammar between τ ▹ η and γ ▹ η. These mean different things!
+   Maybe change the latter to use ◃.
+
 TO PROVE:
  - Preservation
- - Progress
+ - Progress (which now requires lifting)
  - Type erasure vis-a-vis relevance
  - 'twould be fun to relate relevance and roles.
 
@@ -25,10 +29,17 @@ Notation:
    substitution, and dropping any unmatched suffix
  - Notation as:D means the lengths must match exactly
  - \tilde{\Pi} is the unmatchable Pi.
+ 
  - Rel(G) makes all bindings in G relevant.
  - Irrel(G) is a no-op.
  - Thus, rel(G) (with a metavariable rel) is well-defined.
  - \neg rel is the opposite of rel.
+    --> This Rel(G) operation is precisely Mishra-Linger's "context reset" operation
+
+ - We can pretend phi is a type.
+
+ - g1 ||> g2  :=    sym ((sym g1) <|| g2)
+ - `let` in coercions is defined by macro-expansion
 
 TysWiredIn:
 S0 = (~) : (x1 :Irrel Type, x2 :Irrel Type, a1 :Rel x1, a2 :Rel x2)
@@ -40,6 +51,30 @@ Generativity/injectivity:
 
 Relevance:
  - The negation in the App rule is just contravariance. Clearly.
+
+
+build_kpush_co:
+
+build_kpush_co(g; empty) = g
+build_kpush_co(g; ts,t)  = let h = build_kpush_co(g; ts) in
+                           h@(t ||> argk build_kpush_co(g; ts))
+
+data T k where
+  MkT :: forall a. Proxy (a :: k) -> MkT k
+
+case (MkT Bool True (P Bool True)) |> co of ...
+  where
+    co :: T Bool ~ T s
+
+-->
+
+case (MkT s (True |> g0) (P Bool True |> g1)) of ...
+  where
+    g0 :: Bool ~ s
+    g1 :: Proxy Bool True ~ Proxy s (True |> g0)
+
+    g0 = argk (<forall k (a :: k). Proxy k a -> MkT k>@(nth 0 co))
+    g1 = argk (<forall k (a :: k). Proxy k a -> MkT k>@(nth 0 co)@(<True> |>> g0)
 
 
 Example:

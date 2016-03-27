@@ -1,7 +1,7 @@
-%% Semantic for FCD
+%% Semantics for FCD
 
 defns
-JTyCo :: '' ::=
+JTyCon :: '' ::=
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Type constants  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,6 +36,9 @@ S |-tc P : k
 %%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+defns
+JTy :: '' ::=
+
 defn
 S ; G |-ty t : k :: :: Ty :: 'Ty_'
   {{ com Type formation }}
@@ -57,9 +60,9 @@ S;G |-ty t : PI c : phi. k //  S;Rel(G) |-co g : phi
 ------------------ :: CApp
 S;G |-ty t g : k[g/c]
 
-S;G, a:rel k1 |-ty k2 : Type
+S;G, d |-ty k : Type
 -------------------------------- :: Pi
-S;G |-ty PI a :rel k1. k2 : Type
+S;G |-ty PI d. k : Type
 
 S;G |-co g : k1 ~ k2
 S;G |-ty t : k1   //  S;G |-ty k2 : Type
@@ -118,6 +121,62 @@ defn
 S ; G |-co g : phi :: :: Co :: 'Co_'
   {{ com Coercion formation }}
 by
+
+S |-ctx G  //  c : phi \in G
+------------------ :: Var
+S;G |-co c : phi
+
+S;G |-ty t : k
+-------------------- :: Refl
+S;G |-co <t> : t ~ t
+
+S;G |-co g : t1 ~ t2
+------------------------ :: Sym
+S;G |-co sym g : t2 ~ t1
+
+S;G |-co g1 : t1 ~ t2
+S;G |-co g2 : t2 ~ t3
+-------------------------- :: Trans
+S;G |-co g1 ;; g2 : t1 ~ t3
+
+S;G |-co g1 : t1 ~ t2
+S;G |-ty t1 |> g2 : k2
+----------------------------- :: Coherence
+S;G |-co g1 <|| g2 : (t1 |> g2) ~ t2
+
+S;G |-co g1 : phi1   //  S;G |-co g2 : phi2
+S;G |-co h : phi1 ~ phi2
+----------------------------- :: ProofIrrel
+S;G |-co <g1,g2>I^h : g1 ~ g2
+
+S;G |-co h : k1 ~ k2
+S;G,a:rel k1 |-co g : s1 ~ s2
+-------------------------------- :: Pi
+S;G |-co PI a :rel h. g : PI a:rel k1.s1 ~ PI a:rel k2.(s2[a |> sym h/a])
+
+S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
+------------------------- :: ArgK
+S;G |-co argk g : k1 ~ k2
+
+S;G |-co g : PI c:phi1.s1 ~ PI c:phi2.s2
+-------------------------------- :: CArgK
+S;G |-co argk g : phi1 ~ phi2 
+
+S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
+S;G |-co h : t1 ~ t2
+S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
+-------------------------- :: Inst
+S;G |-co g@h : s1[t1/a] ~ s2[t2/a]
+
+S;G |-co h1 : PI c:phi1. s1 ~ PI c:phi2.s2
+S;G |-co h2 : g1 ~ g2
+S;G |-co g1 : phi1  //   S;G |-co g2 : phi2
+-------------------------- :: CInst
+S;G |-co h1@h2 : s1[g1/c] ~ s2[g2/c]
+
+S;G |-co g : H ts ~ H ss
+-------------------------- :: Nth
+S;G |-co nth i g : ti ~ si
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Propositions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -187,3 +246,78 @@ S |-ctx G, a:rel k
 S;Rel(G) |-prop phi  // c # G
 ---------------- :: CoVar
 S |-ctx G, c:phi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Reduction  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+JStep :: '' ::=
+
+defn
+S ; G |-s s --> s' :: :: Step :: 'S_'
+  {{ com Small-step operational semantics }}
+by
+
+------------------------- :: Beta
+S;G |-s (\a:rel k.s1) s2 --> s1[s2/a]
+
+alti = K xs -> c. t0
+---------------------------- :: Iota
+S;G |-s case_k K ts ss of alts --> t0[ss/xs,<K ts ss>/c]
+
+---------------------------------- :: Trans
+S;G |-s (v |> g1) |> g2 --> v |> (g1 ;; g2)
+
+S;G,a:Irrel k |-s s --> s'
+------------------------------------- :: IrrelAbs_Cong
+S;G |-s \a :Irrel k.s --> \a :Irrel k. s'
+
+S;G |-s s1 --> s1'
+---------------- :: App_Cong
+S;G |-s s1 s2 --> s1' s2
+
+S;G |-s s --> s'
+------------------ :: Cast_Cong
+S;G |-s s |> g --> s' |> g
+
+S;G |-s s --> s'
+-------------------------------------- :: Case_Cong
+S;G |-s case_t s of alts --> case_t s' of alts
+
+
+S;G |-ty v : PI a:rel k. s
+g1 = sym (argk g0)      //   g2 = g0@(<t> <|| g1)
+% g0 : PI a:rel k. s ~ PI a:rel k'. s'
+% g1 : k' ~ k
+% g2 : s[(t |> g1)/a] ~ s'[t/a]
+----------------------------------------- :: Push
+S;G |-s (v |> g0) t --> v (t |> g1) |> g2
+
+S;G |-ty v : PI c:phi. s
+g1 = argk g0 //  g2 = nth 2 g1  //  g3 = sym (nth 3 g1)
+h' = g2 ;; h ;; g3  //  g4 = g0@<h',h>I^g1
+% g0 : PI c:phi.s ~ PI c:phi'.s'
+% phi = t1 ~ t2
+% phi' = t1' ~ t2'
+% h : t1' ~ t2'
+% g2 : t1 ~ t1'
+% g3 : t2' ~ t2
+% g4 : s[(g1 ;; h ;; g2)/c] ~ s'[h/c]
+% h' : (g1 ;; h ;; g2) ~ h
+% g1 : phi ~ phi'
+--------------------------------------------- :: CPush
+S;G |-s (v |> g0) h --> v h' |> g4
+
+----------------------------------- :: APush
+S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI a:Irrel <k>. g)
+
+K : (D;T) \in S   //    T : (as:ks) \in S
+S;G |-co h : T ts ~ T ts'
+k = MPI as :Irrel ks, D. T as
+forall i: gi = build_kpush_co(<k>@(nths h);ss_{0..i-1})
+forall i: si' = si |> argk gi
+% kind K = MPI as :Irrel ks. MPI D. T as
+% si' = s' |> argk (kind K @ nths h @ ...)
+----------------------------------------------------------------- :: KPush
+S;G |-s case_k0 (K ts ss) |> h of alts --> case_k0 K ts' ss' of alts
