@@ -19,13 +19,20 @@ data Ty (n : ℕ) : Set where
   _:~>_ : Ty n → Ty n → Ty n
 infixr 0 _:~>_
 
+data _⇒_ : ℕ → ℕ → Set where
+  zero : ∀ {n₁} → n₁ ⇒ suc n₁
+  suc  : ∀ {n₁ n₂} → n₁ ⇒ n₂ → (suc n₁) ⇒ (suc n₂)
+
 tshift : ∀ {n} → Ty n → Ty (suc n)
-tshift = go 0
+tshift ty = go zero ty
   where
-    go : ∀ {n} → ℕ → Ty n → Ty (suc n)
-    go cutoff (TVar x) with (cutoff ≤? toℕ x)
-    go cutoff (TVar x) | yes p = TVar (suc x)
-    go cutoff (TVar x) | no ¬p = TVar (inject₁ x)
+    goVar : ∀ {n₁ n₂} → (n₁ ⇒ n₂) → Fin n₁ → Fin n₂
+    goVar zero v               = suc v
+    goVar (suc cutoff) zero    = zero
+    goVar (suc cutoff) (suc v) = suc (goVar cutoff v)
+
+    go : ∀ {n₁ n₂} → (n₁ ⇒ n₂) → Ty n₁ → Ty n₂
+    go cutoff (TVar x) = TVar (goVar cutoff x)
     go cutoff (TForall ty) = TForall (go (suc cutoff) ty)
     go cutoff (ty :~> ty₁) = go cutoff ty :~> go cutoff ty₁
 

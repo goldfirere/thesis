@@ -55,7 +55,7 @@ aux/%: tex/% $(AUX_DIR_MARKER)
 pdf/%.pdf: aux/%.pdf $(PDF_DIR_MARKER)
 	cp aux/$*.pdf pdf/$*.pdf
 
-tex/%: tex/%.mng $(OTT_FILES_FULL)
+aux/%: aux/%.mng $(OTT_FILES_FULL)
 	ott $(OTT_OPTS) -tex_filter $< $@ $(OTT_FILES_FULL)
 
 aux/%.tex: aux/%.lhs $(FMT_FILES_FULL:tex/%=aux/%)
@@ -73,8 +73,8 @@ aux/%.hs: aux/%.lhs $(FMT_FILES_FULL:tex/%=aux/%)
 
 clean:
 	rm -rf $(OTT_OUTPUT_FULL)
-	rm -rf $(patsubst %.lhs,%.tex,$(wildcard tex/*.lhs))
-	rm -rf $(patsubst %.mng,%,$(wildcard tex/*.mng))
+	rm -rf $(patsubst tex/%.lhs,aux/%.tex,$(wildcard tex/*.lhs))
+	rm -rf $(patsubst tex/%.mng,aux/%,$(wildcard tex/*.mng))
 	rm -rf pdf
 	rm -rf aux
 	rm -rf o

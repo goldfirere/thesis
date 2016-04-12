@@ -12,7 +12,6 @@ embed {{ tex-preamble
 %%  Metavariables  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-metavar c                                     ::=   {{ com Coercion variables }}
 metavar K                                     ::=   {{ com Data constructors }}
 
 indexvar i, j ::= {{ com Indices }}
@@ -49,15 +48,43 @@ con_type {{ tex ( \Delta, \ottmv{T} ) }} :: 'ConTy_' ::=
 var, a, b, x :: 'Var_' ::= {{ com Variables }}
 | _                     :: M :: Blank
 
+covar, c :: 'CoVar_' ::= {{ com Coercion variables }}
+| _                     :: M :: Blank
+
 vars, as {{ tex \overline{\ottnt{a} } }}, bs {{ tex \overline{\ottnt{b} } }},
   xs {{ tex \overline{\ottnt{x} } }} :: 'Vars_' ::=
 | a                     ::   :: One
 | as1 , .... , asi      ::   :: Many
 | nil                   :: M :: Nil
-| dom ( G )             :: M :: DomCtx
-  {{ tex [[dom]]([[G]]) }}
 | prefix ( as )         :: M :: Prefix
   {{ tex [[prefix]]([[as]]) }}
+
+tycovar, z :: 'TyCoVar_' ::=
+| a                     ::   :: Ty
+| c                     ::   :: Co
+
+mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'MixedVars_' ::=
+| z                                  ::   :: One
+| mixed_vars1 , .... , mixed_varsi   ::   :: Many
+| empty                              :: M :: Empty
+| dom ( G )                          :: M :: DomCtx
+  {{ tex [[dom]]([[G]]) }}
+| xs                                 :: M :: Tys
+
+fvset :: 'FVs_' ::=
+| { zs }                             :: M :: Set
+| fv ( t )                           :: M :: fv_type
+  {{ tex [[fv]] ( [[t]] ) }}
+| fv ( alt )                         :: M :: fv_alt
+  {{ tex [[fv]] ( [[alt]] ) }}
+| fv ( D )                           :: M :: fv_tel
+  {{ tex [[fv]] ( [[D]] ) }}
+| ( fvset )                          :: M :: Parens
+| fvset1 \union fvset2               :: M :: Union
+| fvset1 \ fvset2                    :: M :: Minus
+  {{ tex [[fvset1]] \mathop{\backslash} [[fvset2]] }}
+| \emptyset                          :: M :: Emptyset
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Binders  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -129,7 +156,7 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 | t                       ::   :: One
 | ts1 , .... , tsi        ::   :: Many
 | nil                     :: M :: Nil  
-| as                      :: M :: Vars
+| zs                      :: M :: Vars
 | prefix ( ts )           :: M :: Prefix
   {{ tex [[prefix]]([[ts]]) }}
 | ts _{ I1 '..' I2 }        :: M :: IndexPrefix
@@ -143,9 +170,10 @@ alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
 alt :: 'Alt_' ::=
 | p -> c . t             ::   :: Alt
   {{ tex [[p]] [[->]] [[c]]. \, [[t]] }}
+| alt [ subst ]          :: M :: Subst
 
 pattern, p {{ tex \pi }} :: 'Pat_' ::=
-| H as                ::   :: Con
+| H zs                ::   :: Con
 | _                   ::   :: Blank
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -154,6 +182,7 @@ pattern, p {{ tex \pi }} :: 'Pat_' ::=
 
 prop, phi {{ tex \phi }} :: 'Phi_' ::=
 | t1 ~ t2                      ::   :: Equality
+| phi [ subst ]                :: M :: Subst
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -169,20 +198,22 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | g1 <|| g2                     ::   :: Coherence
 | < g1 , g2 >I^ g3             ::   :: ProofIrrel
   {{ tex \langle [[g1]], [[g2]] \rangle_{\mathrm{I} }^{[[g3]]} }}
-| PI a colon h . g             ::   :: Pi
-  {{ tex [[PI]] [[a]] [[colon]] [[h]]. \, [[g]] }}
+| PI ( a1 , a2 , c ) colon h . g             ::   :: Pi
+  {{ tex [[PI]] ([[a1]],[[a2]],[[c]]) [[colon]] [[h]]. \, [[g]] }}
 % | PI c : h . g                 ::   :: CPi
 %   {{ tex [[PI]] [[c]] {:} [[h]]. \, [[g]] }}
 | !!! g1 @ g2                  ::   :: Inst
 | argk g                       ::   :: ArgK
 | nth I g                      ::   :: Nth
   {{ tex {[[nth]]}^{[[I]]}\,[[g]] }}
+| step t                       ::   :: Step
 
 | ( g )                        :: M :: Parens
 
 | g1 ||> g2                    :: M :: CoherenceRight
 | g1 @ gs                      :: M :: Insts
 | let c := h in g              :: M :: Let  
+| g [ theta ]                  :: M :: Subst
 
 coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
   :: 'Cos_' ::=
@@ -224,6 +255,8 @@ context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'Ctx_' ::=
 | ( G )                        :: M :: Parens
 | rel ( G )                    :: M :: ApplyRel
   {{ tex [[rel]]([[G]]) }}
+| prefix ( G )                 :: M :: Prefix
+  {{ tex [[prefix]]([[G]]) }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Substitutions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -245,6 +278,10 @@ subst :: 'Subst_' ::=
 
 eq :: 'Eq_' ::=
 | =                         ::   :: Equal
+  %% the M on the next line is important so that
+  %% ottdump builds
+| &=                        :: M :: Align
+  {{ tex &= }}
 
 nil :: 'Nil_' ::=
 | empty                     ::   :: Empty
@@ -265,7 +302,7 @@ nat, I {{ tex \ottnt{i} }}  :: 'Nat_' ::=
 terminals :: 'terminals_' ::=
 | \                                    ::   :: Lam     {{ tex \lambda }}
 | ->                                   ::   :: Arrow   {{ tex \to }}
-| ~>                                   ::   :: FFArrow {{ tex \rightsquigarrow }}
+| ~>                                   ::   :: red     {{ tex \rightsquigarrow }}
 | '//'                                 ::   :: sep     {{ tex \quad }}
 | MPI                                  ::   :: Pi      {{ tex \bar{\Pi} }}
 | UPI                                  ::   :: Upi     {{ tex \tilde{\Pi} }}
@@ -275,17 +312,23 @@ terminals :: 'terminals_' ::=
 | |-                                   ::   :: Entails {{ tex \vdash }}
 | empty                                ::   :: Empty   {{ tex \varnothing }}
 | \in                                  ::   :: in      {{ tex \in }}
+| \notin                               ::   :: notin   {{ tex \not\in }}
 | !!!                                  ::   :: internal {{ tex }}
 | ~                                    ::   :: twid    {{ tex \sim }}
 | #                                    ::   :: fresh   {{ tex \mathrel{\#} }}
 | ;;                                   ::   :: semi    {{ tex \fatsemi }}
 | forall                               ::   :: forall  {{ tex \forall }}
 | blank                                ::   :: blank   {{ tex \! }}
+| fv                                   ::   :: fv      {{ tex \mathsf{fv} }}
 | dom                                  ::   :: dom     {{ tex \mathsf{dom} }}
 | prefix                               ::   :: prefix  {{ tex \mathsf{prefix} }}
 | nth                                  ::   :: nth     {{ tex \ottkw{nth} }}
 | -->                                  ::   :: step    {{ tex \longrightarrow }}
 | :=                                   ::   :: assign  {{ tex \mathrel{ {:}{=} } }}
+| \subseteq                            ::   :: subset  {{ tex \subseteq }}
+| \union                               ::   :: union   {{ tex \cup }}
+| \emptyset                            ::   :: emptyset {{ tex \emptyset }}
+| !                                    ::   :: cons    {{ tex \propto }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -295,7 +338,8 @@ terminals :: 'terminals_' ::=
 | |-tel                                ::   :: Tel_ent {{ tex \vdashy{tel} }}
 | |-alt                                ::   :: Alt_ent {{ tex \vdashy{alt} }}
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
-| |-s                                  ::   :: S_ent {{ tex \vdashy{s} }}
+| |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
+| |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
 
 
 
@@ -312,14 +356,22 @@ formula :: 'formula_' ::=
   | sig_bnd \in S                      ::   :: sig_in
   | ts1 eq ts2                         ::   :: ts_rewrite
   | G1 eq G2                           ::   :: G_rewrite
-  | as1 eq as2                         ::   :: Vars_rewrite
+  | zs1 eq zs2                         ::   :: Zs_rewrite
   | alts1 eq alts2                     ::   :: alts_rewrite
+  | fvset1 eq fvset2                   ::   :: fvset_rewrite
   | T # S                              ::   :: T_fresh
   | K # S                              ::   :: K_fresh
   | a # G                              ::   :: a_fresh
   | c # G                              ::   :: c_fresh
   | alts are exhaustive for s          ::   :: exhaustive
     {{ tex [[alts]] \text{ are exhaustive for } [[s]] }}
+  | fvset1 \subseteq fvset2            ::   :: subset
+  | zs fresh                           ::   :: fresh
+    {{ tex [[zs]] \text{ fresh} }}
+  | G1 \subseteq G2                    ::   :: G_subseq
+  | a \notin fvset                     ::   :: var_notin_set
+  | t is not a value                   ::   :: not_value
+    {{ tex [[t]] \text{ is not a value} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

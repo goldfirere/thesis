@@ -1,0 +1,313 @@
+\chapter{Proofs about System~D}
+\label{app:d}
+
+\section{Auxiliary definitions}
+
+\begin{definition}[Values]
+Let values $[[v]]$ be defined by the following subgrammar of $[[t]]$:
+\[
+[[v]] \bnfeq [[H ts]] \bnfor [[PI d. t]] \bnfor [[\a:Rel k. t]] \bnfor [[\c:phi.t]]
+\]
+\end{definition}
+
+\begin{definition}[Free variables]
+Define $[[fv]]$ to be a function extracting free variables, overloaded to work
+over types $[[t]]$, coercions $[[g]]$, propositions $[[phi]]$,
+alternatives $[[alt]]$, and telescopes $[[D]]$. 
+The non-standard equations are given here:
+\begin{align*}
+[[fv(H zs -> c. t) &= fv(t) \ {c, zs}]]\\[1ex]
+[[fv(empty) &= \emptyset]]\\
+[[fv(a:rel k,D) &= (fv(D) \ {a}) \union fv(k)]]\\
+[[fv(c:phi,D) &= (fv(D) \ {c}) \union fv(phi)]]\\
+\end{align*}
+\end{definition}
+
+\begin{definition}[Context extension]
+Define the relation $[[G \subseteq G']]$ to mean that $[[G]]$ is a (not necessarily
+contiguous) subsequence of $[[G']]$.
+\end{definition}
+
+\section{Structural properties}
+
+\subsection{Relevant contexts}
+
+\begin{lemma}[$[[dom]]$/$[[Rel]]$]
+\label{lem:dom-rel}
+$[[dom(Rel(G)) = dom(G)]]$
+\end{lemma}
+
+\begin{proof}
+By its definition $[[Rel(G)]]$ binds the same variables as $[[G]]$.
+\end{proof}
+
+\begin{lemma}[Subsequence/$[[Rel]]$]
+\label{lem:subsequence-rel}
+If $[[G \subseteq G']]$ then $[[Rel(G) \subseteq Rel(G')]]$.
+\end{lemma}
+
+\begin{proof}
+By the definitions of $\subseteq$ and $[[Rel]]$.
+\end{proof}
+
+\begin{lemma}[$[[Rel]]$ is idempotent]
+\label{lem:rel-idempotent}
+$[[Rel(Rel(G)) = Rel(G)]]$
+\end{lemma}
+
+\begin{proof}
+By the definition of $[[Rel]]$.
+\end{proof}
+
+\begin{lemma}[Increasing relevance] ~
+\label{lem:increasing-rel}
+Let $[[G]]$ and $[[G']]$ be the same except that some bindings
+in $[[G']]$ are labeled $[[Rel]]$ where those same bindings
+in $[[G]]$ are labeled $[[Irrel]]$.
+\begin{enumerate}
+\item If $[[S;G |-ty t : k]]$, then $[[S;G' |-ty t : k]]$.
+\item If $[[S;G |-co g : phi]]$, then $[[S;G' |-co g : phi]]$.
+\item If $[[S;G |-prop phi]]$, then $[[S;G' |-prop phi]]$.
+\item If $[[S;G;s0;t0 |-alt alt : k]]$, then $[[S;G';s0;t0 |-alt alt : k]]$.
+\item If $[[S;G |-tel D]]$, then $[[S;G' |-tel D]]$.
+\item If $[[S |-ctx G]]$, then $[[S |-ctx G']]$.
+\item If $[[S;G |-s t --> t']]$, then $[[S;G' |-s t --> t']]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By straightforward mutual induction, appealing to
+\pref{lem:rel-idempotent}.
+\end{proof}
+
+\subsection{Regularity}
+
+\begin{lemma}[Type variable kinds]
+\label{lem:tyvar-reg}
+If $[[S |-ctx G]]$ and $[[a :rel k \in G]]$, then there exists
+$[[G']]$ such that $[[G' \subseteq Rel(G)]]$ and $[[S;G' |-ty k : Type]]$.
+Furthermore, the size of the derivation of $[[S;G' |-ty k : Type]]$
+is smaller than that of $[[S |-ctx G]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on $[[S |-ctx G]]$.
+\end{proof}
+
+\begin{lemma}[Coercion variable kinds]
+\label{lem:covar-reg}
+If $[[S |-ctx G]]$ and $[[c : phi \in G]]$, then there exists
+$[[G']]$ such that $[[G' \subseteq Rel(G)]]$ and $[[S;G' |-prop phi]]$.
+Furthermore, the size of the derivation of $[[S;G' |-prop phi]]$
+is smaller than that of $[[S |-ctx G]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on $[[S |-ctx G]]$.
+\end{proof}
+
+\begin{lemma}[Context regularity]
+\label{lem:ctx-reg}
+If:
+\begin{enumerate}
+\item $[[S;G |-ty t : k]]$, OR
+\item $[[S;G;s0;t0 |-alt alt : k]]$, OR
+\item $[[S;G |-co g : phi]]$, OR
+\item $[[S;G |-prop phi]]$, OR
+\item $[[S;G |-tel D]]$, OR
+\item $[[S |-ctx G]]$
+\end{enumerate}
+Then $[[S |-ctx prefix(G)]]$ and $[[|-sig S]]$, where $[[prefix(G)]]$ is an
+arbitrary prefix of $[[G]]$. Furthermore, both resulting derivations are no
+larger than the input derivations.
+\end{lemma}
+
+\begin{proof}
+Straightforward mutual induction.
+\end{proof}
+
+\subsection{Weakening}
+
+\begin{lemma}[Weakening]
+\label{lem:weakening}
+Assume $[[S |-ctx G']]$ and $[[G \subseteq G']]$.
+\begin{enumerate}
+\item If $[[S;G |-ty t : k ]]$ then $[[S;G' |-ty t : k]]$.
+\item If $[[S;G |-co g : phi ]]$, then $[[S;G' |-co g : phi]]$.
+\item If $[[S;G |-prop phi ]]$, then $[[S;G' |-prop phi]]$.
+\item If $[[S;G;s0;t0 |-alt alt : k]]$, then $[[S;G';s0;t0 |-alt alt : k]]$.
+\item If $[[S;G |-tel D]]$, then $[[S;G' |-tel D]]$.
+\item If $[[S |-ctx G, D]]$, then $[[S |-ctx G', D]]$.
+\item If $[[S;G |-s t --> t']]$, then $[[S;G' |-s t --> t']]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By straightforward mutual induction, appealing to
+\pref{lem:subsequence-rel}, \pref{lem:increasing-rel} (in order to
+be able to use the induction hypothesis in, e.g., \rul{Ty\_AppIrrel}),
+and
+\pref{lem:ctx-reg}
+(in order to use the induction hypothesis in, e.g., \rul{Ty\_Pi}).
+\end{proof}
+
+\subsection{Scoping}
+
+\begin{lemma}[Closed primitive kinds]
+\label{lem:closed-primitive-kinds}
+If $[[P : k]]$, then $[[fv(k) = \emptyset]]$.
+\end{lemma}
+
+\begin{proof}
+By inspection of $[[P : k]]$.
+\end{proof}
+
+\begin{lemma}[Scoping] ~
+\label{lem:scoping}
+\begin{enumerate}
+\item If $[[S;G |-ty t : k]]$, then $[[fv(t) \subseteq {dom(G)}]]$ and 
+$[[fv(k) \subseteq {dom(G)}]]$.
+\item If $[[S;G |-co g : phi]]$, then $[[fv(g) \subseteq {dom(G)}]]$ and
+$[[fv(phi) \subseteq {dom(G)}]]$.
+\item If $[[S;G;s0;t0 |-alt H zs -> c. t : k]]$, 
+  then $[[fv(H zs -> c. t) \subseteq {dom(G)}]]$.
+\item If $[[S;G |-prop phi]]$, then $[[fv(phi) \subseteq {dom(G)}]]$.
+\item If $[[S;G |-tel D]]$, then $[[fv(D) \subseteq {dom(G)}]]$.
+\item If $[[|-sig S]]$ and $[[S |-tc H : k]]$, then $[[fv(k) = \emptyset]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By straightforward mutual induction on the structure of the terms (not the
+derivations), appealing to \pref{lem:dom-rel}, \pref{lem:closed-primitive-kinds},
+\pref{lem:tyvar-reg},
+\pref{lem:covar-reg},
+and \pref{lem:ctx-reg}. The
+induction must be on the terms, not the derivation, so that the induction
+hypothesis is general enough to make use of, e.g., \pref{lem:tyvar-reg}.
+\end{proof}
+
+\subsection{Substitution}
+
+\begin{lemma}[Value substitution]
+If $[[v]]$ is a value with a free variable $[[a]]$,
+then $[[v[s/a] ]]$ is also a value.
+\end{lemma}
+
+\begin{proof}
+By the definition of values.
+\end{proof}
+
+\begin{lemma}[Type substitution]
+\label{lem:ty-subst}
+Assume $[[S;G |-ty s : k]]$.
+\begin{enumerate}
+\item If $[[S;G,a:rel k,G' |-ty t : k0]]$, then $[[S;G,G'[s/a] |-ty t[s/a] : k0[s/a] ]]$.
+\item If $[[S;G,a:rel k,G' |-co g : phi]]$, then $[[S;G,G'[s/a] |-co g[s/a] : phi[s/a] ]]$.
+\item If $[[S;G,a:rel k,G' |-prop phi]]$, then $[[S;G,G'[s/a] |-prop phi[s/a] ]]$.
+\item If $[[S;G,a:rel k,G';s0;t0 |-alt alt : k]]$,
+then $[[S;G,G'[s/a];s0[s/a];t0[s/a] |-alt alt[s/a] : k[s/a] ]]$.
+\item If $[[S;G,a:rel k,G' |-tel D]]$, then $[[S;G,G'[s/a] |-tel D[s/a] ]]$.
+\item If $[[S |-ctx G,a:rel k,G']]$, then $[[S |-ctx G,G'[s/a] ]]$.
+\item If $[[S;G,a:rel k,G' |-s t --> t']]$, then $[[S;G,G'[s/a] |-s t[s/a] --> t'[s/a] ]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By mutual induction.
+\begin{description}
+\item[Case \rul{Ty\_Var}:] Here, we know $[[t]]$ is some variable $[[b]]$. There
+are three cases to consider:
+\begin{description}
+\item[Case $[[b:Rel k0 \in G]]$:] We must derive $[[S;G,G'[s/a] |-ty b : k0[s/a] ]]$.
+We will use \rul{Ty\_Var}. We establish $[[S |-ctx G,G'[s/a] ]]$ by the induction
+hypothesis. Scoping (\pref{lem:scoping}) tells us that $[[a \notin fv(k0)]]$, and so we are
+done by the fact that $[[b :Rel k0 \in G]]$.
+\item[Case $[[b = a]]$:] By weakening (\pref{lem:weakening}).
+\item[Case $[[b:Rel k0 \in G']]$:] Once again, we get $[[S |-ctx G,G'[s/a] ]]$ by the
+induction hypothesis. Furthermore, we get $[[b:Rel k0[s/a] \in G'[s/a] ]]$ from 
+$[[b:Rel k0 \in G']]$.
+\end{description}
+\item[Case \rul{Ty\_Con}:] By \pref{lem:scoping}.
+\item[Case \rul{Co\_Var}:] Similar to \rul{Ty\_Var}.
+\item[Other cases:] By the induction hypothesis.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Coercion substitution]
+\label{lem:co-subst}
+Assume $[[S;G |-co g : phi]]$.
+\begin{enumerate}
+\item If $[[S;G,c:phi,G' |-ty t : k0]]$, then $[[S;G,G'[g/c] |-ty t[g/c] : k0[g/c] ]]$.
+\item If $[[S;G,c:phi,G' |-co g : phi]]$, then $[[S;G,G'[g/c] |-co g[g/c] : phi[g/c] ]]$.
+\item If $[[S;G,c:phi,G' |-prop phi]]$, then $[[S;G,G'[g/c] |-prop phi[g/c] ]]$.
+\item If $[[S;G,c:phi,G';s0;t0 |-alt alt : k]]$,
+then $[[S;G,G'[g/c];s0[g/c];t0[g/c] |-alt alt[g/c] : k[g/c] ]]$.
+\item If $[[S;G,c:phi,G' |-tel D]]$, then $[[S;G,G'[g/c] |-tel D[g/c] ]]$.
+\item If $[[S |-ctx G,c:phi,G']]$, then $[[S |-ctx G,G'[g/c] ]]$.
+\item If $[[S;G,c:phi,G' |-s t --> t']]$, then $[[S;G,G'[g/c] |-s t[g/c] --> t'[g/c] ]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Similar to proof for \pref{lem:ty-subst}.
+\end{proof}
+
+\section{Consistency}
+
+\begin{lemma}[Consistency is reflexive]
+\label{lem:cons-refl}
+$[[t ! t]]$
+\end{lemma}
+
+\begin{proof}
+Case analysis on the structure of $[[t]]$.
+\end{proof}
+
+\begin{lemma}[Consistency is symmetric]
+\label{lem:cons-sym}
+If $[[t1 ! t2]]$, then $[[t2 ! t1]]$.
+\end{lemma}
+
+\begin{proof}
+Case analysis on $[[t1 ! t2]]$.
+\end{proof}
+
+
+
+\begin{lemma}[Consistency]
+If $[[G]]$ contains no coercion bindings and $[[S;G |-co g : t1 ~ t2]]$,
+then $[[t1 ! t2]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on $[[S;G |-co g : t1 ~ t2]]$.
+\begin{description}
+\item[Case \rul{Co\_Var}:] Impossible.
+\item[Case \rul{Co\_Refl}:] By \pref{lem:cons-refl}.
+\item[Case \rul{Co\_Sym}:] By the induction hypothesis and \pref{lem:cons-sym}.
+\item[Case \rul{Co\_Trans}:] TODO
+\end{proof}
+
+\section{Preservation}
+
+\begin{lemma}[Preservation]
+\label{lem:preservation}
+If $[[S;G |-ty t : k]]$ and $[[S;G |-s t --> t']]$, then
+$[[S;G |-ty t' : k]]$.
+\end{lemma}
+
+\begin{proof}[unfinished]
+By induction on the size of the typing derivation.
+
+\begin{description}
+\item[Case \rul{Ty\_Var}]: Impossible.
+\item[Case \rul{Ty\_Con}]: Impossible.
+\item[Case \rul{Ty\_AppRel}]: We have several cases to consider.
+\begin{description}
+  \item[Case \rul{S\_Beta}]: By \pref{lem:ty-subst}.
+  \item[Case \rul{S\_App\_Cong}]: By the induction hypothesis.
+  \item[Case \rul{S\_Push}]: 
+\end{description}
+\end{description}
+\end{proof}

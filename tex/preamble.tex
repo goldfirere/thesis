@@ -76,6 +76,11 @@
 \newcommand{\ext}[1]{\texttt{#1}}
 \newcommand{\flag}[1]{\texttt{#1}}
 
+% theorems, etc
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+
 % write proposal-only stuff in blue
 \ifproposal
 
@@ -115,3 +120,6 @@
 
 \newrefformat{app}{Appendix \ref{#1}}
 \newrefformat{tab}{Table \ref{#1}}
+
+\input{ottdefns}
+\newcommand{\rul}[1]{\textmd{\ottdrulename{#1}}}

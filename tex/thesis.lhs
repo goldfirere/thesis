@@ -69,6 +69,7 @@
 \appendix
 
 %include typo.lhs
+\include{app-d}
 \include{fc}
 \include{inference}
 

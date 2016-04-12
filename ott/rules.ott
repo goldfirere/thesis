@@ -1,11 +1,47 @@
 %% Semantics for FCD
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Consistency  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 defns
-JTyCon :: '' ::=
+JCons :: '' ::=
+
+defn
+t1 ! t2 :: :: Cons :: 'C_'
+  {{ com Type consistency }}
+by
+
+t1 is not a value
+------- :: NonValue1
+t1 ! t2
+
+t2 is not a value
+------- :: NonValue2
+t1 ! t2
+
+------- :: TyCon
+H ss ! H ss'
+
+%% Why don't combine these next two? Because we need the relevances
+%% to be the same.
+
+------------------------------ :: PiTy
+PI a:rel k. t ! PI a:rel k'.t'
+
+------------------------- :: PiCo
+PI c:phi.t ! PI c:phi'.t'
+
+% I think this rule is just needed for reflexivity.
+------------- :: Lam
+\d.t ! \d'.t'
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Type constants  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+JTyCon :: '' ::=
 
 defn
 P : k :: :: Prim :: 'Prim_'
@@ -52,15 +88,19 @@ S |-tc H : k  //  S |-ctx G
 -------------- :: Con
 S;G |-ty H : k
 
-S;G |-ty t1 : PI a :rel k1. k2  //  S;-rel(G) |-ty t2 : k1
------------------- :: App
+S;G |-ty t1 : PI a :Rel k1. k2  //  S;G |-ty t2 : k1
+------------------ :: AppRel
+S;G |-ty t1 t2 : k2[t2/a]
+
+S;G |-ty t1 : PI a :Irrel k1. k2  //  S;Rel(G) |-ty t2 : k1
+------------------ :: AppIrrel
 S;G |-ty t1 t2 : k2[t2/a]
 
 S;G |-ty t : PI c : phi. k //  S;Rel(G) |-co g : phi
 ------------------ :: CApp
 S;G |-ty t g : k[g/c]
 
-S;G, d |-ty k : Type
+S;G, Rel(d) |-ty k : Type
 -------------------------------- :: Pi
 S;G |-ty PI d. k : Type
 
@@ -84,7 +124,7 @@ S;G,d |-ty t : k  //  d = a:rel s
 ------------------------ :: Lam
 S;G |-ty \d.t : UPI d. k
 
-S;G |-ty t : UPI _:Rel k.k
+S;G |-ty t : UPI _:Rel k.k   //  k = UPI a:rel k1.k2
 ------------------ :: Fix
 S;G |-ty fix t : k
 
@@ -98,20 +138,10 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
   {{ tex [[S]];[[G]];[[s]] [[|-alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
 by
 
-T : (bs:ks) \in S   //  as = prefix(bs)  // ss = prefix(ks)
-S;G,as:Rel ss |-ty T as : s0
-S;G,as:Rel ss, c : t0 ~ T as |-ty t : k
----------------------------- :: TyCon
-S;G;s0;t0 |-alt T as -> c. t : k
-
-K : (D; T) \in S  //  s0 = T ss  // T : (as:ks) \in S  // xs = dom(D)
-S;G,D[ss/as], c : t0 ~ K ss xs |-ty t : k
-------------------------------- :: DataCon
-S;G;s0;t0 |-alt K xs -> c. t : k
-
-P : s0  //   S;G,c:t0 ~ P |-ty t : k
--------------------------------- :: Prim
-S;G;s0;t0 |-alt P blank -> c. t : k
+S;G |-ty H : MPI as:Irrel ks,D. s as // s0 = s ss' //   zs = dom(D)
+S;G,D[ss'/as],c: t0 ~ H zs |-ty t : k0
+-------------------------------- :: Match
+S;G;s0;t0 |-alt H zs -> c. t : k0
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -150,9 +180,10 @@ S;G |-co h : phi1 ~ phi2
 S;G |-co <g1,g2>I^h : g1 ~ g2
 
 S;G |-co h : k1 ~ k2
-S;G,a:rel k1 |-co g : s1 ~ s2
+S;G,a1:rel k1,a2:rel k2, c:a1~a2 |-co g : s1 ~ s2
+S;G,a1:rel k1 |-ty s1 : k1'  //  S;G,a2:rel k2 |-ty s2 : k2'
 -------------------------------- :: Pi
-S;G |-co PI a :rel h. g : PI a:rel k1.s1 ~ PI a:rel k2.(s2[a |> sym h/a])
+S;G |-co PI (a1,a2,c) :rel h. g : PI a1:rel k1.s1 ~ PI a2:rel k2.s2
 
 S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
 ------------------------- :: ArgK
@@ -162,10 +193,16 @@ S;G |-co g : PI c:phi1.s1 ~ PI c:phi2.s2
 -------------------------------- :: CArgK
 S;G |-co argk g : phi1 ~ phi2 
 
-S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
+S;G |-co g : PI a:Rel k1. s1 ~ PI a:Rel k2. s2
 S;G |-co h : t1 ~ t2
 S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
--------------------------- :: Inst
+-------------------------- :: InstRel
+S;G |-co g@h : s1[t1/a] ~ s2[t2/a]
+
+S;G |-co g : PI a:Irrel k1. s1 ~ PI a:Irrel k2. s2
+S;Rel(G) |-co h : t1 ~ t2
+S;Rel(G) |-ty t1 : k1  //  S;Rel(G) |-ty t2 : k2
+---------------------------------- :: InstIrrel
 S;G |-co g@h : s1[t1/a] ~ s2[t2/a]
 
 S;G |-co h1 : PI c:phi1. s1 ~ PI c:phi2.s2
@@ -177,6 +214,10 @@ S;G |-co h1@h2 : s1[g1/c] ~ s2[g2/c]
 S;G |-co g : H ts ~ H ss
 -------------------------- :: Nth
 S;G |-co nth i g : ti ~ si
+
+S;G |-ty t : k   //  S;G |-s t --> t'
+------------------------ :: Step
+S;G |-co step t : t ~ t'
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Propositions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -239,11 +280,11 @@ by
 -------------- :: Nil
 S |-ctx empty
 
-S;Rel(G) |-ty k : Type  //  a # G
+S;Rel(G) |-ty k : Type  //  a # G  //  S |-ctx G
 -------------- :: TyVar
 S |-ctx G, a:rel k
 
-S;Rel(G) |-prop phi  // c # G
+S;Rel(G) |-prop phi  // c # G   // S |-ctx G
 ---------------- :: CoVar
 S |-ctx G, c:phi
 
@@ -263,7 +304,7 @@ by
 S;G |-s (\a:rel k.s1) s2 --> s1[s2/a]
 
 alti = K xs -> c. t0
----------------------------- :: Iota
+---------------------------- :: Match
 S;G |-s case_k K ts ss of alts --> t0[ss/xs,<K ts ss>/c]
 
 ---------------------------------- :: Trans
@@ -309,8 +350,9 @@ h' = g2 ;; h ;; g3  //  g4 = g0@<h',h>I^g1
 --------------------------------------------- :: CPush
 S;G |-s (v |> g0) h --> v h' |> g4
 
+a2 fresh
 ----------------------------------- :: APush
-S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI a:Irrel <k>. g)
+S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI (a,a2,_):Irrel <k>. g)
 
 K : (D;T) \in S   //    T : (as:ks) \in S
 S;G |-co h : T ts ~ T ts'
@@ -321,3 +363,28 @@ forall i: si' = si |> argk gi
 % si' = s' |> argk (kind K @ nths h @ ...)
 ----------------------------------------------------------------- :: KPush
 S;G |-s case_k0 (K ts ss) |> h of alts --> case_k0 K ts' ss' of alts
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Parallel reduction  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+JRed :: '' ::=
+
+defn
+S ; G |-r t ~> t' :: :: Red :: 'R_'
+  {{ com Type parallel reduction }}
+by
+
+-------------- :: Refl
+S;G |-r t ~> t
+
+S;G |-r t ~> t'
+S;G |-r s ~> s'
+-------------------- :: App
+S;G |-r t s ~> t' s'
+
+S;G |-r k ~> k'
+S;G,a:Rel k
+---------------------------------------- :: PiTy
+S;G |-r PI a:rel k. t ~> PI a:rel k'. t'
