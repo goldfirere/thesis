@@ -138,8 +138,8 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
   {{ tex [[S]];[[G]];[[s]] [[|-alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
 by
 
-S;G |-ty H : MPI as:Irrel ks,D. s as // s0 = s ss' //   zs = dom(D)
-S;G,D[ss'/as],c: t0 ~ H zs |-ty t : k0
+S;G |-ty H : MPI as:Irrel ks,D. s as // s0 = s ss' //  D0 = prefix(D) // zs = dom(D0)
+S;G,D0[ss'/as],c: t0 ~ H zs |-ty t : k0
 -------------------------------- :: Match
 S;G;s0;t0 |-alt H zs -> c. t : k0
 
@@ -303,9 +303,9 @@ by
 ------------------------- :: Beta
 S;G |-s (\a:rel k.s1) s2 --> s1[s2/a]
 
-alti = K xs -> c. t0
+alti = H zs -> c. t0  // other alternatives do not match H
 ---------------------------- :: Match
-S;G |-s case_k K ts ss of alts --> t0[ss/xs,<K ts ss>/c]
+S;G |-s case_k H ts ss of alts --> t0[ss/zs,<H ts ss>/c]
 
 ---------------------------------- :: Trans
 S;G |-s (v |> g1) |> g2 --> v |> (g1 ;; g2)
@@ -325,7 +325,6 @@ S;G |-s s |> g --> s' |> g
 S;G |-s s --> s'
 -------------------------------------- :: Case_Cong
 S;G |-s case_t s of alts --> case_t s' of alts
-
 
 S;G |-ty v : PI a:rel k. s
 g1 = sym (argk g0)      //   g2 = g0@(<t> <|| g1)
@@ -354,15 +353,15 @@ a2 fresh
 ----------------------------------- :: APush
 S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI (a,a2,_):Irrel <k>. g)
 
-K : (D;T) \in S   //    T : (as:ks) \in S
+S |-tc H : k
+k = MPI as :Irrel ks, D. H as
 S;G |-co h : T ts ~ T ts'
-k = MPI as :Irrel ks, D. T as
 forall i: gi = build_kpush_co(<k>@(nths h);ss_{0..i-1})
 forall i: si' = si |> argk gi
 % kind K = MPI as :Irrel ks. MPI D. T as
 % si' = s' |> argk (kind K @ nths h @ ...)
 ----------------------------------------------------------------- :: KPush
-S;G |-s case_k0 (K ts ss) |> h of alts --> case_k0 K ts' ss' of alts
+S;G |-s case_k0 (H ts ss) |> h of alts --> case_k0 H ts' ss' of alts
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parallel reduction  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -372,19 +371,55 @@ defns
 JRed :: '' ::=
 
 defn
-S ; G |-r t ~> t' :: :: Red :: 'R_'
-  {{ com Type parallel reduction }}
+t ~> t' :: :: Red :: 'R_'
+  {{ com Type parallel reduction, over erased types }}
 by
 
 -------------- :: Refl
-S;G |-r t ~> t
+t ~> t
 
-S;G |-r t ~> t'
-S;G |-r s ~> s'
+t ~> t' // s ~> s'
 -------------------- :: App
-S;G |-r t s ~> t' s'
+t s ~> t s'
 
-S;G |-r k ~> k'
-S;G,a:Rel k
----------------------------------------- :: PiTy
-S;G |-r PI a:rel k. t ~> PI a:rel k'. t'
+d ~> d'   //  t ~> t'
+---------------------------------------- :: Pi
+PI d. t ~> PI d'. t'
+
+k ~> k'  //  t ~> t'
+forall i: alti ~> alti'
+---------------- :: Case
+case_k t of alts ~> case_k' t' of alts'
+
+d ~> d'  // t ~> t'
+-------------- :: Lam
+\d.t ~> \d'.t'
+
+t ~> t'
+--------------- :: Fix
+fix t ~> fix t'
+
+empty |-s t --> t'
+------------------ :: Step
+t ~> t'
+
+defn
+d ~> d' :: :: RedBnd :: 'R_'
+  {{ com Parallel reduction of binder }}
+by
+
+k ~> k'
+--------------------- :: TyBinder
+a :rel k ~> a :rel k'
+
+------ :: CoBinder
+o ~> o
+
+defn
+alt ~> alt' :: :: RedAlt :: 'R_'
+  {{ com Parallel reduction in case alternative }}
+by
+
+t ~> t'
+------------------------- :: Alt
+(p -> c. t) ~> (p -> c. t')

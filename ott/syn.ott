@@ -113,6 +113,7 @@ bnd, d {{ tex \delta }} :: 'Bnd_' ::=
   {{ tex [[a]] [[colon]] [[t]] }}
 | c : phi                          ::   :: Coercion
   {{ tex [[c]] {:} [[phi]] }}
+| o                                :: M :: Erased
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Pis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -126,7 +127,8 @@ PI {{ tex \Pi }} :: 'Pi_' ::=
 %%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v
+typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
+  ee {{ tex \epsilon }}
   :: 'Type_' ::=
 | a                            ::   :: Var
 | H                            ::   :: TyCon
@@ -165,12 +167,15 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
 | alt                    ::   :: One
 | alt1 ; .... ; alti     ::   :: Many
-| nil                    ::   :: Nil  
+| nil                    ::   :: Nil
+| '|' alts '|'           :: M :: Erased
 
 alt :: 'Alt_' ::=
 | p -> c . t             ::   :: Alt
   {{ tex [[p]] [[->]] [[c]]. \, [[t]] }}
 | alt [ subst ]          :: M :: Subst
+| ( alt )                :: M :: Parens
+| p -> o . t             :: M :: Erased
 
 pattern, p {{ tex \pi }} :: 'Pat_' ::=
 | H zs                ::   :: Con
@@ -210,6 +215,7 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 
 | ( g )                        :: M :: Parens
 
+| o                            :: M :: Erased
 | g1 ||> g2                    :: M :: CoherenceRight
 | g1 @ gs                      :: M :: Insts
 | let c := h in g              :: M :: Let  
@@ -303,6 +309,7 @@ terminals :: 'terminals_' ::=
 | \                                    ::   :: Lam     {{ tex \lambda }}
 | ->                                   ::   :: Arrow   {{ tex \to }}
 | ~>                                   ::   :: red     {{ tex \rightsquigarrow }}
+| ~~>                                  ::   :: pushto  {{ tex \longrightsquigarrow }}
 | '//'                                 ::   :: sep     {{ tex \quad }}
 | MPI                                  ::   :: Pi      {{ tex \bar{\Pi} }}
 | UPI                                  ::   :: Upi     {{ tex \tilde{\Pi} }}
@@ -329,6 +336,8 @@ terminals :: 'terminals_' ::=
 | \union                               ::   :: union   {{ tex \cup }}
 | \emptyset                            ::   :: emptyset {{ tex \emptyset }}
 | !                                    ::   :: cons    {{ tex \propto }}
+| '>>'                                 ::   :: pushin  {{ tex \succ }}
+| o                                    ::   :: bullet  {{ tex \bullet }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -340,6 +349,7 @@ terminals :: 'terminals_' ::=
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
+| |-kp                                 ::   :: Kp_ent  {{ tex \vdashy{kp} }}
 
 
 
@@ -372,6 +382,8 @@ formula :: 'formula_' ::=
   | a \notin fvset                     ::   :: var_notin_set
   | t is not a value                   ::   :: not_value
     {{ tex [[t]] \text{ is not a value} }}
+  | other alternatives do not match H  ::   :: other_alts
+    {{ tex \text{other alternatives do not match } [[H]] }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -387,6 +399,33 @@ build_kpush_co ( g ; ts ) :: h :: build_kpush_co
 by
 build_kpush_co ( g ; empty ) === g
 build_kpush_co ( g ; ts, t ) === let c := build_kpush_co(g; ts) in c@(<t> ||> argk c)
+
+fun
+'|' t '|' :: s :: erase_type
+
+by
+|a|                === a
+|H|                === H
+|t1 t2|            === |t1| |t2|
+|PI d. t|          === PI |d|.|t|
+|t |> g|           === |t|
+|g|                === o
+|case_k t of alts| === case_|k| |t| of |alts|
+|\d.t|             === \|d|.|t|
+|fix t|            === fix |t|
+
+fun
+'|' d0 '|' :: d :: erase_binder
+
+by
+|a :rel k|    === a :rel |k|
+|c:phi|       === o
+
+fun
+'|' alt0 '|' :: alt :: erase_alt
+
+by
+|p -> c.t|  === p -> o.|t|
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

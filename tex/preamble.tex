@@ -80,6 +80,9 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{definition}[theorem]{Definition}
+\newtheorem{notation}[theorem]{Notation}
+
+\newrefformat{defn}{Definition \ref{#1}}
 
 % write proposal-only stuff in blue
 \ifproposal
@@ -121,5 +124,25 @@
 \newrefformat{app}{Appendix \ref{#1}}
 \newrefformat{tab}{Table \ref{#1}}
 
+%% Import ``mathb'' font
+\DeclareFontFamily{U}{mathb}{\hyphenchar\font45}
+\DeclareFontShape{U}{mathb}{m}{n}{
+      <5> <6> <7> <8> <9> <10> gen * mathb
+      <10.95> mathb10 <12> <14.4> <17.28> <20.74> <24.88> mathb12
+      }{}
+\DeclareSymbolFont{mathb}{U}{mathb}{m}{n}
+\DeclareFontSubstitution{U}{mathb}{m}{n}
+
+%% just so I can get this symbol
+\DeclareMathSymbol{\longrightsquigarrow}{3}{mathb}{"F9}
+
+
 \input{ottdefns}
 \newcommand{\rul}[1]{\textmd{\ottdrulename{#1}}}
+
+\renewenvironment{ottfundefnblock}[3][]%
+{\csname align*\endcsname}%
+{\csname endalign*\endcsname}
+
+\renewcommand{\ottfunclause}[2]{ #1 &= #2 \\}
+

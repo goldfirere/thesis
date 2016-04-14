@@ -187,7 +187,74 @@ induction must be on the terms, not the derivation, so that the induction
 hypothesis is general enough to make use of, e.g., \pref{lem:tyvar-reg}.
 \end{proof}
 
-\subsection{Substitution}
+\section{Determinacy}
+
+\begin{lemma}[Uniqueness of signatures] ~
+\label{lem:uniq-sig}
+Assume $[[|-sig S]]$.
+\begin{enumerate}
+\item If $[[T:(as:ks1) \in S]]$ and $[[T:(as:ks2) \in S]]$, then $[[ks1 = ks2]]$.
+\item If $[[K:(D1;T1) \in S]]$ and $[[K:(D2;T2) \in S]]$, then $[[D1 = D2]]$
+and $[[T1 = T2]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By the freshness conditions on $[[|-sig S]]$.
+\end{proof}
+
+\begin{lemma}[Uniqueness of contexts] ~
+\label{lem:uniq-ctx}
+Assume $[[S |-ctx G]]$.
+\begin{enumerate}
+\item If $[[a :rel1 k1 \in G]]$ and $[[a :rel2 k2 \in G]]$,
+then $[[rel1 = rel2]]$ and $[[k1 = k2]]$.
+\item If $[[c:phi1 \in G]]$ and $[[c:phi2 \in G]]$,
+then $[[phi1 = phi2]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By the freshness conditions on $[[S |-ctx G]]$.
+\end{proof}
+
+\begin{lemma}[Determinacy of type constants]
+\label{lem:determinacy-tycon}
+If $[[|-sig S]]$, $[[S |-tc H : k1]]$, and $[[S |-tc H : k2]]$, then $[[k1 = k2]]$.
+\end{lemma}
+
+\begin{proof}
+From \pref{lem:uniq-ctx}.
+\end{proof}
+
+\begin{lemma}[Values do not step]
+\label{lem:value-no-step}
+There exists no $[[t]]$ such that $[[S;G |-s v --> t]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of $[[v]]$.
+\end{proof}
+
+\begin{lemma}[Determinacy] ~
+\label{lem:determinacy}
+\begin{enumerate}
+\item If $[[S;G |-ty t : k1]]$ and $[[S;G |-ty t : k2]]$, then
+$[[k1 = k2]]$.
+\item If $[[S;G |-co g : phi1]]$ and $[[S;G |-ty g : phi2]]$, then
+$[[phi1 = phi2]]$.
+\item If $[[S;G |-s t --> s1]]$ and $[[S;G |-s t --> s2]]$, then
+$[[s1 = s2]]$.
+\end{enumerate}
+
+\begin{proof}
+By mutual induction, appealing to \pref{lem:uniq-ctx},
+\pref{lem:determinacy-tycon} (which
+requires a use of \pref{lem:ctx-reg} first), and
+\pref{lem:value-no-step}.
+\end{proof}
+
+\section{Substitution}
 
 \begin{lemma}[Value substitution]
 If $[[v]]$ is a value with a free variable $[[a]]$,
@@ -255,25 +322,151 @@ Similar to proof for \pref{lem:ty-subst}.
 
 \section{Consistency}
 
-\begin{lemma}[Consistency is reflexive]
-\label{lem:cons-refl}
-$[[t ! t]]$
+\begin{definition}[Untyped step relation]
+Define the relation $[[empty |-s t --> t']]$ to be just like $[[S;G |-s t --> t']]$
+except missing the ``push'' rules. Note that these rules are the only ones that
+make use of the contexts.
+\end{definition}
+
+\begin{definition}[Erasure]
+\label{defn:erasure}
+Define the erasure of a type $[[ee = |t|]]$ by the following function (including
+auxiliary functions):\\[1ex]
+\ottfundefneraseXXtype{}
+\ottfundefneraseXXbinder{}
+\ottfundefneraseXXalt{}
+\end{definition}
+
+\begin{notation}[Erased types in consistency proof]
+In all lemmas and proofs written from here until the completeness
+of the rewrite relation (\pref{lem:complete-red}), all types
+are assumed to be erased of coercions, according to
+\pref{defn:erasure}.
+\end{notation}
+
+%% \begin{lemma}[Consistency is reflexive]
+%% \label{lem:cons-refl}
+%% $[[t ! t]]$
+%% \end{lemma}
+
+%% \begin{proof}
+%% Case analysis on the structure of $[[t]]$.
+%% \end{proof}
+
+%% \begin{lemma}[Consistency is symmetric]
+%% \label{lem:cons-sym}
+%% If $[[t1 ! t2]]$, then $[[t2 ! t1]]$.
+%% \end{lemma}
+
+%% \begin{proof}
+%% Case analysis on $[[t1 ! t2]]$.
+%% \end{proof}
+
+\begin{lemma}[Parallel reduction substitution] ~
+\label{lem:red-subst}
+Assume $[[s1 ~> s2]]$. We can then conclude:
+\begin{enumerate}
+\item $[[t[s1/a] ~> t[s2/a] ]]$
+\item $[[d[s1/a] ~> d[s2/a] ]]$
+\item $[[alt[s1/a] ~> alt[s2/a] ]]$
+\end{enumerate} 
 \end{lemma}
 
 \begin{proof}
-Case analysis on the structure of $[[t]]$.
+By straightforward
+mutual induction on the structure of $[[t]]$/$[[d]]$/$[[alt]]$.
+%% \begin{description}
+%% \item[Case $[[t = a]]$:] By assumption.
+%% \item[Case $[[t = b]]$:] By \rul{R\_Refl}.
+%% \item[Case $[[t = H]]$:] By \rul{R\_Refl}.
+%% \item[Case $[[t = t1 t2]]$:] By induction and \rul{R\_App}.
+%% \item[Case $[[t = PI d. s]]$:] By induction and \rul{R\_Pi}.
+%% \item[Case $[[t = o]]$:] By \rul{R\_Refl}.
+%% \item[Case $[[t = case_k s of alts]]$:] By induction and \rul{R\_Case}.
+%% \item[Case $[[t = \d.s]]$:] By induction and \rul{R\_Lam}.
+%% \item[Case $[[t = fix s]]$:] By induction and \rul{R\_Fix}.
+%% \item[Case $[[d = a:rel k]]$:] By induction and \rul{R\_TyBinder}.
+%% \item[Case $[[d = o]]$:] By \rul{R\_CoBinder}.
+%% \item[Case $[[alt = p -> c.s]]$:] By induction and \rul{R\_Alt}.
+%% \end{description}
 \end{proof}
 
-\begin{lemma}[Consistency is symmetric]
-\label{lem:cons-sym}
-If $[[t1 ! t2]]$, then $[[t2 ! t1]]$.
+\begin{lemma}[Parallel reduction substitution in parallel]
+\label{lem:red-subst-par}
+If $[[t1 ~> t2]]$ and $[[s1 ~> s2]]$, then
+$[[t1[s1/a] ~> t2[s2/a] ]]$.
+\end{lemma}
+
+\begin{lemma}[Local diamond]
+Let $[[ti]]$ denote an erased type.
+If $[[t0 ~> t1]]$ and $[[t0 ~> t2]]$, then there exists $[[t3]]$ such
+that $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$.
+\end{lemma}
+
+\begin{proof}[TODO]
+By induction on the structure of $[[t0]]$ followed by case analysis
+on the reduction of $[[t0]]$. We assume throughout that all types
+have had their coercions erased.
+
+\begin{description}
+\item[Case $[[t0 = a]]$:] $[[t1]] = [[t2]] = [[t3]] = [[a]]$.
+\item[Case $[[t0 = H]]$:] $[[t1]] = [[t2]] = [[t3]] = [[H]]$.
+\item[Case $[[t0 = s1 s2]]$:] We now have several cases:
+\begin{description}
+\item[Case \rul{R\_App}/\rul{R\_App}:] By induction.
+\item[Case \rul{R\_App}/\rul{R\_Step}:] We now have several cases, depending
+on how the type steps:
+\begin{description}
+\item[Case \rul{S\_Beta}:] It must be that $[[t0 = (\a:rel k. s3) s4]]$,
+$[[t1 = (\a:rel k. s5) s6]]$ where $[[s3 ~> s5]]$ and $[[s4 ~> s6]]$, and
+$[[t2 = s3[s4/a] ]]$.
+Choose $[[t3 = s5[s6/a] ]]$. We must show that $[[t1 ~> t3]]$ and 
+$[[t2 ~> t3]]$. The first is by \rul{R\_Step}. The second is by
+\pref{lem:red-subst}.
+\item[Case \rul{S\_App\_Cong}:]
+It must be that $[[t1 = s1' s2']]$ where $[[s1 ~> s1']]$
+and $[[s2 ~> s2']]$, and $[[t2 = s1'' s2]]$ where $[[empty |-s s1 --> s1'']]$.
+By \rul{R\_Step}, we can see that $[[s1 ~> s1'']]$. We can then use the
+induction hypothesis on $[[s1]]$ to get $[[s3]]$ such that $[[s1' ~> s3]]$
+and $[[s1'' ~> s3]]$.
+Choose $[[t3 = s3 s2']]$. We must show that $[[t1 ~> t3]]$ and
+$[[t2 ~> t3]]$. Both can be concluded by \rul{R\_App}.
+\end{description}
+\item[Case \rul{R\_Step}/\rul{R\_Step}:] By \pref{lem:determinacy}.
+\end{description}
+\item[Case $[[t0 = PI d. s0]]$:] By induction. Note that $[[t0]]$ cannot
+reduce by \rul{R\_Step}.
+\item[Case $[[t0 = o]]$:] $[[t1]] = [[t2]] = [[t3]] = [[o]]$.
+\item[Case $[[t0 = case_k s0 of alts]]$:]
+We now have several cases:
+\begin{description}
+\item[Case \rul{R\_Case}/\rul{R\_Case}:] By induction.
+\item[Case \rul{R\_Case}/\rul{R\_Step}:] We now have several cases, depending
+on how the type steps:
+\begin{description}
+\item[Case \rul{S\_Match}:] It must be that
+$[[t0 = case_k H ts ss of alts]]$ where $[[alti = H zs -> o. s1]]$
+and other alternatives do not match $[[H]]$, $[[t1 = case_k s2 of alts']]$
+where $[[H ts ss ~> s2]]$ and $[[forall j: altj ~> altj']]$,
+and $[[t2 = s1[ss/zs] ]]$.
+It must be that $[[alti' = H zs -> o. s3]]$ where $[[s1 ~> s3]]$.
+Furthermore, it must be that $[[s2 = H ts' ss']]$ where $[[ts ~> ts']]$
+and $[[ss ~> ss']]$ (because $[[H ts ss]]$ is a value and \pref{lem:value-no-step};
+therefore it must reduce by \rul{R\_App}).
+Choose $[[t3 = s3[ss'/zs] ]]$. We must show that $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$.
+The first is by \rul{R\_Step}. The second is by 
+\end{description}
+\end{proof}
+
+\begin{lemma}[Completeness of type reduction]
+\label{lem:complete-red}
+If $[[G]]$ contains no coercion bindings and
+$[[S;G |-co g : t1 ~ t2]]$, then $[[|t1| <=> |t2|]]$.
 \end{lemma}
 
 \begin{proof}
-Case analysis on $[[t1 ! t2]]$.
+TODO
 \end{proof}
-
-
 
 \begin{lemma}[Consistency]
 If $[[G]]$ contains no coercion bindings and $[[S;G |-co g : t1 ~ t2]]$,
@@ -287,6 +480,7 @@ By induction on $[[S;G |-co g : t1 ~ t2]]$.
 \item[Case \rul{Co\_Refl}:] By \pref{lem:cons-refl}.
 \item[Case \rul{Co\_Sym}:] By the induction hypothesis and \pref{lem:cons-sym}.
 \item[Case \rul{Co\_Trans}:] TODO
+\end{description}
 \end{proof}
 
 \section{Preservation}
