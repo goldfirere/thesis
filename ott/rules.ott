@@ -104,17 +104,17 @@ S;G, Rel(d) |-ty k : Type
 -------------------------------- :: Pi
 S;G |-ty PI d. k : Type
 
-S;G |-co g : k1 ~ k2
-S;G |-ty t : k1   //  S;G |-ty k2 : Type
+S;Rel(G) |-co g : k1 ~ k2
+S;G |-ty t : k1   //  S;Rel(G) |-ty k2 : Type
 -------------------- :: Cast
 S;G |-ty t |> g : k2
 
-S;G |-co g : t1 ~ t2
-S;G |-ty t1 : k1 // S;G |-ty t2 : k2
+S;Rel(G) |-co g : t1 ~ t2
+S;Rel(G) |-ty t1 : k1 // S;Rel(G) |-ty t2 : k2
 ---------------------------- :: Coercion
 S;G |-ty g : (~) k1 k2 t1 t2
 
-S;G |-ty k : Type  //  S;G |-ty t : s
+S;Rel(G) |-ty k : Type  //  S;G |-ty t : s
 forall i: S;G;s;t |-alt alti : k
 alts are exhaustive for s
 ------------------------------ :: Case
@@ -169,15 +169,10 @@ S;G |-co g2 : t2 ~ t3
 -------------------------- :: Trans
 S;G |-co g1 ;; g2 : t1 ~ t3
 
-S;G |-co g1 : t1 ~ t2
-S;G |-ty t1 |> g2 : k2
------------------------------ :: Coherence
-S;G |-co g1 <|| g2 : (t1 |> g2) ~ t2
-
-S;G |-co g1 : phi1   //  S;G |-co g2 : phi2
-S;G |-co h : phi1 ~ phi2
------------------------------ :: ProofIrrel
-S;G |-co <g1,g2>I^h : g1 ~ g2
+S;G |-co h : k1 ~ k2  // |t1| = |t2|
+S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
+-------------------------------- :: Coherence
+S;G |-co erase_h t1 t2 : t1 ~ t2
 
 S;G |-co h : k1 ~ k2
 S;G,a1:rel k1,a2:rel k2, c:a1~a2 |-co g : s1 ~ s2
@@ -307,6 +302,10 @@ alti = H zs -> c. t0  // other alternatives do not match H
 ---------------------------- :: Match
 S;G |-s case_k H ts ss of alts --> t0[ss/zs,<H ts ss>/c]
 
+t = \a:rel k.s
+---------------------------- :: Unroll
+S;G |-s fix t --> s[fix t/a]
+
 ---------------------------------- :: Trans
 S;G |-s (v |> g1) |> g2 --> v |> (g1 ;; g2)
 
@@ -326,8 +325,12 @@ S;G |-s s --> s'
 -------------------------------------- :: Case_Cong
 S;G |-s case_t s of alts --> case_t s' of alts
 
+S;G |-s t --> t'
+------------------------ :: Fix_Cong
+S;G |-s fix t --> fix t'
+
 S;G |-ty v : PI a:rel k. s
-g1 = sym (argk g0)      //   g2 = g0@(<t> <|| g1)
+g1 = sym (argk g0)      //   g2 = g0@(erase_(sym g1) (t |> g1) t)
 % g0 : PI a:rel k. s ~ PI a:rel k'. s'
 % g1 : k' ~ k
 % g2 : s[(t |> g1)/a] ~ s'[t/a]
@@ -336,7 +339,7 @@ S;G |-s (v |> g0) t --> v (t |> g1) |> g2
 
 S;G |-ty v : PI c:phi. s
 g1 = argk g0 //  g2 = nth 2 g1  //  g3 = sym (nth 3 g1)
-h' = g2 ;; h ;; g3  //  g4 = g0@<h',h>I^g1
+h' = g2 ;; h ;; g3  //  g4 = g0@(erase_g1 h' h)
 % g0 : PI c:phi.s ~ PI c:phi'.s'
 % phi = t1 ~ t2
 % phi' = t1' ~ t2'
@@ -399,9 +402,18 @@ t ~> t'
 --------------- :: Fix
 fix t ~> fix t'
 
-empty |-s t --> t'
------------------- :: Step
-t ~> t'
+t1 ~> t1'  // t2 ~> t2'
+------------------------------ :: Beta
+(\a :rel k. t1) t2 ~> t1'[t2'/a]
+
+alti = H zs -> o. t0  // ss ~> ss' // t0 ~> t0'
+other alternatives do not match H
+----------------------------------- :: Match
+case_k H ts ss of alts ~> t0'[ss'/zs]
+
+s ~> s' // k ~> k'
+------------------- :: Unroll
+fix (\a:rel k.s) ~> s'[fix (\a:rel k'.s')/a]
 
 defn
 d ~> d' :: :: RedBnd :: 'R_'

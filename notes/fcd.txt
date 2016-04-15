@@ -96,3 +96,25 @@ Example:
 	    case_(Vec a n) n of
 	      Zero → c. Nil a n c
 	      Succ n' → c. Cons a n n' c x (r n' x)
+
+
+----------
+SCW 4/14/16:
+
+|t1| = |t2|
+------------
+erase t1 t2 : t1 ~ t2
+
+Drop universals when erasing coercions??
+
+
+------
+Simplifications:
+- Tried to remove g from grammar of types. Caused major headaches, because
+  g1 ~ g2 is no longer well-formed. This way lies the X coercions of the
+  "overabundance" paper. Ick.
+
+- Tried labeling applications. This seems like it could work better than
+  the last fix, but I'm still unconvinced. It would mean making braced
+  applications its own grammar to support lists, etc. Also, we should
+  have braces in patterns, too.

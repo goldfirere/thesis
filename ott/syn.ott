@@ -200,9 +200,8 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   {{ tex \langle [[t]] \rangle }}
 | sym g                        ::   :: Sym
 | g1 ;; g2                     ::   :: Trans
-| g1 <|| g2                     ::   :: Coherence
-| < g1 , g2 >I^ g3             ::   :: ProofIrrel
-  {{ tex \langle [[g1]], [[g2]] \rangle_{\mathrm{I} }^{[[g3]]} }}
+| erase _ h t1 t2              ::   :: Erase
+  {{ tex \ottkw{erase}_{[[h]]}\,[[t1]]\,[[t2]] }}
 | PI ( a1 , a2 , c ) colon h . g             ::   :: Pi
   {{ tex [[PI]] ([[a1]],[[a2]],[[c]]) [[colon]] [[h]]. \, [[g]] }}
 % | PI c : h . g                 ::   :: CPi
@@ -216,7 +215,6 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | ( g )                        :: M :: Parens
 
 | o                            :: M :: Erased
-| g1 ||> g2                    :: M :: CoherenceRight
 | g1 @ gs                      :: M :: Insts
 | let c := h in g              :: M :: Let  
 | g [ theta ]                  :: M :: Subst
@@ -272,7 +270,7 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
 | subst                             ::   :: One
 | substs1 , .... , substsi          ::   :: Many
 | nil                               :: M :: Nil  
-| ts / as                           :: M :: Telescope
+| ts / zs                           :: M :: Telescope
 
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
@@ -369,6 +367,7 @@ formula :: 'formula_' ::=
   | zs1 eq zs2                         ::   :: Zs_rewrite
   | alts1 eq alts2                     ::   :: alts_rewrite
   | fvset1 eq fvset2                   ::   :: fvset_rewrite
+  | rel1 eq rel2                       ::   :: rel_rewrite
   | T # S                              ::   :: T_fresh
   | K # S                              ::   :: K_fresh
   | a # G                              ::   :: a_fresh
@@ -384,6 +383,7 @@ formula :: 'formula_' ::=
     {{ tex [[t]] \text{ is not a value} }}
   | other alternatives do not match H  ::   :: other_alts
     {{ tex \text{other alternatives do not match } [[H]] }}
+  | ts ~> ts'                          ::   :: many_red
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -398,7 +398,7 @@ build_kpush_co ( g ; ts ) :: h :: build_kpush_co
 
 by
 build_kpush_co ( g ; empty ) === g
-build_kpush_co ( g ; ts, t ) === let c := build_kpush_co(g; ts) in c@(<t> ||> argk c)
+build_kpush_co ( g ; ts, t ) === let c := build_kpush_co(g; ts) in c@(erase_c t (t |> argk c))
 
 fun
 '|' t '|' :: s :: erase_type

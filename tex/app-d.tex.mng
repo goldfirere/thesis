@@ -257,12 +257,22 @@ requires a use of \pref{lem:ctx-reg} first), and
 \section{Substitution}
 
 \begin{lemma}[Value substitution]
+\label{lem:value-subst}
 If $[[v]]$ is a value with a free variable $[[a]]$,
 then $[[v[s/a] ]]$ is also a value.
 \end{lemma}
 
 \begin{proof}
 By the definition of values.
+\end{proof}
+
+\begin{lemma}[Substitution/erasure]
+\label{lem:subst-erase}
+$[[|t|[|s|/a] = |t[s/a]|]]$
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of $[[t]]$.
 \end{proof}
 
 \begin{lemma}[Type substitution]
@@ -297,7 +307,8 @@ $[[b:Rel k0 \in G']]$.
 \end{description}
 \item[Case \rul{Ty\_Con}:] By \pref{lem:scoping}.
 \item[Case \rul{Co\_Var}:] Similar to \rul{Ty\_Var}.
-\item[Other cases:] By the induction hypothesis.
+\item[Other cases:] By the induction hypothesis, using \pref{lem:value-subst} for
+certain step rules.
 \end{description}
 \end{proof}
 
@@ -306,7 +317,7 @@ $[[b:Rel k0 \in G']]$.
 Assume $[[S;G |-co g : phi]]$.
 \begin{enumerate}
 \item If $[[S;G,c:phi,G' |-ty t : k0]]$, then $[[S;G,G'[g/c] |-ty t[g/c] : k0[g/c] ]]$.
-\item If $[[S;G,c:phi,G' |-co g : phi]]$, then $[[S;G,G'[g/c] |-co g[g/c] : phi[g/c] ]]$.
+\item If $[[S;G,c:phi,G' |-co h : phi]]$, then $[[S;G,G'[g/c] |-co h[g/c] : phi[g/c] ]]$.
 \item If $[[S;G,c:phi,G' |-prop phi]]$, then $[[S;G,G'[g/c] |-prop phi[g/c] ]]$.
 \item If $[[S;G,c:phi,G';s0;t0 |-alt alt : k]]$,
 then $[[S;G,G'[g/c];s0[g/c];t0[g/c] |-alt alt[g/c] : k[g/c] ]]$.
@@ -322,12 +333,6 @@ Similar to proof for \pref{lem:ty-subst}.
 
 \section{Consistency}
 
-\begin{definition}[Untyped step relation]
-Define the relation $[[empty |-s t --> t']]$ to be just like $[[S;G |-s t --> t']]$
-except missing the ``push'' rules. Note that these rules are the only ones that
-make use of the contexts.
-\end{definition}
-
 \begin{definition}[Erasure]
 \label{defn:erasure}
 Define the erasure of a type $[[ee = |t|]]$ by the following function (including
@@ -342,6 +347,10 @@ In all lemmas and proofs written from here until the completeness
 of the rewrite relation (\pref{lem:complete-red}), all types
 are assumed to be erased of coercions, according to
 \pref{defn:erasure}.
+\end{notation}
+
+\begin{notation}[Elementwise reduction]
+We write $[[ts ~> ts']]$ to mean $\forall [[i]], [[ti ~> ti']]$.
 \end{notation}
 
 %% \begin{lemma}[Consistency is reflexive]
@@ -364,11 +373,11 @@ are assumed to be erased of coercions, according to
 
 \begin{lemma}[Parallel reduction substitution] ~
 \label{lem:red-subst}
-Assume $[[s1 ~> s2]]$. We can then conclude:
+Assume $[[ss ~> ss']]$. We can then conclude:
 \begin{enumerate}
-\item $[[t[s1/a] ~> t[s2/a] ]]$
-\item $[[d[s1/a] ~> d[s2/a] ]]$
-\item $[[alt[s1/a] ~> alt[s2/a] ]]$
+\item $[[t[ss/zs] ~> t[ss'/zs] ]]$
+\item $[[d[ss/zs] ~> d[ss'/zs] ]]$
+\item $[[alt[ss/zs] ~> alt[ss'/zs] ]]$
 \end{enumerate} 
 \end{lemma}
 
@@ -393,17 +402,91 @@ mutual induction on the structure of $[[t]]$/$[[d]]$/$[[alt]]$.
 
 \begin{lemma}[Parallel reduction substitution in parallel]
 \label{lem:red-subst-par}
-If $[[t1 ~> t2]]$ and $[[s1 ~> s2]]$, then
-$[[t1[s1/a] ~> t2[s2/a] ]]$.
+If $[[t1 ~> t2]]$ and $[[ss ~> ss']]$, then
+$[[t1[ss/zs] ~> t2[ss'/zs] ]]$.
 \end{lemma}
 
+\begin{proof}
+By induction on $[[t1 ~> t2]]$.
+
+\begin{description}
+\item[Case \rul{R\_Refl}:] By \pref{lem:red-subst}.
+\item[Congruence rules:] By induction.
+\item[Case \rul{R\_Beta}:] It must be that $[[t1 = (\b:rel k1. t3) t4]]$
+and $[[t2 = t3'[t4'/b] ]]$ where $[[t3 ~> t3']]$ and $[[t4 ~> t4']]$.
+We must show that
+$[[ (\b:rel k1[ss/zs]. t3[ss/zs]) t4[ss/zs] ~> t3'[t4'/b][ss'/zs] ]]$.
+Proceeding by \rul{R\_Beta}, the left-hand-side steps to 
+$[[ t5[t6/b] ]]$ where $[[t3[ss/zs] ~> t5]]$ and $[[t4[ss/zs] ~> t6]]$.
+(We can choose $[[t5]]$ and $[[t6]]$.)
+We must thus show that $[[t5[t6/b] = t3'[t4'/b][ss'/zs] ]]$.
+First, we reorder substitutions to get
+$[[t3'[t4'/b][ss'/zs] = t3'[ss'/zs][t4'[ss'/zs]/b] ]]$, noting
+that $[[b # ss']]$ by the Barendregt convention.
+Choose $[[t5 = t3'[ss'/zs] ]]$ and $[[t6 = t4'[ss'/zs] ]]$.
+We must show that $[[t3[ss/zs] ~> t5]]$ and $[[t4[ss/zs] ~> t6]]$;
+expanding gives us that we must show
+$[[t3[ss/zs] ~> t3'[ss'/zs] ]]$ and $[[t4[ss/zs] ~> t4'[ss'/zs] ]]$.
+Both of these follow directly from the induction hypothesis, and
+so we are done.
+\item[Case \rul{R\_Match}:] It must be that:
+\begin{itemize}
+\item $[[t1 = case_k H ts ts' of alts]]$
+\item $[[t2 = t4[ts''/zs'] ]]$ where $[[H zs' -> o.t3 \in alts]]$,
+$[[t3 ~> t4]]$, $[[ts' ~> ts'']]$, and no other alternative matches.
+\end{itemize}
+We must show that
+$[[case_k[ss/zs] ts[ss/zs] ts'[ss/zs] of alts[ss/zs] ~> t4[ts''/zs'][ss'/zs] ]]$.
+Proceeding by \rul{R\_Match}, the left-hand side steps to
+$[[t5[ts'''/zs'] ]]$ where $[[t3[ss/zs] ~> t5]]$ and $[[ts'[ss/zs] ~> ts''']]$,
+and we get to choose $[[t5]]$ and $[[ts''']]$.
+We must show that $[[t5[ts'''/zs'] = t4[ts''/zs'][ss'/zs] ]]$.
+Reorder substitutions to get
+$[[t4[ts''/zs'][ss'/zs] = t4[ss'/zs][ts''[ss'/zs]/zs'] ]]$,
+noting that $[[zs' # ts'']]$ by the Barendregt convention.
+Choose $[[t5 = t4[ss'/zs] ]]$ and $[[ts''' = ts''[ss'/zs] ]]$.
+We must show that $[[t3[ss/zs] ~> t4[ss'/zs] ]]$ and
+$[[ts'[ss/zs] ~> ts''[ss'/zs] ]]$. Both of these follow from the
+induction hypothesis, and so we are done.
+\item[Case \rul{R\_Unroll}:] It must be that:
+\begin{itemize}
+\item $[[t1 = fix (\a:rel k1.t3)]]$
+\item $[[t2 = t4[fix (\a:rel k2.t4)/a] ]]$ where $[[k1 ~> k2]]$ and
+$[[t3 ~> t4]]$.
+\end{itemize}
+We must show that
+$[[fix (\a:rel k1[ss/zs].t3[ss/zs]) ~> t4[fix (\a:rel k2.t4)/a][ss'/zs] ]]$.
+Proceeding by \rul{R\_Unroll}, the left-hand side steps to
+$[[t5[fix (\a:rel k3.t5)/a] ]]$ where $[[t3[ss/zs] ~> t5]]$
+and $[[k1[ss/zs] ~> k3]]$.
+We must show that
+$[[t5[fix (\a:rel k3.t5)/a] = t4[fix (\a:rel k2.t4)/a][ss'/zs] ]]$.
+Reorder substitutions on the right to get
+$[[t4[fix (\a:rel k2.t4)/a][ss'/zs] = t4[ss'/zs][fix (\a:rel k2[ss'/zs].t4[ss'/zs])/a] ]]$, where $[[a # ss']]$ by the Barendregt convention.
+Choose $[[t5 = t4[ss'/zs] ]]$ and $[[k3 = k2[ss'/zs] ]]$.
+It remains only to show that $[[t3[ss/zs] ~> t4[ss'/zs] ]]$
+and $[[k1[ss/zs] ~> k2[ss'/zs] ]]$, both of which follow from the
+induction hypothesis. We are done.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Application reduction]
+\label{lem:app-red}
+If $[[H ts ~> s]]$, then $[[s = H ts']]$ where, $[[ts ~> ts']]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on the structure of $[[s0 = H ts]]$.
+\end{proof}
+
 \begin{lemma}[Local diamond]
+\label{lem:local-diamond}
 Let $[[ti]]$ denote an erased type.
 If $[[t0 ~> t1]]$ and $[[t0 ~> t2]]$, then there exists $[[t3]]$ such
 that $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$.
 \end{lemma}
 
-\begin{proof}[TODO]
+\begin{proof}
 By induction on the structure of $[[t0]]$ followed by case analysis
 on the reduction of $[[t0]]$. We assume throughout that all types
 have had their coercions erased.
@@ -414,58 +497,141 @@ have had their coercions erased.
 \item[Case $[[t0 = s1 s2]]$:] We now have several cases:
 \begin{description}
 \item[Case \rul{R\_App}/\rul{R\_App}:] By induction.
-\item[Case \rul{R\_App}/\rul{R\_Step}:] We now have several cases, depending
-on how the type steps:
-\begin{description}
-\item[Case \rul{S\_Beta}:] It must be that $[[t0 = (\a:rel k. s3) s4]]$,
-$[[t1 = (\a:rel k. s5) s6]]$ where $[[s3 ~> s5]]$ and $[[s4 ~> s6]]$, and
-$[[t2 = s3[s4/a] ]]$.
-Choose $[[t3 = s5[s6/a] ]]$. We must show that $[[t1 ~> t3]]$ and 
-$[[t2 ~> t3]]$. The first is by \rul{R\_Step}. The second is by
-\pref{lem:red-subst}.
-\item[Case \rul{S\_App\_Cong}:]
-It must be that $[[t1 = s1' s2']]$ where $[[s1 ~> s1']]$
-and $[[s2 ~> s2']]$, and $[[t2 = s1'' s2]]$ where $[[empty |-s s1 --> s1'']]$.
-By \rul{R\_Step}, we can see that $[[s1 ~> s1'']]$. We can then use the
-induction hypothesis on $[[s1]]$ to get $[[s3]]$ such that $[[s1' ~> s3]]$
-and $[[s1'' ~> s3]]$.
-Choose $[[t3 = s3 s2']]$. We must show that $[[t1 ~> t3]]$ and
-$[[t2 ~> t3]]$. Both can be concluded by \rul{R\_App}.
+\item[Case \rul{R\_App}/\rul{R\_Beta}:] It must be that:
+\begin{itemize}
+\item
+$[[t0 = (\a:rel k1. s3) s4]]$
+\item $[[t1 = (\a:rel k2. s5) s6]]$, where
+$[[k1 ~> k2]]$, $[[s3 ~> s5]]$, and $[[s4 ~> s6]]$, and
+\item $[[t2 = s3[s4/a] ]]$.
+\end{itemize}
+Choose $[[t3 = s5[s6/a] ]]$. We must show $[[t1 ~> t3]]$
+and $[[t2 ~> t3]]$. The first is by \rul{R\_Beta}.
+The second is by \pref{lem:red-subst-par}.
+\item[Case \rul{R\_Beta}/\rul{R\_Beta}:] 
+It must be that:
+\begin{itemize}
+\item $[[t0 = (\a:rel k.s3) s4]]$
+\item $[[t1 = s3'[s4'/a] ]]$, where $[[s3 ~> s3']]$ and $[[s4 ~> s4']]$
+\item $[[t2 = s3''[s4''/a] ]]$, where $[[s3 ~> s3'']]$ and $[[s4 ~> s4'']]$.
+\end{itemize}
+Using the induction hypothesis, we can get $[[s5]]$ and $[[s6]]$ such that
+\begin{itemize}
+\item $[[s3' ~> s5]]$
+\item $[[s3'' ~> s5]]$
+\item $[[s4' ~> s6]]$
+\item $[[s4'' ~> s6]]$.
+\end{itemize}
+Choose $[[t3 = s5[s6/a] ]]$. We must show $[[s3'[s4'/a] ~> s5[s6/a] ]]$
+and $[[s3''[s4''/a] ~> s5[s6/a] ]]$. Both of these follow from
+\pref{lem:red-subst-par}.
 \end{description}
-\item[Case \rul{R\_Step}/\rul{R\_Step}:] By \pref{lem:determinacy}.
-\end{description}
-\item[Case $[[t0 = PI d. s0]]$:] By induction. Note that $[[t0]]$ cannot
-reduce by \rul{R\_Step}.
+\item[Case $[[t0 = PI d. s0]]$:] By induction.
 \item[Case $[[t0 = o]]$:] $[[t1]] = [[t2]] = [[t3]] = [[o]]$.
 \item[Case $[[t0 = case_k s0 of alts]]$:]
 We now have several cases:
 \begin{description}
 \item[Case \rul{R\_Case}/\rul{R\_Case}:] By induction.
-\item[Case \rul{R\_Case}/\rul{R\_Step}:] We now have several cases, depending
-on how the type steps:
-\begin{description}
-\item[Case \rul{S\_Match}:] It must be that
-$[[t0 = case_k H ts ss of alts]]$ where $[[alti = H zs -> o. s1]]$
-and other alternatives do not match $[[H]]$, $[[t1 = case_k s2 of alts']]$
-where $[[H ts ss ~> s2]]$ and $[[forall j: altj ~> altj']]$,
-and $[[t2 = s1[ss/zs] ]]$.
-It must be that $[[alti' = H zs -> o. s3]]$ where $[[s1 ~> s3]]$.
-Furthermore, it must be that $[[s2 = H ts' ss']]$ where $[[ts ~> ts']]$
-and $[[ss ~> ss']]$ (because $[[H ts ss]]$ is a value and \pref{lem:value-no-step};
-therefore it must reduce by \rul{R\_App}).
-Choose $[[t3 = s3[ss'/zs] ]]$. We must show that $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$.
-The first is by \rul{R\_Step}. The second is by 
+\item[Case \rul{R\_Case}/\rul{R\_Match}:] It must be that:
+\begin{itemize}
+\item $[[t0 = case_k H ts ss of alts]]$
+\item $[[t1 = case_k' H ts' ss' of alts']]$
+where $[[k ~> k']]$, $[[ts ~> ts']]$, $[[ss ~> ss']]$, and $[[alts ~> alts']]$
+\item $[[t2 = s0'[ss''/zs] ]]$, where $[[alti = H zs -> o. s0]]$,
+no other alternative matches $[[H]]$,
+$[[s0 ~> s0']]$, and $[[ss ~> ss'']]$.
+\end{itemize}
+Using the induction hypothesis, we can get $[[ss''']]$ such that
+$[[ss' ~> ss''']]$ and $[[ss'' ~> ss''']]$. Let $[[alti' = H zs -> o. s0'']]$.
+We thus have $[[s0 ~> s0']]$ and $[[s0 ~> s0'']]$. The induction hypothesis
+gives us $[[s0''']]$ such that $[[s0' ~> s0''']]$ and $[[s0'' ~> s0''']]$.
+Choose $[[t3 = s0'''[ss'''/zs] ]]$. We must show both $[[t1 ~> t3]]$
+and $[[t2 ~> t3]]$. The first is by \rul{R\_Match}. The second is by
+\pref{lem:red-subst-par}.
+\item[Case \rul{R\_Match}/\rul{R\_Match}:] It must be that:
+\begin{itemize}
+\item $[[t0 = case_k H ts ss of alts]]$
+\item $[[alti = H zs -> o. k1]]$ where no other alternative matches $[[H]]$
+\item $[[t1 = k1'[ss'/zs] ]]$ where $[[k1 ~> k1']]$ and $[[ss ~> ss']]$.
+\item $[[t2 = k1''[ss''/zs] ]]$ where $[[k1 ~> k1'']]$ and $[[ss ~> ss'']]$.
+\end{itemize}
+The induction hypothesis gives us $[[k1''']]$ and $[[ss''']]$ such that:
+\begin{itemize}
+\item $[[k1' ~> k1''']]$
+\item $[[k1'' ~> k1''']]$
+\item $[[ss' ~> ss''']]$
+\item $[[ss'' ~> ss''']]$
+\end{itemize}
+Choose $[[t3 = k1'''[ss'''/zs] ]]$ and we are done by \pref{lem:red-subst-par}.
 \end{description}
+\item[Case $[[t0 = \d0.s0]]$:] By induction.
+\item[Case $[[t0 = fix s0]]$:] We have several cases:
+\begin{description}
+\item[Case \rul{R\_Fix}/\rul{R\_Fix}:] By induction.
+\item[Case \rul{R\_Fix}/\rul{R\_Unroll}:] It must be that:
+\begin{itemize}
+\item $[[t0 = fix (\a:rel k1.s1)]]$
+\item $[[t1 = fix (\a:rel k2.s2)]]$ where $[[k1 ~> k2]]$ and $[[s1 ~> s2]]$
+\item $[[t2 = s3[fix (\a:rel k3.s3)/a] ]]$ where $[[k1 ~> k3]]$ and
+$[[s1 ~> s3]]$
+\end{itemize}
+The induction hypothesis gives us $[[k4]]$ and $[[s4]]$ such that
+$[[k2 ~> k4]]$, $[[k3 ~> k4]]$, $[[s2 ~> s4]]$, and $[[s3 ~> s4]]$.
+Choose $[[t3 = s4[fix (\a:rel k4.s4)/a] ]]$. We must show
+$[[t1 ~> t3]]$ and $[[t2 ~> t3]]$. The first is by \rul{R\_Unroll},
+and the second is by \pref{lem:red-subst-par}.
+\item[Case \rul{R\_Unroll}/\rul{R\_Unroll}:] It must be that:
+\begin{itemize}
+\item $[[t0 = fix (\a:rel k1.s1)]]$
+\item $[[t1 = s2[fix (\a:rel k2.s2)/a] ]]$ where $[[k1 ~> k2]]$ and $[[s1 ~> s2]]$
+\item $[[t2 = s3[fix (\a:rel k3.s3)/a] ]]$ where $[[k1 ~> k3]]$ and $[[s1 ~> s3]]$
+\end{itemize}
+The induction hypothesis gives us $[[k4]]$ and $[[s4]]$ such that
+$[[k2 ~> k4]]$, $[[k3 ~> k4]]$, $[[s2 ~> s4]]$, and $[[s3 ~> s4]]$.
+Choose $[[t3 = s4[fix (\a:rel k4.s4)/a] ]]$ and we are done
+by \pref{lem:red-subst-par}.
+\end{description}
+\end{description}
+\end{proof}
+
+\begin{lemma}[Confluence]
+\label{lem:confluence}
+Let $[[ti]]$ denote an erased type.
+If $[[t1 ~>* t2]]$ and $[[t1 ~>* t3]]$, then there exists
+$[[t4]]$ such that $[[t2 ~>* t4]]$ and $[[t3 ~>* t4]]$.
+\end{lemma}
+
+\begin{proof}
+Consequence of \pref{lem:local-diamond}.
 \end{proof}
 
 \begin{lemma}[Completeness of type reduction]
 \label{lem:complete-red}
 If $[[G]]$ contains no coercion bindings and
-$[[S;G |-co g : t1 ~ t2]]$, then $[[|t1| <=> |t2|]]$.
+$[[S;G |-co g : t1 ~ t2]]$, then there exists some
+erased type $[[ee]]$ such that $[[|t1| ~>* ee]]$ and
+$[[|t2| ~>* ee]]$.
 \end{lemma}
 
 \begin{proof}
-TODO
+By induction on $[[S;G |-co g : t1 ~ t2]]$.
+
+\begin{description}
+\item[Case \rul{Co\_Var}:] Impossible.
+\item[Case \rul{Co\_Refl}:] Choose $[[ee = |t1|]]$ and we are done.
+\item[Case \rul{Co\_Sym}:] By induction.
+\item[Case \rul{Co\_Trans}:] Use the metavariable names from the rule:
+\[
+\ottdruleCoXXTrans{}
+\]
+The induction hypothesis gives us $[[ee1]]$ such that $[[|t1| ~>* ee1]]$
+and $[[|t2| ~>* ee1]]$. It also gives us $[[ee2]]$ such that $[[|t2| ~>* ee2]]$
+and $[[|t3| ~>* ee2]]$. \pref{lem:confluence} gives us $[[ee3]]$ such that
+$[[ee1 ~>* ee3]]$ and $[[ee2 ~>* ee3]]$. Thus, $[[ee3]]$ is a common reduct
+of $[[|t1|]]$ and $[[|t3|]]$ as desired.
+\item[Case \rul{Co\_Coherence}:] We know that $[[|t1| = |t2|]]$ and thus
+either can be the common reduct.
+\item[Case \rul{Co\_Pi}:] 
 \end{proof}
 
 \begin{lemma}[Consistency]
