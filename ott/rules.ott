@@ -129,9 +129,9 @@ S;Rel(G) |-ty t1 : k1 // S;Rel(G) |-ty t2 : k2
 ---------------------------- :: Coercion
 S;G |-ty g : (~)[] k1 k2 t1 t2
 
-S;Rel(G) |-ty k : Type[]  //  S;G |-ty t : s
-forall i: S;G;s;t |-alt alti : k
-alts are exhaustive for s
+S;Rel(G) |-ty k : Type[]  //  S;G |-ty t : H[] ss
+forall i: S;G;H[] ss;t |-alt alti : k
+alts are exhaustive for H
 ------------------------------ :: Case
 S;G |-ty case_k t of alts : k
 
@@ -153,11 +153,11 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
   {{ tex [[S]];[[G]];[[s]] [[|-alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
 by
 
-S |-tc H : D1;D2;H'  //  s0 = H'[] ss'
+S |-tc H : D1;D2;H'
 D0 = prefix(D2)  // zs = dom(D0)
-S;G,D0[ss'/dom(D1)],c: t0 ~ H[ss'] zs |-ty t : k0
+S;G,D0[ss/dom(D1)],c: t0 ~ H[ss] zs |-ty t : k0
 -------------------------------- :: Match
-S;G;s0;t0 |-alt H zs -> c. t : k0
+S;G;H'[] ss;t0 |-alt H zs -> c. t : k0
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -190,10 +190,43 @@ S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
 -------------------------------- :: Coherence
 S;G |-co erase_h t1 t2 : t1 ~ t2
 
+S;G |-co g1 : t1 ~ s1
+S;G |-co g2 : t2 ~ s2
+S;G |-ty t1 t2 : k1 // S;G |-ty s1 s2 : k2
+-------------------------- :: App
+S;G |-co g1 g2 : t1 t2 ~ s1 s2
+
 S;G |-co h : k1 ~ k2
 S;G,a:rel k1 |-co g : s1 ~ s2
--------------------------------- :: Pi
+-------------------------------- :: PiTy
 S;G |-co PI a :rel h. g : PI a:rel k1.s1 ~ PI a:rel k2.(s2[a |> sym h/a])
+
+S;G |-co h : phi1 ~ phi2
+S;G,c:phi1 |-co g : s1 ~ s2
+h1 = nth 3 h  //  h2 = nth 4 h
+% h : (t1 ~ t2) ~ (k1 ~ k2)
+% h1 : t1 ~ k1
+% h2 : t2 ~ k2
+% phi1 = t1 ~ t2
+% phi2 = k1 ~ k2
+% c:phi2 |- h1 ;; c ;; sym h2 : t1 ~ t2
+-------------------------------- :: PiCo
+S;G |-co PI c : h. g : PI c:phi1.s1 ~ PI c:phi2.(s2[h1 ;; c ;; sym h2 / c])
+
+S;G |-prop phi  //  S;G |-co g : t1 ~ t2
+S;G |-ty t1 : H[] ss1   //  calts are exhaustive for H
+forall i: S;G;H[] ss1;t1 |-calt calti : phi
+------------------------------ :: Case
+S;G |-co case_phi g of calts : phi
+
+S;G |-co h : k1 ~ k2
+S;G, a :rel k1 |-co g : t1 ~ t2
+------------------------------------- :: Lam
+S;G |-co \a :rel h . g : \a:rel k1.t1 ~ \a:rel k2.(t2[a |> sym h/a])
+
+S;G |-co g : t1 ~ t2
+-------------------------------- :: Fix
+S;G |-co fix g : fix t1 ~ fix t2
 
 S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
 ------------------------- :: ArgK
@@ -201,7 +234,11 @@ S;G |-co argk g : k1 ~ k2
 
 S;G |-co g : PI c:phi1.s1 ~ PI c:phi2.s2
 -------------------------------- :: CArgK
-S;G |-co argk g : phi1 ~ phi2 
+S;G |-co argk g : phi1 ~ phi2
+
+S;G |-co g : \a:rel k1.s1 ~ \a:rel k2.s2
+------------------------- :: ArgKLam
+S;G |-co argk g : k1 ~ k2
 
 S;G |-co g : PI a:Rel k1. s1 ~ PI a:Rel k2. s2
 S;G |-co h : t1 ~ t2
@@ -221,13 +258,46 @@ S;G |-co g1 : phi1  //   S;G |-co g2 : phi2
 -------------------------- :: CInst
 S;G |-co h1@h2 : s1[g1/c] ~ s2[g2/c]
 
+S;G |-co g : \a:rel k1.t1 ~ \a:rel k2.t2
+S;G |-co h : s1 ~ s2
+S;G |-ty s1 : k1  //  S;G |-ty s2 : k2
+--------------------------- :: InstLam
+S;G |-co g@h : t1[s1/a] ~ t2[s2/a]
+
 S;G |-co g : H[ks] ts ~ H[ks'] ss
 -------------------------- :: Nth
 S;G |-co nth i g : ti ~ si
 
+S;G |-co g : t1 ~ t2
+S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
+------------------------- :: Kind
+S;G |-co kind g : k1 ~ k2
+
 S;G |-ty t : k   //  S;G |-s t --> t'
 ------------------------ :: Step
 S;G |-co step t : t ~ t'
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Coercion case alternatives  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S ; G ; s ; t |-calt calt : phi :: :: CAlt :: 'CAlt_'
+  {{ com Case alternative in a coercion }}
+  {{ tex [[S]];[[G]];[[s]] [[|-calt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[calt]] : [[phi]] }}
+by
+
+S |-tc H : D1;D2;H'
+D0 = prefix(D2)  //  zs = dom(D0)
+S;G,D0[ss/dom(D1)],c: t0 ~ H[ss] zs |-co g : k1 ~ k2
+-------------------------------------- :: Match
+S;G;H'[] ss;t0 |-calt H zs -> c. g : k1 ~ k2
+
+% in RHS:
+% nth i h : s1i ~ s2i
+
+% c : t2 ~ H[ss2] zs
+% must prove t1 ~ H[ss1] zs
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Propositions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

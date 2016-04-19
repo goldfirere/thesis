@@ -211,14 +211,23 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | g1 ;; g2                     ::   :: Trans
 | erase _ h t1 t2              ::   :: Erase
   {{ tex \ottkw{erase}_{[[h]]}\,[[t1]]\,[[t2]] }}
+| g1 g2                        ::   :: App
 % | PI ( a1 , a2 , c ) colon h . g             ::   :: Pi
 %   {{ tex [[PI]] ([[a1]],[[a2]],[[c]]) [[colon]] [[h]]. \, [[g]] }}
-| PI a colon h . g                 ::   :: Pi
+| PI a colon h . g             ::   :: PiTy
   {{ tex [[PI]] [[a]] [[colon]] [[h]]. \, [[g]] }}
-| !!! g1 @ g2                  ::   :: Inst
+| PI c : h . g                 ::   :: PiCo
+  {{ tex [[PI]] [[c]] {:} [[h]].\, [[g]] }}
+| case _ phi g of calts        ::   :: Case
+  {{ tex \ottkw{case}_{[[phi]]}\, [[g]]\, \ottkw{of}\, [[calts]] }}
+| \ a colon h . g              ::   :: Lam
+  {{ tex [[\]] [[a]] [[colon]] [[h]].\, [[g]] }}
+| fix g                        ::   :: Fix
 | argk g                       ::   :: ArgK
+| !!! g1 @ g2                  ::   :: Inst
 | nth I g                      ::   :: Nth
   {{ tex {[[nth]]}^{[[I]]}\,[[g]] }}
+| kind g                       ::   :: Kind
 | step t                       ::   :: Step
 
 | ( g )                        :: M :: Parens
@@ -236,6 +245,15 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 | nths g                       :: M :: nths
   {{ tex \overline{\ottkw{nth}\,[[g]]} }}
 | ( gs )                       :: M :: Parens
+
+calt :: 'CAlt_' ::=
+| p -> c. g                    ::   :: Alt
+  {{ tex [[p]] [[->]] [[c]].\,[[g]] }}
+
+calts {{ tex \overline{\ottnt{calt} } }} :: 'CAlts_' ::=
+| calt                   ::   :: One
+| calts1 ; .... ; caltsi ::   :: Many
+| nil                    :: M :: Nil
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Signatures  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -362,6 +380,7 @@ terminals :: 'terminals_' ::=
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
 | |-kp                                 ::   :: Kp_ent  {{ tex \vdashy{kp} }}
+| |-calt                               ::   :: Calt_ent {{ tex \vdashy{calt} }}
 
 
 
