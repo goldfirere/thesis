@@ -354,10 +354,16 @@ Similar to proof for \pref{lem:ty-subst}.
 \label{defn:erasure}
 Define the erasure of a type $[[ee = |t|]]$ by the following function (including
 auxiliary functions):\\[1ex]
-\ottfundefneraseXXtype{}
-\ottfundefneraseXXbinder{}
-\ottfundefneraseXXprop{}
+{
+\setlength{\abovedisplayskip}{-20pt}
+\setlength{\belowdisplayskip}{-20pt}
+\setlength{\abovedisplayshortskip}{-20pt}
+\setlength{\belowdisplayshortskip}{-20pt}
+\ottfundefneraseXXtype{}\\[1ex]
+\ottfundefneraseXXbinder{}\\[1ex]
+\ottfundefneraseXXprop{}\\[1ex]
 \ottfundefneraseXXalt{}
+}
 \end{definition}
 
 \begin{notation}[Erased types in consistency proof]
@@ -833,13 +839,13 @@ $[[S;G |-ty t' : k]]$.
 By induction on the size of the typing derivation.
 
 \begin{description}
-\item[Case \rul{Ty\_Var}]: Impossible.
-\item[Case \rul{Ty\_Con}]: Impossible.
-\item[Case \rul{Ty\_AppRel}]: We have several cases to consider.
+\item[Case \rul{Ty\_Var}:] Impossible.
+\item[Case \rul{Ty\_Con}:] Impossible.
+\item[Case \rul{Ty\_AppRel}:] We have several cases to consider.
 \begin{description}
-  \item[Case \rul{S\_Beta}]: By \pref{lem:ty-subst}.
-  \item[Case \rul{S\_App\_Cong}]: By the induction hypothesis.
-  \item[Case \rul{S\_Push}]: 
+  \item[Case \rul{S\_Beta}:] By \pref{lem:ty-subst}.
+  \item[Case \rul{S\_App\_Cong}:] By the induction hypothesis.
+  \item[Case \rul{S\_Push}:] 
 \end{description}
 \end{description}
 \end{proof}

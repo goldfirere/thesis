@@ -68,6 +68,10 @@
 
 \appendix
 
+\setlist[enumerate]{itemsep=0pt}
+\setlist[itemize]{itemsep=0pt}
+\setlist[description]{itemsep=0pt}
+
 %include typo.lhs
 \include{app-d}
 \include{fc}
