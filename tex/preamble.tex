@@ -13,6 +13,7 @@
 \usepackage{verbatim}
 \usepackage[greek,english]{babel}
 \usepackage{mdframed}
+\usepackage{graphicx}
 
 \usepackage[top=1in, bottom=1in, left=1.5in, right=1in,includefoot,paperwidth=8.5in,paperheight=11in]{geometry}
 
@@ -135,6 +136,17 @@
 
 %% just so I can get this symbol
 \DeclareMathSymbol{\longrightsquigarrow}{3}{mathb}{"F9}
+
+%% and I need \leftsquigarrow, as per
+%% https://tex.stackexchange.com/questions/195025/how-to-get-the-opposite-direction-of-rightsquigarrow
+\makeatletter
+\providecommand{\leftsquigarrow}{%
+  \mathrel{\mathpalette\reflect@squig\relax}%
+}
+\newcommand{\reflect@squig}[2]{%
+  \reflectbox{$\m@th#1\rightsquigarrow$}%
+}
+\makeatother
 
 
 \input{ottdefns}

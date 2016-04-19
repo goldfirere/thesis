@@ -21,7 +21,7 @@ t2 is not a value
 t1 ! t2
 
 ------- :: TyCon
-H ss ! H ss'
+H[ts] ss ! H[ts'] ss'
 
 %% Why don't combine these next two? Because we need the relevances
 %% to be the same.
@@ -36,6 +36,29 @@ PI c:phi.t ! PI c:phi'.t'
 ------------- :: Lam
 \d.t ! \d'.t'
 
+
+% defn
+% ee1 !! ee2 :: :: ECons :: 'EC_'
+%   {{ com Erased type consistency }}
+% by
+
+% ------- :: TyCon
+% H** ss !! H** ss'
+
+% %% Why don't combine these next two? Because we need the relevances
+% %% to be the same.
+
+% ------------------------------ :: PiTy
+% PI a:rel k. t !! PI a:rel k'.t'
+
+% ------------------------- :: PiCo
+% PI o:phi.t !! PI o:phi'.t'
+
+% % I think this rule is just needed for reflexivity.
+% ------------- :: Lam
+% \d.t !! \d'.t'
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Type constants  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -44,29 +67,20 @@ defns
 JTyCon :: '' ::=
 
 defn
-P : k :: :: Prim :: 'Prim_'
-  {{ com Type primitive kinds }}
-by
-
------------ :: Type
-Type : Type
-
-defn
-S |-tc H : k :: :: Tc :: 'Tc_'
-  {{ com Type constant kinds }}
+S |-tc H : D1 ; D2 ; H' :: :: Tc :: 'Tc_'
+  {{ com Type constant kinds, with universals [[D1]], existentials [[D2]], and result [[H']] }}
 by
 
 T : (as:ks) \in S
 ------------ :: ADT
-S |-tc T : MPI as :Rel ks. Type
+S |-tc T : empty; as:Rel ks; Type
 
 K : (D; T) \in S  // T : (as:ks) \in S
 ----------------------------- :: DataCon
-S |-tc K : MPI as :Irrel ks, D. T as
+S |-tc K : as:Irrel ks; D; T
 
-P : k
---------------- :: Prim
-S |-tc P : k
+--------------- :: Type
+S |-tc Type : empty; empty; Type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -84,9 +98,10 @@ S |-ctx G  //  a :Rel k \in G
 -------------- :: Var
 S;G |-ty a : k
 
-S |-tc H : k  //  S |-ctx G
+S |-tc H : D1;D2;H'  //  S |-ctx G
+S;G |-vec ts : D1
 -------------- :: Con
-S;G |-ty H : k
+S;G |-ty H[ts] : MPI D2[ts/dom(D1)]. H'[] ts
 
 S;G |-ty t1 : PI a :Rel k1. k2  //  S;G |-ty t2 : k1
 ------------------ :: AppRel
@@ -100,21 +115,21 @@ S;G |-ty t : PI c : phi. k //  S;Rel(G) |-co g : phi
 ------------------ :: CApp
 S;G |-ty t g : k[g/c]
 
-S;G, Rel(d) |-ty k : Type
+S;G, Rel(d) |-ty k : Type[]
 -------------------------------- :: Pi
-S;G |-ty PI d. k : Type
+S;G |-ty PI d. k : Type[]
 
 S;Rel(G) |-co g : k1 ~ k2
-S;G |-ty t : k1   //  S;Rel(G) |-ty k2 : Type
+S;G |-ty t : k1   //  S;Rel(G) |-ty k2 : Type[]
 -------------------- :: Cast
 S;G |-ty t |> g : k2
 
 S;Rel(G) |-co g : t1 ~ t2
 S;Rel(G) |-ty t1 : k1 // S;Rel(G) |-ty t2 : k2
 ---------------------------- :: Coercion
-S;G |-ty g : (~) k1 k2 t1 t2
+S;G |-ty g : (~)[] k1 k2 t1 t2
 
-S;Rel(G) |-ty k : Type  //  S;G |-ty t : s
+S;Rel(G) |-ty k : Type[]  //  S;G |-ty t : s
 forall i: S;G;s;t |-alt alti : k
 alts are exhaustive for s
 ------------------------------ :: Case
@@ -138,8 +153,9 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
   {{ tex [[S]];[[G]];[[s]] [[|-alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
 by
 
-S;G |-ty H : MPI as:Irrel ks,D. s as // s0 = s ss' //  D0 = prefix(D) // zs = dom(D0)
-S;G,D0[ss'/as],c: t0 ~ H zs |-ty t : k0
+S |-tc H : D1;D2;H'  //  s0 = H'[] ss'
+D0 = prefix(D2)  // zs = dom(D0)
+S;G,D0[ss'/dom(D1)],c: t0 ~ H[ss'] zs |-ty t : k0
 -------------------------------- :: Match
 S;G;s0;t0 |-alt H zs -> c. t : k0
 
@@ -175,10 +191,9 @@ S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
 S;G |-co erase_h t1 t2 : t1 ~ t2
 
 S;G |-co h : k1 ~ k2
-S;G,a1:rel k1,a2:rel k2, c:a1~a2 |-co g : s1 ~ s2
-S;G,a1:rel k1 |-ty s1 : k1'  //  S;G,a2:rel k2 |-ty s2 : k2'
+S;G,a:rel k1 |-co g : s1 ~ s2
 -------------------------------- :: Pi
-S;G |-co PI (a1,a2,c) :rel h. g : PI a1:rel k1.s1 ~ PI a2:rel k2.s2
+S;G |-co PI a :rel h. g : PI a:rel k1.s1 ~ PI a:rel k2.(s2[a |> sym h/a])
 
 S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
 ------------------------- :: ArgK
@@ -206,7 +221,7 @@ S;G |-co g1 : phi1  //   S;G |-co g2 : phi2
 -------------------------- :: CInst
 S;G |-co h1@h2 : s1[g1/c] ~ s2[g2/c]
 
-S;G |-co g : H ts ~ H ss
+S;G |-co g : H[ks] ts ~ H[ks'] ss
 -------------------------- :: Nth
 S;G |-co nth i g : ti ~ si
 
@@ -227,6 +242,35 @@ S;G |-ty t1 : k1
 S;G |-ty t2 : k2
 ------------------ :: Equality
 S;G |-prop t1 ~ t2
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Vectors  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S ; G |-vec ts : D :: :: Vec :: 'Vec_'
+  {{ com Type vector formation }}
+by
+
+S |-ctx G
+----------------------- :: Nil
+S;G |-vec empty : empty
+
+S;G |-ty t : k
+S;G |-vec ss : D[t/a]
+-------------------------- :: TyRel
+S;G |-vec t,ss : a:Rel k,D
+
+S;Rel(G) |-ty t : k
+S;G |-vec ss : D[t/a]
+-------------------------- :: TyIrrel
+S;G |-vec t,ss : a:Irrel k,D
+
+S;Rel(G) |-co g : phi
+S;G |-vec ss : D[g/c]
+------------------------ :: Co
+S;G |-vec g,ss : c:phi,D
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -275,7 +319,7 @@ by
 -------------- :: Nil
 S |-ctx empty
 
-S;Rel(G) |-ty k : Type  //  a # G  //  S |-ctx G
+S;Rel(G) |-ty k : Type[]  //  a # G  //  S |-ctx G
 -------------- :: TyVar
 S |-ctx G, a:rel k
 
@@ -300,7 +344,7 @@ S;G |-s (\a:rel k.s1) s2 --> s1[s2/a]
 
 alti = H zs -> c. t0  // other alternatives do not match H
 ---------------------------- :: Match
-S;G |-s case_k H ts ss of alts --> t0[ss/zs,<H ts ss>/c]
+S;G |-s case_k H[ts] ss of alts --> t0[ss/zs,<H[ts] ss>/c]
 
 t = \a:rel k.s
 ---------------------------- :: Unroll
@@ -352,19 +396,17 @@ h' = g2 ;; h ;; g3  //  g4 = g0@(erase_g1 h' h)
 --------------------------------------------- :: CPush
 S;G |-s (v |> g0) h --> v h' |> g4
 
-a2 fresh
 ----------------------------------- :: APush
-S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI (a,a2,_):Irrel <k>. g)
+S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI a:Irrel <k>. g)
 
-S |-tc H : k
-k = MPI as :Irrel ks, D. H as
-S;G |-co h : T ts ~ T ts'
+S |-tc H : as:Irrel ks;D;H'
+S;G |-co h : H'[] ts ~ H'[] ts'
 forall i: gi = build_kpush_co(<k>@(nths h);ss_{0..i-1})
 forall i: si' = si |> argk gi
 % kind K = MPI as :Irrel ks. MPI D. T as
 % si' = s' |> argk (kind K @ nths h @ ...)
 ----------------------------------------------------------------- :: KPush
-S;G |-s case_k0 (H ts ss) |> h of alts --> case_k0 H ts' ss' of alts
+S;G |-s case_k0 (H[ts] ss) |> h of alts --> case_k0 H[ts'] ss' of alts
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parallel reduction  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -409,7 +451,7 @@ t1 ~> t1'  // t2 ~> t2'
 alti = H zs -> o. t0  // ss ~> ss' // t0 ~> t0'
 other alternatives do not match H
 ----------------------------------- :: Match
-case_k H ts ss of alts ~> t0'[ss'/zs]
+case_k H** ss of alts ~> t0'[ss'/zs]
 
 s ~> s' // k ~> k'
 ------------------- :: Unroll
@@ -424,8 +466,9 @@ k ~> k'
 --------------------- :: TyBinder
 a :rel k ~> a :rel k'
 
------- :: CoBinder
-o ~> o
+s1 ~> s2 // t1 ~> t2
+---------- :: CoBinder
+o:s1 ~ t1 ~> o:s2 ~ t2
 
 defn
 alt ~> alt' :: :: RedAlt :: 'R_'
@@ -434,4 +477,4 @@ by
 
 t ~> t'
 ------------------------- :: Alt
-(p -> c. t) ~> (p -> c. t')
+(p -> o. t) ~> (p -> o. t')

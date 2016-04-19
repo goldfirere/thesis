@@ -1,0 +1,1 @@
+See https://ghc.haskell.org/trac/ghc/wiki/DependentHaskell/Phase1#Visibilitychangesintypes; email titled "Named foralls"

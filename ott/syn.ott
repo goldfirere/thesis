@@ -66,7 +66,7 @@ tycovar, z :: 'TyCoVar_' ::=
 mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'MixedVars_' ::=
 | z                                  ::   :: One
 | mixed_vars1 , .... , mixed_varsi   ::   :: Many
-| empty                              :: M :: Empty
+| nil                                :: M :: Empty
 | dom ( G )                          :: M :: DomCtx
   {{ tex [[dom]]([[G]]) }}
 | xs                                 :: M :: Tys
@@ -113,7 +113,9 @@ bnd, d {{ tex \delta }} :: 'Bnd_' ::=
   {{ tex [[a]] [[colon]] [[t]] }}
 | c : phi                          ::   :: Coercion
   {{ tex [[c]] {:} [[phi]] }}
-| o                                :: M :: Erased
+| o : phi                          :: M :: ErasedCoercion
+  {{ tex [[o]] {:} [[phi]] }}
+| d [ theta ]                      :: M :: Subst
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Pis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,7 +133,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
   ee {{ tex \epsilon }}
   :: 'Type_' ::=
 | a                            ::   :: Var
-| H                            ::   :: TyCon
+| H [ ts ]                     ::   :: TyCon
+  {{ tex [[H]]_{[ [[ts]] ]} }}
 | !!! t1 t2                    ::   :: App
 | !!! PI d . t                 ::   :: Pi
   {{ tex [[PI]] [[d]] .\, [[t]] }}
@@ -140,9 +143,14 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | case _ k t of alts           ::   :: Case
   {{ tex \ottkw{case}_{[[k]]}\, [[t]]\, \ottkw{of}\, [[alts]] }}
 | \ d . t                      ::   :: Lam
+  {{ tex [[\]] [[d]]. \, [[t]] }}
 | fix t                        ::   :: Fix
 
 | t ts                         :: M :: Apps
+| H []                         :: M :: HEmpty
+  {{ tex [[H]] }}
+| H **                         :: M :: HErased
+  {{ tex [[H]] }}
 | PI D .  t                    :: M :: Pis
   {{ tex [[PI]] [[D]].\, [[t]] }}
 | t1 -> t2                     :: M :: Arrow
@@ -161,8 +169,9 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 | zs                      :: M :: Vars
 | prefix ( ts )           :: M :: Prefix
   {{ tex [[prefix]]([[ts]]) }}
-| ts _{ I1 '..' I2 }        :: M :: IndexPrefix
+| ts _{ I1 '..' I2 }      :: M :: IndexPrefix
   {{ tex {[[ts]]}_{[[I1]] \ldots [[I2]]} }}
+| ts [ theta ]            :: M :: Subst
 
 alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
 | alt                    ::   :: One
@@ -173,7 +182,7 @@ alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
 alt :: 'Alt_' ::=
 | p -> c . t             ::   :: Alt
   {{ tex [[p]] [[->]] [[c]]. \, [[t]] }}
-| alt [ subst ]          :: M :: Subst
+| alt [ theta ]          :: M :: Subst
 | ( alt )                :: M :: Parens
 | p -> o . t             :: M :: Erased
 
@@ -202,10 +211,10 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | g1 ;; g2                     ::   :: Trans
 | erase _ h t1 t2              ::   :: Erase
   {{ tex \ottkw{erase}_{[[h]]}\,[[t1]]\,[[t2]] }}
-| PI ( a1 , a2 , c ) colon h . g             ::   :: Pi
-  {{ tex [[PI]] ([[a1]],[[a2]],[[c]]) [[colon]] [[h]]. \, [[g]] }}
-% | PI c : h . g                 ::   :: CPi
-%   {{ tex [[PI]] [[c]] {:} [[h]]. \, [[g]] }}
+% | PI ( a1 , a2 , c ) colon h . g             ::   :: Pi
+%   {{ tex [[PI]] ([[a1]],[[a2]],[[c]]) [[colon]] [[h]]. \, [[g]] }}
+| PI a colon h . g                 ::   :: Pi
+  {{ tex [[PI]] [[a]] [[colon]] [[h]]. \, [[g]] }}
 | !!! g1 @ g2                  ::   :: Inst
 | argk g                       ::   :: ArgK
 | nth I g                      ::   :: Nth
@@ -223,7 +232,7 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
   :: 'Cos_' ::=
 | g                            ::   :: One
 | gs1 , .... , gsi             ::   :: Many
-| empty                        :: M :: Empty
+| nil                          :: M :: Empty
 | nths g                       :: M :: nths
   {{ tex \overline{\ottkw{nth}\,[[g]]} }}
 | ( gs )                       :: M :: Parens
@@ -267,7 +276,7 @@ context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'Ctx_' ::=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 substs, theta {{ tex \theta }} :: 'Substs_' ::=
-| subst                             ::   :: One
+% | subst                             ::   :: One
 | substs1 , .... , substsi          ::   :: Many
 | nil                               :: M :: Nil  
 | ts / zs                           :: M :: Telescope
@@ -307,6 +316,9 @@ terminals :: 'terminals_' ::=
 | \                                    ::   :: Lam     {{ tex \lambda }}
 | ->                                   ::   :: Arrow   {{ tex \to }}
 | ~>                                   ::   :: red     {{ tex \rightsquigarrow }}
+| ~>*                                  ::   :: redstar {{ tex \rightsquigarrow^* }}
+| <~                                   ::   :: der     {{ tex \leftsquigarrow }}
+| *<~                                  ::   :: ratsder {{ tex \mathrel{ {}^*{\leftsquigarrow} } }}
 | ~~>                                  ::   :: pushto  {{ tex \longrightsquigarrow }}
 | '//'                                 ::   :: sep     {{ tex \quad }}
 | MPI                                  ::   :: Pi      {{ tex \bar{\Pi} }}
@@ -334,6 +346,7 @@ terminals :: 'terminals_' ::=
 | \union                               ::   :: union   {{ tex \cup }}
 | \emptyset                            ::   :: emptyset {{ tex \emptyset }}
 | !                                    ::   :: cons    {{ tex \propto }}
+| !!                                   ::   :: lcons   {{ tex \mathrel{\ltimes} }}
 | '>>'                                 ::   :: pushin  {{ tex \succ }}
 | o                                    ::   :: bullet  {{ tex \bullet }}
 
@@ -344,6 +357,7 @@ terminals :: 'terminals_' ::=
 | |-sig                                ::   :: Sig_ent {{ tex \vdashy{sig} }}
 | |-tel                                ::   :: Tel_ent {{ tex \vdashy{tel} }}
 | |-alt                                ::   :: Alt_ent {{ tex \vdashy{alt} }}
+| |-vec                                ::   :: Vec_ent {{ tex \vdashy{vec} }}
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
@@ -362,16 +376,18 @@ formula :: 'formula_' ::=
     {{ tex [[forall]] [[i]]{:}\; [[formula]] }}
   | bnd \in G                          ::   :: ctx_in
   | sig_bnd \in S                      ::   :: sig_in
+  | alt \in alts                       ::   :: alt_in
   | ts1 eq ts2                         ::   :: ts_rewrite
   | G1 eq G2                           ::   :: G_rewrite
-  | zs1 eq zs2                         ::   :: Zs_rewrite
   | alts1 eq alts2                     ::   :: alts_rewrite
   | fvset1 eq fvset2                   ::   :: fvset_rewrite
   | rel1 eq rel2                       ::   :: rel_rewrite
+  | H1 eq H2                           ::   :: H_rewrite
   | T # S                              ::   :: T_fresh
   | K # S                              ::   :: K_fresh
   | a # G                              ::   :: a_fresh
   | c # G                              ::   :: c_fresh
+  | zs # ts                             ::   :: a_not_free
   | alts are exhaustive for s          ::   :: exhaustive
     {{ tex [[alts]] \text{ are exhaustive for } [[s]] }}
   | fvset1 \subseteq fvset2            ::   :: subset
@@ -384,6 +400,10 @@ formula :: 'formula_' ::=
   | other alternatives do not match H  ::   :: other_alts
     {{ tex \text{other alternatives do not match } [[H]] }}
   | ts ~> ts'                          ::   :: many_red
+  | alts1 ~> alts2                     ::   :: alts_red
+  | ts ~> ts' <~ ts''                  ::   :: diamond
+  | ts ~>* ts'                         ::   :: many_red_star
+  | ts ~>* ts' *<~ ts''                ::   :: confluence
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -405,7 +425,7 @@ fun
 
 by
 |a|                === a
-|H|                === H
+|H[ts]|            === H**
 |t1 t2|            === |t1| |t2|
 |PI d. t|          === PI |d|.|t|
 |t |> g|           === |t|
@@ -419,7 +439,13 @@ fun
 
 by
 |a :rel k|    === a :rel |k|
-|c:phi|       === o
+|c:phi|       === o : |phi|
+
+fun
+'|' phi0 '|' :: phi :: erase_prop
+
+by
+|t1 ~ t2|   === |t1| ~ |t2|
 
 fun
 '|' alt0 '|' :: alt :: erase_alt
@@ -441,3 +467,9 @@ Ctx_Telescope <= Ctx_Subst
 Ctx_Many <= Ctx_Telescope
 
 Vars_One <= Ctx_ZipKs
+
+Ctx_One <= Ctx_Subst
+Types_One <= Types_Subst
+
+Types_One <= formula_many_red
+Alts_One <= formula_alts_red

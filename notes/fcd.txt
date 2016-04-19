@@ -1,7 +1,3 @@
-PROBLEMS:
- - ambiguity in grammar between τ ▹ η and γ ▹ η. These mean different things!
-   Maybe change the latter to use ◃.
-
 TO PROVE:
  - Preservation
  - Progress (which now requires lifting)
@@ -29,6 +25,7 @@ Notation:
    substitution, and dropping any unmatched suffix
  - Notation as:D means the lengths must match exactly
  - \tilde{\Pi} is the unmatchable Pi.
+ - We write H for H[]
  
  - Rel(G) makes all bindings in G relevant.
  - Irrel(G) is a no-op.
@@ -101,10 +98,6 @@ Example:
 ----------
 SCW 4/14/16:
 
-|t1| = |t2|
-------------
-erase t1 t2 : t1 ~ t2
-
 Drop universals when erasing coercions??
 
 
@@ -118,3 +111,7 @@ Simplifications:
   the last fix, but I'm still unconvinced. It would mean making braced
   applications its own grammar to support lists, etc. Also, we should
   have braces in patterns, too.
+
+- The three-binder approach to the Π-coercion runs into trouble in proving
+  consistency, because it introduces a coercion variable. So I'm going with
+  the asymmetrical one-binder approach, as implemented.
