@@ -99,9 +99,9 @@ S |-ctx G  //  a :Rel k \in G
 S;G |-ty a : k
 
 S |-tc H : D1;D2;H'  //  S |-ctx G
-S;G |-vec ts : D1
+S;Rel(G) |-vec ts : D1
 -------------- :: Con
-S;G |-ty H[ts] : MPI D2[ts/dom(D1)]. H'[] ts
+S;G |-ty H[ts] : MPI (D2[ts/dom(D1)]). H'[] ts
 
 S;G |-ty t1 : PI a :Rel k1. k2  //  S;G |-ty t2 : k1
 ------------------ :: AppRel
@@ -190,6 +190,11 @@ S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
 -------------------------------- :: Coherence
 S;G |-co erase_h t1 t2 : t1 ~ t2
 
+forall i: S;G |-co gi : si ~ si'
+S;G |-ty H[ss] : k1  //  S;G |-ty H[ss'] : k2
+------------------------------- :: Con
+S;G |-co H[gs] : H[ss] ~ H[ss']
+
 S;G |-co g1 : t1 ~ s1
 S;G |-co g2 : t2 ~ s2
 S;G |-ty t1 t2 : k1 // S;G |-ty s1 s2 : k2
@@ -197,7 +202,7 @@ S;G |-ty t1 t2 : k1 // S;G |-ty s1 s2 : k2
 S;G |-co g1 g2 : t1 t2 ~ s1 s2
 
 S;G |-co h : k1 ~ k2
-S;G,a:rel k1 |-co g : s1 ~ s2
+S;G,a:Rel k1 |-co g : s1 ~ s2
 -------------------------------- :: PiTy
 S;G |-co PI a :rel h. g : PI a:rel k1.s1 ~ PI a:rel k2.(s2[a |> sym h/a])
 
@@ -213,17 +218,18 @@ h1 = nth 3 h  //  h2 = nth 4 h
 -------------------------------- :: PiCo
 S;G |-co PI c : h. g : PI c:phi1.s1 ~ PI c:phi2.(s2[h1 ;; c ;; sym h2 / c])
 
-S;G |-prop phi  //  S;G |-co g : t1 ~ t2
+S;G |-co h : k1 ~ k2  //  S;G |-co g : t1 ~ t2
 S;G |-ty t1 : H[] ss1   //  calts are exhaustive for H
-forall i: S;G;H[] ss1;t1 |-calt calti : phi
+forall i: S;G;kind g;g |-calt calti : alt1i ~ alt2i
 ------------------------------ :: Case
-S;G |-co case_phi g of calts : phi
+S;G |-co case_h g of calts : case_k1 t1 of alts1 ~ case_k2 t2 of alts2
 
 S;G |-co h : k1 ~ k2
-S;G, a :rel k1 |-co g : t1 ~ t2
+S;G, a :Rel k1 |-co g : t1 ~ t2
 ------------------------------------- :: Lam
 S;G |-co \a :rel h . g : \a:rel k1.t1 ~ \a:rel k2.(t2[a |> sym h/a])
 
+% TODO: This needs more premises for regularity.
 S;G |-co g : t1 ~ t2
 -------------------------------- :: Fix
 S;G |-co fix g : fix t1 ~ fix t2
@@ -240,16 +246,10 @@ S;G |-co g : \a:rel k1.s1 ~ \a:rel k2.s2
 ------------------------- :: ArgKLam
 S;G |-co argk g : k1 ~ k2
 
-S;G |-co g : PI a:Rel k1. s1 ~ PI a:Rel k2. s2
+S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
 S;G |-co h : t1 ~ t2
 S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
--------------------------- :: InstRel
-S;G |-co g@h : s1[t1/a] ~ s2[t2/a]
-
-S;G |-co g : PI a:Irrel k1. s1 ~ PI a:Irrel k2. s2
-S;Rel(G) |-co h : t1 ~ t2
-S;Rel(G) |-ty t1 : k1  //  S;Rel(G) |-ty t2 : k2
----------------------------------- :: InstIrrel
+-------------------------- :: Inst
 S;G |-co g@h : s1[t1/a] ~ s2[t2/a]
 
 S;G |-co h1 : PI c:phi1. s1 ~ PI c:phi2.s2
@@ -282,22 +282,18 @@ S;G |-co step t : t ~ t'
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defn
-S ; G ; s ; t |-calt calt : phi :: :: CAlt :: 'CAlt_'
+S ; G ; h ; g |-calt calt : alt1 ~ alt2 :: :: CAlt :: 'CAlt_'
   {{ com Case alternative in a coercion }}
-  {{ tex [[S]];[[G]];[[s]] [[|-calt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[calt]] : [[phi]] }}
+  {{ tex [[S]];[[G]];[[h]] [[|-calt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[g]]$} } [[calt]] : [[alt1]] \sim [[alt2]] }}
 by
 
-S |-tc H : D1;D2;H'
-D0 = prefix(D2)  //  zs = dom(D0)
-S;G,D0[ss/dom(D1)],c: t0 ~ H[ss] zs |-co g : k1 ~ k2
+S |-tc H : D1;D2;H'  //  S;G |-co h : H'[] ss ~ H'[] ss'
+D0 = prefix(D2)  //  zs = dom(D0)  //  S;G |-co g0 : t1 ~ t2
+S;G,Rel(D0[ss/dom(D1)]),c: t1 ~ H[ss] zs |-co g : s1 ~ s2
+Psi1 = dom(D1) |-> nths h
+theta = build_subst(Psi1; D2; g ;; c ;; H[nths h] <zs> / c)
 -------------------------------------- :: Match
-S;G;H'[] ss;t0 |-calt H zs -> c. g : k1 ~ k2
-
-% in RHS:
-% nth i h : s1i ~ s2i
-
-% c : t2 ~ H[ss2] zs
-% must prove t1 ~ H[ss1] zs
+S;G;h;g0 |-calt H zs -> c. g : H zs -> c. s1 ~ H zs -> c. theta(s2)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Propositions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -365,7 +361,7 @@ defn
   {{ com Signature formation }}
 by
 
------------ :: Nil
+----------- :: Boot
 |-sig S0
 
 S; empty |-tel as :Irrel ks  // T # S

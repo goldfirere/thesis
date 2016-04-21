@@ -34,7 +34,8 @@ tycon, H :: 'TyCon_' ::=
 | P                ::   :: Primitive
 
 adt_kind {{ tex ( \overline{\ottmv{a} } {:} \overline{\kappa} ) }} :: 'AdtKi_' ::=
-| ( as : ks )          ::   :: Telescope
+| ( a1 : k1 , .... , ai : ki )   ::   :: Vars
+| ( as : ks )                    :: M :: Telescope
   {{ tex ([[as]]{:}[[ks]]) }}
 
 con_type {{ tex ( \Delta, \ottmv{T} ) }} :: 'ConTy_' ::=
@@ -211,6 +212,7 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | g1 ;; g2                     ::   :: Trans
 | erase _ h t1 t2              ::   :: Erase
   {{ tex \ottkw{erase}_{[[h]]}\,[[t1]]\,[[t2]] }}
+| H [ gs ]                     ::   :: Con
 | g1 g2                        ::   :: App
 % | PI ( a1 , a2 , c ) colon h . g             ::   :: Pi
 %   {{ tex [[PI]] ([[a1]],[[a2]],[[c]]) [[colon]] [[h]]. \, [[g]] }}
@@ -218,8 +220,8 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   {{ tex [[PI]] [[a]] [[colon]] [[h]]. \, [[g]] }}
 | PI c : h . g                 ::   :: PiCo
   {{ tex [[PI]] [[c]] {:} [[h]].\, [[g]] }}
-| case _ phi g of calts        ::   :: Case
-  {{ tex \ottkw{case}_{[[phi]]}\, [[g]]\, \ottkw{of}\, [[calts]] }}
+| case _ h g of calts        ::   :: Case
+  {{ tex \ottkw{case}_{[[h]]}\, [[g]]\, \ottkw{of}\, [[calts]] }}
 | \ a colon h . g              ::   :: Lam
   {{ tex [[\]] [[a]] [[colon]] [[h]].\, [[g]] }}
 | fix g                        ::   :: Fix
@@ -247,7 +249,7 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 | ( gs )                       :: M :: Parens
 
 calt :: 'CAlt_' ::=
-| p -> c. g                    ::   :: Alt
+| p -> c . g                    ::   :: Alt
   {{ tex [[p]] [[->]] [[c]].\,[[g]] }}
 
 calts {{ tex \overline{\ottnt{calt} } }} :: 'CAlts_' ::=
@@ -298,10 +300,25 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
 | substs1 , .... , substsi          ::   :: Many
 | nil                               :: M :: Nil  
 | ts / zs                           :: M :: Telescope
+| Psi _ lr                          :: M :: PsiLR
+  {{ tex [[Psi]]_{[[lr]]} }}
 
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
 | g / c                  ::   :: CoVar
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Lifting contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+lc_bnd :: 'LC1_' ::=
+| a |-> g           ::   :: Ty
+| c |-> ( g1 , g2 ) ::   :: Co
+
+lc, Psi {{ tex \Psi }} :: 'LC_' ::=
+| lc_bnd               ::   :: One
+| lc1 , .... , lci     ::   :: Many
+| nil                  :: M :: Nil
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Utility  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -318,12 +335,19 @@ nil :: 'Nil_' ::=
 | empty                     ::   :: Empty
 | blank                     ::   :: Omitted
 
+lr :: 'LR_' ::=
+| left                      ::   :: Left
+  {{ tex \mathrm{L} }}
+| right                     ::   :: Right
+  {{ tex \mathrm{R} }}
+
 nat, I {{ tex \ottnt{i} }}  :: 'Nat_' ::=
 | i                         ::   :: Index
 | 0                         ::   :: Zero
 | 1                         ::   :: One
 | 2                         ::   :: Two
 | 3                         ::   :: Three
+| 4                         ::   :: Four
 | I1 - I2                   :: M :: Sub
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -332,6 +356,7 @@ nat, I {{ tex \ottnt{i} }}  :: 'Nat_' ::=
 
 terminals :: 'terminals_' ::=
 | \                                    ::   :: Lam     {{ tex \lambda }}
+| |->                                  ::   :: mapsto  {{ tex \mapsto }}
 | ->                                   ::   :: Arrow   {{ tex \to }}
 | ~>                                   ::   :: red     {{ tex \rightsquigarrow }}
 | ~>*                                  ::   :: redstar {{ tex \rightsquigarrow^* }}
@@ -407,8 +432,10 @@ formula :: 'formula_' ::=
   | a # G                              ::   :: a_fresh
   | c # G                              ::   :: c_fresh
   | zs # ts                             ::   :: a_not_free
-  | alts are exhaustive for s          ::   :: exhaustive
-    {{ tex [[alts]] \text{ are exhaustive for } [[s]] }}
+  | alts are exhaustive for H          ::   :: exhaustive
+    {{ tex [[alts]] \text{ are exhaustive for } [[H]] }}
+  | calts are exhaustive for H         ::   :: cexhaustive
+    {{ tex [[calts]] \text{ are exhaustive for } [[H]] }}
   | fvset1 \subseteq fvset2            ::   :: subset
   | zs fresh                           ::   :: fresh
     {{ tex [[zs]] \text{ fresh} }}
@@ -429,6 +456,36 @@ formula :: 'formula_' ::=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 funs
+Lifting ::=
+
+fun
+Psi _ S ; G ( t ) :: g :: lift
+  {{ tex [[Psi]]_{[[S]];[[G]]}([[t]]) }}
+
+by
+(Psi, a |-> g)_S:G(a)     === g
+Psi_S;G(b)                === <b>
+Psi_S;G(H[ts])            === H[Psi_S;G(ts)]
+Psi_S;G(t1 t2)            === Psi_S;G(t1) Psi_S;G(t2)
+Psi_S;G(PI a :rel k. t)   === let c0 := Psi_S;G(k) in PI a:rel c0. (Psi, a |-> erase_Psi_left(k) a (a |> c0))_S;G,a:rel Psi_left(k)(t)
+Psi_S;G(PI c:phi.t)       === let c0 := Psi_S;G(phi) in PI c:c0. (Psi, c |-> (c, sym (nth 3 c0) ;; c ;; nth 4 c0))_S;G,c:Psi_left(phi)(t)
+Psi_S;G(t |> g)           === erase_sym g Psi_left(t |> g) Psi_left(t) ;; Psi_S;G(t) ;; erase_g Psi_right(t) Psi_right(t |> g)
+Psi_S;G(g)                === erase_Psi_S;G(coercionKind_S;G(g)) Psi_left(g) Psi_right(g)
+Psi_S;G(case_k t of alts) === case_Psi_S;G(k) Psi_S;G(t) of Psi_S;G(alts)
+Psi_S;G(\ a:rel k . t)    === let c0 := Psi_S;G(k) in \ a:rel c0. (Psi, a |-> erase_Psi_left(k) a (a |> c0))_S;G,a: rel Psi_left(k)(t)
+Psi_S;G(fix t)            === fix Psi_S;G(t)
+
+fun
+Psi _ S ; G ( alt ) :: calt :: lift_alt
+  {{ tex [[Psi]]_{[[S]];[[G]]}([[alt]]) }}
+
+by
+Psi_S;G(H zs -> c. t) === TODO
+%% This is going pear shaped. Perhaps it would be better to separate out coercions
+%% after all. Then I don't think I'd need to parameterize over S;G throughout
+%% lifting. This would dilute the complexity.
+
+funs
 Co ::=
 
 fun
@@ -438,6 +495,42 @@ build_kpush_co ( g ; ts ) :: h :: build_kpush_co
 by
 build_kpush_co ( g ; empty ) === g
 build_kpush_co ( g ; ts, t ) === let c := build_kpush_co(g; ts) in c@(erase_c t (t |> argk c))
+
+fun
+build_subst ( Psi ; D; theta ) :: substs :: build_subst
+  {{ tex \mathsf{build\_subst}([[Psi]];[[D]];[[theta]]) }}
+
+by
+build_subst(Psi; empty; theta)       === theta
+build_subst(Psi; a :rel k, D; theta) === build_subst(Psi, a |-> Psi(k); D; theta, a |> sym Psi(k) / a)
+build_subst(Psi; c:phi, D; theta)    === build_subst(Psi, c |-> Psi(phi); D; theta, nth 3 Psi(phi) ;; c ;; sym (nth 4 Psi(phi)) / c)
+
+fun
+promote _ S ; G ( g ) :: h :: promote_co
+  {{ tex \mathsf{promote}_{[[S]];[[G]]}([[g]]) }}
+
+by
+promote_S;G(c)         	       === kind c
+promote_S;G(<t>)       	       === < typeKind_S;G(t) >
+promote_S;G(sym g)     	       === sym promote_S;G(g)
+promote_S;G(g1 ;; g2)  	       === promote_S;G(g1) ;; promote_S;G(g2)
+promote_S;G(erase_h t1 t2)     === h
+promote_S;G(g1 g2)             === promote_S;G(g1)@g2
+promote_S;G(PI a colon h.g)    === <Type[]>
+promote_S;G(PI c:h.g)          === <Type[]>
+promote_S;G(case_h g of calts) === h
+promote_S;G(\a :rel h. g)      === PI a:rel h. promote_S;G(g)
+promote_S;G(fix g)             === argk promote_S;G(g)
+promote_S;G(argk g)            === <Type[]>
+promote_S;G(g@h)               === promote_S;G(g)@h  % <Type[]>
+% RAE: This last one is borked. We need to distinguish the two @ signs.
+promote_S;G(nth i g)           === % yech (RAE)
+promote_S;G(kind g)            === <Type[]>
+promote_S;G(step t)            === < typeKind_S;G(t) >
+% This last one depends on preservation. SCW was right.
+
+funs
+Erase ::=
 
 fun
 '|' t '|' :: s :: erase_type

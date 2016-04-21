@@ -49,6 +49,18 @@ Generativity/injectivity:
 Relevance:
  - The negation in the App rule is just contravariance. Clearly.
 
+Unnecessary coercions:
+  App
+  PiCo
+  Case
+  Lam
+  Fix
+  ArgKLam
+  InstLam
+  Kind
+
+  Con
+
 
 build_kpush_co:
 
@@ -93,12 +105,6 @@ Example:
 	    case_(Vec a n) n of
 	      Zero → c. Nil a n c
 	      Succ n' → c. Cons a n n' c x (r n' x)
-
-
-----------
-SCW 4/14/16:
-
-Drop universals when erasing coercions??
 
 
 ------
