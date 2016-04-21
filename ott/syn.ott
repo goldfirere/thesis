@@ -160,6 +160,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | phi                          :: M :: Prop
 
 | t [ theta ]                  :: M :: Subst
+| typeKind _ S ; G ( t )       :: M :: TypeKind
+  {{ tex [[typeKind]]_{[[S]];[[G]]}([[t]]) }}
 
 typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
   ks {{ tex \overline{\kappa} }}
@@ -187,7 +189,7 @@ alt :: 'Alt_' ::=
 | ( alt )                :: M :: Parens
 | p -> o . t             :: M :: Erased
 
-pattern, p {{ tex \pi }} :: 'Pat_' ::=
+pattern, pat {{ tex \pi }} :: 'Pat_' ::=
 | H zs                ::   :: Con
 | _                   ::   :: Blank
 
@@ -198,6 +200,8 @@ pattern, p {{ tex \pi }} :: 'Pat_' ::=
 prop, phi {{ tex \phi }} :: 'Phi_' ::=
 | t1 ~ t2                      ::   :: Equality
 | phi [ subst ]                :: M :: Subst
+| coercionKind _ S ; G ( g )   :: M :: CoKind
+  {{ tex [[coercionKind]]_{[[S]];[[G]]}([[g]]) }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -247,6 +251,8 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 | nths g                       :: M :: nths
   {{ tex \overline{\ottkw{nth}\,[[g]]} }}
 | ( gs )                       :: M :: Parens
+| Psi _ S ; G ( ts )           :: M :: LiftedTys
+  {{ tex [[Psi]]_{[[S]];[[G]]}([[ts]]) }}
 
 calt :: 'CAlt_' ::=
 | p -> c . g                    ::   :: Alt
@@ -256,6 +262,8 @@ calts {{ tex \overline{\ottnt{calt} } }} :: 'CAlts_' ::=
 | calt                   ::   :: One
 | calts1 ; .... ; caltsi ::   :: Many
 | nil                    :: M :: Nil
+| Psi _ S ; G ( alts )   :: M :: LiftedAlts
+  {{ tex [[Psi]]_{[[S]];[[G]]}([[alts]]) }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Signatures  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -319,6 +327,7 @@ lc, Psi {{ tex \Psi }} :: 'LC_' ::=
 | lc_bnd               ::   :: One
 | lc1 , .... , lci     ::   :: Many
 | nil                  :: M :: Nil
+| ( Psi )              :: M :: Parens
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Utility  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -392,6 +401,8 @@ terminals :: 'terminals_' ::=
 | !!                                   ::   :: lcons   {{ tex \mathrel{\ltimes} }}
 | '>>'                                 ::   :: pushin  {{ tex \succ }}
 | o                                    ::   :: bullet  {{ tex \bullet }}
+| coercionKind                         ::   :: coKind  {{ tex \mathsf{coercion\_kind} }}
+| typeKind                             ::   :: tyKind  {{ tex \mathsf{type\_kind} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -463,16 +474,16 @@ Psi _ S ; G ( t ) :: g :: lift
   {{ tex [[Psi]]_{[[S]];[[G]]}([[t]]) }}
 
 by
-(Psi, a |-> g)_S:G(a)     === g
+(Psi, a |-> g)_S;G(a)     === g
 Psi_S;G(b)                === <b>
 Psi_S;G(H[ts])            === H[Psi_S;G(ts)]
 Psi_S;G(t1 t2)            === Psi_S;G(t1) Psi_S;G(t2)
-Psi_S;G(PI a :rel k. t)   === let c0 := Psi_S;G(k) in PI a:rel c0. (Psi, a |-> erase_Psi_left(k) a (a |> c0))_S;G,a:rel Psi_left(k)(t)
-Psi_S;G(PI c:phi.t)       === let c0 := Psi_S;G(phi) in PI c:c0. (Psi, c |-> (c, sym (nth 3 c0) ;; c ;; nth 4 c0))_S;G,c:Psi_left(phi)(t)
-Psi_S;G(t |> g)           === erase_sym g Psi_left(t |> g) Psi_left(t) ;; Psi_S;G(t) ;; erase_g Psi_right(t) Psi_right(t |> g)
-Psi_S;G(g)                === erase_Psi_S;G(coercionKind_S;G(g)) Psi_left(g) Psi_right(g)
+Psi_S;G(PI a :rel k. t)   === let c0 := Psi_S;G(k) in PI a:rel c0. (Psi, a |-> erase_c0 a (a |> c0))_S;G,a:rel k[Psi_left] (t)
+Psi_S;G(PI c:phi.t)       === let c0 := Psi_S;G(phi) in PI c:c0. (Psi, c |-> (c, sym (nth 3 c0) ;; c ;; nth 4 c0))_S;G,c:phi[Psi_left] (t)
+Psi_S;G(t |> g)           === erase_sym g (t |> g)[Psi_left] t[Psi_left] ;; Psi_S;G(t) ;; erase_g t[Psi_right] (t |> g)[Psi_right]
+Psi_S;G(g)                === erase_Psi_S;G(coercionKind_S;G(g)) g[Psi_left] g[Psi_right]
 Psi_S;G(case_k t of alts) === case_Psi_S;G(k) Psi_S;G(t) of Psi_S;G(alts)
-Psi_S;G(\ a:rel k . t)    === let c0 := Psi_S;G(k) in \ a:rel c0. (Psi, a |-> erase_Psi_left(k) a (a |> c0))_S;G,a: rel Psi_left(k)(t)
+Psi_S;G(\ a:rel k . t)    === let c0 := Psi_S;G(k) in \ a:rel c0. (Psi, a |-> erase_c0 a (a |> c0))_S;G,a: rel k[Psi_left] (t)
 Psi_S;G(fix t)            === fix Psi_S;G(t)
 
 fun
@@ -497,13 +508,14 @@ build_kpush_co ( g ; empty ) === g
 build_kpush_co ( g ; ts, t ) === let c := build_kpush_co(g; ts) in c@(erase_c t (t |> argk c))
 
 fun
-build_subst ( Psi ; D; theta ) :: substs :: build_subst
+build_subst ( Psi ; D ; theta ) :: substs :: build_subst
   {{ tex \mathsf{build\_subst}([[Psi]];[[D]];[[theta]]) }}
 
 by
 build_subst(Psi; empty; theta)       === theta
-build_subst(Psi; a :rel k, D; theta) === build_subst(Psi, a |-> Psi(k); D; theta, a |> sym Psi(k) / a)
-build_subst(Psi; c:phi, D; theta)    === build_subst(Psi, c |-> Psi(phi); D; theta, nth 3 Psi(phi) ;; c ;; sym (nth 4 Psi(phi)) / c)
+build_subst(Psi; a :rel k, D; theta) === build_subst(Psi, a |-> Psi_S;G(k); D; theta, a |> sym Psi_S;G(k) / a)
+%% RAE: Out-of-scope contexts above and below.
+build_subst(Psi; c:phi, D; theta)    === build_subst(Psi, c |-> Psi_S;G(phi); D; theta, nth 3 Psi(phi) ;; c ;; sym (nth 4 Psi(phi)) / c)
 
 fun
 promote _ S ; G ( g ) :: h :: promote_co
