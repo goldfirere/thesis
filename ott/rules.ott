@@ -129,13 +129,13 @@ S;Rel(G) |-ty t1 : k1 // S;Rel(G) |-ty t2 : k2
 ---------------------------- :: Coercion
 S;G |-ty g : (~)[] k1 k2 t1 t2
 
-S;Rel(G) |-ty k : Type[]  //  S;G |-ty t : H[] ss
-forall i: S;G;H[] ss;t |-alt alti : k
-alts are exhaustive for H
+S;Rel(G) |-ty k : Type[]  //  S;G |-ty t : s
+forall i: S;G;s;t |-alt alti : k
+s = MPI D. H[] ss // alts are exhaustive for H
 ------------------------------ :: Case
 S;G |-ty case_k t of alts : k
 
-S;G,d |-ty t : k  //  d = a:rel s
+S;G,d |-ty t : k
 ------------------------ :: Lam
 S;G |-ty \d.t : UPI d. k
 
@@ -153,11 +153,10 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
   {{ tex [[S]];[[G]];[[s]] [[|-alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
 by
 
-S |-tc H : D1;D2;H'
-D0 = prefix(D2)  // zs = dom(D0)
-S;G,D0[ss/dom(D1)],c: t0 ~ H[ss] zs |-ty t : k0
--------------------------------- :: Match
-S;G;H'[] ss;t0 |-alt H zs -> c. t : k0
+S |-tc H : D1;D2;H'  //  D0,D' = D2[ss/dom(D1)]
+S;G |-ty t : UPI D0, c: t0 ~ H[ss] dom(D0). k
+-------------------------- :: Match
+S;G;MPI D'.H'[] ss;t0 |-alt H -> t : k
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -218,16 +217,23 @@ h1 = nth 3 h  //  h2 = nth 4 h
 -------------------------------- :: PiCo
 S;G |-co PI c : h. g : PI c:phi1.s1 ~ PI c:phi2.(s2[h1 ;; c ;; sym h2 / c])
 
-S;G |-co h : k1 ~ k2  //  S;G |-co g : t1 ~ t2
-S;G |-ty t1 : H[] ss1   //  calts are exhaustive for H
-forall i: S;G;kind g;g |-calt calti : alt1i ~ alt2i
+S;G |-co h : k1 ~ k2  //  S;G |-co g0 : t1 ~ t2
+forall i: S;G |-co gi : si ~ s'i
+alts1 = list of Hi -> si  // alts2 = list of Hi -> s'i
+S;G |-ty case_k1 t1 of alts1 : k1  // S;G |-ty case_k2 t2 of alts2 : k2
 ------------------------------ :: Case
-S;G |-co case_h g of calts : case_k1 t1 of alts1 ~ case_k2 t2 of alts2
+S;G |-co case_h g0 of list of Hi -> gi : case_k1 t1 of alts1 ~ case_k2 t2 of alts2
 
 S;G |-co h : k1 ~ k2
 S;G, a :Rel k1 |-co g : t1 ~ t2
 ------------------------------------- :: Lam
 S;G |-co \a :rel h . g : \a:rel k1.t1 ~ \a:rel k2.(t2[a |> sym h/a])
+
+S;G |-co h : phi1 ~ phi2
+S;G,c:phi1 |-co g : s1 ~ s2
+h1 = nth 3 h  //  h2 = nth 4 h
+------------------------------- :: CLam
+S;G |-co \c:h.g : \c:phi1.s1 ~ \c:phi2.(s2[h1 ;; c ;; sym h2 / c])
 
 % TODO: This needs more premises for regularity.
 S;G |-co g : t1 ~ t2
@@ -276,24 +282,6 @@ S;G |-co kind g : k1 ~ k2
 S;G |-ty t : k   //  S;G |-s t --> t'
 ------------------------ :: Step
 S;G |-co step t : t ~ t'
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  Coercion case alternatives  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-defn
-S ; G ; h ; g |-calt calt : alt1 ~ alt2 :: :: CAlt :: 'CAlt_'
-  {{ com Case alternative in a coercion }}
-  {{ tex [[S]];[[G]];[[h]] [[|-calt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[g]]$} } [[calt]] : [[alt1]] \sim [[alt2]] }}
-by
-
-S |-tc H : D1;D2;H'  //  S;G |-co h : H'[] ss ~ H'[] ss'
-D0 = prefix(D2)  //  zs = dom(D0)  //  S;G |-co g0 : t1 ~ t2
-S;G,Rel(D0[ss/dom(D1)]),c: t1 ~ H[ss] zs |-co g : s1 ~ s2
-Psi1 = dom(D1) |-> nths h
-theta = build_subst(Psi1; D2; g ;; c ;; H[nths h] <zs> / c)
--------------------------------------- :: Match
-S;G;h;g0 |-calt H zs -> c. g : H zs -> c. s1 ~ H zs -> c. theta(s2)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Propositions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -408,9 +396,12 @@ by
 ------------------------- :: Beta
 S;G |-s (\a:rel k.s1) s2 --> s1[s2/a]
 
-alti = H zs -> c. t0  // other alternatives do not match H
+------------------------------- :: CBeta
+S;G |-s (\c:phi.s) g --> s[g/c]
+
+alti = H -> t0  // other alternatives do not match H
 ---------------------------- :: Match
-S;G |-s case_k H[ts] ss of alts --> t0[ss/zs,<H[ts] ss>/c]
+S;G |-s case_k H[ts] ss of alts --> t0 ss <H[ts] ss>
 
 t = \a:rel k.s
 ---------------------------- :: Unroll
@@ -497,10 +488,9 @@ d ~> d'   //  t ~> t'
 ---------------------------------------- :: Pi
 PI d. t ~> PI d'. t'
 
-k ~> k'  //  t ~> t'
-forall i: alti ~> alti'
+k ~> k'  //  t ~> t'  // ss ~> ss'
 ---------------- :: Case
-case_k t of alts ~> case_k' t' of alts'
+case_k t of list of H -> s ~> case_k' t' of list of H -> s'
 
 d ~> d'  // t ~> t'
 -------------- :: Lam
@@ -514,10 +504,14 @@ t1 ~> t1'  // t2 ~> t2'
 ------------------------------ :: Beta
 (\a :rel k. t1) t2 ~> t1'[t2'/a]
 
-alti = H zs -> o. t0  // ss ~> ss' // t0 ~> t0'
+t ~> t'
+------------------ :: CBeta
+(\o:phi.t) o ~> t'
+
+alti = H -> t0  // ss ~> ss' // t0 ~> t0'
 other alternatives do not match H
 ----------------------------------- :: Match
-case_k H** ss of alts ~> t0'[ss'/zs]
+case_k H** ss of alts ~> t0' ss' o
 
 s ~> s' // k ~> k'
 ------------------- :: Unroll
@@ -536,11 +530,4 @@ s1 ~> s2 // t1 ~> t2
 ---------- :: CoBinder
 o:s1 ~ t1 ~> o:s2 ~ t2
 
-defn
-alt ~> alt' :: :: RedAlt :: 'R_'
-  {{ com Parallel reduction in case alternative }}
-by
 
-t ~> t'
-------------------------- :: Alt
-(p -> o. t) ~> (p -> o. t')

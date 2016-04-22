@@ -38,7 +38,7 @@ adt_kind {{ tex ( \overline{\ottmv{a} } {:} \overline{\kappa} ) }} :: 'AdtKi_' :
 | ( as : ks )                    :: M :: Telescope
   {{ tex ([[as]]{:}[[ks]]) }}
 
-con_type {{ tex ( \Delta, \ottmv{T} ) }} :: 'ConTy_' ::=
+con_type {{ tex ( \Delta; \ottmv{T} ) }} :: 'ConTy_' ::=
 | ( D ; T )       ::   :: Pair
   {{ tex ([[D]]; [[T]]) }}
 
@@ -164,7 +164,7 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
   {{ tex [[typeKind]]_{[[S]];[[G]]}([[t]]) }}
 
 typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
-  ks {{ tex \overline{\kappa} }}
+  ks {{ tex \overline{\kappa} }}, ees {{ tex \overline{\epsilon} }}
   :: 'Types_' ::=
 | t                       ::   :: One
 | ts1 , .... , tsi        ::   :: Many
@@ -181,17 +181,13 @@ alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
 | alt1 ; .... ; alti     ::   :: Many
 | nil                    ::   :: Nil
 | '|' alts '|'           :: M :: Erased
+| list of alt            :: M :: List
+  {{ tex \overline{[[alt]]} }}
 
 alt :: 'Alt_' ::=
-| p -> c . t             ::   :: Alt
-  {{ tex [[p]] [[->]] [[c]]. \, [[t]] }}
+| H -> t                 ::   :: Alt
 | alt [ theta ]          :: M :: Subst
 | ( alt )                :: M :: Parens
-| p -> o . t             :: M :: Erased
-
-pattern, pat {{ tex \pi }} :: 'Pat_' ::=
-| H zs                ::   :: Con
-| _                   ::   :: Blank
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Proposition  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -228,6 +224,8 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   {{ tex \ottkw{case}_{[[h]]}\, [[g]]\, \ottkw{of}\, [[calts]] }}
 | \ a colon h . g              ::   :: Lam
   {{ tex [[\]] [[a]] [[colon]] [[h]].\, [[g]] }}
+| \ c : h . g                  ::   :: CLam
+  {{ tex [[\]] [[c]] {:} [[h]].\,[[g]] }}
 | fix g                        ::   :: Fix
 | argk g                       ::   :: ArgK
 | !!! g1 @ g2                  ::   :: Inst
@@ -255,15 +253,14 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
   {{ tex [[Psi]]_{[[S]];[[G]]}([[ts]]) }}
 
 calt :: 'CAlt_' ::=
-| p -> c . g                    ::   :: Alt
-  {{ tex [[p]] [[->]] [[c]].\,[[g]] }}
+| H -> g                        ::   :: Alt
 
 calts {{ tex \overline{\ottnt{calt} } }} :: 'CAlts_' ::=
 | calt                   ::   :: One
 | calts1 ; .... ; caltsi ::   :: Many
 | nil                    :: M :: Nil
-| Psi _ S ; G ( alts )   :: M :: LiftedAlts
-  {{ tex [[Psi]]_{[[S]];[[G]]}([[alts]]) }}
+| list of calt           :: M :: List
+  {{ tex \overline{[[calt]]} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Signatures  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -359,6 +356,15 @@ nat, I {{ tex \ottnt{i} }}  :: 'Nat_' ::=
 | 4                         ::   :: Four
 | I1 - I2                   :: M :: Sub
 
+rewrite_rule :: 'Rewrite_' ::=
+| ts1 eq ts2                         ::   :: ts_rewrite
+| G1 eq G2                           ::   :: G_rewrite
+| alts1 eq alts2                     ::   :: alts_rewrite
+| fvset1 eq fvset2                   ::   :: fvset_rewrite
+| rel1 eq rel2                       ::   :: rel_rewrite
+| H1 eq H2                           ::   :: H_rewrite
+| S1 eq S2                           ::   :: S_rewrite
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -403,6 +409,8 @@ terminals :: 'terminals_' ::=
 | o                                    ::   :: bullet  {{ tex \bullet }}
 | coercionKind                         ::   :: coKind  {{ tex \mathsf{coercion\_kind} }}
 | typeKind                             ::   :: tyKind  {{ tex \mathsf{type\_kind} }}
+| promote                              ::   :: promote {{ tex \mathsf{promote} }}
+| nokind                               ::   :: nokind {{ tex \mathsf{nokind} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -415,10 +423,6 @@ terminals :: 'terminals_' ::=
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
-| |-kp                                 ::   :: Kp_ent  {{ tex \vdashy{kp} }}
-| |-calt                               ::   :: Calt_ent {{ tex \vdashy{calt} }}
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -429,15 +433,10 @@ formula :: 'formula_' ::=
   | </ formulai // '//' // i />        ::   :: dots
   | forall i : formula                 ::   :: forall
     {{ tex [[forall]] [[i]]{:}\; [[formula]] }}
+  | rewrite_rule                       ::   :: rewrite
   | bnd \in G                          ::   :: ctx_in
   | sig_bnd \in S                      ::   :: sig_in
   | alt \in alts                       ::   :: alt_in
-  | ts1 eq ts2                         ::   :: ts_rewrite
-  | G1 eq G2                           ::   :: G_rewrite
-  | alts1 eq alts2                     ::   :: alts_rewrite
-  | fvset1 eq fvset2                   ::   :: fvset_rewrite
-  | rel1 eq rel2                       ::   :: rel_rewrite
-  | H1 eq H2                           ::   :: H_rewrite
   | T # S                              ::   :: T_fresh
   | K # S                              ::   :: K_fresh
   | a # G                              ::   :: a_fresh
@@ -466,35 +465,35 @@ formula :: 'formula_' ::=
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-funs
-Lifting ::=
+% funs
+% Lifting ::=
 
-fun
-Psi _ S ; G ( t ) :: g :: lift
-  {{ tex [[Psi]]_{[[S]];[[G]]}([[t]]) }}
+% fun
+% Psi _ S ; G ( t ) :: g :: lift
+%   {{ tex [[Psi]]_{[[S]];[[G]]}([[t]]) }}
 
-by
-(Psi, a |-> g)_S;G(a)     === g
-Psi_S;G(b)                === <b>
-Psi_S;G(H[ts])            === H[Psi_S;G(ts)]
-Psi_S;G(t1 t2)            === Psi_S;G(t1) Psi_S;G(t2)
-Psi_S;G(PI a :rel k. t)   === let c0 := Psi_S;G(k) in PI a:rel c0. (Psi, a |-> erase_c0 a (a |> c0))_S;G,a:rel k[Psi_left] (t)
-Psi_S;G(PI c:phi.t)       === let c0 := Psi_S;G(phi) in PI c:c0. (Psi, c |-> (c, sym (nth 3 c0) ;; c ;; nth 4 c0))_S;G,c:phi[Psi_left] (t)
-Psi_S;G(t |> g)           === erase_sym g (t |> g)[Psi_left] t[Psi_left] ;; Psi_S;G(t) ;; erase_g t[Psi_right] (t |> g)[Psi_right]
-Psi_S;G(g)                === erase_Psi_S;G(coercionKind_S;G(g)) g[Psi_left] g[Psi_right]
-Psi_S;G(case_k t of alts) === case_Psi_S;G(k) Psi_S;G(t) of Psi_S;G(alts)
-Psi_S;G(\ a:rel k . t)    === let c0 := Psi_S;G(k) in \ a:rel c0. (Psi, a |-> erase_c0 a (a |> c0))_S;G,a: rel k[Psi_left] (t)
-Psi_S;G(fix t)            === fix Psi_S;G(t)
+% by
+% (Psi, a |-> g)_S;G(a)     === g
+% Psi_S;G(b)                === <b>
+% Psi_S;G(H[ts])            === H[Psi_S;G(ts)]
+% Psi_S;G(t1 t2)            === Psi_S;G(t1) Psi_S;G(t2)
+% Psi_S;G(PI a :rel k. t)   === let c0 := Psi_S;G(k) in PI a:rel c0. (Psi, a |-> erase_c0 a (a |> c0))_S;G,a:rel k[Psi_left] (t)
+% Psi_S;G(PI c:phi.t)       === let c0 := Psi_S;G(phi) in PI c:c0. (Psi, c |-> (c, sym (nth 3 c0) ;; c ;; nth 4 c0))_S;G,c:phi[Psi_left] (t)
+% Psi_S;G(t |> g)           === erase_sym g (t |> g)[Psi_left] t[Psi_left] ;; Psi_S;G(t) ;; erase_g t[Psi_right] (t |> g)[Psi_right]
+% Psi_S;G(g)                === erase_Psi_S;G(coercionKind_S;G(g)) g[Psi_left] g[Psi_right]
+% Psi_S;G(case_k t of alts) === case_Psi_S;G(k) Psi_S;G(t) of Psi_S;G(alts)
+% Psi_S;G(\ a:rel k . t)    === let c0 := Psi_S;G(k) in \ a:rel c0. (Psi, a |-> erase_c0 a (a |> c0))_S;G,a: rel k[Psi_left] (t)
+% Psi_S;G(fix t)            === fix Psi_S;G(t)
 
-fun
-Psi _ S ; G ( alt ) :: calt :: lift_alt
-  {{ tex [[Psi]]_{[[S]];[[G]]}([[alt]]) }}
+% fun
+% Psi _ S ; G ( alt ) :: calt :: lift_alt
+%   {{ tex [[Psi]]_{[[S]];[[G]]}([[alt]]) }}
 
-by
-Psi_S;G(H zs -> c. t) === TODO
-%% This is going pear shaped. Perhaps it would be better to separate out coercions
-%% after all. Then I don't think I'd need to parameterize over S;G throughout
-%% lifting. This would dilute the complexity.
+% by
+% Psi_S;G(H zs -> c. t) === TODO
+% %% This is going pear shaped. Perhaps it would be better to separate out coercions
+% %% after all. Then I don't think I'd need to parameterize over S;G throughout
+% %% lifting. This would dilute the complexity.
 
 funs
 Co ::=
@@ -507,39 +506,39 @@ by
 build_kpush_co ( g ; empty ) === g
 build_kpush_co ( g ; ts, t ) === let c := build_kpush_co(g; ts) in c@(erase_c t (t |> argk c))
 
-fun
-build_subst ( Psi ; D ; theta ) :: substs :: build_subst
-  {{ tex \mathsf{build\_subst}([[Psi]];[[D]];[[theta]]) }}
+% fun
+% build_subst ( Psi ; D ; theta ) :: substs :: build_subst
+%   {{ tex \mathsf{build\_subst}([[Psi]];[[D]];[[theta]]) }}
 
-by
-build_subst(Psi; empty; theta)       === theta
-build_subst(Psi; a :rel k, D; theta) === build_subst(Psi, a |-> Psi_S;G(k); D; theta, a |> sym Psi_S;G(k) / a)
-%% RAE: Out-of-scope contexts above and below.
-build_subst(Psi; c:phi, D; theta)    === build_subst(Psi, c |-> Psi_S;G(phi); D; theta, nth 3 Psi(phi) ;; c ;; sym (nth 4 Psi(phi)) / c)
+% by
+% build_subst(Psi; empty; theta)       === theta
+% build_subst(Psi; a :rel k, D; theta) === build_subst(Psi, a |-> Psi_S;G(k); D; theta, a |> sym Psi_S;G(k) / a)
+% %% RAE: Out-of-scope contexts above and below.
+% build_subst(Psi; c:phi, D; theta)    === build_subst(Psi, c |-> Psi_S;G(phi); D; theta, nth 3 Psi(phi) ;; c ;; sym (nth 4 Psi(phi)) / c)
 
-fun
-promote _ S ; G ( g ) :: h :: promote_co
-  {{ tex \mathsf{promote}_{[[S]];[[G]]}([[g]]) }}
+% fun
+% promote _ S ; G ( g ) :: h :: promote_co
+%   {{ tex [[promote]]_{[[S]];[[G]]}([[g]]) }}
 
-by
-promote_S;G(c)         	       === kind c
-promote_S;G(<t>)       	       === < typeKind_S;G(t) >
-promote_S;G(sym g)     	       === sym promote_S;G(g)
-promote_S;G(g1 ;; g2)  	       === promote_S;G(g1) ;; promote_S;G(g2)
-promote_S;G(erase_h t1 t2)     === h
-promote_S;G(g1 g2)             === promote_S;G(g1)@g2
-promote_S;G(PI a colon h.g)    === <Type[]>
-promote_S;G(PI c:h.g)          === <Type[]>
-promote_S;G(case_h g of calts) === h
-promote_S;G(\a :rel h. g)      === PI a:rel h. promote_S;G(g)
-promote_S;G(fix g)             === argk promote_S;G(g)
-promote_S;G(argk g)            === <Type[]>
-promote_S;G(g@h)               === promote_S;G(g)@h  % <Type[]>
-% RAE: This last one is borked. We need to distinguish the two @ signs.
-promote_S;G(nth i g)           === % yech (RAE)
-promote_S;G(kind g)            === <Type[]>
-promote_S;G(step t)            === < typeKind_S;G(t) >
-% This last one depends on preservation. SCW was right.
+% by
+% promote_S;G(c)         	       === kind c
+% promote_S;G(<t>)       	       === < typeKind_S;G(t) >
+% promote_S;G(sym g)     	       === sym promote_S;G(g)
+% promote_S;G(g1 ;; g2)  	       === promote_S;G(g1) ;; promote_S;G(g2)
+% promote_S;G(erase_h t1 t2)     === h
+% promote_S;G(g1 g2)             === promote_S;G(g1)@g2
+% promote_S;G(PI a colon h.g)    === <Type[]>
+% promote_S;G(PI c:h.g)          === <Type[]>
+% promote_S;G(case_h g of calts) === h
+% promote_S;G(\a :rel h. g)      === PI a:rel h. promote_S;G(g)
+% promote_S;G(fix g)             === argk promote_S;G(g)
+% promote_S;G(argk g)            === <Type[]>
+% promote_S;G(g@h)               === promote_S;G(g)@h  % <Type[]>
+% % RAE: This last one is borked. We need to distinguish the two @ signs.
+% promote_S;G(nth i g)           === % yech (RAE)
+% promote_S;G(kind g)            === <Type[]>
+% promote_S;G(step t)            === < typeKind_S;G(t) >
+% % This last one depends on preservation. SCW was right.
 
 funs
 Erase ::=
@@ -575,7 +574,7 @@ fun
 '|' alt0 '|' :: alt :: erase_alt
 
 by
-|p -> c.t|  === p -> o.|t|
+|H -> t|  === H -> |t|
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

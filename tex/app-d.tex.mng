@@ -10,6 +10,7 @@ defined thus:
 \[
 [[S0 = (~) : (a1 : Type[], a2 : Type[], b1 : a1, b2 : a2)]]
 \]
+\end{definition}
 
 \begin{definition}[Values]
 Let values $[[v]]$ be defined by the following subgrammar of $[[t]]$:
@@ -22,14 +23,7 @@ Let values $[[v]]$ be defined by the following subgrammar of $[[t]]$:
 Define $[[fv]]$ to be a function extracting free variables, overloaded to work
 over types $[[t]]$, coercions $[[g]]$, propositions $[[phi]]$,
 alternatives $[[alt]]$, and telescopes $[[D]]$. 
-The non-standard equations are given here:
-\begin{align*}
-[[fv(H zs -> c. t) &= fv(t) \ {c, zs}]]\\[1ex]
-[[fv(H zs -> c. g) &= fv(g) \ {c, zs}]]\\[1ex]
-[[fv(empty) &= \emptyset]]\\
-[[fv(a:rel k,D) &= (fv(D) \ {a}) \union fv(k)]]\\
-[[fv(c:phi,D) &= (fv(D) \ {c}) \union fv(phi)]]\\
-\end{align*}
+The definitions are entirely standard.
 \end{definition}
 
 \begin{definition}[Context extension]
@@ -78,7 +72,6 @@ in $[[G]]$ are labeled $[[Irrel]]$.
 \item If $[[S;G |-co g : phi]]$, then $[[S;G' |-co g : phi]]$.
 \item If $[[S;G |-prop phi]]$, then $[[S;G' |-prop phi]]$.
 \item If $[[S;G;s0;t0 |-alt alt : k]]$, then $[[S;G';s0;t0 |-alt alt : k]]$.
-\item If $[[S;G;s0;t0 |-calt calt : phi]]$, then $[[S;G';s0;t0 |-calt calt : phi]]$.
 \item If $[[S;G |-vec ts : D]]$, then $[[S;G' |-vec ts : D]]$.
 \item If $[[S;G |-tel D]]$, then $[[S;G' |-tel D]]$.
 \item If $[[S |-ctx G]]$, then $[[S |-ctx G']]$.
@@ -91,7 +84,7 @@ By straightforward mutual induction, appealing to
 \pref{lem:rel-idempotent}.
 \end{proof}
 
-\subsection{Regularity}
+\subsection{Regularity, Part I}
 
 \begin{lemma}[Type variable kinds]
 \label{lem:tyvar-reg}
@@ -125,7 +118,6 @@ If:
 \item $[[S;G |-co g : phi]]$, OR
 \item $[[S;G |-prop phi]]$, OR
 \item $[[S;G;s0;t0 |-alt alt : k]]$, OR
-\item $[[S;G;s0;t0 |-calt calt : phi]]$, OR
 \item $[[S;G |-vec ts : D]]$, OR
 \item $[[S;G |-tel D]]$, OR
 \item $[[S |-ctx G]]$
@@ -149,7 +141,6 @@ Assume $[[S |-ctx G']]$ and $[[G \subseteq G']]$.
 \item If $[[S;G |-co g : phi ]]$, then $[[S;G' |-co g : phi]]$.
 \item If $[[S;G |-prop phi ]]$, then $[[S;G' |-prop phi]]$.
 \item If $[[S;G;s0;t0 |-alt alt : k]]$, then $[[S;G';s0;t0 |-alt alt : k]]$.
-\item If $[[S;G;s0;t0 |-calt calt : phi]]$, then $[[S;G';s0;t0 |-calt calt : phi]]$.
 \item If $[[S;G |-vec ts : D]]$, then $[[S;G' |-vec ts : D]]$.
 \item If $[[S;G |-tel D]]$, then $[[S;G' |-tel D]]$.
 \item If $[[S |-ctx G, D]]$, then $[[S |-ctx G', D]]$.
@@ -167,15 +158,14 @@ and
 \end{proof}
 
 \begin{lemma}[Strengthening]
-\label{lem:strengthening]
+\label{lem:strengthening}
 Assume $[[G' \subseteq G]]$ and the
-variables $[[(dom(G) \ dom(G')]]$ are never used.
+variables $[[{dom(G)} \ {dom(G')}]]$ are never used.
 \begin{enumerate}
 \item If $[[S;G |-ty t : k ]]$ then $[[S;G' |-ty t : k]]$.
 \item If $[[S;G |-co g : phi ]]$, then $[[S;G' |-co g : phi]]$.
 \item If $[[S;G |-prop phi ]]$, then $[[S;G' |-prop phi]]$.
 \item If $[[S;G;s0;t0 |-alt alt : k]]$, then $[[S;G';s0;t0 |-alt alt : k]]$.
-\item If $[[S;G;s0;t0 |-calt calt : phi]]$, then $[[S;G';s0;t0 |-calt calt : phi]]$.
 \item If $[[S;G |-vec ts : D]]$, then $[[S;G' |-vec ts : D]]$.
 \item If $[[S;G |-tel D]]$, then $[[S;G' |-tel D]]$.
 \item If $[[S |-ctx G]]$, then $[[S |-ctx G']]$.
@@ -197,10 +187,8 @@ $[[fv(k) \subseteq {dom(G)}]]$.
 \item If $[[S;G |-co g : phi]]$, then $[[fv(g) \subseteq {dom(G)}]]$ and
 $[[fv(phi) \subseteq {dom(G)}]]$.
 \item If $[[S;G |-prop phi]]$, then $[[fv(phi) \subseteq {dom(G)}]]$.
-\item If $[[S;G;s0;t0 |-alt H zs -> c. t : k]]$, 
-  then $[[fv(H zs -> c. t) \subseteq {dom(G)}]]$.
-\item If $[[S;G;s0;t0 |-calt H zs -> c. g : phi]]$, 
-  then $[[fv(H zs -> c. g) \subseteq {dom(G)}]]$.
+\item If $[[S;G;s0;t0 |-alt H -> t : k]]$, 
+  then $[[fv(t) \subseteq {dom(G)}]]$.
 \item If $[[S;G |-tel D]]$, then $[[fv(D) \subseteq {dom(G)}]]$.
 \item If $[[|-sig S]]$ and $[[S |-tc H : D1;D2;H']]$, 
 then $[[fv(D1) = \emptyset]]$ and $[[fv(D2) \subseteq {dom(D1)}]]$.
@@ -341,7 +329,7 @@ $[[b:Rel k0 \in G']]$.
 We adopt the variable names from the rule (renaming the variable to be substituted
 to $[[b]]$):
 \[
-\ottdruleCoXXPi{}
+\ottdruleCoXXPiTy{}
 \]
 The induction hypothesis gives us:
 \begin{itemize}
@@ -371,8 +359,6 @@ Assume $[[S;G |-co g : phi]]$.
 \item If $[[S;G,c:phi,G' |-prop phi']]$, then $[[S;G,G'[g/c] |-prop phi'[g/c] ]]$.
 \item If $[[S;G,c:phi,G';s0;t0 |-alt alt : k]]$,
 then $[[S;G,G'[g/c];s0[g/c];t0[g/c] |-alt alt[g/c] : k[g/c] ]]$.
-\item If $[[S;G,c:phi,G';s0;t0 |-calt calt : phi']]$,
-then $[[S;G,G'[g/c];s0[g/c];t0[g/c] |-calt calt[g/c] : phi'[g/c] ]]$.
 \item If $[[S;G,c:phi,G' |-vec ts : D]]$, then
 $[[S;G,G'[g/c] |-vec ts[g/c] : D[g/c] ]]$.
 \item If $[[S;G,c:phi,G' |-tel D]]$, then $[[S;G,G'[g/c] |-tel D[g/c] ]]$.
@@ -485,7 +471,7 @@ then $[[S;empty |-ty MPI D1,D2.H'[] dom(D1) : Type[] ]]$.
 \begin{proof}
 To prove $[[S;empty |-ty MPI D1,D2.H'[] dom(D1) : Type[] ]]$,
 we will use \rul{Ty\_Pi} (repeatedly). We thus must show
-$[[S;Rel(D1,D2) |-ty : H'[] dom(D1) : Type[] ]]$.
+$[[S;Rel(D1,D2) |-ty H'[] dom(D1) : Type[] ]]$.
 This, in turn, will be by \rul{Ty\_AppRel} (repeatedly). We thus
 must show 
 \begin{description}
@@ -555,7 +541,7 @@ to a $[[Rel]]$ and without the need for \pref{lem:increasing-rel}.
 \item[Case \rul{Ty\_CApp}:]
 Similar to previous case.
 \item[Case \rul{Ty\_Pi}:]
-By \pref{ctx-reg} and \pref{lem:type-in-type}.
+By \pref{lem:ctx-reg} and \pref{lem:type-in-type}.
 \item[Case \rul{Ty\_Cast}:]
 By inversion.
 \item[Case \rul{Ty\_Coercion}:]
@@ -631,17 +617,16 @@ Assume $[[ss ~> ss']]$. We can then conclude:
 \begin{enumerate}
 \item $[[t[ss/zs] ~> t[ss'/zs] ]]$
 \item $[[d[ss/zs] ~> d[ss'/zs] ]]$
-\item $[[alt[ss/zs] ~> alt[ss'/zs] ]]$
 \end{enumerate} 
 \end{lemma}
 
 \begin{proof}
 By straightforward
-mutual induction on the structure of $[[t]]$/$[[d]]$/$[[alt]]$.
+mutual induction on the structure of $[[t]]$/$[[d]]$.
 %% \begin{description}
 %% \item[Case $[[t = a]]$:] By assumption.
 %% \item[Case $[[t = b]]$:] By \rul{R\_Refl}.
-%% \item[Case $[[t = H]]$:] By \rul{R\_Refl}.
+%% \item[Case $[[t = H**]]$:] By \rul{R\_Refl}.
 %% \item[Case $[[t = t1 t2]]$:] By induction and \rul{R\_App}.
 %% \item[Case $[[t = PI d. s]]$:] By induction and \rul{R\_Pi}.
 %% \item[Case $[[t = o]]$:] By \rul{R\_Refl}.
@@ -650,7 +635,6 @@ mutual induction on the structure of $[[t]]$/$[[d]]$/$[[alt]]$.
 %% \item[Case $[[t = fix s]]$:] By induction and \rul{R\_Fix}.
 %% \item[Case $[[d = a:rel k]]$:] By induction and \rul{R\_TyBinder}.
 %% \item[Case $[[d = o:phi]]$:] By \rul{R\_CoBinder}.
-%% \item[Case $[[alt = p -> c.s]]$:] By induction and \rul{R\_Alt}.
 %% \end{description}
 \end{proof}
 
@@ -660,12 +644,11 @@ Assume $[[ss ~> ss']]$.
 \begin{enumerate}
 \item If $[[t1 ~> t2]]$, then $[[t1[ss/zs] ~> t2[ss'/zs] ]]$.
 \item If $[[d1 ~> d2]]$, then $[[d1[ss/zs] ~> d2[ss'/zs] ]]$.
-\item If $[[alt1 ~> alt2]]$, then $[[alt1[ss/zs] ~> alt2[ss'/zs] ]]$.
 \end{enumerate}
 \end{lemma}
 
 \begin{proof}
-By induction on $[[t1 ~> t2]]$/$[[d1 ~> d2]]$/$[[alt1 ~> alt2]]$.
+By induction on $[[t1 ~> t2]]$/$[[d1 ~> d2]]$.
 
 \begin{description}
 \item[Case \rul{R\_Refl}:] By \pref{lem:red-subst}.
@@ -687,21 +670,19 @@ expanding gives us that we must show
 $[[t3[ss/zs] ~> t3'[ss'/zs] ]]$ and $[[t4[ss/zs] ~> t4'[ss'/zs] ]]$.
 Both of these follow directly from the induction hypothesis, and
 so we are done.
+\item[Case \rul{R\_CBeta}:] By induction.
 \item[Case \rul{R\_Match}:] It must be that:
 \begin{itemize}
 \item $[[t1 = case_k H** ts of alts]]$
-\item $[[t2 = t4[ts'/zs'] ]]$ where $[[H zs' -> o.t3 \in alts]]$,
+\item $[[t2 = t4 ts' o ]]$ where $[[H -> t3 \in alts]]$,
 $[[t3 ~> t4]]$, $[[ts ~> ts']]$, and no other alternative matches.
 \end{itemize}
 We must show that
-$[[case_k[ss/zs] H** ts[ss/zs] of alts[ss/zs] ~> t4[ts'/zs'][ss'/zs] ]]$.
+$[[case_k[ss/zs] H** ts[ss/zs] of alts[ss/zs] ~> t4[ss'/zs] ts'[ss'/zs] o ]]$.
 Proceeding by \rul{R\_Match}, the left-hand side steps to
-$[[t5[ts''/zs'] ]]$ where $[[t3[ss/zs] ~> t5]]$ and $[[ts[ss/zs] ~> ts'']]$,
+$[[t5 ts'' o ]]$ where $[[t3[ss/zs] ~> t5]]$ and $[[ts[ss/zs] ~> ts'']]$,
 and we get to choose $[[t5]]$ and $[[ts'']]$.
-We must show that $[[t5[ts''/zs'] = t4[ts'/zs'][ss'/zs] ]]$.
-Reorder substitutions to get
-$[[t4[ts'/zs'][ss'/zs] = t4[ss'/zs][ts'[ss'/zs]/zs'] ]]$,
-noting that $[[zs' # ts']]$ by the Barendregt convention.
+We must show that $[[t5 ts'' o = t4[ss'/zs] ts'[ss'/zs] o ]]$.
 Choose $[[t5 = t4[ss'/zs] ]]$ and $[[ts'' = ts'[ss'/zs] ]]$.
 We must show that $[[t3[ss/zs] ~> t4[ss'/zs] ]]$ and
 $[[ts[ss/zs] ~> ts'[ss'/zs] ]]$. Both of these follow from the
@@ -776,6 +757,16 @@ $[[k1 ~> k2]]$, $[[s3 ~> s5]]$, and $[[s4 ~> s6]]$, and
 Choose $[[t3 = s5[s6/a] ]]$. We must show $[[t1 ~> t3]]$
 and $[[t2 ~> t3]]$. The first is by \rul{R\_Beta}.
 The second is by \pref{lem:red-subst-par}.
+\item[Case \rul{R\_App}/\rul{R\_CBeta}:] It must be that:
+\begin{itemize}
+\item $[[t0 = (\o:k1 ~ k2.s3) o]]$
+\item $[[t1 = (\o:k3 ~ k4.s4) o]]$ where $[[k1 ~> k3]]$, $[[k2 ~> k4]]$,
+and $[[s3 ~> s4]]$.
+\item $[[t2 = s5]]$ where $[[s3 ~> s5]]$
+\end{itemize}
+The induction hypothesis gives us $[[s6]]$ such that $[[s4 ~> s6 <~ s5]]$.
+Choose $[[t3 = s6]]$. We must show $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$.
+The first is by \rul{R\_CBeta}. The second is immediate.
 \item[Case \rul{R\_Beta}/\rul{R\_Beta}:] 
 It must be that:
 \begin{itemize}
@@ -791,6 +782,7 @@ Using the induction hypothesis, we can get $[[s5]]$ and $[[s6]]$ such that
 Choose $[[t3 = s5[s6/a] ]]$. We must show $[[s3'[s4'/a] ~> s5[s6/a] ]]$
 and $[[s3''[s4''/a] ~> s5[s6/a] ]]$. Both of these follow from
 \pref{lem:red-subst-par}.
+\item[Case \rul{R\_CBeta}/\rul{R\_CBeta}:] By induction.
 \end{description}
 \item[Case $[[t0 = PI d. s0]]$:] By induction.
 \item[Case $[[t0 = o]]$:] $[[t1]] = [[t2]] = [[t3]] = [[o]]$.
@@ -800,27 +792,26 @@ We now have several cases:
 \item[Case \rul{R\_Case}/\rul{R\_Case}:] By induction.
 \item[Case \rul{R\_Case}/\rul{R\_Match}:] It must be that:
 \begin{itemize}
-\item $[[t0 = case_k H** ss of alts]]$
-\item $[[t1 = case_k' H** ss' of alts']]$
-where $[[k ~> k']]$, $[[ss ~> ss']]$, and $[[alts ~> alts']]$
+\item $[[t0 = case_k H** ss of list of H -> ee]]$
+\item $[[t1 = case_k' H** ss' of list of H -> ee']]$
+where $[[k ~> k']]$, $[[ss ~> ss']]$, and $[[ees ~> ees']]$
 (appealing to \pref{lem:app-red})
-\item $[[t2 = s0'[ss''/zs] ]]$, where $[[alti = H zs -> o. s0]]$,
+\item $[[t2 = eei'' ss'' o ]]$, where $[[Hi = H]]$,
 no other alternative matches $[[H]]$,
-$[[s0 ~> s0']]$, and $[[ss ~> ss'']]$.
+$[[eei ~> eei'']]$, and $[[ss ~> ss'']]$.
 \end{itemize}
-Using the induction hypothesis, we can get $[[ss''']]$ such that
-$[[ss' ~> ss''' <~ ss'']]$. Let $[[alti' = H zs -> o. s0'']]$.
-We thus have $[[s0 ~> s0']]$ and $[[s0 ~> s0'']]$. The induction hypothesis
-gives us $[[s0''']]$ such that $[[s0' ~> s0''' <~ s0'']]$.
-Choose $[[t3 = s0'''[ss'''/zs] ]]$. We must show both $[[t1 ~> t3]]$
+Using the induction hypothesis, we can get $[[eei''']]$ such that
+$[[eei' ~> eei''' <~ eei'']]$ and $[[ss''']]$ such that
+$[[ss' ~> ss''' <~ ss'']]$.
+Choose $[[t3 = eei''' ss''' o]]$. We must show both $[[t1 ~> t3]]$
 and $[[t2 ~> t3]]$. The first is by \rul{R\_Match}. The second is by
-\pref{lem:red-subst-par}.
+repeated use of \rul{R\_App}.
 \item[Case \rul{R\_Match}/\rul{R\_Match}:] It must be that:
 \begin{itemize}
 \item $[[t0 = case_k H** ss of alts]]$
-\item $[[alti = H zs -> o. k1]]$ where no other alternative matches $[[H]]$
-\item $[[t1 = k1'[ss'/zs] ]]$ where $[[k1 ~> k1']]$ and $[[ss ~> ss']]$.
-\item $[[t2 = k1''[ss''/zs] ]]$ where $[[k1 ~> k1'']]$ and $[[ss ~> ss'']]$.
+\item $[[alti = H -> k1]]$ where no other alternative matches $[[H]]$
+\item $[[t1 = k1' ss' o ]]$ where $[[k1 ~> k1']]$ and $[[ss ~> ss']]$.
+\item $[[t2 = k1'' ss'' o ]]$ where $[[k1 ~> k1'']]$ and $[[ss ~> ss'']]$.
 \end{itemize}
 The induction hypothesis gives us $[[k1''']]$ and $[[ss''']]$ such that:
 \begin{itemize}
@@ -899,9 +890,19 @@ $[[|t[g/c]| = |t|]]$
 By induction on the structure of $[[t]]$.
 \end{proof}
 
+\begin{definition}[$[[promote]]$]
+TODO
+\end{definition}
+
 \begin{definition}[$[[nokind]]$]
+Define the operation $[[nokind_S;G(g) = h]]$ as follows:
+$[[nokind_S;G(kind g) = promote_S;G(g)]]$; $[[nokind_S;G(g)]]$ where $[[g]]$
+is not headed by \ottkw{kind} simply recurs on the component coercions.
+\end{definition}
 
 \begin{lemma}[Eliminating \ottkw{kind}]
+TODO
+\end{lemma}
 
 \begin{lemma}[Completeness of type reduction]
 \label{lem:complete-red}
