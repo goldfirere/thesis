@@ -49,6 +49,16 @@ Generativity/injectivity:
 Relevance:
  - The negation in the App rule is just contravariance. Clearly.
 
+Erasure:
+ - We have coercion abstraction, which cannot get erased. But we will prove
+   that type inference never creates a coercion abstraction except in the
+   body of a pattern match. And in this position, whenever the match fires,
+   it will get applied, as per S_Match. So we'll never get stuck on a
+   coercion abstraction. Yet, coercion abstractions are useful in simplifying
+   the grammar for case expressions (BIG WIN) and also in let-floating.
+   Admittedly, a let-floated coercion abstraction might cause stuckness,
+   but it is up to the optimizer to make sure this doesn't happen.
+
 Unnecessary coercions:
   App
   PiCo
