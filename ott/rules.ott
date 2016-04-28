@@ -21,7 +21,7 @@ t2 is not a value
 t1 ! t2
 
 ------- :: TyCon
-H[ts] ss ! H[ts'] ss'
+H[ts] ps ! H[ts'] ps'
 
 %% Why don't combine these next two? Because we need the relevances
 %% to be the same.
@@ -124,11 +124,6 @@ S;G |-ty t : k1   //  S;Rel(G) |-ty k2 : Type[]
 -------------------- :: Cast
 S;G |-ty t |> g : k2
 
-S;Rel(G) |-co g : t1 ~ t2
-S;Rel(G) |-ty t1 : k1 // S;Rel(G) |-ty t2 : k2
----------------------------- :: Coercion
-S;G |-ty g : (~)[] k1 k2 t1 t2
-
 S;Rel(G) |-ty k : Type[]  //  S;G |-ty t : s
 forall i: S;G;s;t |-alt alti : k
 s = MPI D. H[] ss // alts are exhaustive for H
@@ -194,28 +189,27 @@ S;G |-ty H[ss] : k1  //  S;G |-ty H[ss'] : k2
 ------------------------------- :: Con
 S;G |-co H[gs] : H[ss] ~ H[ss']
 
-S;G |-co g1 : t1 ~ s1
-S;G |-co g2 : t2 ~ s2
-S;G |-ty t1 t2 : k1 // S;G |-ty s1 s2 : k2
+S;G |-co g1 : t1 ~ t2
+S;G |-co g2 : s1 ~ s2
+S;G |-ty t1 s1 : k1 // S;G |-ty t2 s2 : k2
 -------------------------- :: App
-S;G |-co g1 g2 : t1 t2 ~ s1 s2
+S;G |-co g1 g2 : t1 s1 ~ t2 s2
+
+S;G |-co g0 : t1 ~ t2
+S;G |-ty t1 g1 : k1 // S;G |-ty t2 g2 : k2
+-------------------------- :: CApp
+S;G |-co g1 (g1,g2) : t1 g1 ~ t2 g2
 
 S;G |-co h : k1 ~ k2
 S;G,a:Rel k1 |-co g : s1 ~ s2
 -------------------------------- :: PiTy
 S;G |-co PI a :rel h. g : PI a:rel k1.s1 ~ PI a:rel k2.(s2[a |> sym h/a])
 
-S;G |-co h : phi1 ~ phi2
-S;G,c:phi1 |-co g : s1 ~ s2
-h1 = nth 3 h  //  h2 = nth 4 h
-% h : (t1 ~ t2) ~ (k1 ~ k2)
-% h1 : t1 ~ k1
-% h2 : t2 ~ k2
-% phi1 = t1 ~ t2
-% phi2 = k1 ~ k2
-% c:phi2 |- h1 ;; c ;; sym h2 : t1 ~ t2
--------------------------------- :: PiCo
-S;G |-co PI c : h. g : PI c:phi1.s1 ~ PI c:phi2.(s2[h1 ;; c ;; sym h2 / c])
+S;G |-co h1 : t1 ~ t2
+S;G |-co h2 : s1 ~ s2
+S;G,c:t1~s1 |-co g : k1 ~ k2
+------------------------------ :: PiCo
+S;G |-co PI c:(h1,h2).g : PI c:t1 ~ s1. k1 ~ PI c:t2 ~ s2.(k2[h1 ;; c ;; sym h2/c])
 
 S;G |-co h : k1 ~ k2  //  S;G |-co g0 : t1 ~ t2
 forall i: S;G |-co gi : si ~ s'i
@@ -229,11 +223,11 @@ S;G, a :Rel k1 |-co g : t1 ~ t2
 ------------------------------------- :: Lam
 S;G |-co \a :rel h . g : \a:rel k1.t1 ~ \a:rel k2.(t2[a |> sym h/a])
 
-S;G |-co h : phi1 ~ phi2
-S;G,c:phi1 |-co g : s1 ~ s2
-h1 = nth 3 h  //  h2 = nth 4 h
+S;G |-co h1 : t1 ~ t2
+S;G |-co h2 : s1 ~ s2
+S;G,c:t1~s1 |-co g : k1 ~ k2
 ------------------------------- :: CLam
-S;G |-co \c:h.g : \c:phi1.s1 ~ \c:phi2.(s2[h1 ;; c ;; sym h2 / c])
+S;G |-co \c:(h1,h2).g : \c:t1~s1.k1 ~ \c:t2 ~ s2.(k2[h1 ;; c ;; sym h2 / c])
 
 % TODO: This needs more premises for regularity.
 S;G |-co g : t1 ~ t2
@@ -244,13 +238,25 @@ S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
 ------------------------- :: ArgK
 S;G |-co argk g : k1 ~ k2
 
-S;G |-co g : PI c:phi1.s1 ~ PI c:phi2.s2
--------------------------------- :: CArgK
-S;G |-co argk g : phi1 ~ phi2
+S;G |-co g : PI c:t1 ~ t1'.s1 ~ PI c:t2 ~ t2'.s2
+-------------------------------- :: CArgK1
+S;G |-co argk 1 g : t1 ~ t2
+
+S;G |-co g : PI c:t1 ~ t1'.s1 ~ PI c:t2 ~ t2'.s2
+----------------------------- :: CArgK2
+S;G |-co argk 2 g : t1' ~ t2'
 
 S;G |-co g : \a:rel k1.s1 ~ \a:rel k2.s2
 ------------------------- :: ArgKLam
 S;G |-co argk g : k1 ~ k2
+
+S;G |-co g : \c:t1 ~ t1'.s1 ~ \c:t2 ~ t2'.s2
+--------------------- :: CArgKLam1
+S;G |-co argk 1 g : t1 ~ t2
+
+S;G |-co g : \c:t1 ~ t1'.s1 ~ \c:t2 ~ t2'.s2
+--------------------- :: CArgKLam2
+S;G |-co argk 2 g : t1' ~ t2'
 
 S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
 S;G |-co h : t1 ~ t2
@@ -259,20 +265,20 @@ S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
 S;G |-co g@h : s1[t1/a] ~ s2[t2/a]
 
 S;G |-co h1 : PI c:phi1. s1 ~ PI c:phi2.s2
-S;G |-co h2 : g1 ~ g2
 S;G |-co g1 : phi1  //   S;G |-co g2 : phi2
 -------------------------- :: CInst
-S;G |-co h1@h2 : s1[g1/c] ~ s2[g2/c]
+S;G |-co h1@(g1,g2) : s1[g1/c] ~ s2[g2/c]
 
 S;G |-co g : \a:rel k1.t1 ~ \a:rel k2.t2
 S;G |-co h : s1 ~ s2
 S;G |-ty s1 : k1  //  S;G |-ty s2 : k2
 --------------------------- :: InstLam
-S;G |-co g@h : t1[s1/a] ~ t2[s2/a]
+S;G |-co g@\h : t1[s1/a] ~ t2[s2/a]
 
-S;G |-co g : H[ks] ts ~ H[ks'] ss
+S;G |-co g : H[ks] ps ~ H[ks'] ps'
+pi = t  //  pi' = s
 -------------------------- :: Nth
-S;G |-co nth i g : ti ~ si
+S;G |-co nth i g : t ~ s
 
 S;G |-co g : t1 ~ t2
 S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
@@ -282,6 +288,23 @@ S;G |-co kind g : k1 ~ k2
 S;G |-ty t : k   //  S;G |-s t --> t'
 ------------------------ :: Step
 S;G |-co step t : t ~ t'
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%  Coercion arguments  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% defn
+% S ; G |-arg w : ( p1 ; p2 ) :: :: Arg :: 'Arg_'
+%   {{ com Coercion argument formation }}
+% by
+
+% S;G |-co g : t1 ~ t2
+% --------------------- :: Ty
+% S;G |-arg g : (t1; t2)
+
+% S;G |-co g1 : t1 ~ s1 // S;G |-co g2 : t2 ~ s2
+% ----------------------------- :: Co
+% S;G |-arg (g1, g2) : (g1; g2)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Propositions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -303,7 +326,7 @@ S;G |-prop t1 ~ t2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defn
-S ; G |-vec ts : D :: :: Vec :: 'Vec_'
+S ; G |-vec ps : D :: :: Vec :: 'Vec_'
   {{ com Type vector formation }}
 by
 
@@ -312,33 +335,20 @@ S |-ctx G
 S;G |-vec empty : empty
 
 S;G |-ty t : k
-S;G |-vec ss : D[t/a]
+S;G |-vec ps : D[t/a]
 -------------------------- :: TyRel
-S;G |-vec t,ss : a:Rel k,D
+S;G |-vec t,ps : a:Rel k,D
 
 S;Rel(G) |-ty t : k
-S;G |-vec ss : D[t/a]
+S;G |-vec ps : D[t/a]
 -------------------------- :: TyIrrel
-S;G |-vec t,ss : a:Irrel k,D
+S;G |-vec t,ps : a:Irrel k,D
 
 S;Rel(G) |-co g : phi
-S;G |-vec ss : D[g/c]
+S;G |-vec ps : D[g/c]
 ------------------------ :: Co
-S;G |-vec g,ss : c:phi,D
+S;G |-vec g,ps : c:phi,D
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  Telescopes  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-defn
-S ; G |-tel D :: :: Tel :: 'Tel_'
-  {{ com Telescope formation }}
-by
-
-S |-ctx G,D
------------ :: Binders
-S;G |-tel D
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Signatures  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -352,11 +362,11 @@ by
 ----------- :: Boot
 |-sig S0
 
-S; empty |-tel as :Irrel ks  // T # S
+S |-ctx as :Irrel ks  // T # S
 ----------------- :: ADT
 |-sig S, T : (as:ks)
 
-T : (as:ks) \in S   //  S;as:Irrel ks |-tel D  // K # S
+T : (as:ks) \in S   //  S |-ctx as:Irrel ks, D  // K # S
 ------------------- :: DataCon
 |-sig S, K : (D; T)
 
@@ -401,7 +411,7 @@ S;G |-s (\c:phi.s) g --> s[g/c]
 
 alti = H -> t0  // other alternatives do not match H
 ---------------------------- :: Match
-S;G |-s case_k H[ts] ss of alts --> t0 ss <H[ts] ss>
+S;G |-s case_k H[ts] ps of alts --> t0 ps <H[ts] ps>
 
 t = \a:rel k.s
 ---------------------------- :: Unroll
@@ -439,31 +449,23 @@ g1 = sym (argk g0)      //   g2 = g0@(erase_(sym g1) (t |> g1) t)
 S;G |-s (v |> g0) t --> v (t |> g1) |> g2
 
 S;G |-ty v : PI c:phi. s
-g1 = argk g0 //  g2 = nth 2 g1  //  g3 = sym (nth 3 g1)
-h' = g2 ;; h ;; g3  //  g4 = g0@(erase_g1 h' h)
-% g0 : PI c:phi.s ~ PI c:phi'.s'
-% phi = t1 ~ t2
-% phi' = t1' ~ t2'
-% h : t1' ~ t2'
-% g2 : t1 ~ t1'
-% g3 : t2' ~ t2
-% g4 : s[(g1 ;; h ;; g2)/c] ~ s'[h/c]
-% h' : (g1 ;; h ;; g2) ~ h
-% g1 : phi ~ phi'
+g1 = argk 1 g0 //  g2 = argk 2 g0
+h' = g1 ;; h ;; g2  //  g3 = g0@(h', h)
 --------------------------------------------- :: CPush
-S;G |-s (v |> g0) h --> v h' |> g4
+S;G |-s (v |> g0) h --> v h' |> g3
 
 ----------------------------------- :: APush
 S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI a:Irrel <k>. g)
 
 S |-tc H : as:Irrel ks;D;H'
-S;G |-co h : H'[] ts ~ H'[] ts'
-forall i: gi = build_kpush_co(<k>@(nths h);ss_{0..i-1})
-forall i: si' = si |> argk gi
+S;G |-co h : H'[] ps ~ H'[] ps'
+forall j: wj = mk_nth(g;j;pj;pj')
+forall i: gi = build_kpush_co(<k>@ws;ps_{0..i-1})
+forall i: pi' = cast_kpush_arg(pi;gi)
 % kind K = MPI as :Irrel ks. MPI D. T as
 % si' = s' |> argk (kind K @ nths h @ ...)
 ----------------------------------------------------------------- :: KPush
-S;G |-s case_k0 (H[ts] ss) |> h of alts --> case_k0 H[ts'] ss' of alts
+S;G |-s case_k0 (H[ts] ps) |> h of alts --> case_k0 H[ts'] ps' of alts
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parallel reduction  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -482,13 +484,17 @@ t ~> t
 
 t ~> t' // s ~> s'
 -------------------- :: App
-t s ~> t s'
+t s ~> t' s'
+
+t ~> t'
+----------- :: CApp
+t o ~> t' o
 
 d ~> d'   //  t ~> t'
 ---------------------------------------- :: Pi
 PI d. t ~> PI d'. t'
 
-k ~> k'  //  t ~> t'  // ss ~> ss'
+k ~> k'  //  t ~> t'  //  ss ~> ss'
 ---------------- :: Case
 case_k t of list of H -> s ~> case_k' t' of list of H -> s'
 
@@ -508,10 +514,10 @@ t ~> t'
 ------------------ :: CBeta
 (\o:phi.t) o ~> t'
 
-alti = H -> t0  // ss ~> ss' // t0 ~> t0'
+alti = H -> t0  // ps ~> ps' // t0 ~> t0'
 other alternatives do not match H
 ----------------------------------- :: Match
-case_k H** ss of alts ~> t0' ss' o
+case_k H** ps of alts ~> t0' ps' o
 
 s ~> s' // k ~> k'
 ------------------- :: Unroll
@@ -530,4 +536,10 @@ s1 ~> s2 // t1 ~> t2
 ---------- :: CoBinder
 o:s1 ~ t1 ~> o:s2 ~ t2
 
+defn
+g ~> g'  :: :: RedCo :: 'R_'
+  {{ com ``Reduction'' of erased coercion }}
+by
 
+------ :: ErasedCo
+o ~> o

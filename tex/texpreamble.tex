@@ -1,0 +1,59 @@
+% package inclusion
+\usepackage[usenames,dvipsnames,svgnames]{xcolor}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\usepackage{setspace}
+\usepackage{amstext}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{prettyref}
+\usepackage{verbatim}
+\usepackage[greek,english]{babel}
+\usepackage{mdframed}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{supertabular}
+
+% formatting macros
+\newcommand{\keyword}[1]{\textsf{\textbf{#1}}}
+\newcommand{\id}[1]{\textsf{\textsl{#1}}}
+\newcommand{\tick}{\text{\textquoteright}}
+\newcommand{\package}[1]{\textsf{#1}}
+\newcommand{\ext}[1]{\texttt{#1}}
+\newcommand{\flag}[1]{\texttt{#1}}
+
+%% Import ``mathb'' font
+\DeclareFontFamily{U}{mathb}{\hyphenchar\font45}
+\DeclareFontShape{U}{mathb}{m}{n}{
+      <5> <6> <7> <8> <9> <10> gen * mathb
+      <10.95> mathb10 <12> <14.4> <17.28> <20.74> <24.88> mathb12
+      }{}
+\DeclareSymbolFont{mathb}{U}{mathb}{m}{n}
+\DeclareFontSubstitution{U}{mathb}{m}{n}
+
+%% just so I can get this symbol
+\DeclareMathSymbol{\longrightsquigarrow}{3}{mathb}{"F9}
+
+%% and I need \leftsquigarrow, as per
+%% https://tex.stackexchange.com/questions/195025/how-to-get-the-opposite-direction-of-rightsquigarrow
+\makeatletter
+\providecommand{\leftsquigarrow}{%
+  \mathrel{\mathpalette\reflect@squig\relax}%
+}
+\newcommand{\reflect@squig}[2]{%
+  \reflectbox{$\m@th#1\rightsquigarrow$}%
+}
+\makeatother
+
+\newcommand{\at}{@}
+
+\input{ottdefns}
+\newcommand{\rul}[1]{\textmd{\ottdrulename{#1}}}
+
+\renewenvironment{ottfundefnblock}[3][]%
+{\csname align*\endcsname}%
+{\csname endalign*\endcsname}
+
+\renewcommand{\ottfunclause}[2]{ #1 &= #2 \\}
+\renewcommand{\ottkw}[1]{\ensuremath{\mathbf{#1}}}

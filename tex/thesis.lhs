@@ -1,17 +1,11 @@
 %% -*- mode: LaTeX -*-
 
-\newif \ifdraft \draftfalse
-\newif \ifproposal \proposalfalse
 \documentclass[12pt,oneside]{book}
 
 %include rae.fmt
 
-\newcommand{\Title}{DEPENDENT TYPES IN HASKELL: THEORY AND PRACTICE}
-\newcommand{\Author}{Richard A.~Eisenberg}
-\newcommand{\Advisor}{Stephanie Weirich}
-\newcommand{\Year}{2016}
-
-\input{preamble}
+\input{texpreamble}
+\input{thesispreamble}
 
 \title{\Title}
 \author{\Author}

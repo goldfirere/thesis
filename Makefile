@@ -1,3 +1,5 @@
+C = app-d
+
 OTT_FILES_BASE = syn rules
 PAPER_BASE = thesis
 OTT_PICKY = false
@@ -29,6 +31,8 @@ compile: $(ALL_LHS_FILES:tex/%.lhs=aux/%.o)
 thesis: pdf/$(PAPER_BASE).pdf
 	@echo '**** THESIS BUILT ****'
 
+chapter: pdf/chapter.pdf
+
 ott: pdf/$(OTT_DUMP_BASE).pdf
 
 $(PDF_DIR_MARKER):
@@ -46,7 +50,14 @@ $(OTT_OUTPUT_FULL): $(OTT_FILES_FULL)
 
 aux/$(PAPER_BASE).tex: $(ALL_LHS_FILES:tex/%=aux/%)
 
-aux/%.pdf: aux/%.tex $(OTT_OUTPUT_FULL) $(BIB_FILES_FULL) $(AUX_DIR_MARKER) $(ALL_TEX_FILES:tex/%=aux/%)
+aux/chapter.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex aux/thesispreamble.tex aux/thechapter.tex
+aux/ottdump.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex
+aux/thesis.pdf: $(OTT_OUTPUT_FULL) $(BIB_FILES_FULL) $(ALL_TEX_FILES:tex/%=aux/%)
+
+aux/thechapter.tex: aux/$(C).tex
+	cp $< $@
+
+aux/%.pdf: aux/%.tex $(AUX_DIR_MARKER)
 	latexmk -pdf -cd $<
 
 aux/%: tex/% $(AUX_DIR_MARKER)

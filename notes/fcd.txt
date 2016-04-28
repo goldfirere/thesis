@@ -16,26 +16,20 @@ Features missing:
  - levity polymorphism (would need to generalize Ty_Pi)
 
 Notation:
- - a -> b means (_ :(Nondep,Rel,Vis,Mat) a. b)
- - a ~> b means (_ :(Nondep,Rel,Vis,Unm) a. b)
- - We can use binders \delta in place of types and telescopes \Delta in place
-   of lists of types.
- - dom(D) can be used as a list of types. See Tc_DataCon.
- - Notation as:prefix(D) means to zip the as with the D, doing telescopy
-   substitution, and dropping any unmatched suffix
- - Notation as:D means the lengths must match exactly
+%% - a -> b means (_ :(Nondep,Rel,Vis,Mat) a. b)
+%% - a ~> b means (_ :(Nondep,Rel,Vis,Unm) a. b)
+ - dom(D) is a list of type/coercion variables zs.
+ - prefix(.) takes the prefix of a list
+%% - Notation as:D means the lengths must match exactly
  - \tilde{\Pi} is the unmatchable Pi.
  - We write H for H[]
  
  - Rel(G) makes all bindings in G relevant.
- - Irrel(G) is a no-op.
- - Thus, rel(G) (with a metavariable rel) is well-defined.
- - \neg rel is the opposite of rel.
-    --> This Rel(G) operation is precisely Mishra-Linger's "context reset" operation
+%% - Irrel(G) is a no-op.
+%% - Thus, rel(G) (with a metavariable rel) is well-defined.
+%% - \neg rel is the opposite of rel.
+%%    --> This Rel(G) operation is precisely Mishra-Linger's "context reset" operation
 
- - We can pretend phi is a type.
-
- - g1 ||> g2  :=    sym ((sym g1) <|| g2)
  - `let` in coercions is defined by macro-expansion
 
 TysWiredIn:
@@ -45,9 +39,6 @@ Generativity/injectivity:
  - A generative/injective thing is called "matchable".
  - The opposite of "matchable" is "unmatchable".
 
-
-Relevance:
- - The negation in the App rule is just contravariance. Clearly.
 
 Erasure:
  - We have coercion abstraction, which cannot get erased. But we will prove
@@ -70,6 +61,8 @@ Unnecessary coercions:
   Kind
 
   Con
+
+  (Actually, just look it up in the git history.)
 
 Added/changed: Case, Match, CBeta, CLam
 
@@ -124,6 +117,7 @@ Simplifications:
 - Tried to remove g from grammar of types. Caused major headaches, because
   g1 ~ g2 is no longer well-formed. This way lies the X coercions of the
   "overabundance" paper. Ick.
+  UPDATE: Actually, got this to work.
 
 - Tried labeling applications. This seems like it could work better than
   the last fix, but I'm still unconvinced. It would mean making braced
@@ -135,7 +129,6 @@ Simplifications:
   the asymmetrical one-binder approach, as implemented.
 
 
-TODO: Add \a:Irrel k.v to language of values.
 TODO: Make an explicit argument form.
 TODO: "other alternatives do not match" needs to be in the typing rule,
       not the step rule.
