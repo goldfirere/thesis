@@ -6,6 +6,9 @@
 
 embed {{ tex-preamble
 \newcommand{\vdashy}[1]{\vdash_{\!\!\!\mathsf{#1} } }
+\newcommand{\gobble}[1]{}
+\let\supp\gobble
+\newcommand{\nosupp}[1]{\begingroup\let\supp\relax#1\endgroup}
 }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -26,7 +29,6 @@ Prim, P :: 'PrimTyCon_' ::=
 | Type             ::   :: Type
 
 ADT, T :: 'ADT_' ::=
-| ( ~ )            ::   :: Twiddle
 
 tycon, H :: 'TyCon_' ::=
 | T                ::   :: ADT
@@ -182,8 +184,12 @@ alt :: 'Alt_' ::=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 prop, phi {{ tex \phi }} :: 'Phi_' ::=
-| t1 ~ t2                      ::   :: Equality
+| t1 ( k1 )~( k2 ) t2          ::   :: Equality
+  {{ tex [[t1]] \mathrel{ {}^{[[k1]]} {\sim}^{[[k2]]} } [[t2]] }}
+| t1 [ k1 ]~[ k2 ] t2          :: M :: IEquality
+  {{ tex [[t1]] \mathrel{ {}^{\supp{[[k1]]} } {\sim}^{\supp{[[k2]]} } } [[t2]] }}
 | phi [ subst ]                :: M :: Subst
+% TODO: Remove?
 | coercionKind _ S ; G ( g )   :: M :: CoKind
   {{ tex [[coercionKind]]_{[[S]];[[G]]}([[g]]) }}
 
@@ -239,6 +245,7 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 | ( gs )                       :: M :: Parens
 | Psi _ S ; G ( ts )           :: M :: LiftedTys
   {{ tex [[Psi]]_{[[S]];[[G]]}([[ts]]) }}
+| nths g                       :: M :: Nths
 
 calt :: 'CAlt_' ::=
 | H -> g                        ::   :: Alt
@@ -622,7 +629,7 @@ fun
 '|' phi0 '|' :: phi :: erase_prop
 
 by
-|t1 ~ t2|   === |t1| ~ |t2|
+|t1 (k1)~(k2) t2|   === |t1| (|k1|)~(|k2|) |t2|
 
 fun
 '|' alt0 '|' :: alt :: erase_alt
@@ -658,3 +665,4 @@ Cos_One <= CoArgs_Coercions
 
 Args_Many <= Rewrite_ts_rewrite
 
+Phi_IEquality <= Phi_Subst

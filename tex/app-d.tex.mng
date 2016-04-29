@@ -3,14 +3,14 @@
 
 \section{Auxiliary definitions}
 
-\begin{definition}[Bootstrap signature]
-\label{defn:sig-boot}
-The bootstrap signature $[[S0]]$ (as mentioned in \rul{Sig\_Boot}) is
-defined thus:
-\[
-[[S0 = (~) : (a1 : Type{}, a2 : Type{}, b1 : a1, b2 : a2)]]
-\]
-\end{definition}
+%% \begin{definition}[Bootstrap signature]
+%% \label{defn:sig-boot}
+%% The bootstrap signature $[[S0]]$ (as mentioned in \rul{Sig\_Boot}) is
+%% defined thus:
+%% \[
+%% [[S0 = (~) : (a1 : Type{}, a2 : Type{}, b1 : a1, b2 : a2)]]
+%% \]
+%% \end{definition}
 
 \begin{definition}[Values]
 Let values $[[v]]$ be defined by the following subgrammar of $[[t]]$:
@@ -32,6 +32,15 @@ The definitions are entirely standard.
 Define the relation $[[G \subseteq G']]$ to mean that $[[G]]$ is a (not necessarily
 contiguous) subsequence of $[[G']]$.
 \end{definition}
+
+\begin{notation}[Kinds in propositions]
+A proposition $[[phi]]$ is properly written $[[t1 (k1)~(k2) t2]]$. We
+frequently elide the kinds if they are obvious or irrelevant.
+Despite these elisions, the kinds are sometimes helpful when proving
+properties of judgments. We then include in the kinds when displaying
+a rule during a proof. This does not change the meaning of the rule;
+it is merely a typesetting convenience to elide the kinds.
+\end{notation}
 
 \section{Structural properties}
 
@@ -341,12 +350,12 @@ to $[[b]]$):
 \]
 The induction hypothesis gives us:
 \begin{itemize}
-\item $[[S;G,G'[s/b] |-co h[s/b] : k1[s/b] ~ k2[s/b] ]]$
-\item $[[S;G,G'[s/b],a:rel k1[s/b] |-co g[s/b] : s1[s/b] ~ s2[s/b] ]]$
+\item $[[S;G,G'[s/b] |-co h[s/b] : k1[s/b] [Type{}]~[Type{}] k2[s/b] ]]$
+\item $[[S;G,G'[s/b],a:Rel k1[s/b] |-co g[s/b] : s1[s/b] [Type{}]~[Type{}] s2[s/b] ]]$
 \end{itemize}
 By \rul{Co\_PiTy}, we get
 \[
-[[S;G,G'[s/b] |-co PI a:rel h[s/b]. g[s/b] : (PI a:rel k1[s/b]. s1[s/b]) ~ (PI a:rel k2[s/b]. (s2[s/b][a |> sym h[s/b]/a])) ]]
+[[S;G,G'[s/b] |-co PI a:rel h[s/b]. g[s/b] : (PI a:rel k1[s/b]. s1[s/b]) [Type{}]~[Type{}] (PI a:rel k2[s/b]. (s2[s/b][a |> sym h[s/b]/a])) ]]
 \]
 All that remains to show is that
 $[[s2[s/b][a |> sym h[s/b]/a] = s2[a |> sym h/a][s/b] ]]$, but this
@@ -354,7 +363,7 @@ follows from the fact that $[[a # s]]$, guaranteed by the Barendregt
 convention. We are done with this case.
 \item[Other cases:] By the induction hypothesis, using \pref{lem:value-subst} for
 certain step rules, and using the Barendregt convention to rearrange substitutions
-(as in the \rul{Co\_PiTy} case) in the \rul{Inst} rules and in rule \rul{Co\_Lam}.
+(as in the \rul{Co\_PiTy} case).
 \end{description}
 \end{proof}
 
@@ -427,16 +436,6 @@ following:
 \item[$[[S;empty |-vec empty : empty]]$:] By \rul{Vec\_Nil}.
 \end{description}
 We are thus done.
-\end{proof}
-
-\begin{lemma}[Kinds in a context]
-\label{lem:kind-ctx}
-If $[[S |-ctx G]]$ and $[[a :rel k \in G]]$, then
-$[[S;Rel(G) |-ty k : Type{} ]]$.
-\end{lemma}
-
-\begin{proof}
-By induction on the size of $[[G]]$.
 \end{proof}
 
 \begin{lemma}[Telescopes]
@@ -520,14 +519,14 @@ get from \pref{lem:tycon-tel}. We are done.
 
 \begin{lemma}[Kind regularity] ~
 \label{lem:kind-reg}
-If $[[S;G |-ty t : k]]$, then $[[S;Rel(G) |-ty k : Type{} ]]$.
+\item If $[[S;G |-ty t : k]]$, then $[[S;Rel(G) |-ty k : Type{} ]]$.
 \end{lemma}
 
 \begin{proof}
-By induction on the typing derivation.
+By mutual induction on the typing derivation.
 
 \begin{description}
-\item[Case \rul{Ty\_Var}:] By \pref{lem:kind-ctx}.
+\item[Case \rul{Ty\_Var}:] By \pref{lem:tyvar-reg} (and \pref{lem:weakening}).
 \item[Case \rul{Ty\_Con}:] We'll adopt the metavariable names
 from the rule:
 \[
@@ -592,7 +591,7 @@ If $[[S;G |-co g : phi]]$, then $[[S;Rel(G) |-prop phi]]$.
 By induction on the typing derivation.
 
 \begin{description}
-\item[Case \rul{Co\_Var}:] By \pref{lem:covar-reg}, \pref{ctx-reg}, and
+\item[Case \rul{Co\_Var}:] By \pref{lem:covar-reg}, \pref{lem:ctx-reg}, and
  \pref{lem:weakening}.
 \item[Case \rul{Co\_Refl}:] Immediate.
 \item[Case \rul{Co\_Sym}:] By induction.
@@ -605,60 +604,76 @@ By induction on the typing derivation.
 \item[Case \rul{Co\_PiTy}:] 
 We adopt the metavariable names from the statement of the rule:
 \[
-\ottdruleCoXXPiTy{}
+\nosupp{\ottdruleCoXXPiTy{}}
 \]
+The induction hypothesis (and inversion) give us the following:
+\begin{itemize}
+\item $[[S;Rel(G) |-ty k1 : Type{}]]$
+\item $[[S;Rel(G) |-ty k2 : Type{}]]$
+\item $[[S;Rel(G),a:Rel k1 |-ty s1 : Type{}]]$
+\item $[[S;Rel(G),a:Rel k1 |-ty s2 : Type{}]]$
+\end{itemize}
 We can straightforwardly use \rul{Ty\_Pi} to show that
-$[[S;G |-ty PI a:rel k1.s1 : Type{}]]$.
-Choose a fresh $[[b]]$. We know $[[S |-ctx G,a:Rel k1]]$ by \pref{lem:ctx-reg}.
+$[[S;Rel(G) |-ty PI a:rel k1.s1 : Type{}]]$.
+Choose a fresh $[[b]]$. We know $[[S |-ctx Rel(G),a:Rel k1]]$ by \pref{lem:ctx-reg}.
 We can then use \rul{Ctx\_TyVar} (with \pref{lem:increasing-rel})
-to show that $[[S |-ctx G,b :Rel k2,a:Rel k1]]$ (along with a little inversion
+to show that $[[S |-ctx Rel(G),b :Rel k2,a:Rel k1]]$ (along with a little inversion
 and rebuilding to reorder the variables).
-We also know $[[S;G,a:Rel k1 |-ty s2 : Type{}]]$.
+We established above that $[[S;Rel(G),a:Rel k1 |-ty s2 : Type{}]]$.
 Use weakening, \pref{lem:weakening}, (here and elsewhere in this case) to get
-$[[S;G,b:Rel k2,a:Rel k1 |-ty s2 : Type{}]]$.
+$[[S;Rel(G),b:Rel k2,a:Rel k1 |-ty s2 : Type{}]]$.
 We can use \rul{Co\_Sym} to see that
-$[[S;G,b:Rel k2 |-co sym h : k2 ~ k1]]$
+$[[S;Rel(G),b:Rel k2 |-co sym h : k2 ~ k1]]$
 and then \rul{Ty\_Cast} to see that
-$[[S;G,b:Rel k2 |-ty b |> sym h : k1]]$.
+$[[S;Rel(G),b:Rel k2 |-ty b |> sym h : k1]]$.
 \pref{lem:ty-subst} then gives us
-$[[S;G,b:Rel k2 |-ty s2[b |> sym h/a] : Type{}]]$.
-Use \rul{Ty\_Pi} to get $[[S;G |-ty PI b:Rel k2.(s2[b |> sym h/a]) : Type{}]]$
+$[[S;Rel(G),b:Rel k2 |-ty s2[b |> sym h/a] : Type{}]]$.
+Use \rul{Ty\_Pi} to get $[[S;Rel(G) |-ty PI b:rel k2.(s2[b |> sym h/a]) : Type{}]]$
 and $\alpha$-equivalence to get
-$[[S;G |-ty PI a:rel k2.(s2[a |> sym h/a]) : Type{}]]$.
-We are done.
+$[[S;Rel(G) |-ty PI a:rel k2.(s2[a |> sym h/a]) : Type{}]]$.
+We are done by \rul{Prop\_Equality}.
 \item[Case \rul{Co\_PiCo}:]
 We adopt the metavariable names from the statement of the rule:
 \[
-\ottdruleCoXXPiCo{}
+\nosupp{\ottdruleCoXXPiCo{}}
 \]
+The induction hypothesis (and inversion) give us the following:
+\begin{itemize}
+\item $[[S;Rel(G) |-ty t1 : k3]]$
+\item $[[S;Rel(G) |-ty t2 : k4]]$
+\item $[[S;Rel(G) |-ty s1 : k5]]$
+\item $[[S;Rel(G) |-ty s2 : k6]]$
+\item $[[S;Rel(G),c:t1 [k3]~[k5] s1 |-ty k1 : Type{}]]$
+\item $[[S;Rel(G),c:t1 [k3]~[k5] s1 |-ty k2 : Type{}]]$
+\end{itemize}
 We can straightforwardly use \rul{Ty\_Pi} to show that
-$[[S;G |-ty PI c:t1~s1.k1 : Type{}]]$.
-Choose a fresh $[[b]]$. We know $[[S |-ctx G,c:t1~s1]]$ by \pref{lem:ctx-reg}.
+$[[S;Rel(G) |-ty PI c:t1 [k3]~[k5] s1.k1 : Type{}]]$.
+Choose a fresh $[[b]]$. We know $[[S |-ctx Rel(G),c:t1 [k3]~[k5] s1]]$ by \pref{lem:ctx-reg}.
 We can then use \rul{Ctx\_CoVar} (with \pref{lem:increasing-rel})
-to show that $[[S |-ctx G,c2 : t2~s2,c:t1~s1]]$ (along with a little inversion
+to show that $[[S |-ctx Rel(G),c2 : t2 [k4]~[k6] s2,c:t1 [k3]~[k5] s1]]$ (along with a little inversion
 and rebuilding to reorder the variables).
-We also know $[[S;G,c:t1~s1 |-ty k2 : Type{}]]$.
+We also know $[[S;Rel(G),c:t1 [k3]~[k5] s1 |-ty k2 : Type{}]]$.
 Use weakening, \pref{lem:weakening}, (here and elsewhere in this case) to get
-$[[S;G,c2:t2~s2,c:t1~s1 |-ty k2 : Type{}]]$.
+$[[S;Rel(G),c2:t2 [k4]~[k6] s2,c:t1 [k3]~[k5] s1 |-ty k2 : Type{}]]$.
 We can use typing rules straightforwardly to see that
-$[[S;G,c2:t2~s2 |-co h1 ;; c2 ;; sym h2 : t1 ~ s1]]$.
+$[[S;Rel(G),c2:t2 [k4]~[k6] s2 |-co h1 ;; c2 ;; sym h2 : t1 [k3]~[k5] s1]]$.
 \pref{lem:co-subst} then gives us
-$[[S;G,c2:t2~s2 |-ty k2[h1 ;; c2 ;; sym h2/c] : Type{}]]$.
-Use \rul{Ty\_Pi} to get $[[S;G |-ty PI c2:t2~s2.(k2[h1;;c2;;sym h2/c]) : Type{}]]$
+$[[S;Rel(G),c2:t2 [k4]~[k6] s2 |-ty k2[h1 ;; c2 ;; sym h2/c] : Type{}]]$.
+Use \rul{Ty\_Pi} to get $[[S;Rel(G) |-ty PI c2:t2 [k4]~[k6] s2.(k2[h1;;c2;;sym h2/c]) : Type{}]]$
 and $\alpha$-equivalence to get
-$[[S;G |-ty PI c:t2~s2.(k2[h1;;c;;sym h2/c]) : Type{}]]$.
+$[[S;Rel(G) |-ty PI c:t2 [k4]~[k6] s2.(k2[h1;;c;;sym h2/c]) : Type{}]]$.
 We are done.
 \item[Case \rul{Co\_Case}:] Immediate.
 \item[Case \rul{Co\_Lam}:]
 We adopt the metavariable names from the statement of the rule:
 \[
-\ottdruleCoXXLam{}
+\nosupp{\ottdruleCoXXLam{}}
 \]
 We can use
 \rul{Ty\_Lam} to get $[[S;G |-ty \a:rel k1.t1 : UPI a:rel k1.s1]]$.
 Proceeding similarly to the case for \rul{Co\_PiTy}, we can
 get $[[S;G |-ty \a:rel k2.(t2[a |> sym h/a]) : UPI a:rel k2. (s2[a |> sym h/a])]]$
-and we are done.
+and we are done by \pref{lem:increasing-rel}.
 \item[Case \rul{Co\_CLam}:]
 Similar to previous case and the case for \rul{Co\_PiCo}.
 \item[Case \rul{Co\_Fix}:] Immediate.
@@ -678,13 +693,15 @@ statement of the rule:
 We will prove that $[[s1[t1/a] ]]$ is well-typed; the proof for $[[s2[t2/a] ]]$
 is similar.
 The induction hypothesis (and some inversion) tells us
-$[[S;G |-ty PI a:rel k1. s1 : Type{}]]$.
+$[[S;Rel(G) |-ty PI a:rel k1. s1 : Type{}]]$.
 Further inversion gives us $[[S;G,a:Rel k1 |-ty s1 : Type{}]]$.
-\pref{lem:ty-susbst} gives us $[[S;G |-ty s1[t1/a] : Type{}]]$ as desired.
+The induction hypothesis and an inversion also gives us
+$[[S;Rel(G) |-ty t1 : k1]]$.
+\pref{lem:ty-susbst} gives us $[[S;Rel(G) |-ty s1[t1/a] : Type{}]]$ as desired.
 \item[Case \rul{Co\_CInst}:] Similar to previous case.
 \item[Case \rul{Co\_InstLam}:] Similar to previous case.
 \item[Case \rul{Co\_CInstLam}:] Similar to previous case.
-\item[Case \rul{Co\_Nth}:] By induction and repeated inversion.
+\item[Case \rul{Co\_Nth}:] Immediate.
 \item[Case \rul{Co\_Kind}:] By \pref{lem:kind-reg}.
 \item[Case \rul{Co\_Step}:] By \pref{lem:preservation}.
 \end{description}
@@ -894,8 +911,8 @@ and $[[s3''[s4''/a] ~> s5[s6/a] ]]$. Both of these follow from
 \item[Case \rul{R\_CApp}/\rul{R\_CApp}:] By induction.
 \item[Case \rul{R\_CApp}/\rul{R\_CBeta}:] It must be that:
 \begin{itemize}
-\item $[[t0 = (\o:k1 ~ k2.s3) o]]$
-\item $[[t1 = (\o:k3 ~ k4.s4) o]]$ where $[[k1 ~> k3]]$, $[[k2 ~> k4]]$,
+\item $[[t0 = (\o:k1 [k5]~[k6] k2.s3) o]]$
+\item $[[t1 = (\o:k3 [k7]~[k8] k4.s4) o]]$ where $[[k1 ~> k3]]$, $[[k2 ~> k4]]$,
 and $[[s3 ~> s4]]$.
 \item $[[t2 = s5]]$ where $[[s3 ~> s5]]$
 \end{itemize}
@@ -1026,12 +1043,11 @@ TODO
 \begin{lemma}[Completeness of type reduction] ~
 \label{lem:complete-red}
 If $[[G]]$ contains no coercion bindings and
-$[[S;G |-co g : t1 ~ t2]]$, then:
+$[[S;G |-co g : t1 (k1)~(k2) t2]]$, then:
 \begin{enumerate}
 \item There exists some
 erased type $[[ee]]$ such that $[[|t1| ~>* ee *<~ |t2|]]$.
-\item If $[[S;G |-ty t1 : k1]]$ and $[[S;G |-ty t2 : k2]]$,
-then there exists some erased type $[[ee]]$ such that
+\item There exists some erased type $[[ee]]$ such that
 $[[|k1| ~>* ee *<~ |k2|]]$.
 \end{enumerate}
 \end{lemma}
@@ -1331,7 +1347,7 @@ be headed by some constant $[[H]]$. Proceed as in the previous case.
 \end{proof}
 
 \begin{lemma}[Consistency]
-If $[[G]]$ contains no coercion bindings and $[[S;G |-co g : t1 ~ t2]]$,
+If $[[G]]$ contains no coercion bindings and $[[S;G |-co g : t1 [k1]~[k2] t2]]$,
 then $[[t1 ! t2]]$.
 \end{lemma}
 

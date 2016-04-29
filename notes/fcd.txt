@@ -32,8 +32,8 @@ Notation:
 
  - `let` in coercions is defined by macro-expansion
 
-TysWiredIn:
-S0 = (~) : (x1 :Irrel Type, x2 :Irrel Type, a1 :Rel x1, a2 :Rel x2)
+%% TysWiredIn:
+%% S0 = (~) : (x1 :Irrel Type, x2 :Irrel Type, a1 :Rel x1, a2 :Rel x2)
 
 Generativity/injectivity:
  - A generative/injective thing is called "matchable".
@@ -129,7 +129,13 @@ Simplifications:
   the asymmetrical one-binder approach, as implemented.
 
 
-TODO: Make an explicit argument form.
 TODO: "other alternatives do not match" needs to be in the typing rule,
       not the step rule.
       
+STACK:
+Ditto Co_PiTy
+Ditto Co_PiCo (and its |-prop premise)
+Co_Lam
+Co_Inst
+Co_InstLam
+Co_Nth *added* PREMISES

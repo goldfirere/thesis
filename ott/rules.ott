@@ -119,8 +119,8 @@ S;G, Rel(d) |-ty k : Type{}
 -------------------------------- :: Pi
 S;G |-ty PI d. k : Type{}
 
-S;Rel(G) |-co g : k1 ~ k2
-S;G |-ty t : k1   //  S;Rel(G) |-ty k2 : Type{}
+S;Rel(G) |-co g : k1 [Type{}]~[Type{}] k2
+S;G |-ty t : k1  // S;Rel(G) |- k2 : Type{}
 -------------------- :: Cast
 S;G |-ty t |> g : k2
 
@@ -149,7 +149,7 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
 by
 
 S |-tc H : D1;D2;H'  //  D0,D' = D2[ss/dom(D1)]
-S;G |-ty t : UPI D0, c: t0 ~ H{ss} dom(D0). k
+S;G |-ty t : UPI D0, c: t0 [MPI D'.H'{} ss]~[MPI D'.H'{} ss] H{ss} dom(D0). k
 -------------------------- :: Match
 S;G;MPI D'.H'{} ss;t0 |-alt H -> t : k
 
@@ -168,138 +168,135 @@ S;G |-co c : phi
 
 S;G |-ty t : k
 -------------------- :: Refl
-S;G |-co <t> : t ~ t
+S;G |-co <t> : t [k]~[k] t
 
-S;G |-co g : t1 ~ t2
+S;G |-co g : t1 [k1]~[k2] t2
 ------------------------ :: Sym
-S;G |-co sym g : t2 ~ t1
+S;G |-co sym g : t2 [k2]~[k1] t1
 
-S;G |-co g1 : t1 ~ t2
-S;G |-co g2 : t2 ~ t3
+S;G |-co g1 : t1 [k1]~[k2] t2
+S;G |-co g2 : t2 [k2]~[k3] t3
 -------------------------- :: Trans
-S;G |-co g1 ;; g2 : t1 ~ t3
+S;G |-co g1 ;; g2 : t1 [k1]~[k3] t3
 
-S;G |-co h : k1 ~ k2  // |t1| = |t2|
+S;G |-co h : k1 [Type{}]~[Type{}] k2  // |t1| = |t2|
 S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
 -------------------------------- :: Coherence
-S;G |-co erase_h t1 t2 : t1 ~ t2
+S;G |-co erase_h t1 t2 : t1 [k1]~[k2] t2
 
-forall i: S;G |-co gi : si ~ si'
+forall i: S;G |-co gi : si [ki]~[ki'] si'
 S;G |-ty H{ss} : k1  //  S;G |-ty H{ss'} : k2
 ------------------------------- :: Con
-S;G |-co H{gs} : H{ss} ~ H{ss'}
+S;G |-co H{gs} : H{ss} [k1]~[k2] H{ss'}
 
-S;G |-co g1 : t1 ~ t2
-S;G |-co g2 : s1 ~ s2
+S;G |-co g1 : t1 [k3]~[k4] t2
+S;G |-co g2 : s1 [k5]~[k6] s2
 S;G |-ty t1 s1 : k1 // S;G |-ty t2 s2 : k2
 -------------------------- :: AppRel
-S;G |-co g1 g2 : t1 s1 ~ t2 s2
+S;G |-co g1 g2 : t1 s1 [k1]~[k2] t2 s2
 
-S;G |-co g1 : t1 ~ t2
-S;G |-co g2 : s1 ~ s2
+S;G |-co g1 : t1 [k3]~[k4] t2
+S;G |-co g2 : s1 [k5]~[k6] s2
 S;G |-ty t1 {s1} : k1 // S;G |-ty t2 {s2} : k2
 -------------------------- :: AppIrrel
-S;G |-co g1 {g2} : t1 {s1} ~ t2 {s2}
+S;G |-co g1 {g2} : t1 {s1} [k1]~[k2] t2 {s2}
 
-S;G |-co g0 : t1 ~ t2
+S;G |-co g0 : t1 [k3]~[k4] t2
 S;G |-ty t1 g1 : k1 // S;G |-ty t2 g2 : k2
 -------------------------- :: CApp
-S;G |-co g1 (g1,g2) : t1 g1 ~ t2 g2
+S;G |-co g1 (g1,g2) : t1 g1 [k1]~[k2] t2 g2
 
-S;G |-co h : k1 ~ k2  //  S;G |-ty k2 : Type{}
-S;G,a:Rel k1 |-co g : s1 ~ s2
-S;G,a:Rel k1 |-ty s1 : Type{}  //  S;G,a:Rel k1 |-ty s2 : Type{}
+S;G |-co h : k1 (Type{})~(Type{}) k2
+S;G,a:Rel k1 |-co g : s1 (Type{})~(Type{}) s2
 -------------------------------- :: PiTy
-S;G |-co PI a :rel h. g : PI a:rel k1.s1 ~ PI a:rel k2.(s2[a |> sym h/a])
+S;G |-co PI a :rel h. g : (PI a:rel k1.s1) [Type{}]~[Type{}] (PI a:rel k2.(s2[a |> sym h/a]))
 
-S;G |-co h1 : t1 ~ t2  //  S;G |-co h2 : s1 ~ s2
-S;G |-prop t2 ~ s2 //  S;G,c:t1~s1 |-co g : k1 ~ k2
-S;G,c:t1~s1 |-ty k1 : Type{}  //  S;G,c:t1~s1 |-ty k2 : Type{}
+S;G |-co h1 : t1 [k3]~[k4] t2  //  S;G |-co h2 : s1 [k5]~[k6] s2
+S;G,c:t1 [k3]~[k5] s1 |-co g : k1 (Type{})~(Type{}) k2
 ------------------------------ :: PiCo
-S;G |-co PI c:(h1,h2).g : (PI c:t1 ~ s1. k1) ~ (PI c:t2 ~ s2.(k2[h1 ;; c ;; sym h2/c]))
+S;G |-co PI c:(h1,h2).g : (PI c:t1 [k3]~[k5] s1. k1) [Type{}]~[Type{}] (PI c:t2 [k4]~[k6] s2.(k2[h1 ;; c ;; sym h2/c]))
 
-S;G |-co h : k1 ~ k2  //  S;G |-co g0 : t1 ~ t2
-forall i: S;G |-co gi : si ~ s'i
+S;G |-co h : k1 [Type{}]~[Type{}] k2  //  S;G |-co g0 : t1 [k3]~[k4] t2
+forall i: S;G |-co gi : si [k5i]~[k6i] s'i
 alts1 = list of Hi -> si  // alts2 = list of Hi -> s'i
 S;G |-ty case_k1 t1 of alts1 : k1  // S;G |-ty case_k2 t2 of alts2 : k2
 ------------------------------ :: Case
-S;G |-co case_h g0 of list of Hi -> gi : case_k1 t1 of alts1 ~ case_k2 t2 of alts2
+S;G |-co case_h g0 of list of Hi -> gi : case_k1 t1 of alts1 [k1]~[k2] case_k2 t2 of alts2
 
-S;G |-co h : k1 ~ k2  //  S;G |-ty k2 : Type{}
-S;G, a :rel k1 |-co g : t1 ~ t2
-S;G, a :rel k1 |-ty t1 : s1  //  S;G, a:rel k1 |-ty t2 : s2
+S;G |-co h : k1 [Type{}]~[Type{}] k2
+S;G, a :rel k1 |-co g : t1 [s1]~[s2] t2
+%% Need these next conditions because it needs to work for Irrel, too.
+S;G, a :rel k1 |-ty t1 : s1 // S;G, a:rel k1 |-ty t2 : s2
 ------------------------------------- :: Lam
-S;G |-co \a :rel h . g : \a:rel k1.t1 ~ \a:rel k2.(t2[a |> sym h/a])
+S;G |-co \a :rel h . g : \a:rel k1.t1 [UPI a:rel k1.s1]~[UPI a:rel k2.(s2[a |> sym h/a])] \a:rel k2.(t2[a |> sym h/a])
 
-S;G |-co h1 : t1 ~ t2 // S;G |-co h2 : s1 ~ s2
-S;G,c:t1~s1 |-co g : k1 ~ k2
+S;G |-co h1 : t1 [k3]~[k4] t2 // S;G |-co h2 : s1 [k5]~[k6] s2
+S;G,c:t1 [k3]~[k5] s1 |-co g : k1 [k7]~[k8] k2
 ------------------------------- :: CLam
-S;G |-co \c:(h1,h2).g : \c:t1~s1.k1 ~ \c:t2 ~ s2.(k2[h1 ;; c ;; sym h2 / c])
+S;G |-co \c:(h1,h2).g : (\c:t1 [k3]~[k5] s1.k1) [UPI c: t1 [k3]~[k5] s1. k7]~[UPI c:t2 [k4]~[k6] s2.(k8[h1 ;; c ;; sym h2 / c])] (\c:t2 [k4]~[k6] s2.(k2[h1 ;; c ;; sym h2 / c]))
 
-S;G |-co g : t1 ~ t2
+S;G |-co g : t1 [k3]~[k4] t2
 S;G |-ty fix t1 : k1 // S;G |-ty fix t2 : k2
 -------------------------------- :: Fix
-S;G |-co fix g : fix t1 ~ fix t2
+S;G |-co fix g : fix t1 [k1]~[k2] fix t2
 
-S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
+S;G |-co g : PI a:rel k1. s1 [Type{}]~[Type{}] PI a:rel k2. s2
 ------------------------- :: ArgK
-S;G |-co argk g : k1 ~ k2
+S;G |-co argk g : k1 [Type{}]~[Type{}] k2
 
-S;G |-co g : PI c:t1 ~ t1'.s1 ~ PI c:t2 ~ t2'.s2
+S;G |-co g : PI c:t1 [k1]~[k2] t1'.s1 [Type{}]~[Type{}] PI c:t2 [k3]~[k4] t2'.s2
 -------------------------------- :: CArgK1
-S;G |-co argk 1 g : t1 ~ t2
+S;G |-co argk 1 g : t1 [k1]~[k3] t2
 
-S;G |-co g : PI c:t1 ~ t1'.s1 ~ PI c:t2 ~ t2'.s2
+S;G |-co g : PI c:t1 [k1]~[k2] t1'.s1 [Type{}]~[Type{}] PI c:t2 [k3]~[k4] t2'.s2
 ----------------------------- :: CArgK2
-S;G |-co argk 2 g : t1' ~ t2'
+S;G |-co argk 2 g : t1' [k2]~[k4] t2'
 
-S;G |-co g : \a:rel k1.s1 ~ \a:rel k2.s2
+S;G |-co g : \a:rel k1.s1 [k3]~[k4] \a:rel k2.s2
 ------------------------- :: ArgKLam
-S;G |-co argk g : k1 ~ k2
+S;G |-co argk g : k1 [Type{}]~[Type{}] k2
 
-S;G |-co g : \c:t1 ~ t1'.s1 ~ \c:t2 ~ t2'.s2
+S;G |-co g : \c:t1 [k1]~[k2] t1'.s1 [k3]~[k4] \c:t2 [k5]~[k6] t2'.s2
 --------------------- :: CArgKLam1
-S;G |-co argk 1 g : t1 ~ t2
+S;G |-co argk 1 g : t1 [k1]~[k5] t2
 
-S;G |-co g : \c:t1 ~ t1'.s1 ~ \c:t2 ~ t2'.s2
+S;G |-co g : \c:t1 [k1]~[k2] t1'.s1 [k3]~[k4] \c:t2 [k5]~[k6] t2'.s2
 --------------------- :: CArgKLam2
-S;G |-co argk 2 g : t1' ~ t2'
+S;G |-co argk 2 g : t1' [k2]~[k6] t2'
 
-S;G |-co g : PI a:rel k1. s1 ~ PI a:rel k2. s2
-S;G |-co h : t1 ~ t2
-S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
+S;G |-co g : PI a:rel k1. s1 [Type{}]~[Type{}] PI a:rel k2. s2
+S;G |-co h : t1 (k1)~(k2) t2
 -------------------------- :: Inst
-S;G |-co g@h : s1[t1/a] ~ s2[t2/a]
+S;G |-co g@h : s1[t1/a] [Type{}]~[Type{}] s2[t2/a]
 
-S;G |-co h1 : PI c:phi1. s1 ~ PI c:phi2.s2
+S;G |-co h1 : PI c:phi1. s1 [Type{}]~[Type{}] PI c:phi2.s2
 S;G |-co g1 : phi1  //   S;G |-co g2 : phi2
 -------------------------- :: CInst
-S;G |-co h1@(g1,g2) : s1[g1/c] ~ s2[g2/c]
+S;G |-co h1@(g1,g2) : s1[g1/c] [Type{}]~[Type{}] s2[g2/c]
 
-S;G |-co g : \a:rel k1.t1 ~ \a:rel k2.t2
-S;G |-co h : s1 ~ s2
-S;G |-ty s1 : k1  //  S;G |-ty s2 : k2
+S;G |-co g : \a:rel k1.t1 [UPI a:rel k1.k3]~[UPI a:rel k2.k4] \a:rel k2.t2
+S;G |-co h : s1 (k1)~(k2) s2
 --------------------------- :: InstLam
-S;G |-co g@\h : t1[s1/a] ~ t2[s2/a]
+S;G |-co g@\h : t1[s1/a] [k3[s1/a] ]~[k4[s2/a] ] t2[s2/a]
 
-S;G |-co g : \c:phi1. s1 ~ \c:phi2.s2
+S;G |-co g : \c:phi1. s1 [UPI c:phi1.k1]~[UPI c:phi2.k2] \c:phi2.s2
 S;G |-co h1 : phi1 // S;G |-co h2 : phi2
 ---------------------------- :: CInstLam
-S;G |-co g@\(h1,h2) : s1[h1/c] ~ s2[h2/c]
+S;G |-co g@\(h1,h2) : s1[h1/c] [k1[h1/c] ]~[k2[h2/c] ] s2[h2/c]
 
-S;G |-co g : H{ks} ps ~ H{ks'} ps'
+S;G |-co g : H{ks} ps [s1]~[s2] H{ks'} ps'
 pi = t  //  pi' = s
+S;G |-ty t : k1  // S;G |-ty s : k2
 -------------------------- :: Nth
-S;G |-co nth i g : t ~ s
+S;G |-co nth i g : t [k1]~[k2] s
 
-S;G |-co g : t1 ~ t2
-S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
+S;G |-co g : t1 (k1)~(k2) t2
 ------------------------- :: Kind
-S;G |-co kind g : k1 ~ k2
+S;G |-co kind g : k1 [Type{}]~[Type{}] k2
 
 S;G |-ty t : k   //  S;G |-s t --> t'
 ------------------------ :: Step
-S;G |-co step t : t ~ t'
+S;G |-co step t : t [k]~[k] t'
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Propositions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -314,7 +311,7 @@ by
 S;G |-ty t1 : k1
 S;G |-ty t2 : k2
 ------------------ :: Equality
-S;G |-prop t1 ~ t2
+S;G |-prop t1 (k1)~(k2) t2
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -355,8 +352,8 @@ defn
   {{ com Signature formation }}
 by
 
------------ :: Boot
-|-sig S0
+----------- :: Nil
+|-sig empty
 
 S |-ctx as :Irrel ks  // T # S
 ----------------- :: ADT
@@ -461,9 +458,8 @@ S;G |-s (v |> g0) h --> v h' |> g3
 S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI a:Irrel <k>. g)
 
 S |-tc H : as:Irrel ks;D;H'
-S;G |-co h : H'{} ps ~ H'{} ps'
-forall j: wj = mk_nth(g;j;pj;pj')
-forall i: gi = build_kpush_co(<k>@ws;ps_{0..i-1})
+S;G |-co h : H'{} ts [Type{}]~[Type{}] H'{} ts'
+forall i: gi = build_kpush_co(<k>@nths h;ps_{0..i-1})
 forall i: pi' = cast_kpush_arg(pi;gi)
 % kind K = MPI as :Irrel ks. MPI D. T as
 % si' = s' |> argk (kind K @ nths h @ ...)
@@ -543,9 +539,9 @@ k ~> k'
 --------------------- :: TyBinder
 a :rel k ~> a :rel k'
 
-s1 ~> s2 // t1 ~> t2
+s1 ~> s2 // t1 ~> t2 // k1 ~> k2 // k1' ~> k2'
 ---------- :: CoBinder
-o:s1 ~ t1 ~> o:s2 ~ t2
+o:s1 (k1)~(k1') t1 ~> o:s2 (k2)~(k2') t2
 
 defn
 g ~> g'  :: :: RedCo :: 'R_'
