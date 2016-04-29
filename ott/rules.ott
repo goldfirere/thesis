@@ -21,7 +21,7 @@ t2 is not a value
 t1 ! t2
 
 ------- :: TyCon
-H[ts] ps ! H[ts'] ps'
+H{ts} ps ! H{ts'} ps'
 
 %% Why don't combine these next two? Because we need the relevances
 %% to be the same.
@@ -101,7 +101,7 @@ S;G |-ty a : k
 S |-tc H : D1;D2;H'  //  S |-ctx G
 S;Rel(G) |-vec ts : D1
 -------------- :: Con
-S;G |-ty H[ts] : MPI (D2[ts/dom(D1)]). H'[] ts
+S;G |-ty H{ts} : MPI (D2[ts/dom(D1)]). H'{} ts
 
 S;G |-ty t1 : PI a :Rel k1. k2  //  S;G |-ty t2 : k1
 ------------------ :: AppRel
@@ -109,24 +109,24 @@ S;G |-ty t1 t2 : k2[t2/a]
 
 S;G |-ty t1 : PI a :Irrel k1. k2  //  S;Rel(G) |-ty t2 : k1
 ------------------ :: AppIrrel
-S;G |-ty t1 t2 : k2[t2/a]
+S;G |-ty t1 {t2} : k2[t2/a]
 
 S;G |-ty t : PI c : phi. k //  S;Rel(G) |-co g : phi
 ------------------ :: CApp
 S;G |-ty t g : k[g/c]
 
-S;G, Rel(d) |-ty k : Type[]
+S;G, Rel(d) |-ty k : Type{}
 -------------------------------- :: Pi
-S;G |-ty PI d. k : Type[]
+S;G |-ty PI d. k : Type{}
 
 S;Rel(G) |-co g : k1 ~ k2
-S;G |-ty t : k1   //  S;Rel(G) |-ty k2 : Type[]
+S;G |-ty t : k1   //  S;Rel(G) |-ty k2 : Type{}
 -------------------- :: Cast
 S;G |-ty t |> g : k2
 
-S;Rel(G) |-ty k : Type[]  //  S;G |-ty t : s
+S;Rel(G) |-ty k : Type{}  //  S;G |-ty t : s
 forall i: S;G;s;t |-alt alti : k
-s = MPI D. H[] ss // alts are exhaustive for H
+s = MPI D. H{} ss // alts are exhaustive for H
 ------------------------------ :: Case
 S;G |-ty case_k t of alts : k
 
@@ -149,9 +149,9 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
 by
 
 S |-tc H : D1;D2;H'  //  D0,D' = D2[ss/dom(D1)]
-S;G |-ty t : UPI D0, c: t0 ~ H[ss] dom(D0). k
+S;G |-ty t : UPI D0, c: t0 ~ H{ss} dom(D0). k
 -------------------------- :: Match
-S;G;MPI D'.H'[] ss;t0 |-alt H -> t : k
+S;G;MPI D'.H'{} ss;t0 |-alt H -> t : k
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -185,31 +185,38 @@ S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
 S;G |-co erase_h t1 t2 : t1 ~ t2
 
 forall i: S;G |-co gi : si ~ si'
-S;G |-ty H[ss] : k1  //  S;G |-ty H[ss'] : k2
+S;G |-ty H{ss} : k1  //  S;G |-ty H{ss'} : k2
 ------------------------------- :: Con
-S;G |-co H[gs] : H[ss] ~ H[ss']
+S;G |-co H{gs} : H{ss} ~ H{ss'}
 
 S;G |-co g1 : t1 ~ t2
 S;G |-co g2 : s1 ~ s2
 S;G |-ty t1 s1 : k1 // S;G |-ty t2 s2 : k2
--------------------------- :: App
+-------------------------- :: AppRel
 S;G |-co g1 g2 : t1 s1 ~ t2 s2
+
+S;G |-co g1 : t1 ~ t2
+S;G |-co g2 : s1 ~ s2
+S;G |-ty t1 {s1} : k1 // S;G |-ty t2 {s2} : k2
+-------------------------- :: AppIrrel
+S;G |-co g1 {g2} : t1 {s1} ~ t2 {s2}
 
 S;G |-co g0 : t1 ~ t2
 S;G |-ty t1 g1 : k1 // S;G |-ty t2 g2 : k2
 -------------------------- :: CApp
 S;G |-co g1 (g1,g2) : t1 g1 ~ t2 g2
 
-S;G |-co h : k1 ~ k2
+S;G |-co h : k1 ~ k2  //  S;G |-ty k2 : Type{}
 S;G,a:Rel k1 |-co g : s1 ~ s2
+S;G,a:Rel k1 |-ty s1 : Type{}  //  S;G,a:Rel k1 |-ty s2 : Type{}
 -------------------------------- :: PiTy
 S;G |-co PI a :rel h. g : PI a:rel k1.s1 ~ PI a:rel k2.(s2[a |> sym h/a])
 
-S;G |-co h1 : t1 ~ t2
-S;G |-co h2 : s1 ~ s2
-S;G,c:t1~s1 |-co g : k1 ~ k2
+S;G |-co h1 : t1 ~ t2  //  S;G |-co h2 : s1 ~ s2
+S;G |-prop t2 ~ s2 //  S;G,c:t1~s1 |-co g : k1 ~ k2
+S;G,c:t1~s1 |-ty k1 : Type{}  //  S;G,c:t1~s1 |-ty k2 : Type{}
 ------------------------------ :: PiCo
-S;G |-co PI c:(h1,h2).g : PI c:t1 ~ s1. k1 ~ PI c:t2 ~ s2.(k2[h1 ;; c ;; sym h2/c])
+S;G |-co PI c:(h1,h2).g : (PI c:t1 ~ s1. k1) ~ (PI c:t2 ~ s2.(k2[h1 ;; c ;; sym h2/c]))
 
 S;G |-co h : k1 ~ k2  //  S;G |-co g0 : t1 ~ t2
 forall i: S;G |-co gi : si ~ s'i
@@ -218,19 +225,19 @@ S;G |-ty case_k1 t1 of alts1 : k1  // S;G |-ty case_k2 t2 of alts2 : k2
 ------------------------------ :: Case
 S;G |-co case_h g0 of list of Hi -> gi : case_k1 t1 of alts1 ~ case_k2 t2 of alts2
 
-S;G |-co h : k1 ~ k2
-S;G, a :Rel k1 |-co g : t1 ~ t2
+S;G |-co h : k1 ~ k2  //  S;G |-ty k2 : Type{}
+S;G, a :rel k1 |-co g : t1 ~ t2
+S;G, a :rel k1 |-ty t1 : s1  //  S;G, a:rel k1 |-ty t2 : s2
 ------------------------------------- :: Lam
 S;G |-co \a :rel h . g : \a:rel k1.t1 ~ \a:rel k2.(t2[a |> sym h/a])
 
-S;G |-co h1 : t1 ~ t2
-S;G |-co h2 : s1 ~ s2
+S;G |-co h1 : t1 ~ t2 // S;G |-co h2 : s1 ~ s2
 S;G,c:t1~s1 |-co g : k1 ~ k2
 ------------------------------- :: CLam
 S;G |-co \c:(h1,h2).g : \c:t1~s1.k1 ~ \c:t2 ~ s2.(k2[h1 ;; c ;; sym h2 / c])
 
-% TODO: This needs more premises for regularity.
 S;G |-co g : t1 ~ t2
+S;G |-ty fix t1 : k1 // S;G |-ty fix t2 : k2
 -------------------------------- :: Fix
 S;G |-co fix g : fix t1 ~ fix t2
 
@@ -275,7 +282,12 @@ S;G |-ty s1 : k1  //  S;G |-ty s2 : k2
 --------------------------- :: InstLam
 S;G |-co g@\h : t1[s1/a] ~ t2[s2/a]
 
-S;G |-co g : H[ks] ps ~ H[ks'] ps'
+S;G |-co g : \c:phi1. s1 ~ \c:phi2.s2
+S;G |-co h1 : phi1 // S;G |-co h2 : phi2
+---------------------------- :: CInstLam
+S;G |-co g@\(h1,h2) : s1[h1/c] ~ s2[h2/c]
+
+S;G |-co g : H{ks} ps ~ H{ks'} ps'
 pi = t  //  pi' = s
 -------------------------- :: Nth
 S;G |-co nth i g : t ~ s
@@ -289,29 +301,13 @@ S;G |-ty t : k   //  S;G |-s t --> t'
 ------------------------ :: Step
 S;G |-co step t : t ~ t'
 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %%  Coercion arguments  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% defn
-% S ; G |-arg w : ( p1 ; p2 ) :: :: Arg :: 'Arg_'
-%   {{ com Coercion argument formation }}
-% by
-
-% S;G |-co g : t1 ~ t2
-% --------------------- :: Ty
-% S;G |-arg g : (t1; t2)
-
-% S;G |-co g1 : t1 ~ s1 // S;G |-co g2 : t2 ~ s2
-% ----------------------------- :: Co
-% S;G |-arg (g1, g2) : (g1; g2)
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Propositions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defn
 S ; G |-prop phi :: :: Prop :: 'Prop_'
+  {{ tex [[S]];[[G]] [[|-prop]] [[phi]] \ok }}
   {{ com Proposition formation }}
 by
 
@@ -383,7 +379,7 @@ by
 -------------- :: Nil
 S |-ctx empty
 
-S;Rel(G) |-ty k : Type[]  //  a # G  //  S |-ctx G
+S;Rel(G) |-ty k : Type{}  //  a # G  //  S |-ctx G
 -------------- :: TyVar
 S |-ctx G, a:rel k
 
@@ -403,15 +399,18 @@ S ; G |-s s --> s' :: :: Step :: 'S_'
   {{ com Small-step operational semantics }}
 by
 
-------------------------- :: Beta
-S;G |-s (\a:rel k.s1) s2 --> s1[s2/a]
+------------------------- :: BetaRel
+S;G |-s (\a:Rel k.s1) s2 --> s1[s2/a]
+
+---------------------------------------- :: BetaIrrel
+S;G |-s (\a:Irrel k.s1) {s2} --> s1[s2/a]
 
 ------------------------------- :: CBeta
 S;G |-s (\c:phi.s) g --> s[g/c]
 
 alti = H -> t0  // other alternatives do not match H
 ---------------------------- :: Match
-S;G |-s case_k H[ts] ps of alts --> t0 ps <H[ts] ps>
+S;G |-s case_k H{ts} ps of alts --> t0 ps <H{ts} ps>
 
 t = \a:rel k.s
 ---------------------------- :: Unroll
@@ -425,8 +424,12 @@ S;G,a:Irrel k |-s s --> s'
 S;G |-s \a :Irrel k.s --> \a :Irrel k. s'
 
 S;G |-s s1 --> s1'
----------------- :: App_Cong
+---------------- :: AppRel_Cong
 S;G |-s s1 s2 --> s1' s2
+
+S;G |-s s1 --> s1'
+------------------ :: AppIrrel_Cong
+S;G |-s s1 {s2} --> s1' {s2}
 
 S;G |-s s --> s'
 ------------------ :: Cast_Cong
@@ -458,14 +461,14 @@ S;G |-s (v |> g0) h --> v h' |> g3
 S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI a:Irrel <k>. g)
 
 S |-tc H : as:Irrel ks;D;H'
-S;G |-co h : H'[] ps ~ H'[] ps'
+S;G |-co h : H'{} ps ~ H'{} ps'
 forall j: wj = mk_nth(g;j;pj;pj')
 forall i: gi = build_kpush_co(<k>@ws;ps_{0..i-1})
 forall i: pi' = cast_kpush_arg(pi;gi)
 % kind K = MPI as :Irrel ks. MPI D. T as
 % si' = s' |> argk (kind K @ nths h @ ...)
 ----------------------------------------------------------------- :: KPush
-S;G |-s case_k0 (H[ts] ps) |> h of alts --> case_k0 H[ts'] ps' of alts
+S;G |-s case_k0 (H{ts} ps) |> h of alts --> case_k0 H{ts'} ps' of alts
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parallel reduction  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -483,8 +486,12 @@ by
 t ~> t
 
 t ~> t' // s ~> s'
--------------------- :: App
+-------------------- :: AppRel
 t s ~> t' s'
+
+t ~> t' // s ~> s'
+-------------------- :: AppIrrel
+t {s} ~> t' {s'}
 
 t ~> t'
 ----------- :: CApp
@@ -507,8 +514,12 @@ t ~> t'
 fix t ~> fix t'
 
 t1 ~> t1'  // t2 ~> t2'
------------------------------- :: Beta
-(\a :rel k. t1) t2 ~> t1'[t2'/a]
+------------------------------ :: BetaRel
+(\a :Rel k. t1) t2 ~> t1'[t2'/a]
+
+t1 ~> t1'  // t2 ~> t2'
+------------------------------ :: BetaIrrel
+(\a :Irrel k. t1) {t2} ~> t1'[t2'/a]
 
 t ~> t'
 ------------------ :: CBeta

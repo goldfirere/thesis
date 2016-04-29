@@ -95,9 +95,7 @@ fvset :: 'FVs_' ::=
 
 relevance, rel {{ tex \mathsf{r} }} :: 'Rel_' ::=
 | Rel              ::   :: Rel
-  {{ tex \mathsf{Rel} }}
 | Irrel            ::   :: Irrel
-  {{ tex \mathsf{Irrel} }}
 
 colon {{ tex {:}^\mathsf{r} }} :: 'Colon_' ::=
 | : rel                       ::   :: Colon
@@ -128,8 +126,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
   ee {{ tex \epsilon }}
   :: 'Type_' ::=
 | a                            ::   :: Var
-| H [ ts ]                     ::   :: TyCon
-  {{ tex [[H]]_{[ [[ts]] ]} }}
+| H { ts }                     ::   :: TyCon
+  {{ tex [[H]]_{ \{ [[ts]] \} } }}
 | !!! t p                      ::   :: App
 | !!! PI d . t                 ::   :: Pi
   {{ tex [[PI]] [[d]] .\, [[t]] }}
@@ -141,7 +139,7 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | fix t                        ::   :: Fix
 
 | t ps                         :: M :: Apps
-| H []                         :: M :: HEmpty
+| H {}                         :: M :: HEmpty
   {{ tex [[H]] }}
 | H **                         :: M :: HErased
   {{ tex [[H]] }}
@@ -164,6 +162,7 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 | prefix ( ts )           :: M :: Prefix
   {{ tex [[prefix]]([[ts]]) }}
 | ts [ theta ]            :: M :: Subst
+| '|' ts '|'              :: M :: Erased
 
 alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
 | alt                    ::   :: One
@@ -201,7 +200,8 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | g1 ;; g2                     ::   :: Trans
 | erase _ h t1 t2              ::   :: Erase
   {{ tex \ottkw{erase}_{[[h]]}\,[[t1]]\,[[t2]] }}
-| H [ gs ]                     ::   :: Con
+| H { gs }                     ::   :: Con
+  {{ tex [[H]]_{ \{ [[gs]] \} } }}
 | g w                          ::   :: App
 | PI a colon h . g             ::   :: PiTy
   {{ tex [[PI]] [[a]] [[colon]] [[h]]. \, [[g]] }}
@@ -218,7 +218,7 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | argk I g                     ::   :: CArgK
   {{ tex {[[argk]]}^{[[I]]}\,[[g]] }}
 | !!! g @ w                    ::   :: Inst
-| g @\ h                       ::   :: InstLam
+| g @\ w                       ::   :: InstLam
 | nth I g                      ::   :: Nth
   {{ tex {[[nth]]}^{[[I]]}\,[[g]] }}
 | kind g                       ::   :: Kind
@@ -256,6 +256,7 @@ calts {{ tex \overline{\ottnt{calt} } }} :: 'CAlts_' ::=
 
 arg, p {{ tex \psi }} :: 'Arg_' ::=
 | t                   ::   :: Ty
+| { t }               ::   :: IrrelTy
 | g                   ::   :: Co
 
 args, ps {{ tex \overline{\psi} }} :: 'Args_' ::=
@@ -272,6 +273,7 @@ args, ps {{ tex \overline{\psi} }} :: 'Args_' ::=
 
 coarg, w {{ tex \omega }} :: 'CoArg_' ::=
 | g                    ::   :: Ty
+| { g }                ::   :: IrrelTy
 | ( g1 , g2 )          ::   :: Co
 
 coargs, ws {{ tex \overline{\omega} }} :: 'CoArgs_' ::=
@@ -313,6 +315,7 @@ context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'Ctx_' ::=
   {{ tex [[Rel]]([[G]]) }}
 | prefix ( G )                 :: M :: Prefix
   {{ tex [[prefix]]([[G]]) }}
+| '|' D '|'                    :: M :: Erased
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Substitutions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -436,6 +439,8 @@ terminals :: 'terminals_' ::=
 | cast_kpush_arg                       ::   :: cast_arg {{ tex \mathsf{cast\_kpush\_arg} }}
 | @                                    ::   :: inst    {{ tex \at^\Pi }}
 | @\                                   ::   :: instlam {{ tex \at^\lambda }}
+| Rel                                  ::   :: Rel     {{ tex \mathsf{Rel} }}
+| Irrel                                ::   :: Irrel   {{ tex \mathsf{Irrel} }}
 
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
@@ -530,6 +535,7 @@ build_kpush_co ( g ; ps ) :: h :: build_kpush_co
 by
 build_kpush_co ( g ; empty ) === g
 build_kpush_co ( g ; ps, t ) === let c := build_kpush_co(g; ps) in c@(erase_c t (t |> argk c))
+build_kpush_co ( g ; ps,{t}) === let c := build_kpush_co(g; ps) in c@{erase_c t (t |> argk c)}
 build_kpush_co ( g ; ps, h ) === let c := build_kpush_co(g; ps) in c@(h, sym (argk 1 c) ;; h ;; argk 2 c)
 
 fun
@@ -537,16 +543,18 @@ mk_nth ( g ; I ; p1 ; p2 ) :: w :: mk_nth
   {{ tex [[mk_nth]]([[g]];[[I]];[[p1]];[[p2]]) }}
 
 by
-mk_nth(g;I;t;s)   === nth I g
-mk_nth(g;I;h1;h2) === (h1,h2)
+mk_nth(g;I;t;s)     === nth I g
+mk_nth(g;I;{t};{s}) === { nth I g }
+mk_nth(g;I;h1;h2)   === (h1,h2)
 
 fun
 cast_kpush_arg ( p0 ; g ) :: p :: cast_kpush_arg
   {{ tex [[cast_kpush_arg]]([[p0]];[[g]]) }}
 
 by
-cast_kpush_arg(t;g) === t |> argk g
-cast_kpush_arg(g;h) === sym (argk 1 h) ;; g ;; argk 2 h
+cast_kpush_arg(t;g)   === t |> argk g
+cast_kpush_arg({t};g) === {t |> argk g}
+cast_kpush_arg(g;h)   === sym (argk 1 h) ;; g ;; argk 2 h
 
 % fun
 % build_subst ( Psi ; D ; theta ) :: substs :: build_subst
@@ -569,12 +577,15 @@ cast_kpush_arg(g;h) === sym (argk 1 h) ;; g ;; argk 2 h
 % promote_S;G(g1 ;; g2)  	       === promote_S;G(g1) ;; promote_S;G(g2)
 % promote_S;G(erase_h t1 t2)     === h
 % promote_S;G(g1 g2)             === promote_S;G(g1)@g2
+% promote_S;G(g (h1,h2))         === promote_S;G(g)@(h1,h2)
 % promote_S;G(PI a colon h.g)    === <Type[]>
-% promote_S;G(PI c:h.g)          === <Type[]>
+% promote_S;G(PI c:(h1,h2).g)    === <Type[]>
 % promote_S;G(case_h g of calts) === h
 % promote_S;G(\a :rel h. g)      === PI a:rel h. promote_S;G(g)
+% promote_S;G(\c:(h1,h2).g)      === PI c:(h1,h2). promote_S;G(g)
 % promote_S;G(fix g)             === argk promote_S;G(g)
 % promote_S;G(argk g)            === <Type[]>
+% promote_S;G(argk I g)          ===
 % promote_S;G(g@h)               === promote_S;G(g)@h  % <Type[]>
 % % RAE: This last one is borked. We need to distinguish the two @ signs.
 % promote_S;G(nth i g)           === % yech (RAE)
@@ -590,8 +601,9 @@ fun
 
 by
 |a|                === a
-|H[ts]|            === H**
+|H{ts}|            === H**
 |t1 t2|            === |t1| |t2|
+|t1 {t2}|          === |t1| {|t2|}
 |t g|              === |t| o
 |PI d. t|          === PI |d|.|t|
 |t |> g|           === |t|
