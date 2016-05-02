@@ -3,15 +3,6 @@
 
 \section{Auxiliary definitions}
 
-%% \begin{definition}[Bootstrap signature]
-%% \label{defn:sig-boot}
-%% The bootstrap signature $[[S0]]$ (as mentioned in \rul{Sig\_Boot}) is
-%% defined thus:
-%% \[
-%% [[S0 = (~) : (a1 : Type{}, a2 : Type{}, b1 : a1, b2 : a2)]]
-%% \]
-%% \end{definition}
-
 \begin{definition}[Values]
 Let values $[[v]]$ be defined by the following subgrammar of $[[t]]$:
 \[
@@ -482,17 +473,17 @@ by \rul{Ctx\_Nil}.
 \begin{lemma}[Type constant kinds]
 \label{lem:tycon-kind}
 If $[[|-sig S]]$ and $[[S |-tc H : D1;D2;H']]$,
-then $[[S;empty |-ty MPI D1,D2.H'{} dom(D1) : Type{} ]]$.
+then $[[S;empty |-ty PI D1,D2.H'{} dom(D1) : Type{} ]]$.
 \end{lemma}
 
 \begin{proof}
-To prove $[[S;empty |-ty MPI D1,D2.H'{} dom(D1) : Type{} ]]$,
+To prove $[[S;empty |-ty PI D1,D2.H'{} dom(D1) : Type{} ]]$,
 we will use \rul{Ty\_Pi} (repeatedly). We thus must show
 $[[S;Rel(D1,D2) |-ty H'{} dom(D1) : Type{} ]]$.
 This, in turn, will be by \rul{Ty\_AppRel} (repeatedly). We thus
 must show 
 \begin{description}
-\item[$[[S;Rel(D1,D2) |-ty H'{} : MPI Rel(D1). Type{} ]]$] (We are being
+\item[$[[S;Rel(D1,D2) |-ty H'{} : PI Rel(D1). Type{} ]]$] (We are being
 a bit more specific here than necessary.) Case analysis of
 $[[S |-tc H : D1;D2;H']]$ gives us several cases:
 \begin{description}
@@ -502,7 +493,7 @@ According to \rul{Ty\_Con} we must show only that $[[S |-ctx Rel(D2) ]]$,
 which follows from \pref{lem:tycon-tel} and \pref{lem:increasing-rel}.
 \item[Case \rul{Tc\_DataCon}:] Here, $[[D1 = as :Irrel ks]]$ and
 $[[H' = T]]$. We must show
-$[[S;as :Rel ks,Rel(D2) |-ty T{} : MPI as :Rel ks. Type{} ]]$.
+$[[S;as :Rel ks,Rel(D2) |-ty T{} : PI as :Rel ks. Type{} ]]$.
 Using \rul{Ty\_Con} means we must show $[[S |-tc T : empty; as :Rel ks; Type]]$
 and $[[S |-ctx as :Rel ks, Rel(D2)]]$. The latter comes from
 $[[|-sig S]]$ and \pref{lem:tycon-tel}. The former comes directly from
@@ -534,13 +525,13 @@ from the rule:
 \]
 Use \pref{lem:ctx-reg} to get
 $[[|-sig S]]$. Then use \pref{lem:tycon-kind} to get
-$[[S;empty |-ty MPI D1,D2.H'{} dom(D1) : Type{} ]]$.
+$[[S;empty |-ty PI D1,D2.H'{} dom(D1) : Type{} ]]$.
 Repeated inversion on \rul{Ty\_Pi} gives us
-$[[S;Rel(D1) |-ty MPI D2.H'{} dom(D1) : Type{} ]]$.
+$[[S;Rel(D1) |-ty PI D2.H'{} dom(D1) : Type{} ]]$.
 \pref{lem:weakening} gives us
-$[[S;Rel(G),Rel(D1) |-ty MPI D2.H'{} dom(D1) : Type{} ]]$.
+$[[S;Rel(G),Rel(D1) |-ty PI D2.H'{} dom(D1) : Type{} ]]$.
 \pref{lem:vec-subst} gives us
-$[[S;Rel(G) |-ty MPI (D2[ts/dom(D1)]). H'{} ts : Type{} ]]$
+$[[S;Rel(G) |-ty PI (D2[ts/dom(D1)]). H'{} ts : Type{} ]]$
 as desired.
 \item[Case \rul{Ty\_AppRel}:]
 We'll adopt the metavariable names from the rule:
@@ -568,7 +559,7 @@ We'll adopt the metavariable names from the rule:
 \[
 \ottdruleTyXXLam{}
 \]
-We must show $[[S;Rel(G) |-ty UPI d.k : Type{} ]]$.
+We must show $[[S;Rel(G) |-ty PI d.k : Type{} ]]$.
 Working backward, use \rul{Ty\_Pi} so that we must show
 $[[S;Rel(G,d) |-ty k : Type{} ]]$, which is true by induction.
 \item[Case \rul{Ty\_Fix}:]
@@ -576,7 +567,7 @@ We'll adopt the metavariable names from the rule:
 \[
 \ottdruleTyXXFix{}
 \]
-The induction hypothesis tells us $[[S;Rel(G) |-ty UPI _:Rel k.k : Type{} ]]$.
+The induction hypothesis tells us $[[S;Rel(G) |-ty PI _:Rel k.k : Type{} ]]$.
 Inversion on \rul{Ty\_Pi} tells us $[[S;Rel(G),_:Rel k |-ty k : Type{} ]]$.
 \pref{lem:strengthening} gives us $[[S;Rel(G) |-ty k : Type{} ]]$ as desired.
 \end{description}
@@ -623,7 +614,7 @@ We established above that $[[S;Rel(G),a:Rel k1 |-ty s2 : Type{}]]$.
 Use weakening, \pref{lem:weakening}, (here and elsewhere in this case) to get
 $[[S;Rel(G),b:Rel k2,a:Rel k1 |-ty s2 : Type{}]]$.
 We can use \rul{Co\_Sym} to see that
-$[[S;Rel(G),b:Rel k2 |-co sym h : k2 ~ k1]]$
+$[[S;Rel(G),b:Rel k2 |-co sym h : k2 [Type{}]~[Type{}] k1]]$
 and then \rul{Ty\_Cast} to see that
 $[[S;Rel(G),b:Rel k2 |-ty b |> sym h : k1]]$.
 \pref{lem:ty-subst} then gives us
@@ -670,9 +661,9 @@ We adopt the metavariable names from the statement of the rule:
 \nosupp{\ottdruleCoXXLam{}}
 \]
 We can use
-\rul{Ty\_Lam} to get $[[S;G |-ty \a:rel k1.t1 : UPI a:rel k1.s1]]$.
+\rul{Ty\_Lam} to get $[[S;G |-ty \a:rel k1.t1 : PI a:rel k1.s1]]$.
 Proceeding similarly to the case for \rul{Co\_PiTy}, we can
-get $[[S;G |-ty \a:rel k2.(t2[a |> sym h/a]) : UPI a:rel k2. (s2[a |> sym h/a])]]$
+get $[[S;G |-ty \a:rel k2.(t2[a |> sym h/a]) : PI a:rel k2. (s2[a |> sym h/a])]]$
 and we are done by \pref{lem:increasing-rel}.
 \item[Case \rul{Co\_CLam}:]
 Similar to previous case and the case for \rul{Co\_PiCo}.
@@ -697,7 +688,7 @@ $[[S;Rel(G) |-ty PI a:rel k1. s1 : Type{}]]$.
 Further inversion gives us $[[S;G,a:Rel k1 |-ty s1 : Type{}]]$.
 The induction hypothesis and an inversion also gives us
 $[[S;Rel(G) |-ty t1 : k1]]$.
-\pref{lem:ty-susbst} gives us $[[S;Rel(G) |-ty s1[t1/a] : Type{}]]$ as desired.
+\pref{lem:ty-subst} gives us $[[S;Rel(G) |-ty s1[t1/a] : Type{}]]$ as desired.
 \item[Case \rul{Co\_CInst}:] Similar to previous case.
 \item[Case \rul{Co\_InstLam}:] Similar to previous case.
 \item[Case \rul{Co\_CInstLam}:] Similar to previous case.
@@ -1051,8 +1042,8 @@ then $[[S;G |-ty t ps : s[ps/dom(D)] ]]$.
 By straightforward induction on $[[S;G |-vec ps : D]]$.
 \end{proof}
 
-\begin{lemma}[Type constant kinds]
-\label{lem:tycon-kind}
+\begin{lemma}[Type constant kinds shape]
+\label{lem:tycon-kind-shape}
 If $[[S;G |-ty H{ts1} ps1 : k1]]$ and $[[S;G |-ty H{ts2} ps2 : k2]]$
 (where the lengths of $[[ps1]]$ and $[[ps2]]$ are the same),
 then there exists a $[[k]]$ such that $[[fv(k) = {as} \union {zs}]]$,
@@ -1064,16 +1055,16 @@ $[[k1 = k[ts1/as,ps1/zs] ]]$, and $[[k2 = k[ts2/as,ps2/zs] ]]$.
 such that $[[S;G |-ty H{ts1} : k3]]$ and $[[S;G |-ty H{ts2} : k4]]$.
 Inversion (via the only applicable rule, \rul{Ty\_Con})
 then tells us that $[[S |-tc H : D1;D2;H' ]]$,
-$[[k3 = MPI(D2[ts1/dom(D1)]). H' ts1]]$, and
-$[[k4 = MPI(D2[ts2/dom(D1)]). H' ts2]]$.
+$[[k3 = PI(D2[ts1/dom(D1)]). H'{} ts1]]$, and
+$[[k4 = PI(D2[ts2/dom(D1)]). H'{} ts2]]$.
 We can see by inversions that $[[S;G |-vec ps1 : prefix(D2[ts1/dom(D1)]) ]]$
 and $[[S;G |-vec ps2 : prefix(D2[ts2/dom(D1)]) ]]$.
 Let $[[D3,D4 = D2]]$, where the length of $[[D3]]$ matches that of $[[ps1]]$.
 Thus \pref{lem:tel-app} tells us that
-$[[k1 = MPI (D4[ts1/dom(D1),ps1/dom(D3)]).H' ts1]]$ and
-$[[k2 = MPI (D4[ts2/dom(D1),ps2/dom(D3)]).H' ts2]]$.
+$[[k1 = PI (D4[ts1/dom(D1),ps1/dom(D3)]).H'{} ts1]]$ and
+$[[k2 = PI (D4[ts2/dom(D1),ps2/dom(D3)]).H'{} ts2]]$.
 Thus, we are done, with $[[as = dom(D1)]]$, $[[zs = dom(D2)]]$,
-and $[[k = MPI D4. H' as]]$.
+and $[[k = PI D4. H'{} as]]$.
 \end{proof}
 
 \begin{definition}[Joinability]
@@ -1214,15 +1205,15 @@ These both can be proved only by \rul{Ty\_Con}.
 The $[[H]]$ in both judgments is the same, and so by \pref{lem:ctx-reg}
 and \pref{lem:determinacy-tycon}, we have unique $[[D1]]$, $[[D2]]$,
 and $[[H']]$ such that $[[S |-tc H : D1;D2;H']]$. We can thus
-see that $[[k1 = MPI(D2[ss/dom(D1)]).H'{} ss]]$
-and $[[k2 = MPI(D2[ss'/dom(D1)]).H'{} ss']]$.
+see that $[[k1 = PI(D2[ss/dom(D1)]).H'{} ss]]$
+and $[[k2 = PI(D2[ss'/dom(D1)]).H'{} ss']]$.
 The induction hypothesis gives us $[[ees']]$ such that, $\forall [[i]]$,
 $[[|si| ~>* eei' *<~ |si'|]]$.
-Choose $[[ee = MPI (|D2|[ees'/dom(D1)]). H'{} ees']]$. We must show
+Choose $[[ee = PI (|D2|[ees'/dom(D1)]). H'{} ees']]$. We must show
 the following:
 \begin{itemize}
-\item $[[MPI (|D2|[|ss|/dom(D1)]). H'{} |ss| ~>* ee]]$
-\item $[[MPI (|D2|[|ss'|/dom(D1)]). H'{} |ss'| ~>* ee]]$
+\item $[[PI (|D2|[|ss|/dom(D1)]). H'{} |ss| ~>* ee]]$
+\item $[[PI (|D2|[|ss'|/dom(D1)]). H'{} |ss'| ~>* ee]]$
 \end{itemize}
 Both of these follow from \pref{lem:red-star-subst}.
 \item[Case \rul{Co\_AppRel}:] We adopt the metavariable names from the rule:
@@ -1235,14 +1226,14 @@ Both must be proved by \rul{Ty\_AppRel}. We thus get all of the following:
 \item $[[S;G |-ty t1 : PI a:Rel k3.k4]]$
 \item $[[S;G |-ty s1 : k3]]$
 \item $[[k1 = k4[s1/a] ]]$
-\item $[[S;G |-ty t2 : PI' a:Rel k5.k6]]$
+\item $[[S;G |-ty t2 : PI a:Rel k5.k6]]$
 \item $[[S;G |-ty s2 : k5]]$
 \item $[[k2 = k6[s2/a] ]]$.
 \end{itemize}
 The (kind) induction hypothesis gives us $[[ee1]]$ such that
-$[[PI a:Rel |k3|.|k4| ~>* ee1 *<~ PI' a:Rel |k5|.|k6|]]$.
+$[[PI a:Rel |k3|.|k4| ~>* ee1 *<~ PI a:Rel |k5|.|k6|]]$.
 \pref{lem:pi-red} gives us $[[ee3]]$ and $[[ee4]]$ such that
-$[[ee1 = PI'' a:Rel ee3.ee4]]$.
+$[[ee1 = PI a:Rel ee3.ee4]]$.
 The (type) induction hypothesis also gives us $[[ee2]]$ such that
 $[[|s1| ~>* ee2 *<~ |s2|]]$.
 Choose $[[ee = ee4[ee2/a] ]]$.
@@ -1272,11 +1263,11 @@ We adopt the metavariable names from the rule:
 \ottdruleCoXXFix{}
 \]
 Inversion on $[[S;G |-ty fix t1 : k1]]$ tells us
-$[[k1 = UPI a:rel k3.k4]]$ and $[[S;G |-ty t1 : UPI _:Rel k1.k1]]$.
+$[[k1 = PI a:rel k3.k4]]$ and $[[S;G |-ty t1 : PI _:Rel k1.k1]]$.
 Similarly, inversion on $[[S;G |-ty fix t2 : k2]]$ tells us
-$[[k2 = UPI a:rel k5.k6]]$ and $[[S;G |-ty t2 : UPI _:Rel k2.k2]]$.
+$[[k2 = PI a:rel k5.k6]]$ and $[[S;G |-ty t2 : PI _:Rel k2.k2]]$.
 The induction hypothesis gives us $[[ee0]]$ such that
-$[[|UPI _:Rel k1.k1| ~>* ee0 *<~ |UPI _:Rel k2.k2|]]$.
+$[[|PI _:Rel k1.k1| ~>* ee0 *<~ |PI _:Rel k2.k2|]]$.
 Use of \pref{lem:pi-red} gives us $[[ee1]]$ such that $[[|k1| ~>* ee1 *<~ |k2|]]$
 and we are done.
 \item[Case \rul{Co\_ArgK}:]
@@ -1329,7 +1320,7 @@ rule). Let $[[t3 = H{ks} ps0]]$ and $[[t4 = H{ks'} ps0']]$.
 $[[S;Rel(G) |-ty H{ks} ps : s1]]$ and $[[S;Rel(G) |-ty H{ks'} ps' : s2]]$.
 By \pref{lem:app-inversion}, there must be $[[s3]]$ and $[[s4]]$ such
 that $[[S;Rel(G) |-ty t3 : s3]]$ and $[[S;Rel(G) |-ty t4 : s4]]$.
-\pref{lem:tycon-kind} tells us that $[[s3 = s5[ks/as,ps/zs] ]]$ and
+\pref{lem:tycon-kind-shape} tells us that $[[s3 = s5[ks/as,ps/zs] ]]$ and
 $[[s4 = s5[ks'/as,ps'/zs] ]]$ for some $[[s5]]$, $[[as]]$, and $[[zs]]$.
 \pref{lem:app-red} tells us that $[[ks]]$ and $[[ks']]$ are joinable,
 as are $[[ps]]$ and $[[ps']]$.

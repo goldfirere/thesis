@@ -113,14 +113,6 @@ bnd, d {{ tex \delta }} :: 'Bnd_' ::=
 | d [ theta ]                      :: M :: Subst
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  Pis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-PI {{ tex \Pi }} :: 'Pi_' ::=
-| MPI       ::   :: Matchable
-| UPI       ::   :: Unmatchable
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -263,6 +255,7 @@ arg, p {{ tex \psi }} :: 'Arg_' ::=
 | t                   ::   :: Ty
 | { t }               ::   :: IrrelTy
 | g                   ::   :: Co
+| '|' p '|'           :: M :: Erased
 
 args, ps {{ tex \overline{\psi} }} :: 'Args_' ::=
 | p                     ::   :: One
@@ -274,6 +267,7 @@ args, ps {{ tex \overline{\psi} }} :: 'Args_' ::=
 | ts                    :: M :: Types
 | ps _{ I1 '..' I2 }    :: M :: IndexPrefix
   {{ tex {[[ps]]}_{[[I1]] \ldots [[I2]]} }}
+| '|' ps '|'            :: M :: Erased
 
 
 coarg, w {{ tex \omega }} :: 'CoArg_' ::=
@@ -407,8 +401,7 @@ terminals :: 'terminals_' ::=
 | *<~                                  ::   :: ratsder {{ tex \mathrel{ {}^*{\leftsquigarrow} } }}
 | ~~>                                  ::   :: pushto  {{ tex \longrightsquigarrow }}
 | '//'                                 ::   :: sep     {{ tex \quad }}
-| MPI                                  ::   :: Pi      {{ tex \bar{\Pi} }}
-| UPI                                  ::   :: Upi     {{ tex \tilde{\Pi} }}
+| PI                                   ::   :: Pi      {{ tex \Pi }}
 | |>                                   ::   :: Cast    {{ tex \rhd }}
 | ||>                                  ::   :: RCast   {{ tex \unrhd }}
 | <||                                  ::   :: LCast   {{ tex \unlhd }}
@@ -435,7 +428,7 @@ terminals :: 'terminals_' ::=
 | !                                    ::   :: cons    {{ tex \propto }}
 | !!                                   ::   :: lcons   {{ tex \mathrel{\ltimes} }}
 | '>>'                                 ::   :: pushin  {{ tex \succ }}
-| o                                    ::   :: bullet  {{ tex \bullet }}
+| o                                    ::   :: bullet  {{ tex {\bullet} }}
 | coercionKind                         ::   :: coKind  {{ tex \mathsf{coercion\_kind} }}
 | typeKind                             ::   :: tyKind  {{ tex \mathsf{type\_kind} }}
 | promote                              ::   :: promote {{ tex \mathsf{promote} }}
@@ -664,3 +657,7 @@ Cos_One <= CoArgs_Coercions
 Args_Many <= Rewrite_ts_rewrite
 
 Phi_IEquality <= Phi_Subst
+
+Arg_Ty <= Arg_Erased
+Arg_Co <= Arg_Erased
+Args_One <= Args_Erased

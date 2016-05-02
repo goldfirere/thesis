@@ -101,7 +101,7 @@ S;G |-ty a : k
 S |-tc H : D1;D2;H'  //  S |-ctx G
 S;Rel(G) |-vec ts : D1
 -------------- :: Con
-S;G |-ty H{ts} : MPI (D2[ts/dom(D1)]). H'{} ts
+S;G |-ty H{ts} : PI (D2[ts/dom(D1)]). H'{} ts
 
 S;G |-ty t1 : PI a :Rel k1. k2  //  S;G |-ty t2 : k1
 ------------------ :: AppRel
@@ -120,21 +120,21 @@ S;G, Rel(d) |-ty k : Type{}
 S;G |-ty PI d. k : Type{}
 
 S;Rel(G) |-co g : k1 [Type{}]~[Type{}] k2
-S;G |-ty t : k1  // S;Rel(G) |- k2 : Type{}
+S;G |-ty t : k1  // S;Rel(G) |-ty k2 : Type{}
 -------------------- :: Cast
 S;G |-ty t |> g : k2
 
 S;Rel(G) |-ty k : Type{}  //  S;G |-ty t : s
 forall i: S;G;s;t |-alt alti : k
-s = MPI D. H{} ss // alts are exhaustive for H
+s = PI D. H{} ss // alts are exhaustive for H
 ------------------------------ :: Case
 S;G |-ty case_k t of alts : k
 
 S;G,d |-ty t : k
 ------------------------ :: Lam
-S;G |-ty \d.t : UPI d. k
+S;G |-ty \d.t : PI d. k
 
-S;G |-ty t : UPI _:Rel k.k   //  k = UPI a:rel k1.k2
+S;G |-ty t : PI _:Rel k.k
 ------------------ :: Fix
 S;G |-ty fix t : k
 
@@ -149,9 +149,9 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
 by
 
 S |-tc H : D1;D2;H'  //  D0,D' = D2[ss/dom(D1)]
-S;G |-ty t : UPI D0, c: t0 [MPI D'.H'{} ss]~[MPI D'.H'{} ss] H{ss} dom(D0). k
+S;G |-ty t : PI D0, c: t0 [PI D'.H'{} ss]~[PI D'.H'{} ss] H{ss} dom(D0). k
 -------------------------- :: Match
-S;G;MPI D'.H'{} ss;t0 |-alt H -> t : k
+S;G;PI D'.H'{} ss;t0 |-alt H -> t : k
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -228,12 +228,12 @@ S;G, a :rel k1 |-co g : t1 [s1]~[s2] t2
 %% Need these next conditions because it needs to work for Irrel, too.
 S;G, a :rel k1 |-ty t1 : s1 // S;G, a:rel k1 |-ty t2 : s2
 ------------------------------------- :: Lam
-S;G |-co \a :rel h . g : \a:rel k1.t1 [UPI a:rel k1.s1]~[UPI a:rel k2.(s2[a |> sym h/a])] \a:rel k2.(t2[a |> sym h/a])
+S;G |-co \a :rel h . g : \a:rel k1.t1 [PI a:rel k1.s1]~[PI a:rel k2.(s2[a |> sym h/a])] \a:rel k2.(t2[a |> sym h/a])
 
 S;G |-co h1 : t1 [k3]~[k4] t2 // S;G |-co h2 : s1 [k5]~[k6] s2
 S;G,c:t1 [k3]~[k5] s1 |-co g : k1 [k7]~[k8] k2
 ------------------------------- :: CLam
-S;G |-co \c:(h1,h2).g : (\c:t1 [k3]~[k5] s1.k1) [UPI c: t1 [k3]~[k5] s1. k7]~[UPI c:t2 [k4]~[k6] s2.(k8[h1 ;; c ;; sym h2 / c])] (\c:t2 [k4]~[k6] s2.(k2[h1 ;; c ;; sym h2 / c]))
+S;G |-co \c:(h1,h2).g : (\c:t1 [k3]~[k5] s1.k1) [PI c: t1 [k3]~[k5] s1. k7]~[PI c:t2 [k4]~[k6] s2.(k8[h1 ;; c ;; sym h2 / c])] (\c:t2 [k4]~[k6] s2.(k2[h1 ;; c ;; sym h2 / c]))
 
 S;G |-co g : t1 [k3]~[k4] t2
 S;G |-ty fix t1 : k1 // S;G |-ty fix t2 : k2
@@ -274,12 +274,12 @@ S;G |-co g1 : phi1  //   S;G |-co g2 : phi2
 -------------------------- :: CInst
 S;G |-co h1@(g1,g2) : s1[g1/c] [Type{}]~[Type{}] s2[g2/c]
 
-S;G |-co g : \a:rel k1.t1 [UPI a:rel k1.k3]~[UPI a:rel k2.k4] \a:rel k2.t2
+S;G |-co g : \a:rel k1.t1 [PI a:rel k1.k3]~[PI a:rel k2.k4] \a:rel k2.t2
 S;G |-co h : s1 (k1)~(k2) s2
 --------------------------- :: InstLam
 S;G |-co g@\h : t1[s1/a] [k3[s1/a] ]~[k4[s2/a] ] t2[s2/a]
 
-S;G |-co g : \c:phi1. s1 [UPI c:phi1.k1]~[UPI c:phi2.k2] \c:phi2.s2
+S;G |-co g : \c:phi1. s1 [PI c:phi1.k1]~[PI c:phi2.k2] \c:phi2.s2
 S;G |-co h1 : phi1 // S;G |-co h2 : phi2
 ---------------------------- :: CInstLam
 S;G |-co g@\(h1,h2) : s1[h1/c] [k1[h1/c] ]~[k2[h2/c] ] s2[h2/c]
@@ -461,13 +461,13 @@ h' = g1 ;; h ;; g2  //  g3 = g0@(h', h)
 S;G |-s (v |> g0) h --> v h' |> g3
 
 ----------------------------------- :: APush
-S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (UPI a:Irrel <k>. g)
+S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (PI a:Irrel <k>. g)
 
 S |-tc H : as:Irrel ks;D;H'
 S;G |-co h : H'{} ts [Type{}]~[Type{}] H'{} ts'
 forall i: gi = build_kpush_co(<k>@nths h;ps_{0..i-1})
 forall i: pi' = cast_kpush_arg(pi;gi)
-% kind K = MPI as :Irrel ks. MPI D. T as
+% kind K = PI as :Irrel ks. PI D. T as
 % si' = s' |> argk (kind K @ nths h @ ...)
 ----------------------------------------------------------------- :: KPush
 S;G |-s case_k0 (H{ts} ps) |> h of alts --> case_k0 H{ts'} ps' of alts
@@ -515,9 +515,9 @@ k ~> k'  // t ~> t'
 -------------- :: Lam
 \a:rel k.t ~> \a:rel k'.t'
 
-t ~> t'  // s ~> s'
+t ~> t'  // s ~> s' // k1 ~> k1' // k2 ~> k2'
 ----------------------- :: CLam
-\c:t~s.k ~> \c:t'~s'.k'
+\c:t (k1)~(k2) s.k ~> \c:t' (k1')~(k2') s'.k'
 
 t ~> t'
 --------------- :: Fix
