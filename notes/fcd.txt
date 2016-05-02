@@ -64,6 +64,20 @@ Unnecessary coercions:
 
   (Actually, just look it up in the git history.)
 
+DESIGN DECISIONS:
+ - Two instantiation operators: to make inversion work. Well, really, to
+   make promotion work, but we've scrapped promotion.
+ - Not putting coercion in the language of types: to avoid awkwardness of
+   "lifting" a coercion in the lifting lemma. Spreads out complexity.
+ - Not putting prop in type: Cleaner once the previous decision was made.
+ - Different argument forms: To avoid overlap in the erased language.
+   Note that ~> is untyped, so we can't tell the difference between
+   relevant application and irrelevant application anymore.
+ - Kinds in phi: to make CArgK{1,2} work. Note that we need these for
+   CPush.
+ - Not erasing the {} parameters to tycons: we need the kinds of the types
+   in Nth to be joinable.
+
 Added/changed: Case, Match, CBeta, CLam
 
 
@@ -132,10 +146,5 @@ Simplifications:
 TODO: "other alternatives do not match" needs to be in the typing rule,
       not the step rule.
       
-STACK:
-Ditto Co_PiTy
-Ditto Co_PiCo (and its |-prop premise)
-Co_Lam
-Co_Inst
-Co_InstLam
-Co_Nth *added* PREMISES
+NEED TO FIX COMPLETENESS OF Co_PiCo and Co_CLam. They are utterly broken because
+the induction hypothesis is inapplicable.

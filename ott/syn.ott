@@ -143,8 +143,6 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | t ps                         :: M :: Apps
 | H {}                         :: M :: HEmpty
   {{ tex [[H]] }}
-| H **                         :: M :: HErased
-  {{ tex [[H]] }}
 | PI D .  t                    :: M :: Pis
   {{ tex [[PI]] [[D]].\, [[t]] }}
 % | t1 -> t2                     :: M :: Arrow
@@ -608,7 +606,7 @@ fun
 
 by
 |a|                === a
-|H{ts}|            === H**
+|H{ts}|            === H{|ts|}
 |t1 t2|            === |t1| |t2|
 |t1 {t2}|          === |t1| {|t2|}
 |t g|              === |t| o

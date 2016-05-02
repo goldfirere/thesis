@@ -701,7 +701,8 @@ $[[S;Rel(G) |-ty t1 : k1]]$.
 \item[Case \rul{Co\_CInst}:] Similar to previous case.
 \item[Case \rul{Co\_InstLam}:] Similar to previous case.
 \item[Case \rul{Co\_CInstLam}:] Similar to previous case.
-\item[Case \rul{Co\_Nth}:] Immediate.
+\item[Case \rul{Co\_NthRel}:] Immediate.
+\item[Case \rul{Co\_NthIrrel}:] Immediate.
 \item[Case \rul{Co\_Kind}:] By \pref{lem:kind-reg}.
 \item[Case \rul{Co\_Step}:] By \pref{lem:preservation}.
 \end{description}
@@ -756,7 +757,7 @@ mutual induction on the structure of $[[t]]$/$[[d]]$.
 %% \begin{description}
 %% \item[Case $[[t = a]]$:] By assumption.
 %% \item[Case $[[t = b]]$:] By \rul{R\_Refl}.
-%% \item[Case $[[t = H**]]$:] By \rul{R\_Refl}.
+%% \item[Case $[[t = H{ts}]]$:] By induction (w.r.t each element of ts) and \rul{R\_Con}.
 %% \item[Case $[[t = t1 t2]]$:] By induction and \rul{R\_AppRep}.
 %% \item[Case $[[t = t1 {t2}]]$:] By induction and \rul{R\_AppIrrel}.
 %% \item[Case $[[t = t0 o]]$:] By induction and \rul{R\_CApp}.
@@ -805,12 +806,12 @@ so we are done.
 \item[Case \rul{R\_CBeta}:] By induction.
 \item[Case \rul{R\_Match}:] It must be that:
 \begin{itemize}
-\item $[[t1 = case_k H** ps0 of alts]]$
+\item $[[t1 = case_k H{ss} ps0 of alts]]$
 \item $[[t2 = t4 ps0' o ]]$ where $[[H -> t3 \in alts]]$,
 $[[t3 ~> t4]]$, $[[ps0 ~> ps0']]$, and no other alternative matches.
 \end{itemize}
 We must show that
-$[[case_k[ps/zs] H** ps0[ps/zs] of alts[ps/zs] ~> t4[ps'/zs] ps0'[ps'/zs] o ]]$.
+$[[case_k[ps/zs] H{ss[ps/zs]} ps0[ps/zs] of alts[ps/zs] ~> t4[ps'/zs] ps0'[ps'/zs] o ]]$.
 Proceeding by \rul{R\_Match}, the left-hand side steps to
 $[[t5 ps0'' o ]]$ where $[[t3[ps/zs] ~> t5]]$ and $[[ps0[ps/zs] ~> ps0'']]$,
 and we get to choose $[[t5]]$ and $[[ps0'']]$.
@@ -853,11 +854,12 @@ By iterated induction on the lengths of the reduction chains.
 
 \begin{lemma}[Application reduction]
 \label{lem:app-red}
-If $[[H** ps ~> s]]$, then $[[s = H** ps']]$ where, $[[ps ~> ps']]$.
+If $[[H{ts} ps ~> s]]$, then $[[s = H{ts'} ps']]$ where $[[ts ~> ts']]$
+and $[[ps ~> ps']]$.
 \end{lemma}
 
 \begin{proof}
-Straightforward induction on the structure of $[[s0 = H** ps]]$.
+Straightforward induction on the structure of $[[s0 = H{ts} ps]]$.
 \end{proof}
 
 \begin{lemma}[Local diamond]
@@ -870,11 +872,12 @@ that $[[t1 ~> t3 <~ t2]]$.
 \begin{proof}
 By induction on the structure of $[[t0]]$ followed by case analysis
 on the reduction of $[[t0]]$. We assume throughout that all types
-have had their coercions erased.
+have had their coercions erased. We also ignore overlap with the
+\rul{R\_Refl} rule, as this is always trivially handled.
 
 \begin{description}
 \item[Case $[[t0 = a]]$:] $[[t1]] = [[t2]] = [[t3]] = [[a]]$.
-\item[Case $[[t0 = H**]]$:] $[[t1]] = [[t2]] = [[t3]] = [[H**]]$.
+\item[Case $[[t0 = H{ts}]]$:] By induction.
 \item[Case $[[t0 = s1 s2]]$:] We now have several cases:
 \begin{description}
 \item[Case \rul{R\_AppRel}/\rul{R\_AppRel}:] By induction.
@@ -928,9 +931,9 @@ We now have several cases:
 \item[Case \rul{R\_Case}/\rul{R\_Case}:] By induction.
 \item[Case \rul{R\_Case}/\rul{R\_Match}:] It must be that:
 \begin{itemize}
-\item $[[t0 = case_k H** ps of list of H -> ee]]$
-\item $[[t1 = case_k' H** ps' of list of H -> ee']]$
-where $[[k ~> k']]$, $[[ps ~> ps']]$, and $[[ees ~> ees']]$
+\item $[[t0 = case_k H{ss} ps of list of H -> ee]]$
+\item $[[t1 = case_k' H{ss'} ps' of list of H -> ee']]$
+where $[[k ~> k']]$, $[[ss ~> ss']]$, $[[ps ~> ps']]$, and $[[ees ~> ees']]$
 (appealing to \pref{lem:app-red})
 \item $[[t2 = eei'' ps'' o ]]$, where $[[Hi = H]]$,
 no other alternative matches $[[H]]$,
@@ -944,7 +947,7 @@ and $[[t2 ~> t3]]$. The first is by \rul{R\_Match}. The second is by
 repeated use of \rul{R\_AppRel}/\rul{R\_AppIrrel}/\rul{R\_CApp}.
 \item[Case \rul{R\_Match}/\rul{R\_Match}:] It must be that:
 \begin{itemize}
-\item $[[t0 = case_k H** ps of alts]]$
+\item $[[t0 = case_k H{ss} ps of alts]]$
 \item $[[alti = H -> k1]]$ where no other alternative matches $[[H]]$
 \item $[[t1 = k1' ps' o ]]$ where $[[k1 ~> k1']]$ and $[[ps ~> ps']]$.
 \item $[[t2 = k1'' ps'' o ]]$ where $[[k1 ~> k1'']]$ and $[[ps ~> ps'']]$.
@@ -1026,19 +1029,51 @@ $[[|t[g/c]| = |t|]]$
 By induction on the structure of $[[t]]$.
 \end{proof}
 
-\begin{definition}[$[[promote]]$]
-TODO
-\end{definition}
-
-\begin{definition}[$[[nokind]]$]
-Define the operation $[[nokind_S;G(g) = h]]$ as follows:
-$[[nokind_S;G(kind g) = promote_S;G(g)]]$; $[[nokind_S;G(g)]]$ where $[[g]]$
-is not headed by \ottkw{kind} simply recurs on the component coercions.
-\end{definition}
-
-\begin{lemma}[Eliminating \ottkw{kind}]
-TODO
+\begin{lemma}[Application inversion]
+\label{lem:app-inversion}
+If $[[S;G |-ty t ss : k]]$ and $[[ss0]]$ is a prefix of $[[ss]]$,
+then there exists $[[k0]]$ such that $[[S;G |-ty t ss0 : k0]]$.
 \end{lemma}
+
+\begin{proof}
+Straightforward induction on the difference in length between
+$[[ss0]]$ and $[[ss]]$.
+\end{proof}
+
+\begin{lemma}[Telescope application]
+\label{lem:tel-app}
+If $[[S;G |-ty t : PI D.s]]$ and $[[S;G |-vec ps : D]]$,
+then $[[S;G |-ty t ps : s[ps/dom(D)] ]]$.
+\end{lemma}
+
+\begin{proof}
+By straightforward induction on $[[S;G |-vec ps : D]]$.
+\end{proof}
+
+\begin{lemma}[Type constant kinds]
+\label{lem:tycon-kind}
+If $[[S;G |-ty H{ts1} ps1 : k1]]$ and $[[S;G |-ty H{ts2} ps2 : k2]]$
+(where the lengths of $[[ps1]]$ and $[[ps2]]$ are the same),
+then there exists a $[[k]]$ such that $[[fv(k) = {as} \union {zs}]]$,
+$[[k1 = k[ts1/as,ps1/zs] ]]$, and $[[k2 = k[ts2/as,ps2/zs] ]]$.
+\end{lemma}
+
+\begin{proof}
+\pref{lem:app-inversion} tells us that there exist $[[k3]]$ and $[[k4]]$
+such that $[[S;G |-ty H{ts1} : k3]]$ and $[[S;G |-ty H{ts2} : k4]]$.
+Inversion (via the only applicable rule, \rul{Ty\_Con})
+then tells us that $[[S |-tc H : D1;D2;H' ]]$,
+$[[k3 = MPI(D2[ts1/dom(D1)]). H' ts1]]$, and
+$[[k4 = MPI(D2[ts2/dom(D1)]). H' ts2]]$.
+We can see by inversions that $[[S;G |-vec ps1 : prefix(D2[ts1/dom(D1)]) ]]$
+and $[[S;G |-vec ps2 : prefix(D2[ts2/dom(D1)]) ]]$.
+Let $[[D3,D4 = D2]]$, where the length of $[[D3]]$ matches that of $[[ps1]]$.
+Thus \pref{lem:tel-app} tells us that
+$[[k1 = MPI (D4[ts1/dom(D1),ps1/dom(D3)]).H' ts1]]$ and
+$[[k2 = MPI (D4[ts2/dom(D1),ps2/dom(D3)]).H' ts2]]$.
+Thus, we are done, with $[[as = dom(D1)]]$, $[[zs = dom(D2)]]$,
+and $[[k = MPI D4. H' as]]$.
+\end{proof}
 
 \begin{lemma}[Completeness of type reduction] ~
 \label{lem:complete-red}
@@ -1072,7 +1107,7 @@ $[[ee1 ~>* ee3 *<~ ee2]]$. Thus, $[[ee3]]$ is a common reduct
 of $[[|t1|]]$ and $[[|t3|]]$ as desired.
 \item[Case \rul{Co\_Coherence}:] We know that $[[|t1| = |t2|]]$ and thus
 either can be the common reduct.
-\item[Case \rul{Co\_Con}:] Immediate.
+\item[Case \rul{Co\_Con}:] By induction and repeated use of \rul{R\_Con}.
 \item[Case \rul{Co\_AppRel}:] By induction and repeated use of \rul{R\_AppRel}.
 \item[Case \rul{Co\_AppIrrel}:] By induction and repeated use of \rul{R\_AppIrrel}.
 \item[Case \rul{Co\_CApp}:] By induction.
@@ -1118,7 +1153,9 @@ By induction and \pref{lem:co-subst-erase}.
 Like case \rul{Co\_Inst}, but appealing to \pref{lem:lam-red}.
 \item[Case \rul{Co\_CInstLam}:]
 Like previous case.
-\item[Case \rul{Co\_Nth}:]
+\item[Case \rul{Co\_NthRel}:]
+By induction and \pref{lem:app-red}.
+\item[Case \rul{Co\_NthIrrel}:]
 By induction and \pref{lem:app-red}.
 \item[Case \rul{Co\_Kind}:]
 By induction.
@@ -1132,13 +1169,25 @@ We now must consider the different step rules:
 \item[Case \rul{S\_Unroll}:] By \rul{R\_Unroll}.
 \item[Case \rul{S\_Trans}:] $[[|t1| = |t2|]]$ in this case.
 \item[Congruence rules:] By induction.
-\item[Push rules:] $[[|t1| = |t2|]]$ in these cases.
+\item[Case \rul{S\_KPush}:] We adopt the metavariable names from the
+statement of the rule:
+\[
+\ottdruleSXXKPush{}
+\]
+The only differences between $[[t1]]$ (the redex) and $[[t2]]$ (the reduct)
+are the $[[ts]]$ becoming
+the $[[ts']]$ and the $[[ps]]$ becoming $[[ps']]$, along with the dropped cast
+by $[[h]]$. Casting is erased, so losing $[[h]]$ is inconsequential.
+By the definition of $[[cast_kpush_arg]]$, we can see that
+$[[|cast_kpush_arg(p;g)| = |p|]]$ for any $[[p]]$, so $[[|ps| = |ps'|]]$.
+This leaves us only the $[[ts]]$, but we can see that $[[|ts| ~>* ees *<~ |ts'|]]$
+(for some $[[ees]]$) by the induction hypothesis. We are done by
+\pref{lem:red-star-subst}.
+\item[Other push rules:] $[[|t1| = |t2|]]$ in these cases.
 \end{description}
 \end{description}
 
-We now proceed to the kinds cases. We use \pref{lem:determinacy} here
-to ensure that kinds mentioned in premises match up with the kinds we
-wish to prove joinability about.
+We now proceed to the kinds cases.
 
 \begin{description}
 \item[Case \rul{Co\_Var}:] Impossible.
@@ -1195,26 +1244,21 @@ We are done by two uses of \pref{lem:red-star-subst}.
 \item[Case \rul{Co\_AppIrrel}:] Similar to previous case.
 \item[Case \rul{Co\_CApp}:] Similar to (but easier than -- no argument
 to worry about) previous case.
-\item[Case \rul{Co\_PiTy}:] 
-\pref{lem:prop-reg} tells us that the types related by the rule
-are well-kinded; inversion tells us that both have kind $[[Type{}]]$.
-We are done.
-\item[Case \rul{Co\_PiCo}:]
-Similar to previous case.
+\item[Case \rul{Co\_PiTy}:] Immediate. Both kinds are $[[Type{}]]$.
+\item[Case \rul{Co\_PiCo}:] Immediate. Both kinds are $[[Type{}]]$.
 \item[Case \rul{Co\_Case}:] By induction.
 \item[Case \rul{Co\_Lam}:]
 We adopt the metavariable names from the rule:
 \[
-\ottdruleCoXXLam{}
+\nosupp{\ottdruleCoXXLam{}}
 \]
-\pref{lem:kind-reg} tells us that
-$[[\a:rel k1.t1]]$ and $[[\a:rel k2.(t2[a |> sym h/a])]]$ are both
-well-kinded. Inversion then tells us
+\pref{lem:prop-reg} tells us that
 $[[S;G |- \a:rel k1.t1 : UPI a:rel k1.s1]]$
 and $[[S;G |- \a:rel k2.(t2[a |> sym h/a]) : UPI a:rel k2. (s2[a |> sym h/a])]]$.
-The induction hypothesis (on $[[S;G |-co h : k1 ~ k2]]$)
+The induction hypothesis (on $[[S;G |-co h : k1 [Type{}]~[Type{}] k2]]$)
 gives us $[[ee1]]$ such that
-$[[|k1| ~>* ee1 *<~ |k2|]]$ and (operation on $[[S;G, a:rel k1 |-co g : t1 ~ t2]]$)
+$[[|k1| ~>* ee1 *<~ |k2|]]$ and (induction hypothesis
+on $[[S;G, a:rel k1 |-co g : t1 ~ t2]]$)
 $[[ee2]]$ such that
 $[[|s1| ~>* ee2 *<~ |s2|]]$. Noting that the substitution is immaterial
 after erasure (that is, $[[|a |> sym h| = a]]$), we choose
@@ -1235,11 +1279,76 @@ $[[|UPI _:Rel k1.k1| ~>* ee0 *<~ |UPI _:Rel k2.k2|]]$.
 Use of \pref{lem:pi-red} gives us $[[ee1]]$ such that $[[|k1| ~>* ee1 *<~ |k2|]]$
 and we are done.
 \item[Case \rul{Co\_ArgK}:]
-Inversion, \pref{lem:ctx-reg}, and \pref{lem:tyvar-reg} tell
- us that the related types both have kind $[[Type{}]]$. We are done.
+Here is the rule with all kinds included:
+\[
+\nosupp{\ottdruleCoXXArgK{}}
+\]
+Both kinds are $[[Type{}]]$ and so we are done.
 \item[Case \rul{Co\_CArgK1}:]
-TODO: Include kinds in phi. Then this is doable. Argh.
-
+Examine the typing rule with kinds included:
+\[
+\nosupp{\ottdruleCoXXCArgKOne{}}
+\]
+The induction hypothesis (with \pref{lem:pi-red})
+gives us our result.
+\item[Case \rul{Co\_CArgK2}:] Similar to previous caes.
+\item[Case \rul{Co\_ArgKLam}:] Immediate. Both kinds are $[[Type{}]]$.
+\item[Case \rul{Co\_CArgKLam1}:] Similar to case \rul{Co\_CArgK1}.
+\item[Case \rul{Co\_CArgKLam2}:] Similar to previous case.
+\item[Case \rul{Co\_Inst}:] Immediate. Both kinds are $[[Type{}]]$.
+\item[Case \rul{Co\_CInst}:] Immediate. Both kinds are $[[Type{}]]$.
+\item[Case \rul{Co\_InstLam}:] Here is the rule with kinds shown:
+\[
+\nosupp{\ottdruleCoXXInstLam{}}
+\]
+Our desired result follows from the induction hypothesis and
+\pref{lem:red-star-subst}.
+\item[Case \rul{Co\_CInstLam}:] Here is the rule with kinds shown:
+\[
+\nosupp{\ottdruleCoXXCInstLam{}}
+\]
+Our desired result follows by the induction hypothesis and
+\pref{lem:co-subst-erase}.
+\item[Case \rul{Co\_NthRel}:]
+We adopt metavariable names from the statement of the rule:
+\[
+\nosupp{\ottdruleCoXXNthRel{}}
+\]
+The induction hypothesis gives us $[[ee']]$ such that
+$[[H{|ks|} |ps| ~>* ee' *<~ H{|ks'|} |ps'|]]$. Furthermore,
+we know that the number of $[[ps]]$ is non-zero.
+The reductions must thus be combinations of \rul{R\_AppRel},
+\rul{R\_AppIrrel}, and \rul{R\_CApp}, and we can thus consider
+the reduction of prefixes of the original types. Specifically,
+we can deduce $[[H{|ks|} |ps0| |t| ~>* ee0 *<~ H{|ks'|} |ps0'| |s|]]$,
+where $[[|ps0|]]$ is a prefix of $[[ps]]$ and $[[ps0']]$ is a prefix
+of $[[ps']]$ (and $[[t]]$ and $[[s]]$ are as in the statement of the
+rule). Let $[[t3 = H{ks} ps0]]$ and $[[t4 = H{ks'} ps0']]$.
+\pref{lem:prop-reg} (and inversion) tell us that
+$[[S;Rel(G) |-ty H{ks} ps : s1]]$ and $[[S;Rel(G) |-ty H{ks'} ps' : s2]]$.
+By \pref{lem:app-inversion}, there must be $[[s3]]$ and $[[s4]]$ such
+that $[[S;Rel(G) |-ty t3 : s3]]$ and $[[S;Rel(G) |-ty t4 : s4]]$.
+\pref{lem:tycon-kind} tells us that $[[s3 = s5[ks/as,ps/zs] ]]$ and
+$[[s4 = s5[ks'/as,ps'/zs] ]]$ for some $[[s5]]$, $[[as]]$, and $[[zs]]$.
+\pref{lem:app-red} tells us that $[[ks]]$ and $[[ks']]$ are joinable,
+as are $[[ps]]$ and $[[ps']]$.
+We thus have, by \pref{lem:red-star-subst}
+that $[[s3]]$ and $[[s4]]$ are joinable. Inversion on
+$[[S;Rel(G) |-ty t3 t : s6]]$ and $[[S;Rel(G) |-ty t4 s : s7]]$ tell us
+that $[[s3]]$ and $[[s4]]$ must have the form $[[PI a:rel k1.s8]]$
+and $[[PI a:rel k2.s9]]$, where
+$[[S;Rel(G) |-ty t : k1]]$ and $[[S;Rel(G) |-ty s : k2]]$. By
+\pref{lem:pi-red}, we can see that the joinability of
+$[[s3]]$ and $[[s4]]$ imply the joinability of
+$[[k1]]$ and $[[k2]]$, as desired.
+\item[Case \rul{Co\_NthIrrel}:] Similar to previous case.
+\item[Case \rul{Co\_Kind}:] Immediate, as both kinds are $[[Type{}]]$.
+\item[Case \rul{Co\_Step}:] With kinds shown, the rule is as follows:
+\[
+\nosupp{\ottdruleCoXXStep{}}
+\]
+We can see that the desired result is immediate, as both types have
+the same kind $[[k]]$.
 \end{description}
 \end{proof}
 
@@ -1281,8 +1390,9 @@ an erased value and $[[ee1 ! ee2]]$.
 By case analysis over $[[ee1 ~> ee2]]$.
 \begin{description}
 \item[Case \rul{R\_Refl}:] By \pref{lem:cons-refl}.
+\item[Case \rul{R\_Con}:] Immediate.
 \item[Case \rul{R\_AppRel}:] Since $[[ee1]]$ is an erased value, it must
-be $[[H** ps]]$. We are done by \pref{lem:app-red}.
+be $[[H{ts} ps]]$. We are done by \pref{lem:app-red}.
 \item[Case \rul{R\_AppIrrel}:] Similar to previous case.
 \item[Case \rul{R\_CApp}:] Similar to previous case.
 \item[Case \rul{R\_Pi}:] By the definition of $[[~>]]$.
@@ -1330,8 +1440,8 @@ Proceed by case analysis on the structure of $[[t1]]$.
 
 \begin{description}
 \item[Case $[[t1 = a]]$:] Impossible.
-\item[Case $[[t1 = H{ts} ]]$:] We have $[[|t1| = H**]]$, and thus
-$[[|t2| = H** ps]]$. From the definition of $[[|t2|]]$, we can see
+\item[Case $[[t1 = H{ts} ]]$:] We have $[[|t1| = H{|ts|}]]$, and thus
+$[[|t2| = H{ts'} ps]]$. From the definition of $[[|t2|]]$, we can see
 that $[[t2]]$ must be headed by $[[H]]$ or be a cast. The latter is
 impossible, as a cast is not a value. Thus $[[t2]]$ is headed by
 $[[H]]$ and we are done.

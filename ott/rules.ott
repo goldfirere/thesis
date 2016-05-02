@@ -287,7 +287,13 @@ S;G |-co g@\(h1,h2) : s1[h1/c] [k1[h1/c] ]~[k2[h2/c] ] s2[h2/c]
 S;G |-co g : H{ks} ps [s1]~[s2] H{ks'} ps'
 pi = t  //  pi' = s
 S;G |-ty t : k1  // S;G |-ty s : k2
--------------------------- :: Nth
+-------------------------- :: NthRel
+S;G |-co nth i g : t [k1]~[k2] s
+
+S;G |-co g : H{ks} ps [s1]~[s2] H{ks'} ps'
+pi = {t} // pi' = {s}
+S;Rel(G) |-ty t : k1  //  S;Rel(G) |-ty s : k2
+-------------------------------- :: NthIrrel
 S;G |-co nth i g : t [k1]~[k2] s
 
 S;G |-co g : t1 (k1)~(k2) t2
@@ -481,6 +487,10 @@ by
 -------------- :: Refl
 t ~> t
 
+ts ~> ts'
+---------------- :: Con
+H{ts} ~> H{ts'}
+
 t ~> t' // s ~> s'
 -------------------- :: AppRel
 t s ~> t' s'
@@ -524,7 +534,7 @@ t ~> t'
 alti = H -> t0  // ps ~> ps' // t0 ~> t0'
 other alternatives do not match H
 ----------------------------------- :: Match
-case_k H** ps of alts ~> t0' ps' o
+case_k H{ts} ps of alts ~> t0' ps' o
 
 s ~> s' // k ~> k'
 ------------------- :: Unroll
