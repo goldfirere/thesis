@@ -763,7 +763,7 @@ mutual induction on the structure of $[[t]]$/$[[d]]$.
 %% \item[Case $[[t = t0 o]]$:] By induction and \rul{R\_CApp}.
 %% \item[Case $[[t = PI d. s]]$:] By induction and \rul{R\_Pi}.
 %% \item[Case $[[t = case_k s of alts]]$:] By induction and \rul{R\_Case}.
-%% \item[Case $[[t = \d.s]]$:] By induction and \rul{R\_Lam}.
+%% \item[Case $[[t = \d.s]]$:] By induction and \rul{R\_Lam} or \rul{R\_CLam}.
 %% \item[Case $[[t = fix s]]$:] By induction and \rul{R\_Fix}.
 %% \item[Case $[[d = a:rel k]]$:] By induction and \rul{R\_TyBinder}.
 %% \item[Case $[[d = o:phi]]$:] By \rul{R\_CoBinder}.
@@ -959,7 +959,8 @@ The induction hypothesis gives us $[[k1''']]$ and $[[ps''']]$ such that:
 \end{itemize}
 Choose $[[t3 = k1'''[ps'''/zs] ]]$ and we are done by \pref{lem:red-subst-par}.
 \end{description}
-\item[Case $[[t0 = \d0.s0]]$:] By induction.
+\item[Case $[[t0 = \a :rel k0.s0]]$:] By induction.
+\item[Case $[[t0 = \c:phi.s0]]$:] By induction.
 \item[Case $[[t0 = fix s0]]$:] We have several cases:
 \begin{description}
 \item[Case \rul{R\_Fix}/\rul{R\_Fix}:] By induction.
@@ -1075,6 +1076,11 @@ Thus, we are done, with $[[as = dom(D1)]]$, $[[zs = dom(D2)]]$,
 and $[[k = MPI D4. H' as]]$.
 \end{proof}
 
+\begin{definition}[Joinability]
+We say that two types $[[t1]]$ and $[[t2]]$ are \emph{joinable} if
+there exists an erased type $[[ee]]$ such that $[[|t1| ~>* ee *<~ |t2|]]$.
+\end{definition}
+
 \begin{lemma}[Completeness of type reduction] ~
 \label{lem:complete-red}
 If $[[G]]$ contains no coercion bindings and
@@ -1111,14 +1117,17 @@ either can be the common reduct.
 \item[Case \rul{Co\_AppRel}:] By induction and repeated use of \rul{R\_AppRel}.
 \item[Case \rul{Co\_AppIrrel}:] By induction and repeated use of \rul{R\_AppIrrel}.
 \item[Case \rul{Co\_CApp}:] By induction.
-\item[Case \rul{Co\_PiTy}:] 
-By induction. Note that the substitution in the result of \rul{Co\_PiTy}
-is erased by coercion erasure and so poses no complications.
-\item[Case \rul{Co\_PiCo}:]
-Similar to previous case.
+\item[Case \rul{Co\_PiTy}:] By induction. 
+\item[Case \rul{Co\_PiCo}:] By induction. Note that we do not need
+the induction hypothesis to work on the typing derivation for the body of
+the $[[PI]]$ because of the looseness of \rul{R\_Pi}. The induction
+hypothesis is indeed inapplicable in the body because a coercion variable
+is in scope there.
 \item[Case \rul{Co\_Case}:] By induction and \rul{R\_Case}.
-\item[Case \rul{Co\_Lam}:] Similar to \rul{Co\_PiTy}.
-\item[Case \rul{Co\_CLam}:] Similar to previous case.
+\item[Case \rul{Co\_Lam}:] Similar to \rul{Co\_PiTy}, noting that the
+  substitution in the result of \rul{Co\_Lam} is erased by coercion erasure
+  and so poses no complications.
+\item[Case \rul{Co\_CLam}:] Similar to \rul{Co\_PiCo}.
 \item[Case \rul{Co\_Fix}:] By induction and repeated use of \rul{R\_Fix}.
 \item[Case \rul{Co\_ArgK}:]
 The induction hypothesis gives us $[[ee0]]$ such that
@@ -1252,19 +1261,11 @@ We adopt the metavariable names from the rule:
 \[
 \nosupp{\ottdruleCoXXLam{}}
 \]
-\pref{lem:prop-reg} tells us that
-$[[S;G |- \a:rel k1.t1 : UPI a:rel k1.s1]]$
-and $[[S;G |- \a:rel k2.(t2[a |> sym h/a]) : UPI a:rel k2. (s2[a |> sym h/a])]]$.
-The induction hypothesis (on $[[S;G |-co h : k1 [Type{}]~[Type{}] k2]]$)
-gives us $[[ee1]]$ such that
-$[[|k1| ~>* ee1 *<~ |k2|]]$ and (induction hypothesis
-on $[[S;G, a:rel k1 |-co g : t1 ~ t2]]$)
-$[[ee2]]$ such that
-$[[|s1| ~>* ee2 *<~ |s2|]]$. Noting that the substitution is immaterial
-after erasure (that is, $[[|a |> sym h| = a]]$), we choose
-$[[ee = UPI a:rel ee1.ee2]]$ and we are done by \pref{lem:red-star-subst}.
+Note that due to the looseness of \rul{R\_Lam}, we need only show
+that $[[k1]]$ and $[[k2]]$ are joinable. We get this fact by
+the induction hypothesis, and so we are done by \pref{lem:red-star-subst}.
 \item[Case \rul{Co\_CLam}:]
-By induction.
+Similar to previous case.
 \item[Case \rul{Co\_Fix}:]
 We adopt the metavariable names from the rule:
 \[
@@ -1387,7 +1388,7 @@ an erased value and $[[ee1 ! ee2]]$.
 \end{lemma}
 
 \begin{proof}
-By case analysis over $[[ee1 ~> ee2]]$.
+By induction analysis over $[[ee1 ~> ee2]]$.
 \begin{description}
 \item[Case \rul{R\_Refl}:] By \pref{lem:cons-refl}.
 \item[Case \rul{R\_Con}:] Immediate.
@@ -1397,6 +1398,13 @@ be $[[H{ts} ps]]$. We are done by \pref{lem:app-red}.
 \item[Case \rul{R\_CApp}:] Similar to previous case.
 \item[Case \rul{R\_Pi}:] By the definition of $[[~>]]$.
 \item[Case \rul{R\_Case}:] Impossible.
+\item[Case \rul{R\_Lam}:] We adopt the metavariable names from the
+rule:
+\[
+\ottdruleRXXLam{}
+\]
+If $[[rel = Rel]]$ the result is immediate. If not, then we are done
+by induction.
 \item[Case \rul{R\_Lam}:] Immediate.
 \item[Case \rul{R\_Fix}:] Impossible.
 \item[Case \rul{R\_BetaRel}:] Impossible.

@@ -77,6 +77,10 @@ DESIGN DECISIONS:
    CPush.
  - Not erasing the {} parameters to tycons: we need the kinds of the types
    in Nth to be joinable.
+ - Looseness in R_Pi and R_Lam: necessary for completeness of rewrite
+   relation. Otherwise, the induction hypothesis would be needed with
+   a coercion variable in the context.
+ - NB: Consistency depends on preservation for the Step case.
 
 Added/changed: Case, Match, CBeta, CLam
 
@@ -145,6 +149,4 @@ Simplifications:
 
 TODO: "other alternatives do not match" needs to be in the typing rule,
       not the step rule.
-      
-NEED TO FIX COMPLETENESS OF Co_PiCo and Co_CLam. They are utterly broken because
-the induction hypothesis is inapplicable.
+

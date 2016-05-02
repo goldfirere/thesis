@@ -503,17 +503,21 @@ t ~> t'
 ----------- :: CApp
 t o ~> t' o
 
-d ~> d'   //  t ~> t'
+d ~> d'
 ---------------------------------------- :: Pi
-PI d. t ~> PI d'. t'
+PI d. t ~> PI d'. s
 
 k ~> k'  //  t ~> t'  //  ss ~> ss'
 ---------------- :: Case
 case_k t of list of H -> s ~> case_k' t' of list of H -> s'
 
-d ~> d'  // t ~> t'
+k ~> k'  // t ~> t'
 -------------- :: Lam
-\d.t ~> \d'.t'
+\a:rel k.t ~> \a:rel k'.t'
+
+t ~> t'  // s ~> s'
+----------------------- :: CLam
+\c:t~s.k ~> \c:t'~s'.k'
 
 t ~> t'
 --------------- :: Fix
