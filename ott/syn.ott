@@ -17,7 +17,7 @@ embed {{ tex-preamble
 
 metavar K                                     ::=   {{ com Data constructors }}
 
-indexvar i, j ::= {{ com Indices }}
+indexvar i, j, n ::= {{ com Indices }}
 
 grammar
 
@@ -128,7 +128,7 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | t |> g                       ::   :: Cast
 | case _ k t of alts           ::   :: Case
   {{ tex \ottkw{case}_{[[k]]}\, [[t]]\, \ottkw{of}\, [[alts]] }}
-| \ d . t                      ::   :: Lam
+| !!! \ d . t                  ::   :: Lam
   {{ tex [[\]] [[d]]. \, [[t]] }}
 | fix t                        ::   :: Fix
 
@@ -137,6 +137,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
   {{ tex [[H]] }}
 | PI D .  t                    :: M :: Pis
   {{ tex [[PI]] [[D]].\, [[t]] }}
+| \ D . t                      :: M :: Lams
+  {{ tex [[\]] [[D]].\, [[t]] }}
 % | t1 -> t2                     :: M :: Arrow
 % | t1 ~> t2                     :: M :: FFArrow
 | ( t )                        :: M :: Parens
@@ -155,12 +157,14 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
   {{ tex [[prefix]]([[ts]]) }}
 | ts [ theta ]            :: M :: Subst
 | '|' ts '|'              :: M :: Erased
+  {{ tex \lfloor [[ts]] \rfloor }}
 
 alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
 | alt                    ::   :: One
 | alt1 ; .... ; alti     ::   :: Many
 | nil                    ::   :: Nil
 | '|' alts '|'           :: M :: Erased
+  {{ tex \lfloor [[alts]] \rfloor }}
 | list of alt            :: M :: List
   {{ tex \overline{[[alt]]} }}
 
@@ -178,7 +182,7 @@ prop, phi {{ tex \phi }} :: 'Phi_' ::=
   {{ tex [[t1]] \mathrel{ {}^{[[k1]]} {\sim}^{[[k2]]} } [[t2]] }}
 | t1 [ k1 ]~[ k2 ] t2          :: M :: IEquality
   {{ tex [[t1]] \mathrel{ {}^{\supp{[[k1]]} } {\sim}^{\supp{[[k2]]} } } [[t2]] }}
-| phi [ subst ]                :: M :: Subst
+| phi [ theta ]                :: M :: Subst
 % TODO: Remove?
 | coercionKind _ S ; G ( g )   :: M :: CoKind
   {{ tex [[coercionKind]]_{[[S]];[[G]]}([[g]]) }}
@@ -213,6 +217,8 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | argk g                       ::   :: ArgK
 | argk I g                     ::   :: CArgK
   {{ tex {[[argk]]}^{[[I]]}\,[[g]] }}
+| res ^ I g                    ::   :: Res
+  {{ tex [[res]]^{[[I]]}\,[[g]] }}
 | !!! g @ w                    ::   :: Inst
 | g @\ w                       ::   :: InstLam
 | nth I g                      ::   :: Nth
@@ -256,6 +262,7 @@ arg, p {{ tex \psi }} :: 'Arg_' ::=
 | { t }               ::   :: IrrelTy
 | g                   ::   :: Co
 | '|' p '|'           :: M :: Erased
+  {{ tex \lfloor [[p]] \rfloor }}
 
 args, ps {{ tex \overline{\psi} }} :: 'Args_' ::=
 | p                     ::   :: One
@@ -265,14 +272,16 @@ args, ps {{ tex \overline{\psi} }} :: 'Args_' ::=
 | zs                    :: M :: Vars
 | ps [ theta ]          :: M :: Subst
 | ts                    :: M :: Types
+| gs                    :: M :: Cos
 | ps _{ I1 '..' I2 }    :: M :: IndexPrefix
   {{ tex {[[ps]]}_{[[I1]] \ldots [[I2]]} }}
 | '|' ps '|'            :: M :: Erased
+  {{ tex \lfloor [[ps]] \rfloor }}
 
 
 coarg, w {{ tex \omega }} :: 'CoArg_' ::=
 | g                    ::   :: Ty
-| { g }                ::   :: IrrelTy
+| { g }                ::   :: TyIrrel
 | ( g1 , g2 )          ::   :: Co
 
 coargs, ws {{ tex \overline{\omega} }} :: 'CoArgs_' ::=
@@ -315,6 +324,7 @@ context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'Ctx_' ::=
 | prefix ( G )                 :: M :: Prefix
   {{ tex [[prefix]]([[G]]) }}
 | '|' D '|'                    :: M :: Erased
+  {{ tex \lfloor [[D]] \rfloor }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Substitutions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -375,6 +385,10 @@ nat, I {{ tex \ottnt{i} }}  :: 'Nat_' ::=
 | 3                         ::   :: Three
 | 4                         ::   :: Four
 | I1 - I2                   :: M :: Sub
+| length D                  :: M :: TelescopeLength
+  {{ tex \pipe [[D]] \pipe }}
+| length ps                 :: M :: VectorLength
+  {{ tex \pipe [[ps]] \pipe }}
 
 rewrite_rule :: 'Rewrite_' ::=
 | ps1 eq ps2                         ::   :: ts_rewrite
@@ -386,6 +400,7 @@ rewrite_rule :: 'Rewrite_' ::=
 | rel1 eq rel2                       ::   :: rel_rewrite
 | H1 eq H2                           ::   :: H_rewrite
 | S1 eq S2                           ::   :: S_rewrite
+| I1 eq I2                           ::   :: I_rewrite
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -420,6 +435,7 @@ terminals :: 'terminals_' ::=
 | prefix                               ::   :: prefix  {{ tex \mathsf{prefix} }}
 | nth                                  ::   :: nth     {{ tex \ottkw{nth} }}
 | argk                                 ::   :: argk    {{ tex \ottkw{argk} }}
+| res                                  ::   :: res     {{ tex \ottkw{res} }}
 | -->                                  ::   :: step    {{ tex \longrightarrow }}
 | :=                                   ::   :: assign  {{ tex \mathrel{ {:}{=} } }}
 | \subseteq                            ::   :: subset  {{ tex \subseteq }}
@@ -435,11 +451,11 @@ terminals :: 'terminals_' ::=
 | nokind                               ::   :: nokind  {{ tex \mathsf{nokind} }}
 | mk_nth                               ::   :: mk_nth  {{ tex \mathsf{mk\_nth} }}
 | cast_kpush_arg                       ::   :: cast_arg {{ tex \mathsf{cast\_kpush\_arg} }}
-| @                                    ::   :: inst    {{ tex \at^\Pi }}
-| @\                                   ::   :: instlam {{ tex \at^\lambda }}
+| @                                    ::   :: inst    {{ tex \at }}
+| @\                                   ::   :: instlam {{ tex \at }}
 | Rel                                  ::   :: Rel     {{ tex \mathsf{Rel} }}
 | Irrel                                ::   :: Irrel   {{ tex \mathsf{Irrel} }}
-
+| build_kpush_co                       ::   :: build   {{ tex \mathsf{build\_kpush\_co} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -448,6 +464,7 @@ terminals :: 'terminals_' ::=
 | |-sig                                ::   :: Sig_ent {{ tex \vdashy{sig} }}
 | |-alt                                ::   :: Alt_ent {{ tex \vdashy{alt} }}
 | |-vec                                ::   :: Vec_ent {{ tex \vdashy{vec} }}
+| |-cev                                ::   :: Cev_ent {{ tex \vdashy{cev} }}
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
@@ -462,9 +479,11 @@ formula :: 'formula_' ::=
   | forall i : formula                 ::   :: forall
     {{ tex [[forall]] [[i]]{:}\; [[formula]] }}
   | rewrite_rule                       ::   :: rewrite
+  | I1 = I2 = I3                       ::   :: three_way_I_eq
   | bnd \in G                          ::   :: ctx_in
   | sig_bnd \in S                      ::   :: sig_in
   | alt \in alts                       ::   :: alt_in
+  | p \in ps                           ::   :: p_in
   | T # S                              ::   :: T_fresh
   | K # S                              ::   :: K_fresh
   | a # G                              ::   :: a_fresh
@@ -528,7 +547,7 @@ Co ::=
 
 fun
 build_kpush_co ( g ; ps ) :: h :: build_kpush_co
-  {{ tex \mathsf{build\_kpush\_co}([[g]];[[ps]]) }}
+  {{ tex [[build_kpush_co]]([[g]];[[ps]]) }}
 
 by
 build_kpush_co ( g ; empty ) === g
@@ -542,7 +561,7 @@ mk_nth ( g ; I ; p1 ; p2 ) :: w :: mk_nth
 
 by
 mk_nth(g;I;t;s)     === nth I g
-mk_nth(g;I;{t};{s}) === { nth I g }
+mk_nth(g;I;{t};{s}) === nth I g
 mk_nth(g;I;h1;h2)   === (h1,h2)
 
 fun
@@ -596,6 +615,7 @@ Erase ::=
 
 fun
 '|' t '|' :: s :: erase_type
+  {{ tex \lfloor [[t]] \rfloor }}
 
 by
 |a|                === a
@@ -611,6 +631,7 @@ by
 
 fun
 '|' d0 '|' :: d :: erase_binder
+  {{ tex \lfloor [[d0]] \rfloor }}
 
 by
 |a :rel k|    === a :rel |k|
@@ -618,12 +639,14 @@ by
 
 fun
 '|' phi0 '|' :: phi :: erase_prop
+  {{ tex \lfloor [[phi0]] \rfloor }}
 
 by
 |t1 (k1)~(k2) t2|   === |t1| (|k1|)~(|k2|) |t2|
 
 fun
 '|' alt0 '|' :: alt :: erase_alt
+  {{ tex \lfloor [[alt0]] \rfloor }}
 
 by
 |H -> t|  === H -> |t|
@@ -652,6 +675,7 @@ Alts_One <= formula_alts_red
 Args_One <= Substs_Telescope
 
 Types_One <= Args_Types
+Cos_One <= Args_Cos
 Cos_One <= CoArgs_Coercions
 
 Args_Many <= Rewrite_ts_rewrite

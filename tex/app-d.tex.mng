@@ -211,6 +211,139 @@ By straightforward mutual induction, appealing to \pref{lem:dom-rel},
 and \pref{lem:ctx-reg}.
 \end{proof}
 
+\section{Vectors}
+
+\begin{lemma}
+\label{lem:cev-cons-rel}
+If $[[S;G |-ty t : k]]$ and $[[S;G |-cev ps : D[t/a] ]]$, then
+$[[S;G |-cev t, ps : a :Rel k, D]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on $[[S;G |-cev ps : D[t/a ] ]]$.
+
+\begin{description}
+\item[Case \rul{Cev\_Nil}:] In this case, $[[ps]]$ and $[[D]]$ are both
+empty, and so we are done by \rul{Cev\_Nil} and \rul{Cev\_TyRel}.
+\item[Case \rul{Cev\_TyRel}:] We now have $[[ps = ps', s]]$ and
+$[[D = D', b :Rel k0]]$, with $[[S;G |-ty s : k0[t/a][ps'/dom(D')] ]]$
+and $[[S;G |-cev ps' : D'[t/a] ]]$. The induction hypothesis gives
+us $[[S;G |-cev t, ps' : a :Rel k, D']]$. We are done by
+\rul{Cev\_TyRel}.
+\item[Other cases:] Similar.
+\end{description}
+\end{proof}
+
+\begin{lemma}
+\label{lem:cev-cons-irrel}
+If $[[S;Rel(G) |-ty t : k]]$ and $[[S;G |-cev ps : D[t/a] ]]$, then
+$[[S;G |-cev t, ps : a :Irrel k, D]]$.
+\end{lemma}
+
+\begin{proof}
+Similar to previous proof.
+\end{proof}
+
+\begin{lemma}
+\label{lem:cev-cons-co}
+If $[[S;Rel(G) |-co g : phi]]$ and $[[S;G |-cev ps : D[g/c] ]]$, then
+$[[S;G |-cev g, ps : c : phi, D]]$.
+\end{lemma}
+
+\begin{proof}
+Similar to previous proof.
+\end{proof}
+
+\begin{lemma}
+\label{lem:vec-snoc-rel}
+If $[[S;G |-vec ps : D]]$ and $[[S;G |-ty t : k[ps/dom(D)] ]]$,
+then $[[S;G |-vec ps, t : D, a :Rel k]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on $[[S;G |-vec ps : D]]$.
+
+\begin{description}
+\item[Case \rul{Vec\_Nil}:] In this case, $[[ps]]$ and $[[D]]$ are both
+empty, and so we are done by \rul{Vec\_Nil} and \rul{Vec\_TyRel}.
+\item[Case \rul{Vec\_TyRel}:] We now have
+$[[ps = s, ps']]$ and $[[D = b :Rel k0, D']]$ with
+$[[S;G |-ty s : k0]]$ and $[[S;G |-vec ps' : D'[s/b] ]]$.
+We know, by assumption, that $[[S;G |-ty t : k[ps/dom(D)] ]]$.
+This expands to $[[S;G |-ty t : k[s/b][ps'/dom(D')] ]]$
+(noting that \pref{lem:scoping} assures us that $[[s]]$ has no variables
+in $[[dom(D')]]$ free). We can thus use the induction hypothesis
+to get $[[S;G |-vec ps', t : D'[s/b], a :Rel k[s/b] ]]$, or, equivalently,
+$[[S;G |-vec ps', t : (D', a:Rel k)[s/b] ]]$.
+We are done by \rul{Vec\_TyRel}.
+\item[Other cases:] Similar.
+\end{description}
+\end{proof}
+
+\begin{lemma}
+\label{lem:vec-snoc-irrel}
+If $[[S;G |-vec ps : D]]$ and $[[S;Rel(G) |-ty t : k[ps/dom(D)] ]]$,
+then $[[S;G |-vec ps, t : D, a:Irrel k]]$.
+\end{lemma}
+
+\begin{proof}
+Similar to previous proof.
+\end{proof}
+
+\begin{lemma}
+\label{lem:vec-snoc-co}
+If $[[S;G |-vec ps : D]]$ and $[[S;Rel(G) |-co g : phi[ps/dom(D)] ]]$,
+then $[[S;G |-vec ps, g : D, c:phi]]$.
+\end{lemma}
+
+\begin{proof}
+Similar to previous proof.
+\end{proof}
+
+\begin{lemma}[Vec/Cev]
+\label{lem:vec-cev}
+We have $[[S;G |-vec ps : D]]$ if and only if $[[S;G |-cev ps : D]]$.
+\end{lemma}
+
+\begin{proof}
+We'll prove the forward direction first, by induction on the typing
+derivation:
+
+\begin{description}
+\item[Case \rul{Vec\_Nil}:] We are done by \rul{Cev\_Nil}.
+\item[Case \rul{Vec\_TyRel}:] By the induction hypothesis and \pref{lem:cev-cons-rel}.
+\item[Case \rul{Vec\_TyIrrel}:] By the induction hypothesis and \pref{lem:cev-cons-irrel}.
+\item[Case \rul{Vec\_Co}:] By the induction hypothesis and \pref{lem:cev-cons-co}.
+\end{description}
+
+The reverse direction is similar, appealing to \pref{lem:vec-snoc-rel},
+\pref{lem:vec-snoc-irrel}, and \pref{lem:vec-snoc-co}.
+\end{proof}
+
+\begin{lemma}[Vector lengths]
+\label{lem:vec-length}
+If $[[S;G |-vec ps : D]]$, then $[[length ps = length D]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on $[[S;G |-vec ps : D]]$.
+\end{proof}
+
+\begin{lemma}[Vector kinds]
+\label{lem:vec-kind}
+If $[[S;G |-vec ps : D]]$, then for every $[[p \in ps]]$, we have one of the
+following:
+\begin{enumerate}
+\item $[[p = t]]$ and $[[S;G |-ty t : k]]$ for some $[[k]]$
+\item $[[p = {t}]]$ and $[[S;Rel(G) |-ty t : k]]$ for some $[[k]]$
+\item $[[p = g]]$ and $[[S;Rel(G) |-co g : phi]]$ for some $[[phi]]$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on $[[S;G |-vec ps : D]]$.
+\end{proof}
+
 \section{Determinacy}
 
 \begin{lemma}[Uniqueness of signatures] ~
@@ -398,20 +531,7 @@ We are done by a use of the induction hypothesis.
 \end{description}
 \end{proof}
 
-\section{Preservation}
-
-\begin{lemma}[Preservation]
-\label{lem:preservation}
-If $[[S;G |-ty t : k]]$ and $[[S;G |-s t --> t']]$, then
-$[[S;G |-ty t' : k]]$.
-\end{lemma}
-
-\begin{proof}[unfinished]
-By induction on the size of the typing derivation.
-TODO
-\end{proof}
-
-\section{Regularity, Part II}
+\section{Type constants}
 
 \begin{lemma}[Type-in-type]
 \label{lem:type-in-type}
@@ -507,6 +627,8 @@ that we need only show $[[S |-ctx Rel(D1,D2)]]$, which we
 get from \pref{lem:tycon-tel}. We are done.
 \end{description}
 \end{proof}
+
+\section{Regularity, Part II}
 
 \begin{lemma}[Kind regularity] ~
 \label{lem:kind-reg}
@@ -676,26 +798,330 @@ and \pref{lem:covar-reg}.
 \item[Case \rul{Co\_ArgKLam}:] Similar to case for \rul{Co\_ArgK}.
 \item[Case \rul{Co\_CArgKLam1}:] Similar to case for \rul{Co\_CArgK1}.
 \item[Case \rul{Co\_CArgKLam2}:] Similar to previous case.
-\item[Case \rul{Co\_Inst}:] We adopt the metavariable names from the
+\item[Case \rul{Co\_Res}:] Immediate.
+\item[Case \rul{Co\_ResLam}:] Immediate.
+\item[Case \rul{Co\_InstRel}:] We adopt the metavariable names from the
 statement of the rule:
 \[
-\ottdruleCoXXInst{}
+\ottdruleCoXXInstRel{}
 \]
 We will prove that $[[s1[t1/a] ]]$ is well-typed; the proof for $[[s2[t2/a] ]]$
 is similar.
 The induction hypothesis (and some inversion) tells us
-$[[S;Rel(G) |-ty PI a:rel k1. s1 : Type{}]]$.
+$[[S;Rel(G) |-ty PI a:Rel k1. s1 : Type{}]]$.
 Further inversion gives us $[[S;G,a:Rel k1 |-ty s1 : Type{}]]$.
 The induction hypothesis and an inversion also gives us
 $[[S;Rel(G) |-ty t1 : k1]]$.
 \pref{lem:ty-subst} gives us $[[S;Rel(G) |-ty s1[t1/a] : Type{}]]$ as desired.
+\item[Case \rul{Co\_InstIrrel}:] Similar to previous case.
 \item[Case \rul{Co\_CInst}:] Similar to previous case.
-\item[Case \rul{Co\_InstLam}:] Similar to previous case.
+\item[Case \rul{Co\_InstLamRel}:] Similar to previous case.
+\item[Case \rul{Co\_InstLamIrrel}:] Similar to previous case.
 \item[Case \rul{Co\_CInstLam}:] Similar to previous case.
 \item[Case \rul{Co\_NthRel}:] Immediate.
 \item[Case \rul{Co\_NthIrrel}:] Immediate.
 \item[Case \rul{Co\_Kind}:] By \pref{lem:kind-reg}.
-\item[Case \rul{Co\_Step}:] By \pref{lem:preservation}.
+\item[Case \rul{Co\_Step}:] Immediate.
+\end{description}
+\end{proof}
+
+\section{Preservation}
+
+\begin{lemma}[Application inversion]
+\label{lem:app-inversion}
+If $[[S;G |-ty t ps : k]]$ where $[[ps = ps0,ps1]]$,
+then $[[S;G |-ty t ps0 : PI D.k0]]$, $[[S;G |-vec ps1 : D]]$
+and $[[k = k0[ps1/dom(D)] ]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on $[[ps1]]$.
+\end{proof}
+
+\begin{lemma}[Telescope application]
+\label{lem:tel-app}
+If $[[S;G |-ty t : PI D.s]]$ and $[[S;G |-vec ps : D]]$,
+then $[[S;G |-ty t ps : s[ps/dom(D)] ]]$.
+\end{lemma}
+
+\begin{proof}
+By straightforward induction on $[[S;G |-vec ps : D]]$.
+\end{proof}
+
+\begin{lemma}[Telescope instantiation]
+\label{lem:tel-inst}
+If $[[S;G |-co h : PI D.s [Type{}]~[Type{}] PI D'.s']]$,
+ $(\forall [[i]], [[S;G |-co gi : ti [ki]~[ki'] ti']])$,
+$[[S;G |-vec ts : D]]$, and $[[S;G |-vec ts' : D']]$,
+then $[[S;G |-co h@gs : s[ts/dom(D)] [Type{}]~[Type{}] s'[ts'/dom(D')] ]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of the list $[[gs]]$.
+
+\begin{description}
+\item[Case $gs = empty$:] By \pref{lem:vec-length}, we can see that $[[D]]$
+and $[[D']]$ must both be empty. We are done by assumption.
+\item[Case $[[gs = g0, gs1]]$:] In this case, we know $[[S;G |-vec t0, ts1 : D]]$
+and thus that $[[D = a :Rel k0, D1]]$
+with $[[S;G |-ty t0 : k0]]$ and $[[S;G |-vec ts1 : D1[t0/a] ]]$.
+Similarly, we have $[[S;G |-ty t0' : k0']]$ and $[[S;G |-vec ts1' : D1'[t0'/a] ]]$.
+We must show $[[S;G |-co (h@g0)@gs1 : s[t0/a,ts1/dom(D1)] [Type{}]~[Type{}] s'[t0'/a,ts1'/dom(D1')] ]]$.
+We can rewrite our assumption (expanding $[[D]]$ and $[[D']]$) to be
+$[[S;G |-co h : PI a:Rel k0,D1.s [Type{}]~[Type{}] PI a:Rel k0',D1'.s']]$
+and thus derive
+$[[S;G |-co h@g0 : PI (D1[t0/a]).(s[t0/a]) [Type{}]~[Type{}] PI (D1'[t0'/a]).(s'[t0'/a]) ]]$.
+We can then use the induction hypothesis to get
+$[[S;G |-co (h@g0)@gs : s[t0/a][ts1/dom(D1)] [Type{}]~[Type{}] s'[t0'/a][ts1'/dom(D1')] ]]$, which (noting that $[[t0]]$ cannot have any of the $[[dom(D1)]]$ free)
+is what we wish to prove.
+\end{description}
+\end{proof}
+
+\begin{lemma}[$[[build_kpush_co]]$]
+\label{lem:build-kpush-co}
+Assume $[[S;G |-cev ps : D[ts/as] ]]$ and let $[[gi = build_kpush_co(h; ps_{1..i-1})]]$
+and $[[pi' = cast_kpush_arg(pi;gi)]]$.
+If $[[S;Rel(G) |-co h : (PI D.s)[ts/as] [Type{}]~[Type{}] (PI D.s)[ts'/as] ]]$, then:
+\begin{enumerate}
+\item
+$[[S;Rel(G) |-co build_kpush_co(h; ps) : s[ts/as][ps/dom(D)] [Type{}]~[Type{}] s[ts'/as][ps'/dom(D)] ]]$
+\item $[[S;G |-cev ps' : D[ts'/as] ]]$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Proceed by induction on $[[S;G |-cev ps : D[ts/as] ]]$.
+
+\begin{description}
+\item[Case \rul{Cev\_Nil}:] In this case, both $[[ps]]$ and $[[D]]$ are
+empty. We must prove $[[S;Rel(G) |-co build_kpush_co(h; empty) : s[ts/as] [Type{}]~[Type{}] s[ts'/as] ]]$. By definition, $[[build_kpush_co(h; empty) = h]]$. We
+are done by assumption and \rul{Cev\_Nil}.
+\item[Case \rul{Cev\_TyRel}:]
+In this case, we have $[[ps = ps0, t0]]$ and $[[D = D0, b :Rel k]]$
+with $[[S;G |-cev ps0 : D0[ts/as] ]]$ and $[[S;G |-ty t0 : k[ts/as][ps0/dom(D0)] ]]$.
+We can see that $[[build_kpush_co(h; ps0, t0) = let c := build_kpush_co(h; ps0) in c@(erase_c t0 (t0 |> argk c)) ]]$.
+The induction hypothesis tells us that
+$[[S;Rel(G) |-co c : (PI b :Rel k.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (PI b:Rel k.s)[ts'/as][ps0'/dom(D0)] ]]$. We can thus deduce the following:
+\begin{itemize}
+\item $[[S;Rel(G) |-co argk c : k[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] k[ts'/as][ps0'/dom(D0)] ]]$
+\item $[[S;Rel(G) |-ty t0 |> argk c : k[ts'/as][ps0'/dom(D0)] ]]$
+\item $[[S;Rel(G) |-co erase_c t0 (t0 |> argk c) : t0 [k[ts/as][ps0/dom(D0)] ]~[k[ts'/as][ps0'/dom(D0)] ] t0 |> argk c ]]$
+\item $[[S;Rel(G) |-co c@(erase_c t0 (t0 |> argk c)) : s[ts/as][ps0/dom(D0)][t0/b] [Type{}]~[Type{}] s[ts'/as][ps0'/dom(D0)][t0 |> argk c/b] ]]$
+\end{itemize}
+Note that $[[cast_kpush_arg(t0;c) = t0 |> argk c]]$ and thus that we can say
+$[[t0' = t0 |> argk c]]$. Noting that the $[[ps0]]$ cannot have $[[b]]$ free due to
+the Barendregt convention, we can rewrite the substutition $[ [[ps0/dom(D0)]] ][ [[t0/b]] ]$ as $[ [[ps/dom(D)]] ]$ and rewrite the last judgment above as
+$[[S;Rel(G) |-co build_kpush_co(h; ps) : s[ts/as][ps/dom(D)] [Type{}]~[Type{}] s[ts'/as][ps'/dom(D)] ]]$, which is what we are trying to prove. We are done
+proving result (1).
+
+For result (2), we must prove $[[S;G |-cev ps0', t0 |> argk c : D0[ts'/as], b :Rel k[ts'/as] ]]$. This fact comes from a straightforward use of \rul{Cev\_TyRel}.
+\item[Case \rul{Cev\_TyIrrel}:]
+Similar to previous case.
+\item[Case \rul{Cev\_Co}:]
+In this case, we have $[[ps = ps0, g0]]$ and $[[D = D0, c0 : phi0]]$
+with $[[S;G |-cev ps0 : D0[ts/as] ]]$ and $[[S;Rel(G) |-co g0 : phi0[ts/as][ps0/dom(D0)] ]]$.
+We can see that $[[build_kpush_co(h; ps0, g0) = let c := build_kpush_co(h; ps0) in c@(g0, sym (argk 1 c) ;; g0 ;; argk 2 c)]]$.
+The induction hypothesis tells us that
+$[[S;Rel(G) |-co c : (PI c0:phi0.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (PI c0:phi0.s)[ts'/as][ps0'/dom(D0)] ]]$. Let $[[phi0 = s1 [k1]~[k2] s2]]$. We can thus deduce the following:
+\begin{itemize}
+\item $[[S;Rel(G) |-co sym (argk 1 c) : s1[ts'/as][ps0'/dom(D0)] [k1[ts'/as][ps0'/dom(D0)] ]~[k1[ts/as][ps0/dom(D0)] ] s1[ts/as][ps0/dom(D0)] ]]$
+\item $[[S;Rel(G) |-co argk 2 c : s2[ts/as][ps0/dom(D0)] [k2[ts/as][ps0/dom(D0)] ]~[k2[ts'/as][ps0'/dom(D0)] ] s2[ts'/as][ps0'/dom(D0)] ]]$
+\item $[[S;Rel(G) |-co sym (argk 1 c) ;; g0 ;; argk 2 c : s1[ts'/as][ps0'/dom(D0)] [k1[ts'/as][ps0'/dom(D0)] ]~[k2[ts'/as][ps0'/dom(D0)] ] s2[ts'/as][ps0'/dom(D0)] ]]$
+\item $[[S;Rel(G) |-co c@(g0, sym (argk 1 c) ;; g0 ;; argk 2 c) : s[ts/as][ps0/dom(D0)][g0/c0] [Type{}]~[Type{}] s[ts'/as][ps0'/dom(D0)][sym (argk 1 c) ;; g0 ;; argk 2 c/c0] ]]$
+\end{itemize}
+Note that $[[cast_kpush_arg(g0;c) = sym (argk 1 c) ;; g0 ;; argk 2 c]]$ and
+thus that we can say $[[g0' = sym (argk 1 c) ;; g0 ;; argk 2 c]]$.
+Noting that the $[[ps0]]$ cannot have $[[c0]]$ free due to the Barendregt
+convention, we can rewrite the substitution $[ [[ps0/dom(D0)]] ][ [[g0/c0]] ]$
+as $[ [[ps/dom(D)]] ]$ and rewrite the last judgment above as
+$[[S;Rel(G) |-co build_kpush_co(h; ps) : s[ts/as][ps/dom(D)] [Type{}]~[Type{}] s[ts'/as][ps'/dom(D)] ]]$, which is what we are trying to prove. We are done
+proving result (1).
+
+To prove result (2), we must show $[[S;G |-cev ps0', sym (argk 1 c) ;; g0 ;; argk 2 c : D0[ts'/as], c0 : phi0[ts'/as] ]]$, which we get from a straightforward
+use of \rul{Cev\_Co}.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Preservation]
+\label{lem:preservation}
+If $[[S;G |-ty t : k]]$ and $[[S;G |-s t --> t']]$, then
+$[[S;G |-ty t' : k]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the typing derivation.
+
+\begin{description}
+\item[Case \rul{Ty\_Var}:] Impossible, as variables do not step.
+\item[Case \rul{Ty\_Con}:] Impossible, as constants do not step.
+\item[Case \rul{Ty\_AppRel}:] We now have several cases, depending on
+how the expression has stepped:
+\begin{description}
+\item[Case \rul{S\_BetaRel}:] By \pref{lem:ty-subst}.
+\item[Case \rul{S\_AppRel\_Cong}:] By induction.
+\item[Case \rul{S\_Push}:] We adopt the metavariable names from the
+statement of the rule:
+\[
+\ottdruleSXXPush{}
+\]
+Inversion on $[[S;G |-ty (v |> g0) t : k0]]$
+gives us $[[S;G |-ty t : k']]$ and $[[S;G |-ty v : PI a:rel k.s]]$.
+Straightforward application of typing rules gives us
+$[[S;Rel(G) |-co g1 : k' [Type{}]~[Type{}] k]]$
+and $[[S;Rel(G) |-co g2 : s[t |> g1/a] [Type{}]~[Type{}] s'[t/a] ]]$.
+We can then derive
+$[[S;G |-ty t |> g1 : k]]$ and thus
+$[[S;G |-ty v (t |> g1) : s[t |> g1/a] ]]$
+and
+$[[S;G |-ty v (t |> g1) |> g2 : s'[t/a] ]]$
+as desired.
+\end{description}
+\item[Case \rul{Ty\_AppIrrel}:] We now have several cases:
+\begin{description}
+\item[Case \rul{S\_BetaIrrel}:] By \pref{lem:ty-subst}.
+\item[Case \rul{S\_AppIrrel\_Cong}:] By induction.
+\end{description}
+\item[Case \rul{Ty\_CApp}:] We now have several cases:
+\begin{description}
+\item[Case \rul{S\_CBeta}:] By \pref{lem:co-subst}.
+\item[Case \rul{S\_CApp\_Cong}:] By induction.
+\item[Case \rul{S\_CPush}:] We adopt the metavariable names of the rule:
+\[
+\ottdruleSXXCPush{}
+\]
+We can see that $[[S;G |-ty (v |> g0) h : s'[h/c] ]]$.
+Let $[[phi = t1 [k1]~[k2] t2 ]]$ and $[[phi' = t3 [k3]~[k4] t4]]$.
+Inversion and application of typing rules tells us the following:
+\begin{itemize}
+\item $[[S;G |-ty v : PI c:phi. s]]$
+\item $[[S;Rel(G) |-co h : t3 [k3]~[k4] t4]]$
+\item $[[S;Rel(G) |-co g1 : t1 [k1]~[k3] t3]]$
+\item $[[S;Rel(G) |-co g2 : t2 [k2]~[k4] t4]]$
+\item $[[S;Rel(G) |-co h' : t1 [k1]~[k2] t2]]$
+\item $[[S;Rel(G) |-co g3 : s[h'/c] [Type{}]~[Type{}] s'[h/c] ]]$
+\item $[[S;G |-ty v h' : s[h'/c] ]]$
+\item $[[S;G |-ty v h' |> g3 : s'[h/c] ]]$
+\end{itemize}
+Note that the last fact proves this case.
+\end{description}
+\item[Case \rul{Ty\_Pi}:] Impossible, as $[[PI]]$-types do not step.
+\item[Case \rul{Ty\_Cast}:] We now have several cases:
+\begin{description}
+\item[Case \rul{S\_Trans}:] We adopt the metavariable names of the rule:
+\[
+\ottdruleSXXTrans{}
+\]
+We know $[[S;G |-ty (v |> g1) |> g2 : k]]$. Inversion and typing rules
+give us the following:
+\begin{itemize}
+\item $[[S;G |-co g2 : k2 [Type{}]~[Type{}] k]]$
+\item $[[S;G |-co g1 : k3 [Type{}]~[Type{}] k2]]$
+\item $[[S;G |-ty v : k3]]$
+\item $[[S;G |-co g1 ;; g2 : k3 [Type{}]~[Type{}] k]]$
+\item $[[S;G |-ty v |> (g1 ;; g2) : k]]$
+\end{itemize}
+Note that the last fact proves this case.
+\item[Case \rul{S\_Cast\_Cong}:] By induction.
+\end{description}
+\item[Case \rul{Ty\_Case}:] We now have several cases:
+\begin{description}
+\item[Case \rul{S\_Match}:] We adopt the metavariable names of the rule:
+\[
+\ottdruleSXXMatch{}
+\]
+Inversion and typing rules tell us the following:
+\begin{itemize}
+\item $[[S;G |-ty H{ts} ps : H'{} ts]]$
+\item $[[S |-tc H : D1;D2;H' ]]$
+\item $[[S;G |-ty H{ts} : PI (D2[ts/dom(D1)]). H'{} ts]]$
+\item $[[D0, D' = D2[ts/dom(D1)] ]]$
+\item $[[S;G |-vec ps : D0 ]]$ (by \pref{lem:app-inversion})
+\item $[[S;G;s;H{ts} ps |-alt H -> t0 : k]]$
+\item $[[S;G |-ty t0 : PI D0, c : H{ts} ps [H'{} ts]~[H'{} ts] H{ts} dom(D0).k]]$
+\item $[[S;G |-ty t0 ps : PI c : H{ts} ps [H'{} ts]~[H'{} ts] H{ts} ps.k]]$ (by \pref{lem:tel-app}), where the $[[k]]$ needs no substitution by \pref{lem:scoping}
+\item $[[S;G |-ty t0 ps <H{ts} ps> : k]]$, where the $[[k]]$ needs no substitution
+by \pref{lem:scoping}
+\end{itemize}
+Note that thie last fact proves this case.
+\item[Case \rul{S\_Case\_Cong}:] By induction.
+\item[Case \rul{S\_KPush}:] We adopt the metavariable names of the rule:
+\[
+\ottdruleSXXKPush{}
+\]
+Note that we need to prove only that the type of
+$[[(H{ts} ps) |> h]]$ matches that of $[[H{ts'} ps']]$,
+namely $[[PI (D2[ts'/as][ps'/dom(D1)]). H'{} ts']]$.
+We can then derive these facts:
+\begin{itemize}
+\item $[[S;G |-ty H{ts} ps : PI (D2[ts/as][ps/dom(D1)]). H'{} ts]]$ (by inversion
+of the typing judgment on the redex)
+\item $[[S;G |-ty H{ts} : PI (D1[ts/as],D2[ts/as]). H'{} ts]]$ (by \pref{lem:app-inversion}
+followed by inverting \rul{Ty\_Con})
+\item $[[S;G |-vec ps : D1[ts/as] ]]$ (also from \pref{lem:app-inversion})
+\item $[[S;G |-vec ts : as :Rel ks]]$ (by inversion)
+\item $[[S;Rel(G) |-vec ts' : as:Rel ks]]$ (from \rul{S\_KPush})
+\item $[[S;Rel(G) |-co res^n h : H'{} ts [Type{}]~[Type{}] H'{} ts']]$ (with 
+the well-formedness of $[[ts]]$ and
+$[[ts']]$ telling us that the $[[ts]]$ and $[[ts']]$ do have any
+variables in $[[dom(D2)]]$ free)
+\item $\forall [[i]], \exists [[ki]]$, $[[S;Rel(G) |-ty ti : ki]]$ (by \pref{lem:vec-kind})
+\item $\forall [[i]], \exists [[ki']]$, $[[S;Rel(G) |-ty ti' : ki']]$ (by \pref{lem:vec-kind})
+\item $\forall [[i]]$, $[[S;Rel(G) |-co nth i (res^n h) : ti [ki]~[ki'] ti' ]]$ (from \rul{Co\_NthRel})
+\item $[[S;G |-ty k : Type{}]]$, recalling that $[[k = PI as:Irrel ks, D. H'{} as]]$ (by \pref{lem:ctx-reg}, \pref{lem:tycon-kind}, and
+\pref{lem:weakening})
+\item $[[S;G |-co <k> : k [Type{}]~[Type{}] k]]$ (by \rul{Co\_Refl})
+\item $[[S;G |-co <k>@(nths (res^n h)) : (PI D1,D2. H'{} as)[ts/as] [Type{}]~[Type{}] (PI D1,D2. H'{} as)[ts'/as] ]]$ (by \pref{lem:tel-inst})
+\item $[[S;G |-cev ps : D1[ts/as] ]]$ (by \pref{lem:vec-cev})
+\item $[[S;G |-cev ps' : D1[ts'/as] ]]$ (by \pref{lem:build-kpush-co})
+\item $[[S;G |-vec ps' : D1[ts'/as] ]]$ (by \pref{lem:vec-cev})
+\item $[[S;G |-ty H{ts'} : PI (D1[ts'/as],D2[ts'/as]). H'{} ts']]$ (by a
+use of \rul{Ty\_Con}, along with \pref{lem:ctx-reg})
+\item $[[S;G |-ty H{ts'} ps' : PI (D2[ts'/as][ps'/dom(D1)]). H'{} ts']]$
+\end{itemize}
+This last fact is what we are trying to prove, and so we are done.
+\end{description}
+\item[Case \rul{Ty\_Lam}:] We now have several cases:
+\begin{description}
+\item[Case \rul{S\_IrrelAbs\_Cong}:] By induction.
+\item[Case \rul{S\_APush}:] We adopt the metavariable names from the rule:
+\[
+\ottdruleSXXAPush{}
+\]
+Inversion and typing rules then give us the following facts:
+\begin{itemize}
+\item $[[S;G |-ty \a:Irrel k. (v |> g) : PI a:Irrel k. k1]]$
+\item $[[S;G,a :Irrel k |-ty v |> g : k1]]$
+\item $[[S;Rel(G), a :Rel k |-co g : k0 [Type{}]~[Type{}] k1]]$
+\item $[[S;G, a:Irrel k |-ty v : k0]]$
+\item $[[S;G |-ty \a:Irrel k.v : PI a:Irrel k. k0]]$
+\item $[[S;Rel(G) |-ty k : Type{}]]$ (by \pref{lem:ctx-reg} and
+\pref{lem:tyvar-reg})
+\item $[[S;Rel(G) |-co <k> : k [Type{}]~[Type{}] k]]$ (by \rul{Co\_Refl})
+\item $[[S;Rel(G) |-co PI a:Irrel <k>. g : PI a:Irrel k. k0 [Type{}]~[Type{}] PI a:Irrel k. (k1[a |> sym <k>/a]) ]]$ (by \rul{Co\_PiTy})
+\item $[[S;Rel(G) |-ty PI a:Irrel k. (k1[a |> sym <k>/a]) : Type{} ]]$ (by \pref{lem:prop-reg})
+\item $[[S;Rel(G) |-ty PI a:Irrel k.k1 : Type{}]]$ (by \pref{lem:kind-reg})
+\item $[[S;Rel(G) |-co erase_<Type{}> (PI a:Irrel k. (k1[a |> sym <k>/a])) (PI a:Irrel k. k1) : (PI a:Irrel k. (k1[a |> sym <k>/a])) [Type{}]~[Type{}] (PI a:Irrel k. k1)]]$ (by \rul{Co\_Coherence})
+\end{itemize}
+We can then conclude, by \rul{Co\_Trans} and \rul{Ty\_Cast}, that the result
+has the same type, $[[PI a:Irrel k. k1]]$ as the redex.
+\end{description}
+\item[Case \rul{Ty\_Fix}:] We now have several cases:
+\begin{description}
+\item[Case \rul{S\_Unroll}:] We adopt the variable names from the rule:
+\[
+\ottdruleSXXUnroll{}
+\]
+We can then derive the following:
+\begin{itemize}
+\item $[[S;G |-ty \a:rel k.s : PI a:rel k. k]]$ (by inversion)
+\item $[[S;G, a:rel k |-ty s : k]]$ (by inversion)
+\item $[[S;G |-ty fix (\a:rel k.s) : k ]]$
+(by \rul{Ty\_Fix})
+\item $[[S;G |-ty s[fix (\a:rel k.s)/a] : k]]$ (by \pref{lem:ty-subst})
+\end{itemize}
+This last judgment is what we are trying to prove; we are done.
+\item[Case \rul{S\_Fix\_Cong}:] By induction.
+\end{description}
 \end{description}
 \end{proof}
 
@@ -1021,27 +1447,6 @@ $[[|t[g/c]| = |t|]]$
 By induction on the structure of $[[t]]$.
 \end{proof}
 
-\begin{lemma}[Application inversion]
-\label{lem:app-inversion}
-If $[[S;G |-ty t ss : k]]$ and $[[ss0]]$ is a prefix of $[[ss]]$,
-then there exists $[[k0]]$ such that $[[S;G |-ty t ss0 : k0]]$.
-\end{lemma}
-
-\begin{proof}
-Straightforward induction on the difference in length between
-$[[ss0]]$ and $[[ss]]$.
-\end{proof}
-
-\begin{lemma}[Telescope application]
-\label{lem:tel-app}
-If $[[S;G |-ty t : PI D.s]]$ and $[[S;G |-vec ps : D]]$,
-then $[[S;G |-ty t ps : s[ps/dom(D)] ]]$.
-\end{lemma}
-
-\begin{proof}
-By straightforward induction on $[[S;G |-vec ps : D]]$.
-\end{proof}
-
 \begin{lemma}[Type constant kinds shape]
 \label{lem:tycon-kind-shape}
 If $[[S;G |-ty H{ts1} ps1 : k1]]$ and $[[S;G |-ty H{ts2} ps2 : k2]]$
@@ -1057,7 +1462,8 @@ Inversion (via the only applicable rule, \rul{Ty\_Con})
 then tells us that $[[S |-tc H : D1;D2;H' ]]$,
 $[[k3 = PI(D2[ts1/dom(D1)]). H'{} ts1]]$, and
 $[[k4 = PI(D2[ts2/dom(D1)]). H'{} ts2]]$.
-We can see by inversions that $[[S;G |-vec ps1 : prefix(D2[ts1/dom(D1)]) ]]$
+\pref{lem:app-inversion} also tells us that
+$[[S;G |-vec ps1 : prefix(D2[ts1/dom(D1)]) ]]$
 and $[[S;G |-vec ps2 : prefix(D2[ts2/dom(D1)]) ]]$.
 Let $[[D3,D4 = D2]]$, where the length of $[[D3]]$ matches that of $[[ps1]]$.
 Thus \pref{lem:tel-app} tells us that
@@ -1137,20 +1543,28 @@ Like case \rul{Co\_ArgK}, but appealing to \pref{lem:lam-red}.
 Like previous case.
 \item[Case \rul{Co\_CArgKLam2}:]
 Like previous case.
-\item[Case \rul{Co\_Inst}:]
+\item[Case \rul{Co\_Res}:]
+By induction and \pref{lem:pi-red}.
+\item[Case \rul{Co\_ResLam}:]
+By induction and \pref{lem:lam-red}.
+\item[Case \rul{Co\_InstRel}:]
 We use the metavariable names from the rule:
 \[
-\ottdruleCoXXInst{}
+\ottdruleCoXXInstRel{}
 \]
 The induction hypothesis (along with \pref{lem:pi-red})
 gives us $[[ee0]]$ and $[[ee1]]$ such that
 $[[|s1| ~>* ee0 *<~ |s2|]]$ and $[[|t1| ~>* ee1 *<~ |t2|]]$.
 \pref{lem:red-star-subst} (with \pref{lem:subst-erase}) then tells us that
 $[[|s1[t1/a]| ~>* ee0[ee1/a] *<~ |s2[t2/a]|]]$ as desired.
+\item[Case \rul{Co\_InstIrrel}:]
+Similar to previous case.
 \item[Case \rul{Co\_CInst}:]
 By induction and \pref{lem:co-subst-erase}.
-\item[Case \rul{Co\_InstLam}:]
+\item[Case \rul{Co\_InstLamRel}:]
 Like case \rul{Co\_Inst}, but appealing to \pref{lem:lam-red}.
+\item[Case \rul{Co\_InstLamIrrel}:]
+Like previous case.
 \item[Case \rul{Co\_CInstLam}:]
 Like previous case.
 \item[Case \rul{Co\_NthRel}:]
@@ -1287,14 +1701,22 @@ gives us our result.
 \item[Case \rul{Co\_ArgKLam}:] Immediate. Both kinds are $[[Type{}]]$.
 \item[Case \rul{Co\_CArgKLam1}:] Similar to case \rul{Co\_CArgK1}.
 \item[Case \rul{Co\_CArgKLam2}:] Similar to previous case.
-\item[Case \rul{Co\_Inst}:] Immediate. Both kinds are $[[Type{}]]$.
-\item[Case \rul{Co\_CInst}:] Immediate. Both kinds are $[[Type{}]]$.
-\item[Case \rul{Co\_InstLam}:] Here is the rule with kinds shown:
+\item[Case \rul{Co\_Res}:] Immediate. Both kinds are $[[Type{}]]$.
+\item[Case \rul{Co\_ResLam}:] Examine the typing rule with kinds included:
 \[
-\nosupp{\ottdruleCoXXInstLam{}}
+\nosupp{\ottdruleCoXXResLam{}}
+\]
+We are done by the induction hypothesis and \pref{lem:pi-red}.
+\item[Case \rul{Co\_InstRel}:] Immediate. Both kinds are $[[Type{}]]$.
+\item[Case \rul{Co\_InstIrrel}:] Immediate. Both kinds are $[[Type{}]]$.
+\item[Case \rul{Co\_CInst}:] Immediate. Both kinds are $[[Type{}]]$.
+\item[Case \rul{Co\_InstLamRel}:] Here is the rule with kinds shown:
+\[
+\nosupp{\ottdruleCoXXInstLamRel{}}
 \]
 Our desired result follows from the induction hypothesis and
 \pref{lem:red-star-subst}.
+\item[Case \rul{Co\_InstLamIrrel}:] Similar to previous case.
 \item[Case \rul{Co\_CInstLam}:] Here is the rule with kinds shown:
 \[
 \nosupp{\ottdruleCoXXCInstLam{}}

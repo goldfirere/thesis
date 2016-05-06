@@ -14,6 +14,7 @@ Binders store the following flags:
 
 Features missing:
  - levity polymorphism (would need to generalize Ty_Pi)
+ - Left/Right. Sorta impossible.
 
 Notation:
 %% - a -> b means (_ :(Nondep,Rel,Vis,Mat) a. b)
@@ -66,7 +67,8 @@ Unnecessary coercions:
 
 DESIGN DECISIONS:
  - Two instantiation operators: to make inversion work. Well, really, to
-   make promotion work, but we've scrapped promotion.
+   make promotion work, but we've scrapped promotion. (I have undone this
+   change in the rendering.)
  - Not putting coercion in the language of types: to avoid awkwardness of
    "lifting" a coercion in the lifting lemma. Spreads out complexity.
  - Not putting prop in type: Cleaner once the previous decision was made.
@@ -81,9 +83,11 @@ DESIGN DECISIONS:
    relation. Otherwise, the induction hypothesis would be needed with
    a coercion variable in the context.
  - NB: Consistency depends on preservation for the Step case.
-
-Added/changed: Case, Match, CBeta, CLam
-
+ - In my ott code, I always write the kinds as a self-check.
+ - res must handle many cases at once, because we use it to look past
+   the PIs in a partially-applied constant, and later telescope kinds
+   might refer to earlier ones, even if the end result mentions only
+   universals. Urgh.
 
 build_kpush_co:
 
@@ -150,3 +154,5 @@ Simplifications:
 TODO: "other alternatives do not match" needs to be in the typing rule,
       not the step rule.
 
+Stack:
+  new res rules
