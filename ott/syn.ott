@@ -490,9 +490,9 @@ formula :: 'formula_' ::=
   | c # G                              ::   :: c_fresh
   | zs # ps                            ::   :: a_not_free
   | alts are exhaustive for H          ::   :: exhaustive
-    {{ tex [[alts]] \text{ are exhaustive for } [[H]] }}
+    {{ tex [[alts]] \text{ are exhaustive and distinct for } [[H]] }}
   | calts are exhaustive for H         ::   :: cexhaustive
-    {{ tex [[calts]] \text{ are exhaustive for } [[H]] }}
+    {{ tex [[calts]] \text{ are exhaustive and distinct for } [[H]] }}
   | fvset1 \subseteq fvset2            ::   :: subset
   | zs fresh                           ::   :: fresh
     {{ tex [[zs]] \text{ fresh} }}

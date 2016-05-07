@@ -88,6 +88,15 @@ DESIGN DECISIONS:
    the PIs in a partially-applied constant, and later telescope kinds
    might refer to earlier ones, even if the end result mentions only
    universals. Urgh.
+ - The system is built so that preservation does not depend on consistency.
+   If it did, we could erase the typing rule premises to the push rules
+   other than for KPush, which is needed to extract the ts'.
+ - The typing premise on Co_Step for the result is because preservation
+   needs regularity (for S_APush). Without Co_Step's premise, regularity
+   would need preservation. Alternatively, a premise could be added to APush.
+   However, because consistency depends on regularity, making this change
+   requires consistency to depend on preservation. This isn't harmful,
+   but it all seems cleaner without this dependency.
 
 build_kpush_co:
 

@@ -959,7 +959,7 @@ how the expression has stepped:
 \begin{description}
 \item[Case \rul{S\_BetaRel}:] By \pref{lem:ty-subst}.
 \item[Case \rul{S\_AppRel\_Cong}:] By induction.
-\item[Case \rul{S\_Push}:] We adopt the metavariable names from the
+\item[Case \rul{S\_PushRel}:] We adopt the metavariable names from the
 statement of the rule:
 \[
 \ottdruleSXXPush{}
@@ -980,6 +980,7 @@ as desired.
 \begin{description}
 \item[Case \rul{S\_BetaIrrel}:] By \pref{lem:ty-subst}.
 \item[Case \rul{S\_AppIrrel\_Cong}:] By induction.
+\item[Case \rul{S\_PushIrrel}:] Similar to the case for \rul{S\_PushRel}.
 \end{description}
 \item[Case \rul{Ty\_CApp}:] We now have several cases:
 \begin{description}
@@ -1878,6 +1879,7 @@ be headed by some constant $[[H]]$. Proceed as in the previous case.
 \end{proof}
 
 \begin{lemma}[Consistency]
+\label{lem:consistency}
 If $[[G]]$ contains no coercion bindings and $[[S;G |-co g : t1 [k1]~[k2] t2]]$,
 then $[[t1 ! t2]]$.
 \end{lemma}
@@ -1891,3 +1893,113 @@ that both are values.
 \pref{lem:trans-cons-value} tells us that $[[|t1| ! |t2|]]$.
 Finally, \pref{lem:erase-cons} gives us $[[t1 ! t2]]$ as desired.
 \end{proof}
+
+\section{Progress}
+
+\begin{lemma}[Canonical forms] ~
+\label{lem:canon-form}
+\begin{enumerate}
+\item
+If $[[S;G |-ty v : PI d.k]]$, then either $[[v = \d.s]]$ or $[[v = H{ts} ps]]$.
+\item
+If $[[S;G |-ty v : H{} ss]]$, then $[[v = H'{ss} ps]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By case analysis on the shape of values (along with \pref{lem:determinacy}).
+\end{proof}
+
+\begin{lemma}[Value types]
+\label{lem:val-type}
+If $[[S;G |-ty v : k]]$, then $[[k]]$ is a value.
+\end{lemma}
+
+\begin{proof}
+By case analysis on the possible shapes of values.
+\end{proof}
+
+\begin{lemma}[Progress]
+\label{lem:progress}
+Assume $[[G]]$ has only irrelevant variable bindings.
+If $[[S;G |-ty t : k]]$, then either $[[t]]$ is a value $[[v]]$, $[[t]]$
+is a coerced value $[[t |> g]]$, or there exists $[[t']]$ such that
+$[[S;G |-s t --> t']]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the typing judgment.
+
+\begin{description}
+\item[Case \rul{Ty\_Var}:] Impossible.
+\item[Case \rul{Ty\_Con}:] $[[t]]$ is a value.
+\item[Case \rul{Ty\_AppRel}:] We adopt the metavariable names from
+the rule:
+\[
+\ottdruleTyXXAppRel{}
+\]
+Use the induction hypothesis on $[[t1]]$, giving us several cases:
+\begin{description}
+\item[Case $[[t1 = v]]$:] We now use \pref{lem:canon-form}
+to give us two cases:
+\begin{description}
+\item[Case $[[t1 = H{ts} ps]]$:] Then $[[t = H{ts} ps t2]]$ is a value
+and we are done.
+\item[Case $[[t1 = \a:Rel k1.s]]$:] We are done by \rul{S\_BetaRel}.
+\end{description}
+\item[Case $[[t1 = v |> g]]$:] We wish to use \rul{S\_PushRel} but
+we must prove
+$[[S;Rel(G) |-co g : PI a:Rel k.s [Type{}]~[Type{}] PI a:Rel k'. s']]$
+(for some $[[a]]$, $[[k]]$, $[[s]]$, $[[k']]$, and $[[s']]$).
+We know by inversion that $[[S;G |-ty v |> g : PI a:Rel k1.k2]]$.
+Further inversion gives us
+$[[S;Rel(G) |-co g : k0 [Type{}]~[Type{}] PI a:Rel k1.k2]]$ and
+$[[S;G |-ty v : k0]]$.
+\pref{lem:consistency} tells us that $[[k0 ! PI a:Rel k1.k2]]$.
+\pref{lem:val-type} tells us that $[[k0]]$ is a value.
+Inversion on $[[k0 ! PI a:Rel k1.k2]]$ must happen via \rul{C\_PiTy},
+telling us that $[[k0 = PI a:Rel k1'.k2']]$ for some $[[k1']]$
+and $[[k2']]$.
+We can thus use \rul{S\_PushRel} and are done with this case.
+\item[Case $[[S;G |-s t1 --> t1']]$:] We are done by \rul{S\_AppRel\_Cong}.
+\end{description}
+\item[Case \rul{Ty\_AppIrrel}:] We adopt the metavariable names from
+the rule:
+\[
+\ottdruleTyXXAppIrrel{}
+\]
+Use the induction hypothesis on $[[t1]]$, giving us several cases:
+\begin{description}
+\item[Case $[[t1 = v]]$:] We now use \pref{lem:canon-form} to
+give us two cases, which are handled like the \rul{Ty\_AppRel}
+case, but using \rul{S\_BetaIrrel} in place of \rul{S\_BetaRel}.
+\item[Case $[[t1 = v |> g]]$:] As in \rul{Ty\_AppRel}, but
+using \rul{S\_PushIrrel}.
+\item[Case $[[S;G |-s t1 --> t1']]$:] By \rul{S\_AppIrrel\_Cong}.
+\end{description}
+\item[Case \rul{Ty\_CApp}:]
+Like previous application cases, but using \rul{S\_CBeta},
+\rul{S\_CPush}, and
+\rul{S\_CApp\_Cong}. (The \rul{S\_CPush} rule looks a bit different
+than \rul{S\_PushRel}, but the typing premise of that rule has the
+identical structure as the previous case.)
+\item[Case \rul{Ty\_Pi}:] Immediate, as all $[[PI]]$-types are values.
+\item[Case \rul{Ty\_Cast}:] In this case, we know $[[t = t0 |> g]]$.
+Using the induction hypothesis on $[[t0]]$ gives us several cases:
+\item[Case $[[t0 = v]]$:] $[[v |> g]]$ is a coerced value and so we are done.
+\item[Case $[[t0 = v |> h]]$:] We have $[[t = (v |> h) |> g]]$. We are done
+by \rul{S\_Trans}.
+\item[Case $[[S;G |-s t0 --> t0']]$:] We are done by \rul{Cast\_Cong}.
+\end{description}
+\item[Case \rul{Ty\_Case}:] We know here that
+$[[t = case_k t0 of alts]]$. Using the induction hypothesis on
+$[[t0]]$ gives us several cases:
+\begin{description}
+\item[Case $[[t0 = v]]$:] We see that $[[S;G |-ty v : PI D. H{} ss]]$
+(from a premise of \rul{Ty\_Case}). \pref{lem:canon-form} gives us two
+cases: (Note that it does not matter whether $[[length D = 0]]$ when
+using \pref{canon-form}.)
+\begin{description}
+\item[Case $[[t0 = \ d.t1 ]]$:] 
+
+

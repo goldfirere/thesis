@@ -504,13 +504,21 @@ S;G |-s t --> t'
 ------------------------ :: Fix_Cong
 S;G |-s fix t --> fix t'
 
-S;Rel(G) |-co g0 : PI a :rel k. s [Type{}]~[Type{}] PI a :rel k'. s'
+S;Rel(G) |-co g0 : PI a :Rel k. s [Type{}]~[Type{}] PI a :Rel k'. s'
 g1 = sym (argk g0)      //   g2 = g0@(erase_(sym g1) (t |> g1) t)
 % g0 : PI a:rel k. s ~ PI a:rel k'. s'
 % g1 : k' ~ k
 % g2 : s[(t |> g1)/a] ~ s'[t/a]
------------------------------------------ :: Push
+----------------------------------------- :: PushRel
 S;G |-s (v |> g0) t --> v (t |> g1) |> g2
+
+S;Rel(G) |-co g0 : PI a :Irrel k. s [Type{}]~[Type{}] PI a :Irrel k'. s'
+g1 = sym (argk g0)      //   g2 = g0@(erase_(sym g1) (t |> g1) t)
+% g0 : PI a:rel k. s ~ PI a:rel k'. s'
+% g1 : k' ~ k
+% g2 : s[(t |> g1)/a] ~ s'[t/a]
+----------------------------------------- :: PushIrrel
+S;G |-s (v |> g0) {t} --> v {t |> g1} |> g2
 
 S;Rel(G) |-co g0 : PI c:phi. s [Type{}]~[Type{}] PI c:phi'.s'
 g1 = argk 1 g0 //  g2 = argk 2 g0
