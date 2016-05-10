@@ -860,7 +860,7 @@ then $[[S;G |-co h@gs : s[ts/dom(D)] [Type{}]~[Type{}] s'[ts'/dom(D')] ]]$.
 By induction on the structure of the list $[[gs]]$.
 
 \begin{description}
-\item[Case $gs = empty$:] By \pref{lem:vec-length}, we can see that $[[D]]$
+\item[Case $[[gs = empty]]$:] By \pref{lem:vec-length}, we can see that $[[D]]$
 and $[[D']]$ must both be empty. We are done by assumption.
 \item[Case $[[gs = g0, gs1]]$:] In this case, we know $[[S;G |-vec t0, ts1 : D]]$
 and thus that $[[D = a :Rel k0, D1]]$
@@ -1933,6 +1933,28 @@ If $[[S;G |-ty v : k]]$, then $[[k]]$ is a value.
 By case analysis on the possible shapes of values.
 \end{proof}
 
+\begin{lemma}[Consistency/$[[PI]]$]
+\label{lem:consistency-pi}
+TODO: Write and prove.
+\end{lemma}
+
+\begin{lemma}[Type constant inversion]
+\label{lem:tycon-inversion}
+If $[[S;G |-ty H{ts} ps : k]]$, then:
+\begin{enumerate}
+\item $[[S |-tc H : as :Irrel ks;D;H' ]]$
+\item $[[S;Rel(G) |-vec ts : as :Rel ks]]$
+\item $[[D3,D4 = D2[ts/as] ]]$
+\item $[[S;G |-vec ps : D3 ]]$
+\item $[[k = MPI D4. H'{} ts]]$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By \pref{lem:app-inversion}, \pref{lem:tel-app}, and \pref{lem:determinacy},
+and inversion and application of typing rules.
+\end{proof}
+
 \begin{lemma}[Progress]
 \label{lem:progress}
 Assume $[[G]]$ has only irrelevant variable bindings.
@@ -2012,9 +2034,24 @@ $[[t0]]$ gives us several cases:
 \item[Case $[[t0 = v]]$:] We can derive the following:
 \begin{itemize}
 \item $[[S;G |-ty v : MPI D. H'{} ss]]$ (from a premise of \rul{Ty\_Case})
-\item $[[t0 = H{ts} ps]]$ (by \pref{lem:canon-form}). Note that it does not matter whether $[[length D = 0]]$ when
+\item $[[v]] = [[t0 = H{ts} ps]]$ (by \pref{lem:canon-form}). Note that it does not matter whether $[[length D = 0]]$ when
 using \pref{canon-form}.
-\item $[[S;G |-ty H{ts} ps : MPI D. H'{} ss]]$ (simple substitution)
-\item $[[S;G |-ty H{ts} : MUPI D0. k0]]$ (\pref{lem:app-inversion})
-\item $[[S;G |-vec ps : D0]]$ (same invocation of \pref{lem:appinversion})
-\item $[[S;G |-ty H{ts} ps : k0[ps/dom(D0)] ]]$
+\item $[[S;G |-ty H{ts} ps : MPI D'. H''{} ts]]$ (\pref{lem:tycon-inversion})
+\item $[[S |-tc H : D1;D2;H'' ]]$ (same invocation of \pref{lem:tycon-inversion})
+\item $[[D' = D]]$, $[[H' = H'']]$, and $[[ts = ss]]$ (\pref{lem:determinacy})
+\end{itemize}
+Since we have $[[S |-tc H : D1;D2;H']]$ and $[[alts are exhaustive for H' (wrt S)]]$,
+we can conclude that there exists $[[H -> t1 \in alts]]$. We can thus
+use \rul{S\_Match} and we are done.
+\item[Case $[[t0 = v |> g]]$:] We can derive the following:
+\begin{itemize}
+\item $[[S;G |-ty v |> g : MPI D. H'{} ss]]$ (from a premise of \rul{Ty\_Case})
+\item $[[S;Rel(G) |-co g : k0 [Type{}]~[Type{}] MPI D. H'{} ss]]$ (inversion of \rul{Ty\_Cast}))
+\item $[[S;G |-ty v : k0]]$ (same inversion)
+\item $[[k0 ! MPI D. H'{} ss]]$ (\pref{lem:consistency})
+\item $[[k0]]$ is a value (\pref{lem:val-type})
+\item $[[k0 = MPI D'. k1]]$ (\pref{lem:consistency-pi})
+\item $[[v = H{ts} ps]]$ (\pref{lem:canon-form})
+\item $[[S;G |-ty H{ts} ps : MPI D''. H''{} ts]]$ (\pref{lem:tycon-inversion})
+\item $[[S |-tc H : as :Irrel ks;D2;H'' ]]$ (same invocation of \pref{lem:tycon-inversion})
+\item $[[

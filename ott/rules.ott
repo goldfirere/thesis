@@ -124,9 +124,9 @@ S;G |-ty t : k1  // S;Rel(G) |-ty k2 : Type{}
 -------------------- :: Cast
 S;G |-ty t |> g : k2
 
-S;Rel(G) |-ty k : Type{}  //  S;G |-ty t : s
+S;Rel(G) |-ty k : Type{}  //  S;G |-ty t : s // s = MPI D. H{} ss
 forall i: S;G;s;t |-alt alti : k
-s = MPI D. H{} ss // alts are exhaustive for H
+alts are exhaustive for H (wrt S)
 D contains no coercion bindings
 ------------------------------ :: Case
 S;G |-ty case_k t of alts : k
