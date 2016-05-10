@@ -593,17 +593,17 @@ by \rul{Ctx\_Nil}.
 \begin{lemma}[Type constant kinds]
 \label{lem:tycon-kind}
 If $[[|-sig S]]$ and $[[S |-tc H : D1;D2;H']]$,
-then $[[S;empty |-ty PI D1,D2.H'{} dom(D1) : Type{} ]]$.
+then $[[S;empty |-ty MPI D1,D2.H'{} dom(D1) : Type{} ]]$.
 \end{lemma}
 
 \begin{proof}
-To prove $[[S;empty |-ty PI D1,D2.H'{} dom(D1) : Type{} ]]$,
+To prove $[[S;empty |-ty MPI D1,D2.H'{} dom(D1) : Type{} ]]$,
 we will use \rul{Ty\_Pi} (repeatedly). We thus must show
 $[[S;Rel(D1,D2) |-ty H'{} dom(D1) : Type{} ]]$.
 This, in turn, will be by \rul{Ty\_AppRel} (repeatedly). We thus
 must show 
 \begin{description}
-\item[$[[S;Rel(D1,D2) |-ty H'{} : PI Rel(D1). Type{} ]]$] (We are being
+\item[$[[S;Rel(D1,D2) |-ty H'{} : MPI Rel(D1). Type{} ]]$] (We are being
 a bit more specific here than necessary.) Case analysis of
 $[[S |-tc H : D1;D2;H']]$ gives us several cases:
 \begin{description}
@@ -613,7 +613,7 @@ According to \rul{Ty\_Con} we must show only that $[[S |-ctx Rel(D2) ]]$,
 which follows from \pref{lem:tycon-tel} and \pref{lem:increasing-rel}.
 \item[Case \rul{Tc\_DataCon}:] Here, $[[D1 = as :Irrel ks]]$ and
 $[[H' = T]]$. We must show
-$[[S;as :Rel ks,Rel(D2) |-ty T{} : PI as :Rel ks. Type{} ]]$.
+$[[S;as :Rel ks,Rel(D2) |-ty T{} : MPI as :Rel ks. Type{} ]]$.
 Using \rul{Ty\_Con} means we must show $[[S |-tc T : empty; as :Rel ks; Type]]$
 and $[[S |-ctx as :Rel ks, Rel(D2)]]$. The latter comes from
 $[[|-sig S]]$ and \pref{lem:tycon-tel}. The former comes directly from
@@ -647,13 +647,13 @@ from the rule:
 \]
 Use \pref{lem:ctx-reg} to get
 $[[|-sig S]]$. Then use \pref{lem:tycon-kind} to get
-$[[S;empty |-ty PI D1,D2.H'{} dom(D1) : Type{} ]]$.
+$[[S;empty |-ty MPI D1,D2.H'{} dom(D1) : Type{} ]]$.
 Repeated inversion on \rul{Ty\_Pi} gives us
-$[[S;Rel(D1) |-ty PI D2.H'{} dom(D1) : Type{} ]]$.
+$[[S;Rel(D1) |-ty MPI D2.H'{} dom(D1) : Type{} ]]$.
 \pref{lem:weakening} gives us
-$[[S;Rel(G),Rel(D1) |-ty PI D2.H'{} dom(D1) : Type{} ]]$.
+$[[S;Rel(G),Rel(D1) |-ty MPI D2.H'{} dom(D1) : Type{} ]]$.
 \pref{lem:vec-subst} gives us
-$[[S;Rel(G) |-ty PI (D2[ts/dom(D1)]). H'{} ts : Type{} ]]$
+$[[S;Rel(G) |-ty MPI (D2[ts/dom(D1)]). H'{} ts : Type{} ]]$
 as desired.
 \item[Case \rul{Ty\_AppRel}:]
 We'll adopt the metavariable names from the rule:
@@ -681,7 +681,7 @@ We'll adopt the metavariable names from the rule:
 \[
 \ottdruleTyXXLam{}
 \]
-We must show $[[S;Rel(G) |-ty PI d.k : Type{} ]]$.
+We must show $[[S;Rel(G) |-ty UPI d.k : Type{} ]]$.
 Working backward, use \rul{Ty\_Pi} so that we must show
 $[[S;Rel(G,d) |-ty k : Type{} ]]$, which is true by induction.
 \item[Case \rul{Ty\_Fix}:]
@@ -783,9 +783,9 @@ We adopt the metavariable names from the statement of the rule:
 \nosupp{\ottdruleCoXXLam{}}
 \]
 We can use
-\rul{Ty\_Lam} to get $[[S;G |-ty \a:rel k1.t1 : PI a:rel k1.s1]]$.
+\rul{Ty\_Lam} to get $[[S;G |-ty \a:rel k1.t1 : UPI a:rel k1.s1]]$.
 Proceeding similarly to the case for \rul{Co\_PiTy}, we can
-get $[[S;G |-ty \a:rel k2.(t2[a |> sym h/a]) : PI a:rel k2. (s2[a |> sym h/a])]]$
+get $[[S;G |-ty \a:rel k2.(t2[a |> sym h/a]) : UPI a:rel k2. (s2[a |> sym h/a])]]$
 and we are done by \pref{lem:increasing-rel}.
 \item[Case \rul{Co\_CLam}:]
 Similar to previous case and the case for \rul{Co\_PiCo}.
@@ -830,7 +830,7 @@ $[[S;Rel(G) |-ty t1 : k1]]$.
 \begin{lemma}[Application inversion]
 \label{lem:app-inversion}
 If $[[S;G |-ty t ps : k]]$ where $[[ps = ps0,ps1]]$,
-then $[[S;G |-ty t ps0 : PI D.k0]]$, $[[S;G |-vec ps1 : D]]$
+then $[[S;G |-ty t ps0 : MUPI D.k0]]$, $[[S;G |-vec ps1 : D]]$
 and $[[k = k0[ps1/dom(D)] ]]$.
 \end{lemma}
 
@@ -840,7 +840,7 @@ Straightforward induction on $[[ps1]]$.
 
 \begin{lemma}[Telescope application]
 \label{lem:tel-app}
-If $[[S;G |-ty t : PI D.s]]$ and $[[S;G |-vec ps : D]]$,
+If $[[S;G |-ty t : MUPI D.s]]$ and $[[S;G |-vec ps : D]]$,
 then $[[S;G |-ty t ps : s[ps/dom(D)] ]]$.
 \end{lemma}
 
@@ -850,7 +850,7 @@ By straightforward induction on $[[S;G |-vec ps : D]]$.
 
 \begin{lemma}[Telescope instantiation]
 \label{lem:tel-inst}
-If $[[S;G |-co h : PI D.s [Type{}]~[Type{}] PI D'.s']]$,
+If $[[S;G |-co h : MPI D.s [Type{}]~[Type{}] MPI D'.s']]$,
  $(\forall [[i]], [[S;G |-co gi : ti [ki]~[ki'] ti']])$,
 $[[S;G |-vec ts : D]]$, and $[[S;G |-vec ts' : D']]$,
 then $[[S;G |-co h@gs : s[ts/dom(D)] [Type{}]~[Type{}] s'[ts'/dom(D')] ]]$.
@@ -868,20 +868,26 @@ with $[[S;G |-ty t0 : k0]]$ and $[[S;G |-vec ts1 : D1[t0/a] ]]$.
 Similarly, we have $[[S;G |-ty t0' : k0']]$ and $[[S;G |-vec ts1' : D1'[t0'/a] ]]$.
 We must show $[[S;G |-co (h@g0)@gs1 : s[t0/a,ts1/dom(D1)] [Type{}]~[Type{}] s'[t0'/a,ts1'/dom(D1')] ]]$.
 We can rewrite our assumption (expanding $[[D]]$ and $[[D']]$) to be
-$[[S;G |-co h : PI a:Rel k0,D1.s [Type{}]~[Type{}] PI a:Rel k0',D1'.s']]$
+$[[S;G |-co h : MPI a:Rel k0, D1.s [Type{}]~[Type{}] MPI a:Rel k0',D1'.s']]$
 and thus derive
-$[[S;G |-co h@g0 : PI (D1[t0/a]).(s[t0/a]) [Type{}]~[Type{}] PI (D1'[t0'/a]).(s'[t0'/a]) ]]$.
+$[[S;G |-co h@g0 : MPI (D1[t0/a]).(s[t0/a]) [Type{}]~[Type{}] MPI (D1'[t0'/a]).(s'[t0'/a]) ]]$.
 We can then use the induction hypothesis to get
 $[[S;G |-co (h@g0)@gs : s[t0/a][ts1/dom(D1)] [Type{}]~[Type{}] s'[t0'/a][ts1'/dom(D1')] ]]$, which (noting that $[[t0]]$ cannot have any of the $[[dom(D1)]]$ free)
 is what we wish to prove.
 \end{description}
 \end{proof}
 
+\begin{remark}
+The above \pref{lem:tel-inst} could be made more general, to work with
+$[[UPI]]$ as well as $[[MPI]]$. However, doing so would make the statement
+and proof more cluttered, and it is only ever needed with $[[MPI]]$.
+\end{remark}
+
 \begin{lemma}[$[[build_kpush_co]]$]
 \label{lem:build-kpush-co}
 Assume $[[S;G |-cev ps : D[ts/as] ]]$ and let $[[gi = build_kpush_co(h; ps_{1..i-1})]]$
 and $[[pi' = cast_kpush_arg(pi;gi)]]$.
-If $[[S;Rel(G) |-co h : (PI D.s)[ts/as] [Type{}]~[Type{}] (PI D.s)[ts'/as] ]]$, then:
+If $[[S;Rel(G) |-co h : (MPI D.s)[ts/as] [Type{}]~[Type{}] (MPI D.s)[ts'/as] ]]$, then:
 \begin{enumerate}
 \item
 $[[S;Rel(G) |-co build_kpush_co(h; ps) : s[ts/as][ps/dom(D)] [Type{}]~[Type{}] s[ts'/as][ps'/dom(D)] ]]$
@@ -901,7 +907,7 @@ In this case, we have $[[ps = ps0, t0]]$ and $[[D = D0, b :Rel k]]$
 with $[[S;G |-cev ps0 : D0[ts/as] ]]$ and $[[S;G |-ty t0 : k[ts/as][ps0/dom(D0)] ]]$.
 We can see that $[[build_kpush_co(h; ps0, t0) = let c := build_kpush_co(h; ps0) in c@(erase_c t0 (t0 |> argk c)) ]]$.
 The induction hypothesis tells us that
-$[[S;Rel(G) |-co c : (PI b :Rel k.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (PI b:Rel k.s)[ts'/as][ps0'/dom(D0)] ]]$. We can thus deduce the following:
+$[[S;Rel(G) |-co c : (MPI b :Rel k.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (MPI b:Rel k.s)[ts'/as][ps0'/dom(D0)] ]]$. We can thus deduce the following:
 \begin{itemize}
 \item $[[S;Rel(G) |-co argk c : k[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] k[ts'/as][ps0'/dom(D0)] ]]$
 \item $[[S;Rel(G) |-ty t0 |> argk c : k[ts'/as][ps0'/dom(D0)] ]]$
@@ -922,7 +928,7 @@ In this case, we have $[[ps = ps0, g0]]$ and $[[D = D0, c0 : phi0]]$
 with $[[S;G |-cev ps0 : D0[ts/as] ]]$ and $[[S;Rel(G) |-co g0 : phi0[ts/as][ps0/dom(D0)] ]]$.
 We can see that $[[build_kpush_co(h; ps0, g0) = let c := build_kpush_co(h; ps0) in c@(g0, sym (argk 1 c) ;; g0 ;; argk 2 c)]]$.
 The induction hypothesis tells us that
-$[[S;Rel(G) |-co c : (PI c0:phi0.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (PI c0:phi0.s)[ts'/as][ps0'/dom(D0)] ]]$. Let $[[phi0 = s1 [k1]~[k2] s2]]$. We can thus deduce the following:
+$[[S;Rel(G) |-co c : (MPI c0:phi0.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (MPI c0:phi0.s)[ts'/as][ps0'/dom(D0)] ]]$. Let $[[phi0 = s1 [k1]~[k2] s2]]$. We can thus deduce the following:
 \begin{itemize}
 \item $[[S;Rel(G) |-co sym (argk 1 c) : s1[ts'/as][ps0'/dom(D0)] [k1[ts'/as][ps0'/dom(D0)] ]~[k1[ts/as][ps0/dom(D0)] ] s1[ts/as][ps0/dom(D0)] ]]$
 \item $[[S;Rel(G) |-co argk 2 c : s2[ts/as][ps0/dom(D0)] [k2[ts/as][ps0/dom(D0)] ]~[k2[ts'/as][ps0'/dom(D0)] ] s2[ts'/as][ps0'/dom(D0)] ]]$
@@ -941,6 +947,11 @@ To prove result (2), we must show $[[S;G |-cev ps0', sym (argk 1 c) ;; g0 ;; arg
 use of \rul{Cev\_Co}.
 \end{description}
 \end{proof}
+
+\begin{remark}
+\pref{lem:build-kpush-co} could also be rewritten to work with
+$[[UPI]]$, but with no need.
+\end{remark}
 
 \begin{lemma}[Preservation]
 \label{lem:preservation}
@@ -962,7 +973,7 @@ how the expression has stepped:
 \item[Case \rul{S\_PushRel}:] We adopt the metavariable names from the
 statement of the rule:
 \[
-\ottdruleSXXPush{}
+\ottdruleSXXPushRel{}
 \]
 Inversion on $[[S;G |-ty (v |> g0) t : k0]]$
 gives us $[[S;G |-ty t : k']]$ and $[[S;G |-ty v : PI a:rel k.s]]$.
@@ -1032,14 +1043,16 @@ Note that the last fact proves this case.
 \]
 Inversion and typing rules tell us the following:
 \begin{itemize}
-\item $[[S;G |-ty H{ts} ps : H'{} ts]]$
-\item $[[S |-tc H : D1;D2;H' ]]$
-\item $[[S;G |-ty H{ts} : PI (D2[ts/dom(D1)]). H'{} ts]]$
-\item $[[D0, D' = D2[ts/dom(D1)] ]]$
-\item $[[S;G |-vec ps : D0 ]]$ (by \pref{lem:app-inversion})
-\item $[[S;G;s;H{ts} ps |-alt H -> t0 : k]]$
-\item $[[S;G |-ty t0 : PI D0, c : H{ts} ps [H'{} ts]~[H'{} ts] H{ts} dom(D0).k]]$
-\item $[[S;G |-ty t0 ps : PI c : H{ts} ps [H'{} ts]~[H'{} ts] H{ts} ps.k]]$ (by \pref{lem:tel-app}), where the $[[k]]$ needs no substitution by \pref{lem:scoping}
+\item $[[S;G |-ty H{ts} ps : MPI D. H'{} ss]]$
+\item $[[S;G |-ty H{ts} : MUPI D0. MPI D. H'{} ss]]$ (by \pref{lem:app-inversion})
+\item $[[S;G |-vec ps : D0]]$ (also from \pref{lem:app-inversion})
+\item $[[S |-tc H : D1;D2;H' ]]$ (by inverting \rul{Ty\_Con})
+\item $[[S;G |-ty H{ts} : MPI (D2[ts/dom(D1)]). H'{} ts]]$ (also from \rul{Ty\_Con})
+\item $[[MPI (D2[ts/dom(D1)]). H'{} ts = MUPI D0. MPI D.H'{} ss]]$ (by \pref{lem:determinacy})
+\item $[[D0, D = D2[ts/dom(D1)]]]$ and $[[ts = ss]]$ (by congruence of equality)
+\item $[[S;G;MPI D.H'{} ts;H{ts} ps |-alt H -> t0 : k]]$
+\item $[[S;G |-ty t0 : MUPI D0, c : H{ts} ps [H'{} ts]~[H'{} ts] H{ts} dom(D0).k]]$
+\item $[[S;G |-ty t0 ps : MUPI c : H{ts} ps [H'{} ts]~[H'{} ts] H{ts} ps.k]]$ (by \pref{lem:tel-app}), where the $[[k]]$ needs no substitution by \pref{lem:scoping}
 \item $[[S;G |-ty t0 ps <H{ts} ps> : k]]$, where the $[[k]]$ needs no substitution
 by \pref{lem:scoping}
 \end{itemize}
@@ -1051,12 +1064,12 @@ Note that thie last fact proves this case.
 \]
 Note that we need to prove only that the type of
 $[[(H{ts} ps) |> h]]$ matches that of $[[H{ts'} ps']]$,
-namely $[[PI (D2[ts'/as][ps'/dom(D1)]). H'{} ts']]$.
+namely $[[MPI (D2[ts'/as][ps'/dom(D1)]). H'{} ts']]$.
 We can then derive these facts:
 \begin{itemize}
-\item $[[S;G |-ty H{ts} ps : PI (D2[ts/as][ps/dom(D1)]). H'{} ts]]$ (by inversion
+\item $[[S;G |-ty H{ts} ps : MPI (D2[ts/as][ps/dom(D1)]). H'{} ts]]$ (by inversion
 of the typing judgment on the redex)
-\item $[[S;G |-ty H{ts} : PI (D1[ts/as],D2[ts/as]). H'{} ts]]$ (by \pref{lem:app-inversion}
+\item $[[S;G |-ty H{ts} : MPI (D1[ts/as],D2[ts/as]). H'{} ts]]$ (by \pref{lem:app-inversion}
 followed by inverting \rul{Ty\_Con})
 \item $[[S;G |-vec ps : D1[ts/as] ]]$ (also from \pref{lem:app-inversion})
 \item $[[S;G |-vec ts : as :Rel ks]]$ (by inversion)
@@ -1068,16 +1081,16 @@ variables in $[[dom(D2)]]$ free)
 \item $\forall [[i]], \exists [[ki]]$, $[[S;Rel(G) |-ty ti : ki]]$ (by \pref{lem:vec-kind})
 \item $\forall [[i]], \exists [[ki']]$, $[[S;Rel(G) |-ty ti' : ki']]$ (by \pref{lem:vec-kind})
 \item $\forall [[i]]$, $[[S;Rel(G) |-co nth i (res^n h) : ti [ki]~[ki'] ti' ]]$ (from \rul{Co\_NthRel})
-\item $[[S;G |-ty k : Type{}]]$, recalling that $[[k = PI as:Irrel ks, D. H'{} as]]$ (by \pref{lem:ctx-reg}, \pref{lem:tycon-kind}, and
+\item $[[S;G |-ty k : Type{}]]$, recalling that $[[k = MPI as:Irrel ks, D. H'{} as]]$ (by \pref{lem:ctx-reg}, \pref{lem:tycon-kind}, and
 \pref{lem:weakening})
 \item $[[S;G |-co <k> : k [Type{}]~[Type{}] k]]$ (by \rul{Co\_Refl})
-\item $[[S;G |-co <k>@(nths (res^n h)) : (PI D1,D2. H'{} as)[ts/as] [Type{}]~[Type{}] (PI D1,D2. H'{} as)[ts'/as] ]]$ (by \pref{lem:tel-inst})
+\item $[[S;G |-co <k>@(nths (res^n h)) : (MPI D1,D2. H'{} as)[ts/as] [Type{}]~[Type{}] (MPI D1,D2. H'{} as)[ts'/as] ]]$ (by \pref{lem:tel-inst})
 \item $[[S;G |-cev ps : D1[ts/as] ]]$ (by \pref{lem:vec-cev})
 \item $[[S;G |-cev ps' : D1[ts'/as] ]]$ (by \pref{lem:build-kpush-co})
 \item $[[S;G |-vec ps' : D1[ts'/as] ]]$ (by \pref{lem:vec-cev})
-\item $[[S;G |-ty H{ts'} : PI (D1[ts'/as],D2[ts'/as]). H'{} ts']]$ (by a
+\item $[[S;G |-ty H{ts'} : MPI (D1[ts'/as],D2[ts'/as]). H'{} ts']]$ (by a
 use of \rul{Ty\_Con}, along with \pref{lem:ctx-reg})
-\item $[[S;G |-ty H{ts'} ps' : PI (D2[ts'/as][ps'/dom(D1)]). H'{} ts']]$
+\item $[[S;G |-ty H{ts'} ps' : MPI (D2[ts'/as][ps'/dom(D1)]). H'{} ts']]$
 \end{itemize}
 This last fact is what we are trying to prove, and so we are done.
 \end{description}
@@ -1090,21 +1103,21 @@ This last fact is what we are trying to prove, and so we are done.
 \]
 Inversion and typing rules then give us the following facts:
 \begin{itemize}
-\item $[[S;G |-ty \a:Irrel k. (v |> g) : PI a:Irrel k. k1]]$
+\item $[[S;G |-ty \a:Irrel k. (v |> g) : UPI a:Irrel k. k1]]$
 \item $[[S;G,a :Irrel k |-ty v |> g : k1]]$
 \item $[[S;Rel(G), a :Rel k |-co g : k0 [Type{}]~[Type{}] k1]]$
 \item $[[S;G, a:Irrel k |-ty v : k0]]$
-\item $[[S;G |-ty \a:Irrel k.v : PI a:Irrel k. k0]]$
+\item $[[S;G |-ty \a:Irrel k.v : UPI a:Irrel k. k0]]$
 \item $[[S;Rel(G) |-ty k : Type{}]]$ (by \pref{lem:ctx-reg} and
 \pref{lem:tyvar-reg})
 \item $[[S;Rel(G) |-co <k> : k [Type{}]~[Type{}] k]]$ (by \rul{Co\_Refl})
-\item $[[S;Rel(G) |-co PI a:Irrel <k>. g : PI a:Irrel k. k0 [Type{}]~[Type{}] PI a:Irrel k. (k1[a |> sym <k>/a]) ]]$ (by \rul{Co\_PiTy})
-\item $[[S;Rel(G) |-ty PI a:Irrel k. (k1[a |> sym <k>/a]) : Type{} ]]$ (by \pref{lem:prop-reg})
-\item $[[S;Rel(G) |-ty PI a:Irrel k.k1 : Type{}]]$ (by \pref{lem:kind-reg})
-\item $[[S;Rel(G) |-co erase_<Type{}> (PI a:Irrel k. (k1[a |> sym <k>/a])) (PI a:Irrel k. k1) : (PI a:Irrel k. (k1[a |> sym <k>/a])) [Type{}]~[Type{}] (PI a:Irrel k. k1)]]$ (by \rul{Co\_Coherence})
+\item $[[S;Rel(G) |-co UPI a:Irrel <k>. g : UPI a:Irrel k. k0 [Type{}]~[Type{}] UPI a:Irrel k. (k1[a |> sym <k>/a]) ]]$ (by \rul{Co\_PiTy})
+\item $[[S;Rel(G) |-ty UPI a:Irrel k. (k1[a |> sym <k>/a]) : Type{} ]]$ (by \pref{lem:prop-reg})
+\item $[[S;Rel(G) |-ty UPI a:Irrel k.k1 : Type{}]]$ (by \pref{lem:kind-reg})
+\item $[[S;Rel(G) |-co erase_<Type{}> (UPI a:Irrel k. (k1[a |> sym <k>/a])) (UPI a:Irrel k. k1) : (UPI a:Irrel k. (k1[a |> sym <k>/a])) [Type{}]~[Type{}] (UPI a:Irrel k. k1)]]$ (by \rul{Co\_Coherence})
 \end{itemize}
 We can then conclude, by \rul{Co\_Trans} and \rul{Ty\_Cast}, that the result
-has the same type, $[[PI a:Irrel k. k1]]$ as the redex.
+has the same type, $[[UPI a:Irrel k. k1]]$ as the redex.
 \end{description}
 \item[Case \rul{Ty\_Fix}:] We now have several cases:
 \begin{description}
@@ -1114,7 +1127,7 @@ has the same type, $[[PI a:Irrel k. k1]]$ as the redex.
 \]
 We can then derive the following:
 \begin{itemize}
-\item $[[S;G |-ty \a:rel k.s : PI a:rel k. k]]$ (by inversion)
+\item $[[S;G |-ty \a:rel k.s : UPI a:rel k. k]]$ (by inversion)
 \item $[[S;G, a:rel k |-ty s : k]]$ (by inversion)
 \item $[[S;G |-ty fix (\a:rel k.s) : k ]]$
 (by \rul{Ty\_Fix})
@@ -1342,11 +1355,11 @@ Choose $[[t3 = s6]]$. We must show $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$.
 The first is by \rul{R\_CBeta}. The second is immediate.
 \item[Case \rul{R\_CBeta}/\rul{R\_CBeta}:] By induction.
 \end{description}
-\item[Case $[[t0 = PI d. s0]]$:] By induction.
+\item[Case $[[t0 = PI d. s0]]$:] By induction and \rul{R\_Pi}.
 \item[Case $[[t0 = case_k s0 of alts]]$:]
 We now have several cases:
 \begin{description}
-\item[Case \rul{R\_Case}/\rul{R\_Case}:] By induction.
+\item[Case \rul{R\_Case}/\rul{R\_Case}:] By induction and \rul{R\_Case}.
 \item[Case \rul{R\_Case}/\rul{R\_Match}:] It must be that:
 \begin{itemize}
 \item $[[t0 = case_k H{ss} ps of list of H -> ee]]$
@@ -1461,17 +1474,17 @@ $[[k1 = k[ts1/as,ps1/zs] ]]$, and $[[k2 = k[ts2/as,ps2/zs] ]]$.
 such that $[[S;G |-ty H{ts1} : k3]]$ and $[[S;G |-ty H{ts2} : k4]]$.
 Inversion (via the only applicable rule, \rul{Ty\_Con})
 then tells us that $[[S |-tc H : D1;D2;H' ]]$,
-$[[k3 = PI(D2[ts1/dom(D1)]). H'{} ts1]]$, and
-$[[k4 = PI(D2[ts2/dom(D1)]). H'{} ts2]]$.
+$[[k3 = MPI(D2[ts1/dom(D1)]). H'{} ts1]]$, and
+$[[k4 = MPI(D2[ts2/dom(D1)]). H'{} ts2]]$.
 \pref{lem:app-inversion} also tells us that
 $[[S;G |-vec ps1 : prefix(D2[ts1/dom(D1)]) ]]$
 and $[[S;G |-vec ps2 : prefix(D2[ts2/dom(D1)]) ]]$.
 Let $[[D3,D4 = D2]]$, where the length of $[[D3]]$ matches that of $[[ps1]]$.
 Thus \pref{lem:tel-app} tells us that
-$[[k1 = PI (D4[ts1/dom(D1),ps1/dom(D3)]).H'{} ts1]]$ and
-$[[k2 = PI (D4[ts2/dom(D1),ps2/dom(D3)]).H'{} ts2]]$.
+$[[k1 = MPI (D4[ts1/dom(D1),ps1/dom(D3)]).H'{} ts1]]$ and
+$[[k2 = MPI (D4[ts2/dom(D1),ps2/dom(D3)]).H'{} ts2]]$.
 Thus, we are done, with $[[as = dom(D1)]]$, $[[zs = dom(D2)]]$,
-and $[[k = PI D4. H'{} as]]$.
+and $[[k = MPI D4. H'{} as]]$.
 \end{proof}
 
 \begin{definition}[Joinability]
@@ -1620,15 +1633,15 @@ These both can be proved only by \rul{Ty\_Con}.
 The $[[H]]$ in both judgments is the same, and so by \pref{lem:ctx-reg}
 and \pref{lem:determinacy-tycon}, we have unique $[[D1]]$, $[[D2]]$,
 and $[[H']]$ such that $[[S |-tc H : D1;D2;H']]$. We can thus
-see that $[[k1 = PI(D2[ss/dom(D1)]).H'{} ss]]$
-and $[[k2 = PI(D2[ss'/dom(D1)]).H'{} ss']]$.
+see that $[[k1 = MPI(D2[ss/dom(D1)]).H'{} ss]]$
+and $[[k2 = MPI(D2[ss'/dom(D1)]).H'{} ss']]$.
 The induction hypothesis gives us $[[ees']]$ such that, $\forall [[i]]$,
 $[[|si| ~>* eei' *<~ |si'|]]$.
-Choose $[[ee = PI (|D2|[ees'/dom(D1)]). H'{} ees']]$. We must show
+Choose $[[ee = MPI (|D2|[ees'/dom(D1)]). H'{} ees']]$. We must show
 the following:
 \begin{itemize}
-\item $[[PI (|D2|[|ss|/dom(D1)]). H'{} |ss| ~>* ee]]$
-\item $[[PI (|D2|[|ss'|/dom(D1)]). H'{} |ss'| ~>* ee]]$
+\item $[[MPI (|D2|[|ss|/dom(D1)]). H'{} |ss| ~>* ee]]$
+\item $[[MPI (|D2|[|ss'|/dom(D1)]). H'{} |ss'| ~>* ee]]$
 \end{itemize}
 Both of these follow from \pref{lem:red-star-subst}.
 \item[Case \rul{Co\_AppRel}:] We adopt the metavariable names from the rule:
@@ -1638,17 +1651,18 @@ Both of these follow from \pref{lem:red-star-subst}.
 We invert both $[[S;G |-ty t1 s1 : k1]]$ and $[[S;G |-ty t2 s2 : k2]]$.
 Both must be proved by \rul{Ty\_AppRel}. We thus get all of the following:
 \begin{itemize}
-\item $[[S;G |-ty t1 : PI a:Rel k3.k4]]$
+\item $[[S;G |-ty t1 : PI1 a:Rel k3.k4]]$
 \item $[[S;G |-ty s1 : k3]]$
 \item $[[k1 = k4[s1/a] ]]$
-\item $[[S;G |-ty t2 : PI a:Rel k5.k6]]$
+\item $[[S;G |-ty t2 : PI2 a:Rel k5.k6]]$
 \item $[[S;G |-ty s2 : k5]]$
 \item $[[k2 = k6[s2/a] ]]$.
 \end{itemize}
 The (kind) induction hypothesis gives us $[[ee1]]$ such that
-$[[PI a:Rel |k3|.|k4| ~>* ee1 *<~ PI a:Rel |k5|.|k6|]]$.
-\pref{lem:pi-red} gives us $[[ee3]]$ and $[[ee4]]$ such that
-$[[ee1 = PI a:Rel ee3.ee4]]$.
+$[[PI1 a:Rel |k3|.|k4| ~>* ee1 *<~ PI2 a:Rel |k5|.|k6|]]$.
+\pref{lem:pi-red} tells us $[[PI1 = PI2]]$ and
+gives us $[[ee3]]$ and $[[ee4]]$ such that
+$[[ee1 = PI1 a:Rel ee3.ee4]]$.
 The (type) induction hypothesis also gives us $[[ee2]]$ such that
 $[[|s1| ~>* ee2 *<~ |s2|]]$.
 Choose $[[ee = ee4[ee2/a] ]]$.
@@ -1678,11 +1692,10 @@ We adopt the metavariable names from the rule:
 \ottdruleCoXXFix{}
 \]
 Inversion on $[[S;G |-ty fix t1 : k1]]$ tells us
-$[[k1 = PI a:rel k3.k4]]$ and $[[S;G |-ty t1 : PI _:Rel k1.k1]]$.
-Similarly, inversion on $[[S;G |-ty fix t2 : k2]]$ tells us
-$[[k2 = PI a:rel k5.k6]]$ and $[[S;G |-ty t2 : PI _:Rel k2.k2]]$.
+that $[[S;G |-ty t1 : PI1 a:Rel k1.k1]]$. Similarly,
+we can see that $[[S;G |-ty t2 : PI2 a:Rel k2.k2]]$.
 The induction hypothesis gives us $[[ee0]]$ such that
-$[[|PI _:Rel k1.k1| ~>* ee0 *<~ |PI _:Rel k2.k2|]]$.
+$[[|PI1 a:Rel k1.k1| ~>* ee0 *<~ |PI2 a:Rel k2.k2|]]$.
 Use of \pref{lem:pi-red} gives us $[[ee1]]$ such that $[[|k1| ~>* ee1 *<~ |k2|]]$
 and we are done.
 \item[Case \rul{Co\_ArgK}:]
@@ -1750,8 +1763,8 @@ as are $[[ps]]$ and $[[ps']]$.
 We thus have, by \pref{lem:red-star-subst}
 that $[[s3]]$ and $[[s4]]$ are joinable. Inversion on
 $[[S;Rel(G) |-ty t3 t : s6]]$ and $[[S;Rel(G) |-ty t4 s : s7]]$ tell us
-that $[[s3]]$ and $[[s4]]$ must have the form $[[PI a:rel k1.s8]]$
-and $[[PI a:rel k2.s9]]$, where
+that $[[s3]]$ and $[[s4]]$ must have the form $[[PI1 a:rel k1.s8]]$
+and $[[PI2 a:rel k2.s9]]$, where
 $[[S;Rel(G) |-ty t : k1]]$ and $[[S;Rel(G) |-ty s : k2]]$. By
 \pref{lem:pi-red}, we can see that the joinability of
 $[[s3]]$ and $[[s4]]$ imply the joinability of
@@ -1900,7 +1913,9 @@ Finally, \pref{lem:erase-cons} gives us $[[t1 ! t2]]$ as desired.
 \label{lem:canon-form}
 \begin{enumerate}
 \item
-If $[[S;G |-ty v : PI d.k]]$, then either $[[v = \d.s]]$ or $[[v = H{ts} ps]]$.
+If $[[S;G |-ty v : UPI d.k]]$, then $[[v = \d.s]]$.
+\item
+If $[[S;G |-ty v : MPI d.k]]$, then $[[v = H{ts} ps]]$.
 \item
 If $[[S;G |-ty v : H{} ss]]$, then $[[v = H'{ss} ps]]$.
 \end{enumerate}
@@ -1950,7 +1965,7 @@ and we are done.
 \item[Case $[[t1 = v |> g]]$:] We wish to use \rul{S\_PushRel} but
 we must prove
 $[[S;Rel(G) |-co g : PI a:Rel k.s [Type{}]~[Type{}] PI a:Rel k'. s']]$
-(for some $[[a]]$, $[[k]]$, $[[s]]$, $[[k']]$, and $[[s']]$).
+(for some $[[PI]]$, $[[a]]$, $[[k]]$, $[[s]]$, $[[k']]$, and $[[s']]$).
 We know by inversion that $[[S;G |-ty v |> g : PI a:Rel k1.k2]]$.
 Further inversion gives us
 $[[S;Rel(G) |-co g : k0 [Type{}]~[Type{}] PI a:Rel k1.k2]]$ and
@@ -1995,9 +2010,9 @@ by \rul{S\_Trans}.
 $[[t = case_k t0 of alts]]$. Using the induction hypothesis on
 $[[t0]]$ gives us several cases:
 \begin{description}
-\item[Case $[[t0 = v]]$:] We see that $[[S;G |-ty v : PI D. H{} ss]]$
-(from a premise of \rul{Ty\_Case}). \pref{lem:canon-form} gives us two
-cases: (Note that it does not matter whether $[[length D = 0]]$ when
+\item[Case $[[t0 = v]]$:] We see that $[[S;G |-ty v : MPI D. H'{} ss]]$
+(from a premise of \rul{Ty\_Case}). \pref{lem:canon-form} tells us $[[t0 = H{ts} ps]]$.
+(Note that it does not matter whether $[[length D = 0]]$ when
 using \pref{canon-form}.)
 \begin{description}
 \item[Case $[[t0 = \ d.t1 ]]$:] 

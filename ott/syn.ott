@@ -113,6 +113,14 @@ bnd, d {{ tex \delta }} :: 'Bnd_' ::=
 | d [ theta ]                      :: M :: Subst
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  PIs  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+PI {{ tex \Pi }} :: 'Pi_' ::=
+| MPI            ::   :: Matchable
+| UPI            ::   :: Unmatchable
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -137,6 +145,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
   {{ tex [[H]] }}
 | PI D .  t                    :: M :: Pis
   {{ tex [[PI]] [[D]].\, [[t]] }}
+| MUPI D . t                   :: M :: Mupis
+  {{ tex [[MUPI]] [[D]].\, [[t]] }}
 | \ D . t                      :: M :: Lams
   {{ tex [[\]] [[D]].\, [[t]] }}
 % | t1 -> t2                     :: M :: Arrow
@@ -416,7 +426,9 @@ terminals :: 'terminals_' ::=
 | *<~                                  ::   :: ratsder {{ tex \mathrel{ {}^*{\leftsquigarrow} } }}
 | ~~>                                  ::   :: pushto  {{ tex \longrightsquigarrow }}
 | '//'                                 ::   :: sep     {{ tex \quad }}
-| PI                                   ::   :: Pi      {{ tex \Pi }}
+| MPI                                  ::   :: MPi     {{ tex \mpi }}
+| UPI                                  ::   :: UPi     {{ tex \upi }}
+| MUPI                                 ::   :: MUPi    {{ tex \mupi }}
 | |>                                   ::   :: Cast    {{ tex \rhd }}
 | ||>                                  ::   :: RCast   {{ tex \unrhd }}
 | <||                                  ::   :: LCast   {{ tex \unlhd }}
@@ -507,6 +519,8 @@ formula :: 'formula_' ::=
   | ps ~> ps' <~ ps''                  ::   :: diamond
   | ps ~>* ps'                         ::   :: many_red_star
   | ps ~>* ps' *<~ ps''                ::   :: confluence
+  | D contains no coercion bindings    ::   :: no_coercions
+    {{ tex [[D]] \text{ contains no coercion bindings} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -582,33 +596,6 @@ cast_kpush_arg(g;h)   === sym (argk 1 h) ;; g ;; argk 2 h
 % build_subst(Psi; a :rel k, D; theta) === build_subst(Psi, a |-> Psi_S;G(k); D; theta, a |> sym Psi_S;G(k) / a)
 % %% RAE: Out-of-scope contexts above and below.
 % build_subst(Psi; c:phi, D; theta)    === build_subst(Psi, c |-> Psi_S;G(phi); D; theta, nth 3 Psi(phi) ;; c ;; sym (nth 4 Psi(phi)) / c)
-
-% fun
-% promote _ S ; G ( g ) :: h :: promote_co
-%   {{ tex [[promote]]_{[[S]];[[G]]}([[g]]) }}
-
-% by
-% promote_S;G(c)         	       === kind c
-% promote_S;G(<t>)       	       === < typeKind_S;G(t) >
-% promote_S;G(sym g)     	       === sym promote_S;G(g)
-% promote_S;G(g1 ;; g2)  	       === promote_S;G(g1) ;; promote_S;G(g2)
-% promote_S;G(erase_h t1 t2)     === h
-% promote_S;G(g1 g2)             === promote_S;G(g1)@g2
-% promote_S;G(g (h1,h2))         === promote_S;G(g)@(h1,h2)
-% promote_S;G(PI a colon h.g)    === <Type[]>
-% promote_S;G(PI c:(h1,h2).g)    === <Type[]>
-% promote_S;G(case_h g of calts) === h
-% promote_S;G(\a :rel h. g)      === PI a:rel h. promote_S;G(g)
-% promote_S;G(\c:(h1,h2).g)      === PI c:(h1,h2). promote_S;G(g)
-% promote_S;G(fix g)             === argk promote_S;G(g)
-% promote_S;G(argk g)            === <Type[]>
-% promote_S;G(argk I g)          ===
-% promote_S;G(g@h)               === promote_S;G(g)@h  % <Type[]>
-% % RAE: This last one is borked. We need to distinguish the two @ signs.
-% promote_S;G(nth i g)           === % yech (RAE)
-% promote_S;G(kind g)            === <Type[]>
-% promote_S;G(step t)            === < typeKind_S;G(t) >
-% % This last one depends on preservation. SCW was right.
 
 funs
 Erase ::=

@@ -97,6 +97,30 @@ DESIGN DECISIONS:
    However, because consistency depends on regularity, making this change
    requires consistency to depend on preservation. This isn't harmful,
    but it all seems cleaner without this dependency.
+ - Need M/UPI to allow matching on partially applied things.
+ - Can't match on partially-applied GADT data constructors. See example below.
+ - The ArgK rules, the Res rules, and the Inst rules all require the same PI
+   to be used in both types in the proposition of a coercion. The coincidence
+   of the PIs is not strictly necessary -- all the language properties we prove
+   would remain true if we loosen this. However, the generality is never
+   required, as a coercion between two different PIs is impossible without
+   a bogus assumption. It seems simpler just to use the same PI on both sides,
+   so that is what we do. Generalizing would allow us to also generalize the
+   PushRel, PushIrrel, and CPush rules to allow different PIs on either side,
+   but why bother?
+
+Example about partially-applied GADT data constructors:
+
+data T' = K'
+data T = (T ~ T') => K
+
+K :: PI c : T ~ T'. T
+
+? :: T ~ T'
+PI c:(<T>,<T'>).c  :: (PI c:T~T'. T) ~ (PI c:T~T'. T')
+
+case K |> (PI c:T~T'. c) of
+  K' -> ...
 
 build_kpush_co:
 
@@ -163,5 +187,4 @@ Simplifications:
 TODO: "other alternatives do not match" needs to be in the typing rule,
       not the step rule.
 
-Stack:
-  new res rules
+

@@ -14,6 +14,7 @@
 \usepackage{graphicx}
 \usepackage{enumitem}
 \usepackage{supertabular}
+\usepackage{mathtools}
 
 % formatting macros
 \newcommand{\keyword}[1]{\textsf{\textbf{#1}}}
@@ -49,6 +50,15 @@
 \newcommand{\at}{@}
 \newcommand{\pipe}{|}
 \newcommand{\ok}{\ensuremath{\;\mathsf{ok}}}
+
+\makeatletter
+\newcommand{\raisemath}[1]{\mathpalette{\raisem@th{#1}}}
+\newcommand{\raisem@th}[3]{\raisebox{#1}[0pt][0pt]{$#2#3$}}
+\makeatother
+
+\newcommand{\upi}{\mathmakebox[0pt][l]{\raisemath{-1.1\height}{\tilde{\phantom{\Pi}}}}\Pi}
+\newcommand{\mpi}{\mathmakebox[0pt][l]{\raisemath{-1.15\height}{\bar{\phantom{\Pi}}}}\Pi}
+\newcommand{\mupi}{\mathmakebox[0pt][l]{\raisemath{-1.2\height}{\tilde{\phantom{\Pi}}}}\upi}
 
 \input{ottdefns}
 \newcommand{\rul}[1]{\textmd{\ottdrulename{#1}}}
