@@ -512,8 +512,6 @@ formula :: 'formula_' ::=
   | a \notin fvset                     ::   :: var_notin_set
   | t is not a value                   ::   :: not_value
     {{ tex [[t]] \text{ is not a value} }}
-  | other alternatives do not match H  ::   :: other_alts
-    {{ tex \text{other alternatives do not match } [[H]] }}
   | ps ~> ps'                          ::   :: many_red
   | alts1 ~> alts2                     ::   :: alts_red
   | ps ~> ps' <~ ps''                  ::   :: diamond

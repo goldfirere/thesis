@@ -184,7 +184,4 @@ Simplifications:
   the asymmetrical one-binder approach, as implemented.
 
 
-TODO: "other alternatives do not match" needs to be in the typing rule,
-      not the step rule.
-
 

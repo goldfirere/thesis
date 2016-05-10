@@ -1239,7 +1239,7 @@ so we are done.
 \begin{itemize}
 \item $[[t1 = case_k H{ss} ps0 of alts]]$
 \item $[[t2 = t4 ps0' o ]]$ where $[[H -> t3 \in alts]]$,
-$[[t3 ~> t4]]$, $[[ps0 ~> ps0']]$, and no other alternative matches.
+$[[t3 ~> t4]]$, and $[[ps0 ~> ps0']]$.
 \end{itemize}
 We must show that
 $[[case_k[ps/zs] H{ss[ps/zs]} ps0[ps/zs] of alts[ps/zs] ~> t4[ps'/zs] ps0'[ps'/zs] o ]]$.
@@ -1367,7 +1367,6 @@ We now have several cases:
 where $[[k ~> k']]$, $[[ss ~> ss']]$, $[[ps ~> ps']]$, and $[[ees ~> ees']]$
 (appealing to \pref{lem:app-red})
 \item $[[t2 = eei'' ps'' o ]]$, where $[[Hi = H]]$,
-no other alternative matches $[[H]]$,
 $[[eei ~> eei'']]$, and $[[ps ~> ps'']]$.
 \end{itemize}
 Using the induction hypothesis, we can get $[[eei''']]$ such that
@@ -1379,7 +1378,7 @@ repeated use of \rul{R\_AppRel}/\rul{R\_AppIrrel}/\rul{R\_CApp}.
 \item[Case \rul{R\_Match}/\rul{R\_Match}:] It must be that:
 \begin{itemize}
 \item $[[t0 = case_k H{ss} ps of alts]]$
-\item $[[alti = H -> k1]]$ where no other alternative matches $[[H]]$
+\item $[[alti = H -> k1]]$
 \item $[[t1 = k1' ps' o ]]$ where $[[k1 ~> k1']]$ and $[[ps ~> ps']]$.
 \item $[[t2 = k1'' ps'' o ]]$ where $[[k1 ~> k1'']]$ and $[[ps ~> ps'']]$.
 \end{itemize}
@@ -2010,11 +2009,12 @@ by \rul{S\_Trans}.
 $[[t = case_k t0 of alts]]$. Using the induction hypothesis on
 $[[t0]]$ gives us several cases:
 \begin{description}
-\item[Case $[[t0 = v]]$:] We see that $[[S;G |-ty v : MPI D. H'{} ss]]$
-(from a premise of \rul{Ty\_Case}). \pref{lem:canon-form} tells us $[[t0 = H{ts} ps]]$.
-(Note that it does not matter whether $[[length D = 0]]$ when
-using \pref{canon-form}.)
-\begin{description}
-\item[Case $[[t0 = \ d.t1 ]]$:] 
-
-
+\item[Case $[[t0 = v]]$:] We can derive the following:
+\begin{itemize}
+\item $[[S;G |-ty v : MPI D. H'{} ss]]$ (from a premise of \rul{Ty\_Case})
+\item $[[t0 = H{ts} ps]]$ (by \pref{lem:canon-form}). Note that it does not matter whether $[[length D = 0]]$ when
+using \pref{canon-form}.
+\item $[[S;G |-ty H{ts} ps : MPI D. H'{} ss]]$ (simple substitution)
+\item $[[S;G |-ty H{ts} : MUPI D0. k0]]$ (\pref{lem:app-inversion})
+\item $[[S;G |-vec ps : D0]]$ (same invocation of \pref{lem:appinversion})
+\item $[[S;G |-ty H{ts} ps : k0[ps/dom(D0)] ]]$

@@ -466,7 +466,7 @@ S;G |-s (\a:Irrel k.s1) {s2} --> s1[s2/a]
 ------------------------------- :: CBeta
 S;G |-s (\c:phi.s) g --> s[g/c]
 
-alti = H -> t0  // other alternatives do not match H
+alti = H -> t0 
 ---------------------------- :: Match
 S;G |-s case_k H{ts} ps of alts --> t0 ps <H{ts} ps>
 
@@ -605,7 +605,6 @@ t ~> t'
 (\o:phi.t) o ~> t'
 
 alti = H -> t0  // ps ~> ps' // t0 ~> t0'
-other alternatives do not match H
 ----------------------------------- :: Match
 case_k H{ts} ps of alts ~> t0' ps' o
 
