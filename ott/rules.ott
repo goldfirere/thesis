@@ -264,11 +264,15 @@ S;G |-co g : \c:t1 [k1]~[k2] t1'.s1 [k3]~[k4] \c:t2 [k5]~[k6] t2'.s2
 S;G |-co argk 2 g : t1' [k2]~[k6] t2'
 
 S;G |-co g : MUPI D1.t1 [Type{}]~[Type{}] MUPI D2.t2 //  length D1 = length D2 = n
+D1 contains no coercion bindings
+D2 contains no coercion bindings
 S;G |-ty t1 : Type{}  //  S;G |-ty t2 : Type{}
 --------------------------- :: Res
 S;G |-co res^n g : t1 [Type{}]~[Type{}] t2
 
 S;G |-co g : \D1.t1 [UPI D1.k1]~[UPI D2.k2] \D2.t2  // length D1 = length D2 = n
+D1 contains no coercion bindings
+D2 contains no coercion bindings
 S;G |-ty t1 : k1 // S;G |-ty t2 : k2
 ---------------------------- :: ResLam
 S;G |-co res^n g : t1 [k1]~[k2] t2
