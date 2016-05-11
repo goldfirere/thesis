@@ -575,14 +575,8 @@ k ~> k' // t ~> t'
 PI a :rel k. t ~> PI a :rel k'. t'
 
 phi ~> phi' // t ~> t'
------------------------------ :: PiCoGood
+----------------------------- :: PiCo
 PI o:phi. t ~> PI o:phi'. t'
-
-phi ~> phi'
-bad(S; G; g; phi0; phi)
---------------------------- :: PiCoBad
-PI o:phi. t ~> PI o:phi'. s
-
 
 k ~> k'  //  t ~> t'  //  ss ~> ss'
 ---------------- :: Case
@@ -619,6 +613,10 @@ case_k H{ts} ps of alts ~> t0' ps' o
 s ~> s' // k ~> k'
 ------------------- :: Unroll
 fix (\a:rel k.s) ~> s'[fix (\a:rel k'.s')/a]
+
+phi ~> phi' // bad(phi)
+--------------------------- :: PiCo_ExFalso
+PI o:phi. t ~> PI o:phi'. s
 
 defn
 phi ~> phi' :: :: RedPhi :: 'R_'
