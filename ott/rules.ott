@@ -23,9 +23,7 @@ t1 ! t2
 ------- :: TyCon
 H{ts} ps ! H{ts'} ps'
 
-%% Why don't combine these next two? Because we need the relevances
-%% to be the same.
-
+t ! t'
 ------------------------------ :: PiTy
 PI a:rel k. t ! PI a:rel k'.t'
 
@@ -572,9 +570,19 @@ t ~> t'
 ----------- :: CApp
 t o ~> t' o
 
-d ~> d'
----------------------------------------- :: Pi
-PI d. t ~> PI d'. s
+k ~> k' // t ~> t'
+--------------------------------------- :: PiTy
+PI a :rel k. t ~> PI a :rel k'. t'
+
+phi ~> phi' // t ~> t'
+----------------------------- :: PiCoGood
+PI o:phi. t ~> PI o:phi'. t'
+
+phi ~> phi'
+bad(S; G; g; phi0; phi)
+--------------------------- :: PiCoBad
+PI o:phi. t ~> PI o:phi'. s
+
 
 k ~> k'  //  t ~> t'  //  ss ~> ss'
 ---------------- :: Case
@@ -584,9 +592,9 @@ k ~> k'  // t ~> t'
 -------------- :: Lam
 \a:rel k.t ~> \a:rel k'.t'
 
-t ~> t'  // s ~> s' // k1 ~> k1' // k2 ~> k2'
+pih ~> phi'
 ----------------------- :: CLam
-\c:t (k1)~(k2) s.k ~> \c:t' (k1')~(k2') s'.k'
+\o:phi.t ~> \o:phi'.s
 
 t ~> t'
 --------------- :: Fix
@@ -613,17 +621,13 @@ s ~> s' // k ~> k'
 fix (\a:rel k.s) ~> s'[fix (\a:rel k'.s')/a]
 
 defn
-d ~> d' :: :: RedBnd :: 'R_'
-  {{ com Parallel reduction of binder }}
+phi ~> phi' :: :: RedPhi :: 'R_'
+  {{ com Parallel reduction of propositions }}
 by
 
-k ~> k'
---------------------- :: TyBinder
-a :rel k ~> a :rel k'
-
-s1 ~> s2 // t1 ~> t2 // k1 ~> k2 // k1' ~> k2'
----------- :: CoBinder
-o:s1 (k1)~(k1') t1 ~> o:s2 (k2)~(k2') t2
+t ~> t' // k1 ~> k1' // k2 ~> k2' // s ~> s'
+---------------------------------- :: Prop
+t (k1)~(k2) s ~> t' (k1')~(k2') s'
 
 defn
 g ~> g'  :: :: RedCo :: 'R_'

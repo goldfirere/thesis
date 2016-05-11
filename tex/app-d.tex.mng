@@ -1178,13 +1178,13 @@ are assumed to be erased of coercions, according to
 Assume $[[ps ~> ps']]$. We can then conclude:
 \begin{enumerate}
 \item $[[t[ps/zs] ~> t[ps'/zs] ]]$
-\item $[[d[ps/zs] ~> d[ps'/zs] ]]$
+\item $[[phi[ps/zs] ~> phi[ps'/zs] ]]$
 \end{enumerate} 
 \end{lemma}
 
 \begin{proof}
 By straightforward
-mutual induction on the structure of $[[t]]$/$[[d]]$.
+mutual induction on the structure of $[[t]]$/$[[phi]]$.
 %% \begin{description}
 %% \item[Case $[[t = a]]$:] By assumption.
 %% \item[Case $[[t = b]]$:] By \rul{R\_Refl}.
@@ -1192,12 +1192,13 @@ mutual induction on the structure of $[[t]]$/$[[d]]$.
 %% \item[Case $[[t = t1 t2]]$:] By induction and \rul{R\_AppRep}.
 %% \item[Case $[[t = t1 {t2}]]$:] By induction and \rul{R\_AppIrrel}.
 %% \item[Case $[[t = t0 o]]$:] By induction and \rul{R\_CApp}.
+%% \item[Case $[[t = PI a :rel k. s]]$:] By induction and \rul{R\_PiTy}
+%% \item[Case $[[t = PI c : phi. s]]$:] By induction and \rul{R\_PiCo}.
 %% \item[Case $[[t = PI d. s]]$:] By induction and \rul{R\_Pi}.
 %% \item[Case $[[t = case_k s of alts]]$:] By induction and \rul{R\_Case}.
 %% \item[Case $[[t = \d.s]]$:] By induction and \rul{R\_Lam} or \rul{R\_CLam}.
 %% \item[Case $[[t = fix s]]$:] By induction and \rul{R\_Fix}.
-%% \item[Case $[[d = a:rel k]]$:] By induction and \rul{R\_TyBinder}.
-%% \item[Case $[[d = o:phi]]$:] By \rul{R\_CoBinder}.
+%% \item[Case $[[phi = t (k1)~(k2) s]]$:] By induction and \rul{R\_Prop}.
 %% \end{description}
 \end{proof}
 
@@ -1206,12 +1207,12 @@ mutual induction on the structure of $[[t]]$/$[[d]]$.
 Assume $[[ps ~> ps']]$.
 \begin{enumerate}
 \item If $[[t1 ~> t2]]$, then $[[t1[ps/zs] ~> t2[ps'/zs] ]]$.
-\item If $[[d1 ~> d2]]$, then $[[d1[ps/zs] ~> d2[ps'/zs] ]]$.
+\item If $[[phi1 ~> phi2]]$, then $[[phi1[ps/zs] ~> phi2[ps'/zs] ]]$.
 \end{enumerate}
 \end{lemma}
 
 \begin{proof}
-By induction on $[[t1 ~> t2]]$/$[[d1 ~> d2]]$.
+By induction on $[[t1 ~> t2]]$/$[[phi1 ~> phi2]]$.
 
 \begin{description}
 \item[Case \rul{R\_Refl}:] By \pref{lem:red-subst}.
@@ -1795,7 +1796,7 @@ $[[ee ! ee]]$
 \end{lemma}
 
 \begin{proof}
-Case analysis on the structure of $[[ee]]$.
+By induction on the structure of $[[ee]]$.
 \end{proof}
 
 \begin{lemma}[Consistency is symmetric]
@@ -1804,7 +1805,7 @@ If $[[t1 ! t2]]$, then $[[t2 ! t1]]$.
 \end{lemma}
 
 \begin{proof}
-Case analysis on $[[t1 ! t2]]$.
+By induction on $[[t1 ! t2]]$.
 \end{proof}
 
 \begin{lemma}[Consistency of reduction]
@@ -1814,7 +1815,7 @@ an erased value and $[[ee1 ! ee2]]$.
 \end{lemma}
 
 \begin{proof}
-By induction analysis over $[[ee1 ~> ee2]]$.
+By induction over $[[ee1 ~> ee2]]$.
 \begin{description}
 \item[Case \rul{R\_Refl}:] By \pref{lem:cons-refl}.
 \item[Case \rul{R\_Con}:] Immediate.
@@ -1822,7 +1823,8 @@ By induction analysis over $[[ee1 ~> ee2]]$.
 be $[[H{ts} ps]]$. We are done by \pref{lem:app-red}.
 \item[Case \rul{R\_AppIrrel}:] Similar to previous case.
 \item[Case \rul{R\_CApp}:] Similar to previous case.
-\item[Case \rul{R\_Pi}:] By the definition of $[[~>]]$.
+\item[Case \rul{R\_PiTy}:] By induction.
+\item[Case \rul{R\_PiCo}:] Immediate.
 \item[Case \rul{R\_Case}:] Impossible.
 \item[Case \rul{R\_Lam}:] We adopt the metavariable names from the
 rule:
@@ -1831,7 +1833,7 @@ rule:
 \]
 If $[[rel = Rel]]$ the result is immediate. If not, then we are done
 by induction.
-\item[Case \rul{R\_Lam}:] Immediate.
+\item[Case \rul{R\_CLam}:] Immediate.
 \item[Case \rul{R\_Fix}:] Impossible.
 \item[Case \rul{R\_BetaRel}:] Impossible.
 \item[Case \rul{R\_BetaIrrel}:] Impossible.
@@ -1859,7 +1861,8 @@ $[[ee1 ! ee2]]$ and $[[ee2 ! ee3]]$, then $[[ee1 ! ee3]]$.
 \end{lemma}
 
 \begin{proof}
-Direct from the definition of $[[!]]$.
+By induction on the sum of the sizes of the derivations
+of $[[ee1 ! ee2]]$ and $[[ee2 ! ee3]]$.
 \end{proof}
 
 \begin{lemma}[Erasure/consistency]
@@ -1870,7 +1873,7 @@ If $[[|t1| ! |t2|]]$, then $[[t1 ! t2]]$.
 \begin{proof}
 If either $[[t1]]$ or $[[t2]]$ is not a value, the result is immediate.
 We thus assume both are values.
-Proceed by case analysis on the structure of $[[t1]]$.
+Proceed by induction on the structure of $[[t1]]$.
 
 \begin{description}
 \item[Case $[[t1 = a]]$:] Impossible.
@@ -1881,7 +1884,9 @@ impossible, as a cast is not a value. Thus $[[t2]]$ is headed by
 $[[H]]$ and we are done.
 \item[Case $[[t1 = s1 s2]]$:] For $[[t1]]$ to be a value, it must
 be headed by some constant $[[H]]$. Proceed as in the previous case.
-\item[Case $[[t1 = PI d.t]]$:] Similar to case for $[[H{ts} ]]$.
+\item[Case $[[t1 = PI a:rel k.t]]$:] Similar to case for $[[H{ts}]]$, but also
+using the induction hypothesis.
+\item[Case $[[t1 = PI c:phi.t]]$:] Similar to case for $[[H{ts} ]]$.
 \item[Case $[[t1 = t |> g]]$:] Impossible.
 \item[Case $[[t1 = g]]$:] Impossible.
 \item[Case $[[t1 = case_k t of alts]]$:] Impossible.

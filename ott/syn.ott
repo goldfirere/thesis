@@ -519,6 +519,8 @@ formula :: 'formula_' ::=
   | ps ~>* ps' *<~ ps''                ::   :: confluence
   | D contains no coercion bindings    ::   :: no_coercions
     {{ tex [[D]] \text{ contains no coercion bindings} }}
+  | bad ( S ; G ; g ; phi0 ; phi )     ::   :: bad_coercion
+    {{ tex \not\exists [[S]],[[G]],[[g]],[[phi0]] \text{ where } [[G]] \text{ contains no coercion bindings and } \lfloor [[phi0]] \rfloor = [[phi]] \text{ s.t.~} [[S]];[[G]] \vdashy{co} [[g]] : [[phi0]] }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

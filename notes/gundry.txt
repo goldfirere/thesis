@@ -14,3 +14,5 @@ Differences from Gundry's thesis.
 - My source-level type system will be bidirectional
 - Only one `case` in the source language
 
+- My type erasure property is stronger: his doesn't erase type-lambdas.
+- He has a more intricate consistency relation.
