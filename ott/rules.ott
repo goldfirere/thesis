@@ -125,7 +125,7 @@ S;G |-ty t |> g : k2
 S;Rel(G) |-ty k : Type{}  //  S;G |-ty t : s // s = MPI D. H{} ss
 forall i: S;G;s;t |-alt alti : k
 alts are exhaustive for H (wrt S)
-D contains no coercion bindings
+D contains no coercion assumptions
 ------------------------------ :: Case
 S;G |-ty case_k t of alts : k
 
@@ -264,15 +264,15 @@ S;G |-co g : \c:t1 [k1]~[k2] t1'.s1 [k3]~[k4] \c:t2 [k5]~[k6] t2'.s2
 S;G |-co argk 2 g : t1' [k2]~[k6] t2'
 
 S;G |-co g : MUPI D1.t1 [Type{}]~[Type{}] MUPI D2.t2 //  length D1 = length D2 = n
-D1 contains no coercion bindings
-D2 contains no coercion bindings
+D1 contains no coercion assumptions
+D2 contains no coercion assumptions
 S;G |-ty t1 : Type{}  //  S;G |-ty t2 : Type{}
 --------------------------- :: Res
 S;G |-co res^n g : t1 [Type{}]~[Type{}] t2
 
 S;G |-co g : \D1.t1 [UPI D1.k1]~[UPI D2.k2] \D2.t2  // length D1 = length D2 = n
-D1 contains no coercion bindings
-D2 contains no coercion bindings
+D1 contains no coercion assumptions
+D2 contains no coercion assumptions
 S;G |-ty t1 : k1 // S;G |-ty t2 : k2
 ---------------------------- :: ResLam
 S;G |-co res^n g : t1 [k1]~[k2] t2
@@ -638,3 +638,38 @@ by
 
 ------ :: ErasedCo
 o ~> o
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Goodness  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+JGood :: '' ::=
+
+defn
+good ( G ) :: :: GoodCtx :: 'G_'
+  {{ com Good contexts }}
+  {{ tex [[good]] ([[G]]) }}
+by
+
+----------- :: Nil
+good(empty)
+
+good(G)
+----------------- :: TyVar
+good(G, a :rel k)
+
+good(G) // good(phi)
+-------------- :: CoVar
+good(G, c:phi)
+
+defn
+good ( phi ) :: :: GoodProp :: 'G_'
+  {{ com Good propositions }}
+  {{ tex [[good]] ([[phi]]) }}
+by
+
+S;G |-co g : phi[ps/zs] // good(G)
+--------- :: Prop
+good(phi)
+

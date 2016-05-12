@@ -1067,7 +1067,7 @@ $[[(H{ts} ps) |> h]]$ matches that of $[[H{ts'} ps']]$,
 namely $[[MPI (D2[ts'/as][ps'/dom(D1)]). H'{} ts']]$.
 We can then derive these facts:
 \begin{itemize}
-\item $[[D2 contains no coercion bindings]]$ (from a premise to \rul{Ty\_Case})
+\item $[[D2 contains no coercion assumptions]]$ (from a premise to \rul{Ty\_Case})
 \item $[[S;G |-ty H{ts} ps : MPI (D2[ts/as][ps/dom(D1)]). H'{} ts]]$ (by inversion
 of the typing judgment on the redex)
 \item $[[S;G |-ty H{ts} : MPI (D1[ts/as],D2[ts/as]). H'{} ts]]$ (by \pref{lem:app-inversion}
@@ -1142,6 +1142,11 @@ This last judgment is what we are trying to prove; we are done.
 
 \section{Consistency}
 
+\begin{axiom}[Law of the Excluded Middle]
+\label{axm:lem}
+For any proposition $P$, either $P$ or $\neg P$.
+\end{axiom}
+
 \begin{definition}[Erasure]
 \label{defn:erasure}
 Define the erasure of a type $[[ee = |t|]]$ by the following function (including
@@ -1174,26 +1179,37 @@ are assumed to be erased of coercions, according to
 \end{itemize}
 \end{notation}
 
-\begin{notation}[Bad propositions]
-Let $[[phi]]$ be an erased proposition. Define $[[bad(phi)]]$ to mean the
-following:
-\[
-\not\exists [[S]],[[G]],[[g]],[[phi0]] \text{ where } [[G contains no coercion bindings]] \text{ and } [[|phi0| = phi]] \text{ s.t.~} [[S;G |-co g : phi0]]
-\]
-\end{notation}
+\begin{definition}[Good propositions]
+We say that $[[phi]]$ is a \emph{good proposition}
+when $[[good(phi)]]$ is satisfied.
+We extend this notion to erased propositions, as well.
+\end{definition}
+
+\begin{definition}[Bad propositions]
+A \emph{bad proposition} is any proposition that is not good. We say
+$[[bad(phi)]]$ when $[[phi]]$ is bad.
+\end{definition}
+
+\begin{definition}[Good contexts]
+We say that $[[G]]$ is a \emph{good context} when $[[good(G)]]$ is 
+satisfied.
+\end{definition}
 
 \begin{lemma}[Bad proposition substitution]
 \label{lem:bad-prop-subst}
-If $[[bad(phi)]]$, then $[[bad(phi[ps/zs])]]$.
+If $[[phi]]$ is an erased proposition and $[[bad(phi)]]$, then $[[bad(phi[ps/zs])]]$.
 \end{lemma}
 
 \begin{proof}
 We prove the contrapositive.
-That is, assume we have $[[S1;G1 |-co g1 : phi1]]$ where $[[|phi1| = phi[ps/zs] ]]$
-and $[[G1 contains no coercion bindings]]$, and we must find $[[S0]]$, $[[G1]]$,
-$[[g0]]$ and $[[phi0]]$ such that $[[G0 contains no coercion bindings]]$,
-$[[|phi0| = phi]]$, and $[[S0;G0 |-co g0 : phi0]]$.
-TODO.
+That is, assume we have $[[good(phi[ps/zs])]]$ and we must prove
+$[[good(phi)]]$. Inversion gives us
+$[[S1;G1 |=co o : phi[ps/zs][ps1/zs1] ]]$ where
+$[[good(G1)]]$, and we must find $[[S0]]$, $[[G0]]$
+such that $[[good(G0)]]$, $[[ps0]]$, and $[[zs0]]$,
+such that $[[S0;G0 |=co o : phi[ps0/zs0] ]]$.
+Choose $[[S0 = S1]]$, $[[G0 = G1]]$, $[[ps0 = ps,ps1]]$ and $[[zs0 = zs,zs1]]$.
+we are done.
 \end{proof}
 
 \begin{lemma}[Parallel reduction substitution] ~
@@ -1497,7 +1513,7 @@ If $[[PI o:phi.t ~> s]]$,
 then there exists $[[phi']]$ and $[[t']]$
 such that
 $[[s = PI o:phi'.t']]$ and $[[phi ~> phi']]$.
-Furthermore, if $\neg [[bad(phi)]]$, then $[[t ~> t']]$.
+Furthermore, if $[[good(phi)]]$, then $[[t ~> t']]$.
 \end{lemma}
 
 \begin{proof}
@@ -1567,23 +1583,35 @@ there exists an erased type $[[ee]]$ such that $[[|t1| ~>* ee *<~ |t2|]]$.
 
 \begin{lemma}[Completeness of type reduction] ~
 \label{lem:complete-red}
-If $[[G]]$ contains no coercion bindings and
+If $[[good(G)]]$ and
 $[[S;G |-co g : t1 (k1)~(k2) t2]]$, then:
 \begin{enumerate}
 \item There exists some
-erased type $[[ee]]$ such that $[[|t1| ~>* ee *<~ |t2|]]$.
-\item There exists some erased type $[[ee]]$ such that
-$[[|k1| ~>* ee *<~ |k2|]]$.
+erased type $[[ee]]$ and substitution $[[ps/zs]]$
+such that $[[|t1[ps/zs]| ~>* ee *<~ |t2[ps/zs]|]]$.
+\item There exists some erased type $[[ee]]$ and substitution $[[ps/zs]]$
+such that
+$[[|k1[ps/zs]| ~>* ee *<~ |k2[ps/zs]|]]$.
 \end{enumerate}
 \end{lemma}
 
 \begin{proof}
-By mutual induction. For the purposes of exposition, we present
+By induction on the sum of the sizes of the derivations of
+$[[S;G |-co g : t1 [k1]~[k2] t2]]$ and $[[good(G)]]$.
+For the purposes of exposition, we present
 the types cases separately from the kinds cases, but in a formal
 proof, they would be interleaved. First, the types cases:
 
 \begin{description}
-\item[Case \rul{Co\_Var}:] Impossible.
+\item[Case \rul{Co\_Var}:] We adopt the metavariable names
+from the rule:
+\[
+\ottdruleCoXXVar{}
+\]
+By $[[good(G)]]$, we know there must be a coercion
+$[[g]]$ such that $[[S';G' |-co g : phi[ps/zs] ]]$. We are done by
+induction on this derivation.
+TODO: Check rest of cases for new substitution conclusion.
 \item[Case \rul{Co\_Refl}:] Choose $[[ee = |t1|]]$ and we are done.
 \item[Case \rul{Co\_Sym}:] By induction.
 \item[Case \rul{Co\_Trans}:] Use the metavariable names from the rule:
@@ -1602,7 +1630,17 @@ either can be the common reduct.
 \item[Case \rul{Co\_AppIrrel}:] By induction and repeated use of \rul{R\_AppIrrel}.
 \item[Case \rul{Co\_CApp}:] By induction.
 \item[Case \rul{Co\_PiTy}:] By induction. 
-\item[Case \rul{Co\_PiCo}:] By induction. Note that we do not need
+\item[Case \rul{Co\_PiCo}:] We adopt the metavariable names from the rule:
+\[
+\ottdruleCoXXPiCo{}
+\]
+We have two cases here, discerned
+by using \pref{axm:lem} to decide whether or not $[[good(t1 [k3]~[k5] s1)]]$:
+\begin{description}
+\item[Case $[[good(t1 [k3]~[k5] s1)]]$:] 
+
+ In this case, 
+By induction. Note that we do not need
 the induction hypothesis to work on the typing derivation for the body of
 the $[[PI]]$ because of the looseness of \rul{R\_Pi}. The induction
 hypothesis is indeed inapplicable in the body because a coercion variable
@@ -1971,7 +2009,7 @@ using the induction hypothesis.
 
 \begin{lemma}[Consistency]
 \label{lem:consistency}
-If $[[G]]$ contains no coercion bindings and $[[S;G |-co g : t1 [k1]~[k2] t2]]$,
+If $[[G contains no coercion assumptions]]$ and $[[S;G |-co g : t1 [k1]~[k2] t2]]$,
 then $[[t1 ! t2]]$.
 \end{lemma}
 

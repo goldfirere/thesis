@@ -108,6 +108,7 @@ DESIGN DECISIONS:
    so that is what we do. Generalizing would allow us to also generalize the
    PushRel, PushIrrel, and CPush rules to allow different PIs on either side,
    but why bother?
+ - If axm:lem is kept, it must be thoroughly explained.
 
 Example about partially-applied GADT data constructors:
 

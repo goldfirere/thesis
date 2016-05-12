@@ -347,6 +347,8 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
 | ps / zs                           :: M :: Telescope
 | Psi _ lr                          :: M :: PsiLR
   {{ tex [[Psi]]_{[[lr]]} }}
+| ( theta )                         :: M :: Parens
+| theta1 \circ theta2               :: M :: Compose
 
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
@@ -469,6 +471,7 @@ terminals :: 'terminals_' ::=
 | Irrel                                ::   :: Irrel   {{ tex \mathsf{Irrel} }}
 | build_kpush_co                       ::   :: build   {{ tex \mathsf{build\_kpush\_co} }}
 | bad                                  ::   :: bad     {{ tex \mathsf{bad} }}
+| \circ                                ::   :: compose {{ tex \circ }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -519,7 +522,7 @@ formula :: 'formula_' ::=
   | ps ~>* ps'                         ::   :: many_red_star
   | ps ~>* ps' *<~ ps''                ::   :: confluence
   | D contains no coercion bindings    ::   :: no_coercions
-    {{ tex [[D]] \text{ contains no coercion bindings} }}
+    {{ tex [[D]] \text{ contains no coercion assumptions} }}
   | bad ( phi )                        ::   :: bad_coercion
     {{ tex [[bad]]([[phi]]) }}
 
