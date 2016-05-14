@@ -470,8 +470,8 @@ terminals :: 'terminals_' ::=
 | Rel                                  ::   :: Rel     {{ tex \mathsf{Rel} }}
 | Irrel                                ::   :: Irrel   {{ tex \mathsf{Irrel} }}
 | build_kpush_co                       ::   :: build   {{ tex \mathsf{build\_kpush\_co} }}
-| bad                                  ::   :: bad     {{ tex \mathsf{bad} }}
 | \circ                                ::   :: compose {{ tex \circ }}
+| ~#                                   ::   :: almost  {{ tex \mathrel{\tilde{\#} } }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -523,8 +523,7 @@ formula :: 'formula_' ::=
   | ps ~>* ps' *<~ ps''                ::   :: confluence
   | D contains no coercion bindings    ::   :: no_coercions
     {{ tex [[D]] \text{ contains no coercion assumptions} }}
-  | bad ( phi )                        ::   :: bad_coercion
-    {{ tex [[bad]]([[phi]]) }}
+  | c ~# g                             ::   :: almost_free
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -203,7 +203,7 @@ S;G |-co g1 {g2} : t1 {s1} [k1]~[k2] t2 {s2}
 S;G |-co g0 : t1 [k3]~[k4] t2
 S;G |-ty t1 g1 : k1 // S;G |-ty t2 g2 : k2
 -------------------------- :: CApp
-S;G |-co g1 (g1,g2) : t1 g1 [k1]~[k2] t2 g2
+S;G |-co g0 (g1,g2) : t1 g1 [k1]~[k2] t2 g2
 
 S;G |-co h : k1 (Type{})~(Type{}) k2
 S;G,a:Rel k1 |-co g : s1 (Type{})~(Type{}) s2
@@ -211,7 +211,7 @@ S;G,a:Rel k1 |-co g : s1 (Type{})~(Type{}) s2
 S;G |-co PI a :rel h. g : (PI a:rel k1.s1) [Type{}]~[Type{}] (PI a:rel k2.(s2[a |> sym h/a]))
 
 S;G |-co h1 : t1 [k3]~[k4] t2  //  S;G |-co h2 : s1 [k5]~[k6] s2
-S;G,c:t1 [k3]~[k5] s1 |-co g : k1 (Type{})~(Type{}) k2
+S;G,c:t1 [k3]~[k5] s1 |-co g : k1 (Type{})~(Type{}) k2  //  c ~# g
 ------------------------------ :: PiCo
 S;G |-co PI c:(h1,h2).g : (PI c:t1 [k3]~[k5] s1. k1) [Type{}]~[Type{}] (PI c:t2 [k4]~[k6] s2.(k2[h1 ;; c ;; sym h2/c]))
 
@@ -230,7 +230,7 @@ S;G, a :rel k1 |-ty t1 : s1 // S;G, a:rel k1 |-ty t2 : s2
 S;G |-co \a :rel h . g : \a:rel k1.t1 [UPI a:rel k1.s1]~[UPI a:rel k2.(s2[a |> sym h/a])] \a:rel k2.(t2[a |> sym h/a])
 
 S;G |-co h1 : t1 [k3]~[k4] t2 // S;G |-co h2 : s1 [k5]~[k6] s2
-S;G,c:t1 [k3]~[k5] s1 |-co g : k1 [k7]~[k8] k2
+S;G,c:t1 [k3]~[k5] s1 |-co g : k1 [k7]~[k8] k2 // c ~# g
 ------------------------------- :: CLam
 S;G |-co \c:(h1,h2).g : (\c:t1 [k3]~[k5] s1.k1) [UPI c: t1 [k3]~[k5] s1. k7]~[UPI c:t2 [k4]~[k6] s2.(k8[h1 ;; c ;; sym h2 / c])] (\c:t2 [k4]~[k6] s2.(k2[h1 ;; c ;; sym h2 / c]))
 
@@ -574,25 +574,17 @@ t ~> t'
 ----------- :: CApp
 t o ~> t' o
 
-k ~> k' // t ~> t'
---------------------------------------- :: PiTy
-PI a :rel k. t ~> PI a :rel k'. t'
-
-phi ~> phi' // t ~> t'
------------------------------ :: PiCo
-PI o:phi. t ~> PI o:phi'. t'
+d ~> d' // t ~> t'
+------------------ :: Pi
+PI d.t ~> PI d'.t'
 
 k ~> k'  //  t ~> t'  //  ss ~> ss'
 ---------------- :: Case
 case_k t of list of H -> s ~> case_k' t' of list of H -> s'
 
-k ~> k'  // t ~> t'
+d ~> d' // t ~> t'
 -------------- :: Lam
-\a:rel k.t ~> \a:rel k'.t'
-
-pih ~> phi'
------------------------ :: CLam
-\o:phi.t ~> \o:phi'.s
+\d.t ~> \d'.t'
 
 t ~> t'
 --------------- :: Fix
@@ -618,18 +610,18 @@ s ~> s' // k ~> k'
 ------------------- :: Unroll
 fix (\a:rel k.s) ~> s'[fix (\a:rel k'.s')/a]
 
-phi ~> phi' // bad(phi)
---------------------------- :: PiCo_ExFalso
-PI o:phi. t ~> PI o:phi'. s
-
 defn
-phi ~> phi' :: :: RedPhi :: 'R_'
-  {{ com Parallel reduction of propositions }}
+d ~> d' :: :: RedBnd :: 'R_'
+  {{ com Parallel reduction of binders }}
 by
 
+k ~> k'
+--------------------- :: TyBinder
+a :rel k ~> a :rel k'
+
 t ~> t' // k1 ~> k1' // k2 ~> k2' // s ~> s'
----------------------------------- :: Prop
-t (k1)~(k2) s ~> t' (k1')~(k2') s'
+---------------------------------- :: CoBinder
+o:t (k1)~(k2) s ~> o:t' (k1')~(k2') s'
 
 defn
 g ~> g'  :: :: RedCo :: 'R_'
@@ -638,38 +630,4 @@ by
 
 ------ :: ErasedCo
 o ~> o
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  Goodness  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-defns
-JGood :: '' ::=
-
-defn
-good ( G ) :: :: GoodCtx :: 'G_'
-  {{ com Good contexts }}
-  {{ tex [[good]] ([[G]]) }}
-by
-
------------ :: Nil
-good(empty)
-
-good(G)
------------------ :: TyVar
-good(G, a :rel k)
-
-good(G) // good(phi)
--------------- :: CoVar
-good(G, c:phi)
-
-defn
-good ( phi ) :: :: GoodProp :: 'G_'
-  {{ com Good propositions }}
-  {{ tex [[good]] ([[phi]]) }}
-by
-
-S;G |-co g : phi[ps/zs] // good(G)
---------- :: Prop
-good(phi)
 

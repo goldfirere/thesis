@@ -33,6 +33,13 @@ a rule during a proof. This does not change the meaning of the rule;
 it is merely a typesetting convenience to elide the kinds.
 \end{notation}
 
+\begin{notation}
+\label{note:almost-free}
+Define $[[c ~# g]]$ to mean that the coercion variable $[[c]]$
+appears nowhere in $[[g]]$ except, perhaps, in one of the types
+related by an $[[erase]]$ coercion.
+\end{notation}
+
 \section{Structural properties}
 
 \subsection{Relevant contexts}
@@ -1142,11 +1149,6 @@ This last judgment is what we are trying to prove; we are done.
 
 \section{Consistency}
 
-\begin{axiom}[Law of the Excluded Middle]
-\label{axm:lem}
-For any proposition $P$, either $P$ or $\neg P$.
-\end{axiom}
-
 \begin{definition}[Erasure]
 \label{defn:erasure}
 Define the erasure of a type $[[ee = |t|]]$ by the following function (including
@@ -1164,10 +1166,10 @@ auxiliary functions):\\[1ex]
 \end{definition}
 
 \begin{notation}[Erased types in consistency proof]
-In all lemmas and proofs written from here until the completeness
-of the rewrite relation (\pref{lem:complete-red}), all types
-are assumed to be erased of coercions, according to
-\pref{defn:erasure}.
+The rewrite relation $[[~>]]$ is defined only over \emph{erased}
+types. We use a convention that the occurrence of a metavariable
+in a mention of the $[[~>]]$ relation indicates that the metavariable
+represents an erased element.
 \end{notation}
 
 \begin{notation}[Reduction] ~
@@ -1179,45 +1181,12 @@ are assumed to be erased of coercions, according to
 \end{itemize}
 \end{notation}
 
-\begin{definition}[Good propositions]
-We say that $[[phi]]$ is a \emph{good proposition}
-when $[[good(phi)]]$ is satisfied.
-We extend this notion to erased propositions, as well.
-\end{definition}
-
-\begin{definition}[Bad propositions]
-A \emph{bad proposition} is any proposition that is not good. We say
-$[[bad(phi)]]$ when $[[phi]]$ is bad.
-\end{definition}
-
-\begin{definition}[Good contexts]
-We say that $[[G]]$ is a \emph{good context} when $[[good(G)]]$ is 
-satisfied.
-\end{definition}
-
-\begin{lemma}[Bad proposition substitution]
-\label{lem:bad-prop-subst}
-If $[[phi]]$ is an erased proposition and $[[bad(phi)]]$, then $[[bad(phi[ps/zs])]]$.
-\end{lemma}
-
-\begin{proof}
-We prove the contrapositive.
-That is, assume we have $[[good(phi[ps/zs])]]$ and we must prove
-$[[good(phi)]]$. Inversion gives us
-$[[S1;G1 |=co o : phi[ps/zs][ps1/zs1] ]]$ where
-$[[good(G1)]]$, and we must find $[[S0]]$, $[[G0]]$
-such that $[[good(G0)]]$, $[[ps0]]$, and $[[zs0]]$,
-such that $[[S0;G0 |=co o : phi[ps0/zs0] ]]$.
-Choose $[[S0 = S1]]$, $[[G0 = G1]]$, $[[ps0 = ps,ps1]]$ and $[[zs0 = zs,zs1]]$.
-we are done.
-\end{proof}
-
 \begin{lemma}[Parallel reduction substitution] ~
 \label{lem:red-subst}
 Assume $[[ps ~> ps']]$. We can then conclude:
 \begin{enumerate}
 \item $[[t[ps/zs] ~> t[ps'/zs] ]]$
-\item $[[phi[ps/zs] ~> phi[ps'/zs] ]]$
+\item $[[d[ps/zs] ~> d[ps'/zs] ]]$
 \end{enumerate} 
 \end{lemma}
 
@@ -1231,12 +1200,12 @@ mutual induction on the structure of $[[t]]$/$[[phi]]$.
 %% \item[Case $[[t = t1 t2]]$:] By induction and \rul{R\_AppRep}.
 %% \item[Case $[[t = t1 {t2}]]$:] By induction and \rul{R\_AppIrrel}.
 %% \item[Case $[[t = t0 o]]$:] By induction and \rul{R\_CApp}.
-%% \item[Case $[[t = PI a :rel k. s]]$:] By induction and \rul{R\_PiTy}
-%% \item[Case $[[t = PI c : phi. s]]$:] By induction and \rul{R\_PiCo}.
+%% \item[Case $[[t = PI d. s]]$:] By induction and \rul{R\_Pi}
 %% \item[Case $[[t = case_k s of alts]]$:] By induction and \rul{R\_Case}.
-%% \item[Case $[[t = \d.s]]$:] By induction and \rul{R\_Lam} or \rul{R\_CLam}.
+%% \item[Case $[[t = \d.s]]$:] By induction and \rul{R\_Lam}.
 %% \item[Case $[[t = fix s]]$:] By induction and \rul{R\_Fix}.
-%% \item[Case $[[phi = t (k1)~(k2) s]]$:] By induction and \rul{R\_Prop}.
+%% \item[Case $[[d = a :rel k]]$:] By induction and \rul{R\_TyBinder}.
+%% \item[Case $[[d = o : t1 (k1)~(k2) t2]]$:] By induction and \rul{R\_CoBinder}
 %% \end{description}
 \end{proof}
 
@@ -1245,7 +1214,7 @@ mutual induction on the structure of $[[t]]$/$[[phi]]$.
 Assume $[[ps ~> ps']]$.
 \begin{enumerate}
 \item If $[[t1 ~> t2]]$, then $[[t1[ps/zs] ~> t2[ps'/zs] ]]$.
-\item If $[[phi1 ~> phi2]]$, then $[[phi1[ps/zs] ~> phi2[ps'/zs] ]]$.
+\item If $[[d1 ~> d2]]$, then $[[d1[ps/zs] ~> d2[ps'/zs] ]]$.
 \end{enumerate}
 \end{lemma}
 
@@ -1309,7 +1278,6 @@ Choose $[[t5 = t4[ps'/zs] ]]$ and $[[k3 = k2[ps'/zs] ]]$.
 It remains only to show that $[[t3[ps/zs] ~> t4[ps'/zs] ]]$
 and $[[k1[ps/zs] ~> k2[ps'/zs] ]]$, both of which follow from the
 induction hypothesis. We are done.
-\item[Case \rul{R\_PiCo\_ExFalso}:] By induction and \pref{lem:bad-prop-subst}.
 \end{description}
 \end{proof}
 
@@ -1333,25 +1301,16 @@ and $[[ps ~> ps']]$.
 Straightforward induction on the structure of $[[s0 = H{ts} ps]]$.
 \end{proof}
 
-\begin{lemma}[Bad proposition reduction]
-\label{lem:bad-prop-red}
-If $[[phi ~> phi']]$ and $[[bad(phi)]]$, then $[[bad(phi')]]$.
-\end{lemma}
-
-\begin{proof}
-TODO
-\end{proof}
-
 \begin{lemma}[Local diamond]
 \label{lem:local-diamond}
-Let $[[ti]]$ denote an erased type and $[[phii]]$ an erased proposition.
+Let $[[ti]]$ denote an erased type and $[[di]]$ an erased binder.
 \begin{enumerate}
 \item
 If $[[t0 ~> t1]]$ and $[[t0 ~> t2]]$, then there exists $[[t3]]$ such
 that $[[t1 ~> t3 <~ t2]]$.
 \item
-If $[[phi0 ~> phi1]]$ and $[[phi0 ~> phi2]]$, then there exists $[[phi3]]$
-such that $[[phi1 ~> phi3 <~ phi2]]$.
+If $[[d0 ~> d1]]$ and $[[d0 ~> d2]]$, then there exists $[[d3]]$
+such that $[[d1 ~> d3 <~ d2]]$.
 \end{enumerate}
 \end{lemma}
 
@@ -1411,16 +1370,7 @@ Choose $[[t3 = s6]]$. We must show $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$.
 The first is by \rul{R\_CBeta}. The second is immediate.
 \item[Case \rul{R\_CBeta}/\rul{R\_CBeta}:] By induction.
 \end{description}
-\item[Case $[[t0 = PI a :rel k. s0]]$:] By induction and \rul{R\_PiTy}.
-\item[Case $[[t0 = PI c:phi.s0]]$:] We now have several cases:
-\begin{description}
-\item[Case \rul{R\_PiCo}/\rul{R\_PiCo}:] By induction and \rul{R\_PiCo}.
-\item[Case \rul{R\_PiCo}/\rul{R\_PiCo\_ExFalso}:] We know that
-$[[t1]]$ can step by \rul{R\_PiCo\_ExFalso} by \pref{lem:bad-prop-red}.
-We are done by a use of the induction hypothesis.
-\item[Case \rul{R\_PiCo\_ExFalso}/\rul{R\_PiCo\_ExFalso}:]
-Similar to previous case, again using \pref{lem:bad-prop-red}.
-\end{description}
+\item[Case $[[t0 = PI d. s0]]$:] By induction and \rul{R\_Pi}.
 \item[Case $[[t0 = case_k s0 of alts]]$:]
 We now have several cases:
 \begin{description}
@@ -1454,8 +1404,7 @@ The induction hypothesis gives us $[[k1''']]$ and $[[ps''']]$ such that:
 \end{itemize}
 Choose $[[t3 = k1'''[ps'''/zs] ]]$ and we are done by \pref{lem:red-subst-par}.
 \end{description}
-\item[Case $[[t0 = \a :rel k0.s0]]$:] By induction and \rul{R\_Lam}.
-\item[Case $[[t0 = \c:phi.s0]]$:] By induction and \rul{R\_CLam}.
+\item[Case $[[t0 = \d0.s0]]$:] By induction and \rul{R\_Lam}.
 \item[Case $[[t0 = fix s0]]$:] We have several cases:
 \begin{description}
 \item[Case \rul{R\_Fix}/\rul{R\_Fix}:] By induction.
@@ -1482,7 +1431,8 @@ $[[k2 ~> k4 <~ k3]]$ and $[[s2 ~> s4 <~ s3]]$.
 Choose $[[t3 = s4[fix (\a:rel k4.s4)/a] ]]$ and we are done
 by \pref{lem:red-subst-par}.
 \end{description}
-\item[Case $[[phi0 = s1 (k1)~(k2) s2]]$:] By induction and \rul{R\_Prop}.
+\item[Case $[[d0 = a:rel k0]]$:] By induction and \rul{R\_TyBinder}.
+\item[Case $[[d0 = o:t1 [k1]~[k2] t1]]$:] By induction and \rul{R\_CoBinder}.
 \end{description}
 \end{proof}
 
@@ -1497,48 +1447,24 @@ $[[t4]]$ such that $[[t2 ~>* t4 *<~ t3]]$.
 Consequence of \pref{lem:local-diamond}.
 \end{proof}
 
-\begin{lemma}[$[[PI]]$-reduction (types)]
-\label{lem:pi-red-type}
-If $[[PI a:rel k.t ~> s]]$, then there exist $[[k']]$ and $[[t']]$
-such that $[[s = PI a:rel k'.t']]$, $[[k ~> k']]$, and $[[t ~> t']]$.
+\begin{lemma}[$[[PI]]$-reduction]
+\label{lem:pi-red}
+If $[[PI d.t ~> s]]$, then there exist $[[d']]$ and $[[t']]$
+such that $[[s = PI d'.t']]$, $[[d ~> d']]$, and $[[t ~> t']]$.
 \end{lemma}
 
 \begin{proof}
-Case anlysis on $[[PI a:rel k.t ~> s]]$.
+Case anlysis on $[[PI d.t ~> s]]$.
 \end{proof}
 
-\begin{lemma}[$[[PI]]$-reduction (coercions)]
-\label{lem:pi-red-co}
-If $[[PI o:phi.t ~> s]]$,
-then there exists $[[phi']]$ and $[[t']]$
-such that
-$[[s = PI o:phi'.t']]$ and $[[phi ~> phi']]$.
-Furthermore, if $[[good(phi)]]$, then $[[t ~> t']]$.
+\begin{lemma}[$[[\]]$-reduction]
+\label{lem:lam-red}
+If $[[\d.t ~> s]]$, then there exist $[[d']]$ and $[[t']]$
+such that $[[s = \d'.t']]$, $[[d ~> d']]$, and $[[t ~> t']]$.
 \end{lemma}
 
 \begin{proof}
-Case analysis on $[[PI o:phi.t ~> s]]$.
-\end{proof}
-
-\begin{lemma}[$[[\]]$-reduction (types)]
-\label{lem:lam-red-type}
-If $[[\ a:rel k.t ~> s]]$, then there exist $[[k']]$ and $[[t']]$
-such that $[[s = \ a:rel k'.t']]$, $[[k ~> k']]$, and $[[t ~> t']]$.
-\end{lemma}
-
-\begin{proof}
-Case anlysis on $[[\ a:rel k.t ~> s]]$.
-\end{proof}
-
-\begin{lemma}[$[[\]]$-reduction (coercions)]
-\label{lem:lam-red-co}
-TODO: Make this like lem:pi-red-co.
-If $[[ \o:phi.t ~> s]]$, then there exist $[[phi']]$ and $[[t']]$
-such that $[[s = \o:phi'.t']]$ and $[[phi ~> phi']]$.
-\end{lemma}
-
-\begin{proof}
-Case analysis on $[[ \o:phi.t ~> s]]$.
+Case anlysis on $[[\d.t ~> s]]$.
 \end{proof}
 
 \begin{lemma}[Coercion substitution/erasure]
@@ -1583,35 +1509,26 @@ there exists an erased type $[[ee]]$ such that $[[|t1| ~>* ee *<~ |t2|]]$.
 
 \begin{lemma}[Completeness of type reduction] ~
 \label{lem:complete-red}
-If $[[good(G)]]$ and
-$[[S;G |-co g : t1 (k1)~(k2) t2]]$, then:
+If $[[S;G |-co g : t1 (k1)~(k2) t2]]$ and $[[c ~# g]]$ for every $[[c:phi \in G]]$,
+then:
 \begin{enumerate}
 \item There exists some
-erased type $[[ee]]$ and substitution $[[ps/zs]]$
-such that $[[|t1[ps/zs]| ~>* ee *<~ |t2[ps/zs]|]]$.
-\item There exists some erased type $[[ee]]$ and substitution $[[ps/zs]]$
+erased type $[[ee]]$
+such that $[[|t1| ~>* ee *<~ |t2|]]$.
+\item There exists some erased type $[[ee]]$
 such that
-$[[|k1[ps/zs]| ~>* ee *<~ |k2[ps/zs]|]]$.
+$[[|k1| ~>* ee *<~ |k2|]]$.
 \end{enumerate}
 \end{lemma}
 
 \begin{proof}
-By induction on the sum of the sizes of the derivations of
-$[[S;G |-co g : t1 [k1]~[k2] t2]]$ and $[[good(G)]]$.
+By induction the typing derivation.
 For the purposes of exposition, we present
 the types cases separately from the kinds cases, but in a formal
 proof, they would be interleaved. First, the types cases:
 
 \begin{description}
-\item[Case \rul{Co\_Var}:] We adopt the metavariable names
-from the rule:
-\[
-\ottdruleCoXXVar{}
-\]
-By $[[good(G)]]$, we know there must be a coercion
-$[[g]]$ such that $[[S';G' |-co g : phi[ps/zs] ]]$. We are done by
-induction on this derivation.
-TODO: Check rest of cases for new substitution conclusion.
+\item[Case \rul{Co\_Var}:] Impossible.
 \item[Case \rul{Co\_Refl}:] Choose $[[ee = |t1|]]$ and we are done.
 \item[Case \rul{Co\_Sym}:] By induction.
 \item[Case \rul{Co\_Trans}:] Use the metavariable names from the rule:
@@ -1629,56 +1546,47 @@ either can be the common reduct.
 \item[Case \rul{Co\_AppRel}:] By induction and repeated use of \rul{R\_AppRel}.
 \item[Case \rul{Co\_AppIrrel}:] By induction and repeated use of \rul{R\_AppIrrel}.
 \item[Case \rul{Co\_CApp}:] By induction.
-\item[Case \rul{Co\_PiTy}:] By induction. 
-\item[Case \rul{Co\_PiCo}:] We adopt the metavariable names from the rule:
-\[
-\ottdruleCoXXPiCo{}
-\]
-We have two cases here, discerned
-by using \pref{axm:lem} to decide whether or not $[[good(t1 [k3]~[k5] s1)]]$:
-\begin{description}
-\item[Case $[[good(t1 [k3]~[k5] s1)]]$:] 
-
- In this case, 
-By induction. Note that we do not need
-the induction hypothesis to work on the typing derivation for the body of
-the $[[PI]]$ because of the looseness of \rul{R\_Pi}. The induction
-hypothesis is indeed inapplicable in the body because a coercion variable
-is in scope there.
+\item[Case \rul{Co\_PiTy}:] By induction. Note that the substitution in
+the conclusion is erased by coercion erasure and so poses no complications.
+\item[Case \rul{Co\_PiCo}:] By induction. Note that we need the
+$[[c ~# g]]$ premise of \rul{Co\_PiCo} in order to use the induction
+hypothesis here. Once again, the substitution in the conclusion causes no
+bother.
 \item[Case \rul{Co\_Case}:] By induction and \rul{R\_Case}.
 \item[Case \rul{Co\_Lam}:] Similar to \rul{Co\_PiTy}, noting that the
   substitution in the result of \rul{Co\_Lam} is erased by coercion erasure
   and so poses no complications.
-\item[Case \rul{Co\_CLam}:] Similar to \rul{Co\_PiCo}.
+\item[Case \rul{Co\_CLam}:] Similar to \rul{Co\_PiCo}. Once again, the
+premise of $[[c ~# g]]$ is critical.
 \item[Case \rul{Co\_Fix}:] By induction and repeated use of \rul{R\_Fix}.
 \item[Case \rul{Co\_ArgK}:]
 The induction hypothesis gives us $[[ee0]]$ such that
 $[[|PI a:rel k1.s1| ~>* ee0 *<~ |PI a:rel k2.s2|]]$.
-By repeated use of \pref{lem:pi-red-type}, we see that
+By repeated use of \pref{lem:pi-red}, we see that
 $[[ee0 = PI a:rel k3.s3]]$ such that $[[|k1| ~>* k3 *<~ |k2|]]$
 and $[[|s1| ~>* s3 *<~ |s2|]]$. Thus $[[k3]]$ is a reduct of 
 $[[|k1|]]$ and $[[|k2|]]$ as desired.
 \item[Case \rul{Co\_CArgK1}:]
-Like previous case, but appealing to \pref{lem:pi-red-co}.
+Like previous case, but appealing to \pref{lem:pi-red}.
 \item[Case \rul{Co\_CArgK2}:]
 Like previous case.
 \item[Case \rul{Co\_ArgKLam}:]
-Like case \rul{Co\_ArgK}, but appealing to \pref{lem:lam-red-type}.
+Like case \rul{Co\_ArgK}, but appealing to \pref{lem:lam-red}.
 \item[Case \rul{Co\_CArgKLam1}:]
-Like previous case, but appealing to \pref{lem:lam-red-co}.
+Like previous case.
 \item[Case \rul{Co\_CArgKLam2}:]
 Like previous case.
 \item[Case \rul{Co\_Res}:]
-By induction and \pref{lem:pi-red-type}, noting that the fact that the lack
-of coercion bindings makes \pref{lem:pi-red-type} applicable.
+By induction and \pref{lem:pi-red}, noting that the fact that the lack
+of coercion bindings makes \pref{lem:pi-red} applicable.
 \item[Case \rul{Co\_ResLam}:]
-By induction and \pref{lem:lam-red-type}.
+By induction and \pref{lem:lam-red}.
 \item[Case \rul{Co\_InstRel}:]
 We use the metavariable names from the rule:
 \[
 \ottdruleCoXXInstRel{}
 \]
-The induction hypothesis (along with \pref{lem:pi-red-type})
+The induction hypothesis (along with \pref{lem:pi-red})
 gives us $[[ee0]]$ and $[[ee1]]$ such that
 $[[|s1| ~>* ee0 *<~ |s2|]]$ and $[[|t1| ~>* ee1 *<~ |t2|]]$.
 \pref{lem:red-star-subst} (with \pref{lem:subst-erase}) then tells us that
@@ -1686,13 +1594,13 @@ $[[|s1[t1/a]| ~>* ee0[ee1/a] *<~ |s2[t2/a]|]]$ as desired.
 \item[Case \rul{Co\_InstIrrel}:]
 Similar to previous case.
 \item[Case \rul{Co\_CInst}:]
-TODO: borked borked botked.
+Similar to previous case.
 \item[Case \rul{Co\_InstLamRel}:]
-Like case \rul{Co\_Inst}, but appealing to \pref{lem:lam-red-type}.
+Like case \rul{Co\_Inst}, but appealing to \pref{lem:lam-red}.
 \item[Case \rul{Co\_InstLamIrrel}:]
 Like previous case.
 \item[Case \rul{Co\_CInstLam}:]
-TODO: This is borked too.
+Like previous case.
 \item[Case \rul{Co\_NthRel}:]
 By induction and \pref{lem:app-red}.
 \item[Case \rul{Co\_NthIrrel}:]
@@ -1772,7 +1680,7 @@ Both must be proved by \rul{Ty\_AppRel}. We thus get all of the following:
 \end{itemize}
 The (kind) induction hypothesis gives us $[[ee1]]$ such that
 $[[PI1 a:Rel |k3|.|k4| ~>* ee1 *<~ PI2 a:Rel |k5|.|k6|]]$.
-\pref{lem:pi-red-type} tells us $[[PI1 = PI2]]$ and
+\pref{lem:pi-red} tells us $[[PI1 = PI2]]$ and
 gives us $[[ee3]]$ and $[[ee4]]$ such that
 $[[ee1 = PI1 a:Rel ee3.ee4]]$.
 The (type) induction hypothesis also gives us $[[ee2]]$ such that
@@ -1793,11 +1701,12 @@ We adopt the metavariable names from the rule:
 \[
 \nosupp{\ottdruleCoXXLam{}}
 \]
-Note that due to the looseness of \rul{R\_Lam}, we need only show
-that $[[k1]]$ and $[[k2]]$ are joinable. We get this fact by
-the induction hypothesis, and so we are done by \pref{lem:red-star-subst}.
+The induction hypothesis tells us both that $[[k1]]$ and $[[k2]]$
+are joinable and also that $[[s1]]$ and $[[s2]]$ are joinable.
+We are done by \rul{R\_Pi}.
 \item[Case \rul{Co\_CLam}:]
-Similar to previous case.
+Similar to previous case, again requiring the $[[c ~# g]]$ condition
+in order to use the induction hypothesis.
 \item[Case \rul{Co\_Fix}:]
 We adopt the metavariable names from the rule:
 \[
@@ -1808,7 +1717,7 @@ that $[[S;G |-ty t1 : PI1 a:Rel k1.k1]]$. Similarly,
 we can see that $[[S;G |-ty t2 : PI2 a:Rel k2.k2]]$.
 The induction hypothesis gives us $[[ee0]]$ such that
 $[[|PI1 a:Rel k1.k1| ~>* ee0 *<~ |PI2 a:Rel k2.k2|]]$.
-Use of \pref{lem:pi-red-type} gives us $[[ee1]]$ such that $[[|k1| ~>* ee1 *<~ |k2|]]$
+Use of \pref{lem:pi-red} gives us $[[ee1]]$ such that $[[|k1| ~>* ee1 *<~ |k2|]]$
 and we are done.
 \item[Case \rul{Co\_ArgK}:]
 Here is the rule with all kinds included:
@@ -1821,7 +1730,7 @@ Examine the typing rule with kinds included:
 \[
 \nosupp{\ottdruleCoXXCArgKOne{}}
 \]
-The induction hypothesis (with \pref{lem:pi-red-co})
+The induction hypothesis (with \pref{lem:pi-red})
 gives us our result.
 \item[Case \rul{Co\_CArgK2}:] Similar to previous caes.
 \item[Case \rul{Co\_ArgKLam}:] Immediate. Both kinds are $[[Type{}]]$.
@@ -1832,7 +1741,7 @@ gives us our result.
 \[
 \nosupp{\ottdruleCoXXResLam{}}
 \]
-We are done by the induction hypothesis and \pref{lem:pi-red-type}.
+We are done by the induction hypothesis and \pref{lem:pi-red}.
 \item[Case \rul{Co\_InstRel}:] Immediate. Both kinds are $[[Type{}]]$.
 \item[Case \rul{Co\_InstIrrel}:] Immediate. Both kinds are $[[Type{}]]$.
 \item[Case \rul{Co\_CInst}:] Immediate. Both kinds are $[[Type{}]]$.
@@ -1878,7 +1787,7 @@ $[[S;Rel(G) |-ty t3 t : s6]]$ and $[[S;Rel(G) |-ty t4 s : s7]]$ tell us
 that $[[s3]]$ and $[[s4]]$ must have the form $[[PI1 a:rel k1.s8]]$
 and $[[PI2 a:rel k2.s9]]$, where
 $[[S;Rel(G) |-ty t : k1]]$ and $[[S;Rel(G) |-ty s : k2]]$. By
-\pref{lem:pi-red-type}, we can see that the joinability of
+\pref{lem:pi-red}, we can see that the joinability of
 $[[s3]]$ and $[[s4]]$ imply the joinability of
 $[[k1]]$ and $[[k2]]$, as desired.
 \item[Case \rul{Co\_NthIrrel}:] Similar to previous case.
@@ -1920,13 +1829,25 @@ If $[[t1 ! t2]]$, then $[[t2 ! t1]]$.
 By induction on $[[t1 ! t2]]$.
 \end{proof}
 
-\begin{lemma}[Consistency of reduction]
-\label{lem:cons-red}
-If $[[ee1 ~> ee2]]$ and $[[ee1]]$ is an erased value, then $[[ee2]]$ is
-an erased value and $[[ee1 ! ee2]]$.
+\begin{lemma}[Reduction preserves values]
+\label{lem:red-val}
+If $[[ee1 ~> ee2]]$ and $[[ee1]]$ is an erased value, then
+$[[ee2]]$ is an erased value.
 \end{lemma}
 
 \begin{proof}
+By induction. The induction hypothesis in needed only in the
+$[[ee1 = \ a:Irrel k. s]]$ case.
+\end{proof}
+
+\begin{lemma}[Consistency of reduction]
+\label{lem:cons-red}
+If $[[ee1 ~> ee2]]$, then $[[ee1 ! ee2]]$.
+\end{lemma}
+
+\begin{proof}
+If $[[ee1]]$ is not an erased value, the result is immediate. We
+thus assume $[[ee1]]$ is an erased value.
 By induction over $[[ee1 ~> ee2]]$.
 \begin{description}
 \item[Case \rul{R\_Refl}:] By \pref{lem:cons-refl}.
@@ -1935,17 +1856,9 @@ By induction over $[[ee1 ~> ee2]]$.
 be $[[H{ts} ps]]$. We are done by \pref{lem:app-red}.
 \item[Case \rul{R\_AppIrrel}:] Similar to previous case.
 \item[Case \rul{R\_CApp}:] Similar to previous case.
-\item[Case \rul{R\_PiTy}:] By induction.
-\item[Case \rul{R\_PiCo}:] Immediate.
+\item[Case \rul{R\_Pi}:] By induction.
 \item[Case \rul{R\_Case}:] Impossible.
-\item[Case \rul{R\_Lam}:] We adopt the metavariable names from the
-rule:
-\[
-\ottdruleRXXLam{}
-\]
-If $[[rel = Rel]]$ the result is immediate. If not, then we are done
-by induction.
-\item[Case \rul{R\_CLam}:] Immediate.
+\item[Case \rul{R\_Lam}:] Immediate.
 \item[Case \rul{R\_Fix}:] Impossible.
 \item[Case \rul{R\_BetaRel}:] Impossible.
 \item[Case \rul{R\_BetaIrrel}:] Impossible.
@@ -1957,8 +1870,7 @@ by induction.
 
 \begin{lemma}[Consistency of reductions]
 \label{lem:cons-reds}
-If $[[ee1 ~>* ee2]]$ and $[[ee1]]$ is an erased value, then $[[ee2]]$ is
-an erased value and $[[ee1 ! ee2]]$.
+If $[[ee1 ~>* ee2]]$, then $[[ee1 ! ee2]]$.
 \end{lemma}
 
 \begin{proof}
@@ -1966,15 +1878,56 @@ By induction on the length of the reduction chain, appealing to
 \pref{lem:cons-red}.
 \end{proof}
 
-\begin{lemma}[Transitivity of consistency on values]
-\label{lem:trans-cons-value}
-If $[[ee1]]$, $[[ee2]]$ and $[[ee3]]$ are all erased values with
-$[[ee1 ! ee2]]$ and $[[ee2 ! ee3]]$, then $[[ee1 ! ee3]]$.
+\begin{lemma}[$[[PI]]$-expansion]
+\label{lem:pi-exp}
+If $[[ee1]]$ is an erased value and $[[ee1 ~> PI d.t]]$,
+then there exist $[[d']]$ and $[[t']]$ such that
+$[[ee1 = PI d'.t']]$ where $[[d ~> d']]$ and $[[t ~> t']]$.
 \end{lemma}
 
 \begin{proof}
-By induction on the sum of the sizes of the derivations
-of $[[ee1 ! ee2]]$ and $[[ee2 ! ee3]]$.
+By case analysis on $[[ee1 ~> PI d.t]]$.
+\end{proof}
+
+\begin{lemma}[$[[PI]]$-expansions]
+\label{lem:pi-exps}
+If $[[ee1]]$ is an erased value and $[[ee1 ~>* PI d.t]]$,
+then there exist $[[d']]$ and $[[t']]$ such that
+$[[ee1 = PI d'.t']]$ where $[[d ~>* d']]$ and $[[t ~>* t']]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the length of the reduction chain, using
+\pref{lem:red-val} to establish the value condition and appealing
+to \pref{lem:pi-exp}.
+\end{proof}
+
+\begin{lemma}[Joinable types are consistent]
+\label{lem:joinable-cons}
+If $[[ee1 ~>* ee3 *<~ ee2]]$, then $[[ee1 ! ee2]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of $[[ee1]]$.
+In all cases:
+If either $[[ee1]]$ or $[[ee2]]$ is not an erased value,
+the result is immediate. We thus assume both are values.
+We know (from \pref{lem:cons-reds}) that $[[ee1 ! ee3]]$
+and $[[ee2 ! ee3]]$ and (from \pref{lem:red-val}) that
+$[[ee3]]$ is a value.
+
+Now, suppose $[[ee1]]$ is not a $[[PI]]$-type or is a $[[PI]]$-type
+over a proposition. We can see from inversion on $[[ee1 ! ee3]]$ that
+$[[ee3]]$ must have the same head. We can further see from inversion
+on $[[ee2 ! ee3]]$ that $[[ee2]]$ must have the same shape, and thus
+that $[[ee1 ! ee2]]$ as desired.
+
+Finally, we consider $[[ee1 = PI a:rel k. t]]$. We see (from
+\pref{lem:pi-red}) that
+$[[ee3 = PI a :rel k'. t']]$ with $[[k ~>* k']]$ and $[[t ~>* t']]$.
+Now we can use \pref{lem:pi-exps} to see that $[[ee2 = PI a :rel k''. t'']]$
+with $[[k'' ~>* k']]$ and $[[t'' ~>* t']]$. The induction hypothesis
+tells us $[[t ! t'']]$, which gives us $[[ee1 ! ee2]]$ by \rul{C\_PiTy}.
 \end{proof}
 
 \begin{lemma}[Erasure/consistency]
@@ -2009,7 +1962,7 @@ using the induction hypothesis.
 
 \begin{lemma}[Consistency]
 \label{lem:consistency}
-If $[[G contains no coercion assumptions]]$ and $[[S;G |-co g : t1 [k1]~[k2] t2]]$,
+If $[[S;G |-co g : t1 [k1]~[k2] t2]]$ and $[[c ~# g]]$ for every $[[c:phi \in G]]$,
 then $[[t1 ! t2]]$.
 \end{lemma}
 
@@ -2017,9 +1970,7 @@ then $[[t1 ! t2]]$.
 If either $[[t1]]$ or $[[t2]]$ is not a value, then we are done. So, we assume
 that both are values.
 \pref{lem:complete-red} gives us $[[ee]]$ such that $[[|t1| ~>* ee *<~ |t2|]]$.
-\pref{lem:cons-reds} tells us that $[[|t1| ! ee]]$ and $[[|t2| ! ee]]$.
-\pref{lem:cons-sym} tells us that $[[ee ! |t2|]]$, and then
-\pref{lem:trans-cons-value} tells us that $[[|t1| ! |t2|]]$.
+\pref{lem:joinable-cons} then tell us that $[[|t1| ! |t2|]]$.
 Finally, \pref{lem:erase-cons} gives us $[[t1 ! t2]]$ as desired.
 \end{proof}
 
