@@ -97,8 +97,12 @@ DESIGN DECISIONS:
    However, because consistency depends on regularity, making this change
    requires consistency to depend on preservation. This isn't harmful,
    but it all seems cleaner without this dependency.
+ - The three-binder approach to the Π-coercion runs into trouble in proving
+   consistency, because it introduces a coercion variable. So I'm going with
+   the asymmetrical one-binder approach, as implemented.
  - Need M/UPI to allow matching on partially applied things.
- - Can't match on partially-applied GADT data constructors. See example below.
+ - If we didn't have the c ~# g restrictions, we wouldn't be able
+   to match on partially-applied GADT data constructors. See example below.
  - The ArgK rules, the Res rules, and the Inst rules all require the same PI
    to be used in both types in the proposition of a coercion. The coincidence
    of the PIs is not strictly necessary -- all the language properties we prove
@@ -108,7 +112,6 @@ DESIGN DECISIONS:
    so that is what we do. Generalizing would allow us to also generalize the
    PushRel, PushIrrel, and CPush rules to allow different PIs on either side,
    but why bother?
- - If axm:lem is kept, it must be thoroughly explained.
 
 Example about partially-applied GADT data constructors:
 
@@ -122,6 +125,10 @@ PI c:(<T>,<T'>).c  :: (PI c:T~T'. T) ~ (PI c:T~T'. T')
 
 case K |> (PI c:T~T'. c) of
   K' -> ...
+
+
+---------------
+some scratchwork:
 
 build_kpush_co:
 
@@ -146,7 +153,7 @@ case (MkT s (True |> g0) (P Bool True |> g1)) of ...
     g0 = argk (<forall k (a :: k). Proxy k a -> MkT k>@(nth 0 co))
     g1 = argk (<forall k (a :: k). Proxy k a -> MkT k>@(nth 0 co)@(<True> |>> g0)
 
-
+-------------------------
 Example:
 
   Replicate.
@@ -168,20 +175,7 @@ Example:
 	      Succ n' → c. Cons a n n' c x (r n' x)
 
 
-------
-Simplifications:
-- Tried to remove g from grammar of types. Caused major headaches, because
-  g1 ~ g2 is no longer well-formed. This way lies the X coercions of the
-  "overabundance" paper. Ick.
-  UPDATE: Actually, got this to work.
 
-- Tried labeling applications. This seems like it could work better than
-  the last fix, but I'm still unconvinced. It would mean making braced
-  applications its own grammar to support lists, etc. Also, we should
-  have braces in patterns, too.
 
-- The three-binder approach to the Π-coercion runs into trouble in proving
-  consistency, because it introduces a coercion variable. So I'm going with
-  the asymmetrical one-binder approach, as implemented.
 
 

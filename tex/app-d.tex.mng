@@ -1074,7 +1074,6 @@ $[[(H{ts} ps) |> h]]$ matches that of $[[H{ts'} ps']]$,
 namely $[[MPI (D2[ts'/as][ps'/dom(D1)]). H'{} ts']]$.
 We can then derive these facts:
 \begin{itemize}
-\item $[[D2 contains no coercion assumptions]]$ (from a premise to \rul{Ty\_Case})
 \item $[[S;G |-ty H{ts} ps : MPI (D2[ts/as][ps/dom(D1)]). H'{} ts]]$ (by inversion
 of the typing judgment on the redex)
 \item $[[S;G |-ty H{ts} : MPI (D1[ts/as],D2[ts/as]). H'{} ts]]$ (by \pref{lem:app-inversion}
@@ -1192,7 +1191,7 @@ Assume $[[ps ~> ps']]$. We can then conclude:
 
 \begin{proof}
 By straightforward
-mutual induction on the structure of $[[t]]$/$[[phi]]$.
+mutual induction on the structure of $[[t]]$/$[[d]]$.
 %% \begin{description}
 %% \item[Case $[[t = a]]$:] By assumption.
 %% \item[Case $[[t = b]]$:] By \rul{R\_Refl}.
@@ -1200,7 +1199,7 @@ mutual induction on the structure of $[[t]]$/$[[phi]]$.
 %% \item[Case $[[t = t1 t2]]$:] By induction and \rul{R\_AppRep}.
 %% \item[Case $[[t = t1 {t2}]]$:] By induction and \rul{R\_AppIrrel}.
 %% \item[Case $[[t = t0 o]]$:] By induction and \rul{R\_CApp}.
-%% \item[Case $[[t = PI d. s]]$:] By induction and \rul{R\_Pi}
+%% \item[Case $[[t = PI d. s]]$:] By induction and \rul{R\_Pi}.
 %% \item[Case $[[t = case_k s of alts]]$:] By induction and \rul{R\_Case}.
 %% \item[Case $[[t = \d.s]]$:] By induction and \rul{R\_Lam}.
 %% \item[Case $[[t = fix s]]$:] By induction and \rul{R\_Fix}.
@@ -1219,7 +1218,7 @@ Assume $[[ps ~> ps']]$.
 \end{lemma}
 
 \begin{proof}
-By induction on $[[t1 ~> t2]]$/$[[phi1 ~> phi2]]$.
+By induction on $[[t1 ~> t2]]$/$[[d1 ~> d2]]$.
 
 \begin{description}
 \item[Case \rul{R\_Refl}:] By \pref{lem:red-subst}.
@@ -1315,10 +1314,8 @@ such that $[[d1 ~> d3 <~ d2]]$.
 \end{lemma}
 
 \begin{proof}
-By induction on the structure of $[[t0]]$/$[[phi0]]$ followed by case analysis
-on the reduction of $[[t0]]$/$[[phi0]]$. We assume throughout that all types
-and propositions
-have had their coercions erased. We also ignore overlap with the
+By induction on the structure of $[[t0]]$/$[[d0]]$ followed by case analysis
+on the reduction of $[[t0]]$/$[[d0]]$. We ignore overlap with the
 \rul{R\_Refl} rule, as this is always trivially handled.
 
 \begin{description}
@@ -1522,7 +1519,7 @@ $[[|k1| ~>* ee *<~ |k2|]]$.
 \end{lemma}
 
 \begin{proof}
-By induction the typing derivation.
+By induction on the typing derivation.
 For the purposes of exposition, we present
 the types cases separately from the kinds cases, but in a formal
 proof, they would be interleaved. First, the types cases:
@@ -1567,7 +1564,7 @@ $[[ee0 = PI a:rel k3.s3]]$ such that $[[|k1| ~>* k3 *<~ |k2|]]$
 and $[[|s1| ~>* s3 *<~ |s2|]]$. Thus $[[k3]]$ is a reduct of 
 $[[|k1|]]$ and $[[|k2|]]$ as desired.
 \item[Case \rul{Co\_CArgK1}:]
-Like previous case, but appealing to \pref{lem:pi-red}.
+Like previous case.
 \item[Case \rul{Co\_CArgK2}:]
 Like previous case.
 \item[Case \rul{Co\_ArgKLam}:]
@@ -1577,8 +1574,7 @@ Like previous case.
 \item[Case \rul{Co\_CArgKLam2}:]
 Like previous case.
 \item[Case \rul{Co\_Res}:]
-By induction and \pref{lem:pi-red}, noting that the fact that the lack
-of coercion bindings makes \pref{lem:pi-red} applicable.
+By induction and \pref{lem:pi-red}.
 \item[Case \rul{Co\_ResLam}:]
 By induction and \pref{lem:lam-red}.
 \item[Case \rul{Co\_InstRel}:]
@@ -1594,13 +1590,13 @@ $[[|s1[t1/a]| ~>* ee0[ee1/a] *<~ |s2[t2/a]|]]$ as desired.
 \item[Case \rul{Co\_InstIrrel}:]
 Similar to previous case.
 \item[Case \rul{Co\_CInst}:]
-Similar to previous case.
+By induction, \pref{lem:pi-red}, and \pref{lem:co-subst-erase}.
 \item[Case \rul{Co\_InstLamRel}:]
 Like case \rul{Co\_Inst}, but appealing to \pref{lem:lam-red}.
 \item[Case \rul{Co\_InstLamIrrel}:]
 Like previous case.
 \item[Case \rul{Co\_CInstLam}:]
-Like previous case.
+Like case \rul{Co\_CInst}, but appealing to \pref{lem:lam-red}.
 \item[Case \rul{Co\_NthRel}:]
 By induction and \pref{lem:app-red}.
 \item[Case \rul{Co\_NthIrrel}:]

@@ -15,4 +15,6 @@ Differences from Gundry's thesis.
 - Only one `case` in the source language
 
 - My type erasure property is stronger: his doesn't erase type-lambdas.
-- He has a more intricate consistency relation.
+- He has a more intricate consistency relation. And his proof is wrong.
+  (See email to Adam on May 13.) Of course, his theorem may well be correct,
+  but his proof certainly seems wrong.
