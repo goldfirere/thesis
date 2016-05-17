@@ -218,6 +218,23 @@ By straightforward mutual induction, appealing to \pref{lem:dom-rel},
 and \pref{lem:ctx-reg}.
 \end{proof}
 
+\section{Unification}
+
+We assume the following properties of our unification algorithm.
+
+\begin{property}[Domain of $[[match]]$]
+\label{prop:match-dom}
+If $[[match_V(ts1; ts2) = Just theta]]$, then $[[theta = ps/zs]]$ for some
+$[[ps]]$ and $[[zs]]$ with $[[V = {zs}]]$. In other words, the domain of the
+substitution returned by a successful use of $[[match]]$ is the variables
+$[[V]]$ passed into $[[match]]$.
+\end{property}
+
+\begin{property}[$[[match]]$ is sound]
+\label{prop:match-sound}
+If $[[match_V(ts1; ts2) = Just theta]]$, then $[[ts1[theta] = ts2]]$.
+\end{property}
+
 \section{Vectors}
 
 \begin{lemma}
@@ -474,7 +491,7 @@ $[[b:Rel k0 \in G']]$.
 \item[Case \rul{Ty\_Con}:] By \pref{lem:scoping}, \pref{lem:ctx-reg}, and induction.
 \item[Case \rul{Co\_Var}:] Similar to \rul{Ty\_Var}.
 \item[Case \rul{Co\_PiTy}:]
-We adopt the variable names from the rule (renaming the variable to be substituted
+We adopt the metavariable names from the rule (renaming the variable to be substituted
 to $[[b]]$):
 \[
 \ottdruleCoXXPiTy{}
@@ -492,6 +509,14 @@ All that remains to show is that
 $[[s2[s/b][a |> sym h[s/b]/a] = s2[a |> sym h/a][s/b] ]]$, but this
 follows from the fact that $[[a # s]]$, guaranteed by the Barendregt
 convention. We are done with this case.
+\item[Case \rul{Co\_PiCo}:]
+We adopt the metavariable names from the rule:
+\[
+\ottdruleCoXXPiCo{}
+\]
+For the most part, this follows the pattern of case \rul{Co\_PiTy}, but
+we must make sure that $[[c ~# g[s/a] ]]$. This fact follows from the
+Barendregt convention, which asserts that $[[c]]$ cannot appear in $[[s]]$.
 \item[Other cases:] By the induction hypothesis, using \pref{lem:value-subst} for
 certain step rules, and using the Barendregt convention to rearrange substitutions
 (as in the \rul{Co\_PiTy} case).
@@ -696,8 +721,8 @@ We'll adopt the metavariable names from the rule:
 \[
 \ottdruleTyXXFix{}
 \]
-The induction hypothesis tells us $[[S;Rel(G) |-ty PI _:Rel k.k : Type{} ]]$.
-Inversion on \rul{Ty\_Pi} tells us $[[S;Rel(G),_:Rel k |-ty k : Type{} ]]$.
+The induction hypothesis tells us $[[S;Rel(G) |-ty UPI a:Rel k.k : Type{} ]]$.
+Inversion on \rul{Ty\_Pi} tells us $[[S;Rel(G),a:Rel k |-ty k : Type{} ]]$.
 \pref{lem:strengthening} gives us $[[S;Rel(G) |-ty k : Type{} ]]$ as desired.
 \end{description}
 \end{proof}
@@ -853,6 +878,23 @@ then $[[S;G |-ty t ps : s[ps/dom(D)] ]]$.
 
 \begin{proof}
 By straightforward induction on $[[S;G |-vec ps : D]]$.
+\end{proof}
+
+\begin{lemma}[Type constant inversion]
+\label{lem:tycon-inversion}
+If $[[S;G |-ty H{ts} ps : k]]$, then:
+\begin{enumerate}
+\item $[[S |-tc H : as :Irrel ks;D;H' ]]$
+\item $[[S;Rel(G) |-vec ts : as :Rel ks]]$
+\item $[[D1,D2 = D[ts/as] ]]$
+\item $[[S;G |-vec ps : D1 ]]$
+\item $[[k = MPI (D2[ps/dom(D1)]). H'{} ts]]$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By \pref{lem:app-inversion}, \pref{lem:tel-app}, and \pref{lem:determinacy},
+and inversion and application of typing rules.
 \end{proof}
 
 \begin{lemma}[Telescope instantiation]
@@ -1050,18 +1092,26 @@ Note that the last fact proves this case.
 \]
 Inversion and typing rules tell us the following:
 \begin{itemize}
-\item $[[S;G |-ty H{ts} ps : MPI D. H'{} ss]]$
-\item $[[S;G |-ty H{ts} : MUPI D0. MPI D. H'{} ss]]$ (by \pref{lem:app-inversion})
-\item $[[S;G |-vec ps : D0]]$ (also from \pref{lem:app-inversion})
-\item $[[S |-tc H : D1;D2;H' ]]$ (by inverting \rul{Ty\_Con})
-\item $[[S;G |-ty H{ts} : MPI (D2[ts/dom(D1)]). H'{} ts]]$ (also from \rul{Ty\_Con})
-\item $[[MPI (D2[ts/dom(D1)]). H'{} ts = MUPI D0. MPI D.H'{} ss]]$ (by \pref{lem:determinacy})
-\item $[[D0, D = D2[ts/dom(D1)]]]$ and $[[ts = ss]]$ (by congruence of equality)
-\item $[[S;G;MPI D.H'{} ts;H{ts} ps |-alt H -> t0 : k]]$
-\item $[[S;G |-ty t0 : MUPI D0, c : H{ts} ps [H'{} ts]~[H'{} ts] H{ts} dom(D0).k]]$
-\item $[[S;G |-ty t0 ps : MUPI c : H{ts} ps [H'{} ts]~[H'{} ts] H{ts} ps.k]]$ (by \pref{lem:tel-app}), where the $[[k]]$ needs no substitution by \pref{lem:scoping}
-\item $[[S;G |-ty t0 ps <H{ts} ps> : k]]$, where the $[[k]]$ needs no substitution
-by \pref{lem:scoping}
+\item $[[S;G |-ty H{ts} ps : MPI D'. H'{} ss]]$ (premise of \rul{Ty\_Case})
+\item Using \pref{lem:tycon-inversion}:
+\begin{itemize}
+\item $[[S |-tc H : as :Irrel ks; D2; H' ]]$
+\item $[[D0, D1 = D2[ts/as] ]]$
+\item $[[S;G |-vec ps : D0]]$
+\item $[[D' = D1[ps/dom(D0)] ]]$ and $[[ss = ts]]$ (\pref{lem:determinacy})
+\end{itemize}
+\item The premises of \rul{Alt\_Match} (also using \pref{lem:determinacy-tycon}):
+\begin{itemize}
+\item $[[D3,D4 = D2[ts/as] ]]$
+\item $[[length D4 = length D1]]$
+\item $[[S;G |-ty t0 : MUPI D3, c: H{ts} ps [MPI D'.H'{} ts]~[MPI D4.H'{} ts] H{ts} dom(D3). k]]$
+\end{itemize}
+\item $[[D3 = D0]]$ and $[[D4 = D1]]$ (from $[[length D4 = length D1]]$ and the definitions
+of $[[D0]]$, $[[D1]]$, $[[D3]]$, and $[[D4]]$)
+\item $[[S;G |-ty t0 : MUPI D0, c : H{ts} ps [MPI (D1[ps/dom(D0)]).H'{} ts]~[MPI D1.H'{} ts] H{ts} dom(D0). k]]$ (rewriting)
+\item $[[S;G |-ty t0 ps : MUPI c: H{ts} ps [MPI (D1[ps/dom(D0)]).H'{} ts]~[MPI (D1[ps/dom(D0)]).H'{} ts] H{ts} ps. k]]$ (\pref{lem:tel-app}, where the $[[k]]$ needs no substitution by \pref{lem:scoping})
+\item $[[S;G |-ty t0 ps <H {ts} ps> : k]]$ (\rul{Co\_Refl} and \rul{Ty\_CApp}, where the $[[k]]$ needs no substitution
+by \pref{lem:scoping})
 \end{itemize}
 Note that thie last fact proves this case.
 \item[Case \rul{S\_Case\_Cong}:] By induction.
@@ -1072,7 +1122,7 @@ Note that thie last fact proves this case.
 Note that we need to prove only that the type of
 $[[(H{ts} ps) |> h]]$ matches that of $[[H{ts'} ps']]$,
 namely $[[MPI (D2[ts'/as][ps'/dom(D1)]). H'{} ts']]$.
-We can then derive these facts:
+We can derive these facts:
 \begin{itemize}
 \item $[[S;G |-ty H{ts} ps : MPI (D2[ts/as][ps/dom(D1)]). H'{} ts]]$ (by inversion
 of the typing judgment on the redex)
@@ -1134,14 +1184,47 @@ has the same type, $[[UPI a:Irrel k. k1]]$ as the redex.
 \]
 We can then derive the following:
 \begin{itemize}
-\item $[[S;G |-ty \a:rel k.s : UPI a:rel k. k]]$ (by inversion)
-\item $[[S;G, a:rel k |-ty s : k]]$ (by inversion)
-\item $[[S;G |-ty fix (\a:rel k.s) : k ]]$
+\item $[[S;G |-ty \a:Rel k.s : UPI a:Rel k. k]]$ (by inversion)
+\item $[[S;G, a:Rel k |-ty s : k]]$ (by inversion)
+\item $[[S;G |-ty fix (\a:Rel k.s) : k ]]$
 (by \rul{Ty\_Fix})
-\item $[[S;G |-ty s[fix (\a:rel k.s)/a] : k]]$ (by \pref{lem:ty-subst})
+\item $[[S;G |-ty s[fix (\a:Rel k.s)/a] : k]]$ (by \pref{lem:ty-subst})
 \end{itemize}
 This last judgment is what we are trying to prove; we are done.
 \item[Case \rul{S\_Fix\_Cong}:] By induction.
+\item[Case \rul{S\_FPush}:] We adopt the metavariable names from the rule:
+\[
+\ottdruleSXXFPush{}
+\]
+We can derive the following facts:
+\begin{itemize}
+\item $[[S;G |-ty fix ((\a:Rel k.s) |> g0) : k1]]$ (conclusion of \rul{Ty\_Fix})
+\item $[[S;G |-ty (\a:Rel k.s) |> g0 : UPI a:Rel k1.k1]]$ (premise of \rul{Ty\_Fix})
+\item $[[S;Rel(G) |-co g0 : k0 [Type{}]~[Type{}] UPI a:Rel k1.k1]]$ (inversion on \rul{Ty\_Cast})
+\item $[[S;G |-ty \a:Rel k.s : k0]]$ (same inversion)
+\item $[[S;G |-ty \a:Rel k.s : UPI a:Rel k. k2]]$ (inversion by \rul{Ty\_Lam})
+\item $[[k0 = UPI a:Rel k.k2]]$ (\pref{lem:determinacy})
+\item $[[S;G,a:Rel k |-ty s : k2]]$ (inversion by \rul{Ty\_Lam})
+\item $[[S;Rel(G) |-co g0 : (UPI a:Rel k.k2) [Type{}]~[Type{}] (UPI a:Rel k1.k1)]]$ (substitution)
+\item $[[S;Rel(G) |-co argk g0 : k [Type{}]~[Type{}] k1]]$ (\rul{Co\_ArgK})
+\item $[[g2 = argk g0]]$ (premise of \rul{S\_FPush})
+\item $[[S;G,a:Rel k |-ty a |> g2 : k1]]$ (\rul{Ty\_Cast})
+\item $[[S;G,a:Rel k |-co erase_g2 a (a |> g2) : a [k]~[k1] a |> g2]]$ (\rul{Co\_Coherence})
+\item $[[S;G,a:Rel k |-co g0@(erase_g2 a (a |> g2)) : k2 [Type{}]~[Type{}] k1[a |> g2/a] ]]$ (\rul{Co\_InstRel})
+\item $[[S;Rel(G) |-ty UPI a:Rel k1.k1 : Type{}]]$ (\pref{lem:kind-reg})
+\item $[[S;Rel(G),a:Rel k1 |-ty k1 : Type{}]]$ (inversion on \rul{Ty\_Pi})
+\item $[[S;Rel(G) |-ty k1 : Type{}]]$ (\pref{lem:tyvar-reg} and \pref{lem:weakening})
+\item $[[k1[a |> g2/a] = k1]]$ (\pref{lem:scoping}, noting that $[[a # k1]]$)
+\item $[[S;G,a:Rel k |-co g0@(erase_g2 a (a |> g2)) : k2 [Type{}]~[Type{}] k1]]$ (substitution)
+\item $[[S;G,a:Rel k |-co sym g2 : k1 [Type{}]~[Type{}] k]]$ (\rul{Co\_Sym} with \pref{lem:weakening})
+\item $[[g1 = g0@(erase_g2 a (a |> g2)) ;; sym g2]]$ (premise of \rul{S\_FPush})
+\item $[[S;G,a:Rel k |-co g1 : k2 [Type{}]~[Type{}] k]]$ (\rul{Co\_Trans})
+\item $[[S;G,a:Rel k |-ty s |> g1 : k]]$ (\rul{Ty\_Cast} and \pref{lem:increasing-rel})
+\item $[[S;G |-ty \a:Rel k. (s |> g1) : UPI a:Rel k.k]]$ (\rul{Ty\_Lam})
+\item $[[S;G |-ty fix (\a:Rel k. (s |> g1)) : k]]$ (\rul{Ty\_Fix})
+\item $[[S;G |-ty (fix (\a:Rel k. (s |> g1))) |> g2 : k1]]$ (\rul{Ty\_Cast})
+\end{itemize}
+The last item proves this case.
 \end{description}
 \end{description}
 \end{proof}
@@ -1958,7 +2041,8 @@ using the induction hypothesis.
 
 \begin{lemma}[Consistency]
 \label{lem:consistency}
-If $[[S;G |-co g : t1 [k1]~[k2] t2]]$ and $[[c ~# g]]$ for every $[[c:phi \in G]]$,
+If $[[G]]$ contains only irrelevant type variable bindings and
+$[[S;G |-co g : t1 [k1]~[k2] t2]]$
 then $[[t1 ! t2]]$.
 \end{lemma}
 
@@ -1966,6 +2050,7 @@ then $[[t1 ! t2]]$.
 If either $[[t1]]$ or $[[t2]]$ is not a value, then we are done. So, we assume
 that both are values.
 \pref{lem:complete-red} gives us $[[ee]]$ such that $[[|t1| ~>* ee *<~ |t2|]]$.
+(This lemma is applicable because there are no coercion bindings in $[[G]]$.)
 \pref{lem:joinable-cons} then tell us that $[[|t1| ! |t2|]]$.
 Finally, \pref{lem:erase-cons} gives us $[[t1 ! t2]]$ as desired.
 \end{proof}
@@ -1997,26 +2082,13 @@ If $[[S;G |-ty v : k]]$, then $[[k]]$ is a value.
 By case analysis on the possible shapes of values.
 \end{proof}
 
-\begin{lemma}[Consistency/$[[PI]]$]
-\label{lem:consistency-pi}
-TODO: Write and prove.
-\end{lemma}
-
-\begin{lemma}[Type constant inversion]
-\label{lem:tycon-inversion}
-If $[[S;G |-ty H{ts} ps : k]]$, then:
-\begin{enumerate}
-\item $[[S |-tc H : as :Irrel ks;D;H' ]]$
-\item $[[S;Rel(G) |-vec ts : as :Rel ks]]$
-\item $[[D3,D4 = D2[ts/as] ]]$
-\item $[[S;G |-vec ps : D3 ]]$
-\item $[[k = MPI D4. H'{} ts]]$
-\end{enumerate}
+\begin{lemma}[Type constant parents]
+\label{lem:tycon-parent}
+If $[[|-sig S]]$ and $[[S |-tc H : D1;D2;H']]$, then $[[S |-tc H' : empty;Rel(D1);Type]]$.
 \end{lemma}
 
 \begin{proof}
-By \pref{lem:app-inversion}, \pref{lem:tel-app}, and \pref{lem:determinacy},
-and inversion and application of typing rules.
+By case analysis on $[[S |-tc H : D1;D2;H']]$
 \end{proof}
 
 \begin{lemma}[Progress]
@@ -2099,7 +2171,7 @@ $[[t0]]$ gives us several cases:
 \begin{itemize}
 \item $[[S;G |-ty v : MPI D. H'{} ss]]$ (from a premise of \rul{Ty\_Case})
 \item $[[v]] = [[t0 = H{ts} ps]]$ (by \pref{lem:canon-form}). Note that it does not matter whether $[[length D = 0]]$ when
-using \pref{canon-form}.
+using \pref{lem:canon-form}.
 \item $[[S;G |-ty H{ts} ps : MPI D'. H''{} ts]]$ (\pref{lem:tycon-inversion})
 \item $[[S |-tc H : D1;D2;H'' ]]$ (same invocation of \pref{lem:tycon-inversion})
 \item $[[D' = D]]$, $[[H' = H'']]$, and $[[ts = ss]]$ (\pref{lem:determinacy})
@@ -2110,12 +2182,66 @@ use \rul{S\_Match} and we are done.
 \item[Case $[[t0 = v |> g]]$:] We can derive the following:
 \begin{itemize}
 \item $[[S;G |-ty v |> g : MPI D. H'{} ss]]$ (from a premise of \rul{Ty\_Case})
-\item $[[S;Rel(G) |-co g : k0 [Type{}]~[Type{}] MPI D. H'{} ss]]$ (inversion of \rul{Ty\_Cast}))
+\item $[[S;Rel(G) |-co g : k0 [Type{}]~[Type{}] MPI D. H'{} ss]]$ (inversion of \rul{Ty\_Cast})
 \item $[[S;G |-ty v : k0]]$ (same inversion)
 \item $[[k0 ! MPI D. H'{} ss]]$ (\pref{lem:consistency})
 \item $[[k0]]$ is a value (\pref{lem:val-type})
-\item $[[k0 = MPI D'. k1]]$ (\pref{lem:consistency-pi})
+\item $[[k0 = MPI d1. k1]]$ (inversion on $[[k0 ! MPI D. H'{} ss]]$)
 \item $[[v = H{ts} ps]]$ (\pref{lem:canon-form})
-\item $[[S;G |-ty H{ts} ps : MPI D''. H''{} ts]]$ (\pref{lem:tycon-inversion})
-\item $[[S |-tc H : as :Irrel ks;D2;H'' ]]$ (same invocation of \pref{lem:tycon-inversion})
-\item $[[
+\item $[[S |-tc H : as :Irrel ks;D2;H'' ]]$ (\pref{lem:tycon-inversion})
+\item $[[S;G |-ty H{ts} ps : MPI (D4[ps/dom(D3)]). H''{} ts]]$ where $[[D3,D4 = D2[ts/as] ]]$ (same invocation of \pref{lem:tycon-inversion})
+\item $[[k0 = MPI (D4[ps/dom(D3)]). H''{} ts]]$ (\pref{lem:determinacy})
+\item $[[H'' = H']]$ and $[[length D = length D4]]$ (repeated inversion on $[[k0 ! MPI D. H'{} ss]]$)
+\item $[[H -> s0 \in alts]]$ for some $[[s0]]$ (from the fact that $[[alts]]$
+are exhaustive and we have a well-typed $[[H{ts} ps]]$ available)
+\item $[[S;G;MPI D. H'{} ss; v |> g |-alt H -> s0 : k]]$ (a premise of \rul{Ty\_Case})
+\item From the premises of \rul{Alt\_Match}:
+\begin{itemize}
+\item $[[D0,D1 = D2[ss/as] ]]$
+\item $[[dom(D1) = dom(D)]]$
+\item $[[match_{dom(D0)}(types(D1);types(D)) = Just (ps'/dom(D0))]]$ (also using \pref{prop:match-dom})
+\end{itemize}
+\item $[[length D1 = length D]]$ (from the fact that their domains are the same)
+\item $[[length D1 = length D4]]$ (transitivity of $=$)
+\item $[[dom(D0) = dom(D3)]]$ (from the definitions of $[[D0]]$, $[[D1]]$, $[[D3]]$, and $[[D4]]$ and the fact that $[[length D1 = length D4]]$)
+\item Let $[[n = length D1]]$ and $[[D5]]$ be the suffix of $[[D2]]$ of length $[[n]]$.
+\item $[[D = D5[ss/as][ps'/dom(D0)] ]]$ (\pref{prop:match-sound})
+\item $[[S;Rel(G) |-co g : MPI (D5[ts/as][ps/dom(D0)]). H'{} ts [Type{}]~[Type{}] MPI (D5[ss/as][ps'/dom(D0)]). H'{} ss]]$ (substitution in the kind of $[[g]]$ as stated above)
+\item $[[S;Rel(G) |-ty H'{} ss : Type{}]]$ (premise of \rul{Ty\_Case})
+\item $[[S |-tc H' : empty; as :Rel ks; Type]]$ (\pref{lem:tycon-parent})
+\item $[[S;Rel(G) |-vec ss : as :Rel ks]]$ (\pref{lem:tycon-inversion} with \pref{lem:determinacy-tycon})
+\end{itemize}
+We have now proved the premises of \rul{S\_KPush} and so stepping is possible. We
+are done with this case.
+\item[Case $[[S;G |-s t0 --> t0']]$:] We are done by \rul{S\_Case\_Cong}.
+\end{description}
+\item[Case \rul{Ty\_Lam}:] We know that $[[t = \d.t0]]$. If $[[d]]$ is anything
+but an irrelevant-type-variable binder, we are done. So we assume that we have
+$[[t = \a :Irrel k0.t0]]$. Using the induction hypothesis on $[[t0]]$ gives
+us several cases:
+\begin{description}
+\item[Case $[[t0 = v]]$:] We are done, as $[[\a :Irrel k0. v]]$ is a value.
+\item[Case $[[t0 = v |> g]]$:] We are done by \rul{S\_APush}.
+\item[Case $[[S;G,a:Irrel k0 |-s t0 --> t0']]$:] We are done by \rul{S\_IrrelAbs\_Cong}.
+\end{description}
+\item[Case \rul{Ty\_Fix}:] We know that $[[t = fix t0]]$. Using the induction
+hypothesis on $[[t0]]$ gives us several cases:
+\begin{description}
+\item[Case $[[t0 = v]]$:] We know $[[S;G |-ty v : UPI a:Rel k.k]]$.
+\pref{lem:canon-form} tells us
+$[[v = \a:Rel k.s0]]$ and we are done by \rul{S\_Unroll}.
+\item[Case $[[t0 = v |> g]]$:]
+We can derive the following facts:
+\begin{itemize}
+\item $[[S;G |-ty v |> g : UPI a:Rel k.k]]$ (premise of \rul{Ty\_Fix})
+\item $[[S;Rel(G) |-co g : k0 [Type{}]~[Type{}] UPI a:Rel k.k]]$ (inversion on \rul{Ty\_Cast})
+\item $[[S;G |-ty v : k0]]$ (same inversion)
+\item $[[k0 ! UPI a:Rel k.k]]$ (\pref{lem:consistency})
+\item $[[k0]]$ is a value (\pref{lem:val-type})
+\item $[[k0 = UPI a:Rel k1. k2]]$ (inversion on \rul{C\_PiTy})
+\item $[[v = \ a:Rel k1. s]]$ (\pref{lem:canon-form})
+\end{itemize}
+We are done by \rul{S\_FPush}.
+\item[Case $[[S;G |-s t0 --> t0']]$:] We are done by \rul{S\_Fix\_Cong}.
+\end{description}
+\end{proof}

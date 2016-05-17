@@ -122,7 +122,8 @@ S;G |-ty t : k1  // S;Rel(G) |-ty k2 : Type{}
 -------------------- :: Cast
 S;G |-ty t |> g : k2
 
-S;Rel(G) |-ty k : Type{}  //  S;G |-ty t : s // s = MPI D. H{} ss
+S;Rel(G) |-ty k : Type{}  //  S;G |-ty t : s
+s = MPI D. H{} ss // S;Rel(G) |-ty H{} ss : Type{}
 forall i: S;G;s;t |-alt alti : k
 alts are exhaustive for H (wrt S)
 ------------------------------ :: Case
@@ -132,7 +133,7 @@ S;G,d |-ty t : k
 ------------------------ :: Lam
 S;G |-ty \d.t : UPI d. k
 
-S;G |-ty t : PI a:Rel k.k
+S;G |-ty t : UPI a:Rel k.k
 ------------------ :: Fix
 S;G |-ty fix t : k
 
@@ -146,8 +147,9 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
   {{ tex [[S]];[[G]];[[s]] [[|-alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
 by
 
-S |-tc H : D1;D2;H'  //  D0,D' = D2[ss/dom(D1)]
-S;G |-ty t : MUPI D0, c: t0 [MPI D'.H'{} ss]~[MPI D'.H'{} ss] H{ss} dom(D0). k
+S |-tc H : D1;D2;H'  //  D3,D4 = D2[ss/dom(D1)]  //
+dom(D4) = dom(D') //  match_{dom(D3)}(types(D4);types(D')) = Just theta
+S;G |-ty t : MUPI D3, c: t0 [MPI D'.H'{} ss]~[MPI D4.H'{} ss] H{ss} dom(D3). k
 -------------------------- :: Match
 S;G;MPI D'.H'{} ss;t0 |-alt H -> t : k
 
@@ -524,8 +526,21 @@ h' = g1 ;; h ;; sym g2  //  g3 = g0@(h', h)
 --------------------------------------------- :: CPush
 S;G |-s (v |> g0) h --> v h' |> g3
 
+g1 = UPI a:Irrel <k>. g // g2 = erase_<Type{}> t1 t2
+t1 = UPI a:Irrel k. (k1[a |> sym <k>/a]) // t2 = UPI a:Irrel k.k1
 ----------------------------------- :: APush
-S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> ((UPI a:Irrel <k>. g) ;; erase_<Type{}> (UPI a:Irrel k. (k1[a |> sym <k>/a])) (UPI a:Irrel k. k1))
+S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (g1 ;; g2)
+
+% g0 : UPI a:Rel k.k2 ~ UPI a:Rel k3.k3
+% g2 : k ~ k3
+% g2 = argk g0
+% g1 : k2 ~ k
+% g1 = g0@(erase_g2 a (a |> g2)) ; sym g2
+g1 = g0@(erase_g2 a (a |> g2)) ;; sym g2
+g2 = argk g0
+-------------------------------------- :: FPush
+S;G |-s fix ((\a:Rel k.s) |> g0) --> (fix (\a:Rel k. (s |> g1))) |> g2
+% TODO: Update lemmas.
 
 S |-tc H : as:Irrel ks;D;H'  //  D = D1,D2  // n = length D2
 k = MPI as:Irrel ks, D. H'{} as

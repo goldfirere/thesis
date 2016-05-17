@@ -74,7 +74,7 @@ mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'MixedVars_' ::=
   {{ tex [[dom]]([[G]]) }}
 | xs                                 :: M :: Tys
 
-fvset :: 'FVs_' ::=
+fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
 | { zs }                             :: M :: Set
 | fv ( ps )                          :: M :: fv_tycos
   {{ tex [[fv]] ( [[ps]] ) }}
@@ -209,7 +209,7 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | sym g                        ::   :: Sym
 | g1 ;; g2                     ::   :: Trans
 | erase _ h t1 t2              ::   :: Erase
-  {{ tex \ottkw{erase}_{[[h]]}\,[[t1]]\,[[t2]] }}
+  {{ tex [[erase]]_{[[h]]}\,[[t1]]\,[[t2]] }}
 | H { gs }                     ::   :: Con
   {{ tex [[H]]_{ \{ [[gs]] \} } }}
 | g w                          ::   :: App
@@ -353,6 +353,12 @@ subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
 | g / c                  ::   :: CoVar
 
+unif_result :: 'UnifResult_' ::=
+| Nothing                     ::   :: Nothing
+| Just theta                  ::   :: Just
+| match _ V ( ts1 ; ts2 ) :: M :: match
+  {{ tex [[match]]_{[[V]]}([[ts1]];[[ts2]]) }}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Lifting contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -412,6 +418,9 @@ rewrite_rule :: 'Rewrite_' ::=
 | H1 eq H2                           ::   :: H_rewrite
 | S1 eq S2                           ::   :: S_rewrite
 | I1 eq I2                           ::   :: I_rewrite
+| unif_result1 eq unif_result2       ::   :: match_rewrite
+| theta1 eq theta2                   ::   :: theta_rewrite
+| PI1 eq PI2                         ::   :: PI_rewrite
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -470,6 +479,11 @@ terminals :: 'terminals_' ::=
 | Irrel                                ::   :: Irrel   {{ tex \mathsf{Irrel} }}
 | build_kpush_co                       ::   :: build   {{ tex \mathsf{build\_kpush\_co} }}
 | ~#                                   ::   :: almost  {{ tex \mathrel{\tilde{\#} } }}
+| Nothing                              ::   :: Nothing {{ tex \mathsf{Nothing} }}
+| Just                                 ::   :: Just    {{ tex \mathsf{Just} }}
+| match                                ::   :: match   {{ tex \mathsf{match} }}
+| types                                ::   :: types   {{ tex \mathsf{types} }}
+| erase                                ::   :: erase   {{ tex \ottkw{erase} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -518,7 +532,9 @@ formula :: 'formula_' ::=
   | alts1 ~> alts2                     ::   :: alts_red
   | ps ~> ps' <~ ps''                  ::   :: diamond
   | ps ~>* ps'                         ::   :: many_red_star
+  | d1 ~>* d2                          ::   :: many_red_star_d
   | ps ~>* ps' *<~ ps''                ::   :: confluence
+  | d1 ~> d3 <~ d2                     ::   :: d_diamond
   | c ~# g                             ::   :: almost_free
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -554,6 +570,18 @@ formula :: 'formula_' ::=
 % %% This is going pear shaped. Perhaps it would be better to separate out coercions
 % %% after all. Then I don't think I'd need to parameterize over S;G throughout
 % %% lifting. This would dilute the complexity.
+
+funs
+Util ::=
+
+fun
+types ( D ) :: ts :: types
+  {{ tex [[types]]([[D]]) }}
+
+by
+types(empty)                 === empty
+types(D, a :rel k)           === types(D), k
+types(D, c: t1 (k1)~(k2) t2) === types(D), k1, k2, t1, t2
 
 funs
 Co ::=

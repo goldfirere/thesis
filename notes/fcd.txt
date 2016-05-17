@@ -112,6 +112,11 @@ DESIGN DECISIONS:
    so that is what we do. Generalizing would allow us to also generalize the
    PushRel, PushIrrel, and CPush rules to allow different PIs on either side,
    but why bother?
+ - Getting partially-applied matching to work is laborious. It requires complication
+   in Ty_Case and Alt_Match, the MPI/UPI distinction, and unification in the typing
+   rules (see critical use of matching in Alt_Match as used in the KPush case in
+   the Progress theorem). See "weird case" below for an illustrative example of
+   how hard this is.
 
 Example about partially-applied GADT data constructors:
 
@@ -175,7 +180,15 @@ Example:
 	      Succ n' → c. Cons a n n' c x (r n' x)
 
 
+------------
+Example of weird unsaturated case
 
+data X where
+  MkX :: MPI (k :Irrel Type) (a :Irrel k) (x :Rel Proxy k a). X
 
+case_() (blah : MPI (a :Irrel Bool) (x :Rel Proxy Bool a). X) of
+  MkX -> \ (k :Irrel Type) (c : blah [MPI (a:Irrel Bool) (x :Rel Proxy Bool x). X]~[MPI (a :Irrel k) (x :Rel Proxy k a). X] MkX k) -> ()
 
+case_() (blah : MPI (a :Irrel Type) (x :Rel Type). X) of
+  MkX -> \ (k :Irrel Type) (c : blah [MPI (a:Irrel Type) (x :Rel Type). X]~[MPI (a :Irrel k) (x :Rel Proxy k a). X] MkX k) -> ()
 
