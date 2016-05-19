@@ -196,4 +196,3 @@ case_() (blah : MPI (a :Irrel Type) (x :Rel Type). X) of
 
 
 
-TODO: ~# still doesn't allow c in η.

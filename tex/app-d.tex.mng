@@ -1002,8 +1002,8 @@ use of \rul{Cev\_Co}.
 $[[UPI]]$, but with no need.
 \end{remark}
 
-\begin{lemma}[Preservation]
-\label{lem:preservation}
+\begin{theorem}[Preservation]
+\label{thm:preservation}
 If $[[S;G |-ty t : k]]$ and $[[S;G |-s t --> t']]$, then
 $[[S;G |-ty t' : k]]$.
 \end{lemma}
@@ -1018,7 +1018,7 @@ By induction on the typing derivation.
 how the expression has stepped:
 \begin{description}
 \item[Case \rul{S\_BetaRel}:] By \pref{lem:ty-subst}.
-\item[Case \rul{S\_AppRel\_Cong}:] By induction.
+\item[Case \rul{S\_App\_Cong}:] By induction.
 \item[Case \rul{S\_PushRel}:] We adopt the metavariable names from the
 statement of the rule:
 \[
@@ -1039,13 +1039,13 @@ as desired.
 \item[Case \rul{Ty\_AppIrrel}:] We now have several cases:
 \begin{description}
 \item[Case \rul{S\_BetaIrrel}:] By \pref{lem:ty-subst}.
-\item[Case \rul{S\_AppIrrel\_Cong}:] By induction.
+\item[Case \rul{S\_App\_Cong}:] By induction.
 \item[Case \rul{S\_PushIrrel}:] Similar to the case for \rul{S\_PushRel}.
 \end{description}
 \item[Case \rul{Ty\_CApp}:] We now have several cases:
 \begin{description}
 \item[Case \rul{S\_CBeta}:] By \pref{lem:co-subst}.
-\item[Case \rul{S\_CApp\_Cong}:] By induction.
+\item[Case \rul{S\_App\_Cong}:] By induction.
 \item[Case \rul{S\_CPush}:] We adopt the metavariable names of the rule:
 \[
 \ottdruleSXXCPush{}
@@ -1343,19 +1343,19 @@ $[[ps0[ps/zs] ~> ps0'[ps'/zs] ]]$. Both of these follow from the
 induction hypothesis, and so we are done.
 \item[Case \rul{R\_Unroll}:] It must be that:
 \begin{itemize}
-\item $[[t1 = fix (\a:rel k1.t3)]]$
-\item $[[t2 = t4[fix (\a:rel k2.t4)/a] ]]$ where $[[k1 ~> k2]]$ and
+\item $[[t1 = fix (\a:Rel k1.t3)]]$
+\item $[[t2 = t4[fix (\a:Rel k2.t4)/a] ]]$ where $[[k1 ~> k2]]$ and
 $[[t3 ~> t4]]$.
 \end{itemize}
 We must show that
-$[[fix (\a:rel k1[ps/zs].t3[ps/zs]) ~> t4[fix (\a:rel k2.t4)/a][ps'/zs] ]]$.
+$[[fix (\a:Rel k1[ps/zs].t3[ps/zs]) ~> t4[fix (\a:Rel k2.t4)/a][ps'/zs] ]]$.
 Proceeding by \rul{R\_Unroll}, the left-hand side steps to
-$[[t5[fix (\a:rel k3.t5)/a] ]]$ where $[[t3[ps/zs] ~> t5]]$
+$[[t5[fix (\a:Rel k3.t5)/a] ]]$ where $[[t3[ps/zs] ~> t5]]$
 and $[[k1[ps/zs] ~> k3]]$.
 We must show that
-$[[t5[fix (\a:rel k3.t5)/a] = t4[fix (\a:rel k2.t4)/a][ps'/zs] ]]$.
+$[[t5[fix (\a:Rel k3.t5)/a] = t4[fix (\a:Rel k2.t4)/a][ps'/zs] ]]$.
 Reorder substitutions on the right to get
-$[[t4[fix (\a:rel k2.t4)/a][ps'/zs] = t4[ps'/zs][fix (\a:rel k2[ps'/zs].t4[ps'/zs])/a] ]]$, where $[[a # ps']]$ by the Barendregt convention.
+$[[t4[fix (\a:Rel k2.t4)/a][ps'/zs] = t4[ps'/zs][fix (\a:Rel k2[ps'/zs].t4[ps'/zs])/a] ]]$, where $[[a # ps']]$ by the Barendregt convention.
 Choose $[[t5 = t4[ps'/zs] ]]$ and $[[k3 = k2[ps'/zs] ]]$.
 It remains only to show that $[[t3[ps/zs] ~> t4[ps'/zs] ]]$
 and $[[k1[ps/zs] ~> k2[ps'/zs] ]]$, both of which follow from the
@@ -1490,25 +1490,25 @@ Choose $[[t3 = k1'''[ps'''/zs] ]]$ and we are done by \pref{lem:red-subst-par}.
 \item[Case \rul{R\_Fix}/\rul{R\_Fix}:] By induction.
 \item[Case \rul{R\_Fix}/\rul{R\_Unroll}:] It must be that:
 \begin{itemize}
-\item $[[t0 = fix (\a:rel k1.s1)]]$
-\item $[[t1 = fix (\a:rel k2.s2)]]$ where $[[k1 ~> k2]]$ and $[[s1 ~> s2]]$
-\item $[[t2 = s3[fix (\a:rel k3.s3)/a] ]]$ where $[[k1 ~> k3]]$ and
+\item $[[t0 = fix (\a:Rel k1.s1)]]$
+\item $[[t1 = fix (\a:Rel k2.s2)]]$ where $[[k1 ~> k2]]$ and $[[s1 ~> s2]]$
+\item $[[t2 = s3[fix (\a:Rel k3.s3)/a] ]]$ where $[[k1 ~> k3]]$ and
 $[[s1 ~> s3]]$
 \end{itemize}
 The induction hypothesis gives us $[[k4]]$ and $[[s4]]$ such that
 $[[k2 ~> k4 <~ k3]]$ and $[[s2 ~> s4 <~ s3]]$.
-Choose $[[t3 = s4[fix (\a:rel k4.s4)/a] ]]$. We must show
+Choose $[[t3 = s4[fix (\a:Rel k4.s4)/a] ]]$. We must show
 $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$. The first is by \rul{R\_Unroll},
 and the second is by \pref{lem:red-subst-par}.
 \item[Case \rul{R\_Unroll}/\rul{R\_Unroll}:] It must be that:
 \begin{itemize}
-\item $[[t0 = fix (\a:rel k1.s1)]]$
-\item $[[t1 = s2[fix (\a:rel k2.s2)/a] ]]$ where $[[k1 ~> k2]]$ and $[[s1 ~> s2]]$
-\item $[[t2 = s3[fix (\a:rel k3.s3)/a] ]]$ where $[[k1 ~> k3]]$ and $[[s1 ~> s3]]$
+\item $[[t0 = fix (\a:Rel k1.s1)]]$
+\item $[[t1 = s2[fix (\a:Rel k2.s2)/a] ]]$ where $[[k1 ~> k2]]$ and $[[s1 ~> s2]]$
+\item $[[t2 = s3[fix (\a:Rel k3.s3)/a] ]]$ where $[[k1 ~> k3]]$ and $[[s1 ~> s3]]$
 \end{itemize}
 The induction hypothesis gives us $[[k4]]$ and $[[s4]]$ such that
 $[[k2 ~> k4 <~ k3]]$ and $[[s2 ~> s4 <~ s3]]$.
-Choose $[[t3 = s4[fix (\a:rel k4.s4)/a] ]]$ and we are done
+Choose $[[t3 = s4[fix (\a:Rel k4.s4)/a] ]]$ and we are done
 by \pref{lem:red-subst-par}.
 \end{description}
 \item[Case $[[d0 = a:rel k0]]$:] By induction and \rul{R\_TyBinder}.
@@ -2091,8 +2091,8 @@ If $[[|-sig S]]$ and $[[S |-tc H : D1;D2;H']]$, then $[[S |-tc H' : empty;Rel(D1
 By case analysis on $[[S |-tc H : D1;D2;H']]$
 \end{proof}
 
-\begin{lemma}[Progress]
-\label{lem:progress}
+\begin{theorem}[Progress]
+\label{thm:progress}
 Assume $[[G]]$ has only irrelevant variable bindings.
 If $[[S;G |-ty t : k]]$, then either $[[t]]$ is a value $[[v]]$, $[[t]]$
 is a coerced value $[[t |> g]]$, or there exists $[[t']]$ such that
@@ -2246,39 +2246,177 @@ We are done by \rul{S\_FPush}.
 \end{description}
 \end{proof}
 
-%% \section{Proofs about the \ottkw{split} extension}
+\section{Type erasure}
 
-%% \begin{proof}[Extra case for \pref{lem:kind-reg}, kind regularity]
-%% \begin{description}
-%% \item[Case \rul{Ty\_Split}:]
-%% Immediate.
-%% \end{description}
-%% \end{proof}
+\begin{definition}[Expression values]
+Let values $[[ev]]$ be defined by the following subgrammar of $[[e]]$:
+\[
+[[ev]] \bnfeq [[H ys]] \bnfor [[PI]] \bnfor [[\a. e]]
+                       \bnfor [[\o.e]]
+\]
+\end{definition}
 
-%% \begin{proof}[Extra case for \pref{lem:prop-reg}, proposition regularity]
-%% \begin{description}
-%% \item[Case \rul{Co\_Split}:]
-%% Immediate.
-%% \end{description}
-%% \end{proof}
+\begin{lemma}[Expression substitution]
+\label{lem:expr-subst}
+$[[||t[s/a]|| = ||t||[||s||/a] ]]$
+\end{lemma}
 
-%% \begin{proof}[Extra case for \pref{lem:preservation}, preservation]
-%% \begin{description}
-%% \item[Case \rul{Ty\_Split}:] We now have several cases:
-%% \begin{description}
-%% \item[Case \rul{S\_Split}:] We adopt the metavariable names from the rule:
-%% \[
-%% \ottdruleSXXSplit{}
-%% \]
-%% Suppose $[p']$ is really just $[s0]$, a type argument. The other cases (for an
-%% irrelevant type argument $[ {s0} ]$ or a coercion argument $[g0]$ are similar.
-%% We can derive the following facts:
-%% \begin{itemize}
-%% \item $[S;G |-ty split H{ts} ps s0 into s : k]$ (the typing judgment)
-%% \item By inversion on \rul{Ty\_Split}:
-%% \begin{itemize}
-%% \item $[S;G |-ty H{ts} ps s0 : MPI D. H'{} ts]$ (also using \pref{lem:tycon-inversion})
-%% \item $[S;G |-ty s : UPI (a :rel MPI d, D. H'{} ts), d, (c : t0 [MPI D. H'{} ts]~[MPI D. H'{} ts] a dom(d). k]$
-%% \end{itemize}
-%% \item $[S;G |-ty H{ts} ps : PI a :Rel k1. k2]$ (inversion of \rul{Ty\_AppRel})
-%% \item $[S;G |-ty s0 : k1]$ (same inversion)
+\begin{proof}
+By induction on the structure of $[[t]]$.
+\end{proof}
+
+\begin{lemma}[Irrelevant expression substitution]
+\label{lem:irrel-expr-subst}
+If $[[S;G |-ty t : k]]$ and $[[ a :Irrel k' \in G]]$, then
+$[[ ||t[s/a]|| = ||t|| ]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the typing derivation.
+
+\begin{description}
+\item[Case \rul{Ty\_Var}:] Here is the rule:
+\[
+\ottdruleTyXXVar{}
+\]
+We see that $[[t /= a]]$, because the rule would require $[[a]]$ to be
+relevant. Thus $[[t = b]]$ (for some $[[b /= a]]$) and thus the substitution
+causes no change.
+\item[Case \rul{Ty\_Con}:] Immediate from the definition of $[[ ||.|| ]]$.
+\item[Case \rul{Ty\_AppRel}:] By induction.
+\item[Case \rul{Ty\_AppIrrel}:] By induction. Note that we do not need
+to use the induction hypothesis on the argument; we would not be able
+to because of the use of the $[[Rel(G)]]$ context.
+\item[Case \rul{Ty\_CApp}:] By induction, not looking at the coercion.
+\item[Case \rul{Ty\_Pi}:] Immediate from the definition of $[[ ||.|| ]]$.
+\item[Case \rul{Ty\_Cast}:] By induction, not looking at the coercion.
+\item[Case \rul{Ty\_Case}:] By induction, not looking at the kind.
+\item[Case \rul{Ty\_Lam}:] By induction, not looking at the classifier of the binder.
+\item[Case \rul{Ty\_Fix}:] By induction.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Expression substitution of coercions]
+\label{lem:co-expr-subst}
+$[[ ||t[g/c]|| = ||t|| ]]$
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of $[[t]]$.
+\end{proof}
+
+\begin{theorem}[Type erasure]
+\label{thm:type-erasure}
+If $[[S;G |-s t --> t']]$, then either $[[||t|| --> ||t'||]]$ or
+$[[||t|| = ||t'||]]$.
+\end{theorem}
+
+\begin{proof}
+By induction on $[[S;G |-s t --> t']]$.
+
+\begin{description}
+\item[Case \rul{S\_BetaRel}:] By \rul{E\_Beta} and \pref{lem:expr-subst}.
+\item[Case \rul{S\_BetaIrrel}:] Both expressions are equal
+by \pref{lem:irrel-expr-subst}.
+\item[Case \rul{S\_CBeta}:] By \rul{E\_CBeta} and \pref{lem:co-expr-subst}.
+\item[Case \rul{S\_Match}:] By \rul{E\_Match}.
+\item[Case \rul{S\_Unroll}:] By \rul{E\_Unroll}.
+\item[Case \rul{S\_Trans}:] Both expressions are equal by the definition
+of $[[ ||.|| ]]$.
+\item[Case \rul{S\_IrrelAbs\_Cong}:] By the induction hypothesis.
+\item[Case \rul{S\_App\_Cong}:] By the induction hypothesis and \rul{E\_App\_Cong}.
+\item[Case \rul{S\_Cast\_Cong}:] By the induction hypothesis.
+\item[Case \rul{S\_Case\_Cong}:] By the induction hypothesis and \rul{E\_Case\_Cong}.
+\item[Case \rul{S\_Fix\_Cong}:] By the induction hypothesis and \rul{E\_Fix\_Cong}.
+\item[Push rules:] Both expressions are equal by the definition of
+$[[ ||.|| ]]$.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Expression redexes]
+\label{lem:expr-redex}
+If $[[ ||t|| ]]$ is not an expression value, then $[[t]]$ is neither
+a value nor a coerced value.
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of $[[t]]$.
+
+\begin{description}
+\item[Case $[[t = a]]$:] Immediate.
+\item[Case $[[t = H{ts}]]$:] Impossible.
+\item[Case $[[t = t0 p0]]$:] We have two cases here:
+\begin{description}
+\item[Case $[[t1 = H{ts} ps]]$:] Impossible, as $[[ ||t|| ]]$ is an expression value.
+\item[Otherwise:] Immediate, as $[[t]]$ is neither a value nor a coerced value.
+\end
+\item[Case $[[t = PI d. t0]]$:] Impossible.
+\item[Case $[[t = t0 |> g]]$:] Since $[[ ||t0 |> g|| ]]$ is not an expression value,
+we know that $[[ ||t0|| ]]$ is not an expression value, because these expressions
+are the same. We thus use the induction hypothesis to discover that $[[t0]]$ is not
+a value or a coerced value. We thus know that $[[t0 |> g]]$ is not a coerced value
+(and is obviously not a value).
+\item[Case $[[t = case_k t0 of alts]]$:] Immediate.
+\item[Case $[[t = \d.t0]]$:] Impossible.
+\item[Case $[[t = fix t0]]$:] Immediate.
+\end{description}
+
+\begin{lemma}[Expression values do not step]
+\label{lem:expr-value-no-step}
+There is no $[[e']]$ such that $[[ev --> e']]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward case analysis on $[[ev]]$.
+\end{proof}
+
+\begin{theorem}[Types do not prevent evaluation]
+\label{thm:expr-eval}
+Suppose $[[S;G |-ty t : k]]$ and $[[G]]$ has only irrelevant variable bindings.
+If $[[ ||t|| --> e' ]]$, then $[[ S;G |-s t --> t']]$ and either $[[ ||t'|| = e']]$ or 
+$[[||t'|| = ||t||]]$.
+\end{theorem}
+
+\begin{proof}
+We know that $[[||t||]]$ is not an expression value via the contrapositive
+of \pref{lem:expr-value-no-step}. We thus know that $[[t]]$ is neither a value nor a
+coerced value by \pref{lem:expr-redex}. We can now use \pref{thm:progress} to get
+$[[t']]$ such that $[[S;G |-s t --> t']]$. Finally, we use \pref{thm:type-erasure} to
+see that $[[ ||t'|| = e' ]]$ or $[[ ||t'|| = ||t|| ]]$ as desired.
+\end{proof}
+
+\begin{remark}
+Note in the statement of \pref{thm:expr-eval} that the context $[[G]]$ must have only
+irrelevant variable bindings. This means that the expression $[[ ||t|| ]]$ is closed,
+as one would expect of a program that we wish to evaluate.
+\end{remark}
+
+\begin{lemma}[Substitution/coercion abstraction depth]
+\label{lem:subst-col}
+If $[[S |-col t => n]]$, then $[[S |-col t[s/a] => n]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of $[[t]]$.
+
+\begin{description}
+\item[Case $[[t = a]]$:] 
+
+\begin{lemma}[Preservation of coercion abstraction depth]
+\label{lem:preservation-col}
+If $[[S |-col t => n]]$ and $[[S;G |-s t --> t']]$, then $[[S |-col t' => n]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the step relation.
+
+\begin{description}
+\item[Case \rul{S\_BetaRel}:] 
+
+\begin{theorem}[Coercion abstractions do not prevent evaluation]
+\label{thm:co-expr-eval}
+If $[[S |-col t : n]]$, $[[n <= 0]]$, and $[[S;G |-s t -->* v]]$, then
+$[[v]]$ is not a coercion abstraction.
+\end{theorem}
+
+\begin{proof}

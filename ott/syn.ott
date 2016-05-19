@@ -17,7 +17,7 @@ embed {{ tex-preamble
 
 metavar K                                     ::=   {{ com Data constructors }}
 
-indexvar i, j, n ::= {{ com Indices }}
+indexvar i, j, kk {{ tex k }}, n ::= {{ com Indices }}
 
 grammar
 
@@ -374,6 +374,51 @@ lc, Psi {{ tex \Psi }} :: 'LC_' ::=
 | ( Psi )              :: M :: Parens
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Expressions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+exp, e, ev {{ tex \ottnt{w} }} :: 'E_' ::=
+| a                             ::   :: Var
+| H                             ::   :: Const
+| !!! e y                       ::   :: App
+| PI                            ::   :: Pi
+| case e of ealts               ::   :: Case
+| \ a . e                       ::   :: Lam
+| \ o . e                       ::   :: CLam
+| fix e                         ::   :: Fix
+
+| e ys                          :: M :: Apps
+| ( e )                         :: M :: Parens
+| e [ esubsts ]                 :: M :: Subst
+
+ealt :: 'EAlt_' ::=
+| H -> e                        ::   :: EAlt
+
+ealts {{ tex \overline{\ottnt{ealt} } }} :: 'EAlts_' ::=
+| ealt                          ::   :: One
+| ealts1 ; .... ; ealtsi        ::   :: Many
+| nil                           :: M :: nil
+| || alts ||                    :: M :: Erased
+  {{ tex \llfloor [[alts]] \rrfloor }}
+
+earg, y :: 'EArg_' ::=
+| e                             ::   :: Exp
+| o                             ::   :: Co
+
+eargs, ys {{ tex \overline{\ottnt{y} } }} :: 'EArgs_' ::=
+| y                             ::   :: One
+| ys1 .... ysi                  ::   :: Many
+| nil                           :: M :: Nil
+
+esubst :: 'ESubst_' ::=
+| e / a                         ::   :: Expr
+
+esubsts :: 'ESubsts_' ::=
+| esubst                               ::   :: One
+| esubst1 , .... , esubsti             ::   :: Many
+| nil                                  :: M :: Nil
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Utility  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -394,7 +439,7 @@ lr :: 'LR_' ::=
 | right                     ::   :: Right
   {{ tex \mathrm{R} }}
 
-nat, I {{ tex \ottnt{i} }}  :: 'Nat_' ::=
+nat, I {{ tex \ottnt{i} }}, NN {{ tex \ottnt{n} }}  :: 'Nat_' ::=
 | i                         ::   :: Index
 | 0                         ::   :: Zero
 | 1                         ::   :: One
@@ -402,10 +447,19 @@ nat, I {{ tex \ottnt{i} }}  :: 'Nat_' ::=
 | 3                         ::   :: Three
 | 4                         ::   :: Four
 | I1 - I2                   :: M :: Sub
+| I1 + I2                   :: M :: Plus
 | length D                  :: M :: TelescopeLength
   {{ tex \pipe [[D]] \pipe }}
 | length ps                 :: M :: VectorLength
   {{ tex \pipe [[ps]] \pipe }}
+| max ( NNs )               :: M :: Max
+  {{ tex [[max]]([[NNs]]) }}
+
+nats, Is {{ tex \overline{\ottnt{i} } }}, NNs {{ tex \overline{\ottnt{n} } }}
+  :: 'Nats_' ::=
+| I                        ::   :: One
+| I1 , .... , Ii           ::   :: Many
+| nil                      :: M :: Nil
 
 rewrite_rule :: 'Rewrite_' ::=
 | ps1 eq ps2                         ::   :: ts_rewrite
@@ -421,6 +475,11 @@ rewrite_rule :: 'Rewrite_' ::=
 | unif_result1 eq unif_result2       ::   :: match_rewrite
 | theta1 eq theta2                   ::   :: theta_rewrite
 | PI1 eq PI2                         ::   :: PI_rewrite
+| ealts1 eq ealts2                   ::   :: ealts_rewrite
+
+util :: 'Util_' ::=
+| ||.||                              ::   :: terase_op
+  {{ tex \llfloor {\cdot} \rrfloor }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -484,6 +543,9 @@ terminals :: 'terminals_' ::=
 | match                                ::   :: match   {{ tex \mathsf{match} }}
 | types                                ::   :: types   {{ tex \mathsf{types} }}
 | erase                                ::   :: erase   {{ tex \ottkw{erase} }}
+| max                                  ::   :: max     {{ tex \mathsf{max} }}
+| =>                                   ::   :: fatarr  {{ tex \Rightarrow }}
+| count_col                            ::   :: countcl {{ tex \mathsf{count\_co\lambda} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -496,6 +558,8 @@ terminals :: 'terminals_' ::=
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
+| |-col                                ::   :: Col_ent {{ tex \vdashy{co\lambda} }}
+| |-colalt                             ::   :: Cola_et {{ tex \vdashy{co\lambda{}a} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -664,6 +728,46 @@ fun
 
 by
 |H -> t|  === H -> |t|
+
+funs
+TErase ::=
+
+fun
+|| t || :: e :: terase_type
+  {{ tex \llfloor [[t]] \rrfloor }}
+
+by
+|| a ||              === a
+|| H {ts} ||         === H
+|| t1 t2 ||          === ||t1|| ||t2||
+|| t1 {t2} ||        === ||t1||
+|| t1 g ||           === ||t1|| o
+|| PI d. t ||        === PI
+|| t |> g ||         === ||t||
+||case_k t of alts|| === case ||t|| of ||alts||
+|| \a :Rel k. t ||   === \a.||t||
+|| \a :Irrel k. t || === ||t||
+|| \c:phi.t ||       === \o.||t||
+|| fix t ||          === fix ||t||
+
+fun
+|| alt || :: ealt :: terase_alt
+  {{ tex \llfloor [[alt]] \rrfloor }}
+
+by
+|| H -> t ||   === H -> ||t||
+
+funs
+ColDepth ::=
+
+fun
+count_col ( D ) :: NN :: coldepth_tel
+  {{ tex [[count_col]]([[D]]) }}
+
+by
+count_col(empty)      === 0
+count_col(D, a:rel k) === count_col(D)
+count_col(D, c:phi)   === count_col(D) + 1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
