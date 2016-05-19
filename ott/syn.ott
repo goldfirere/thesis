@@ -208,8 +208,8 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   {{ tex \langle [[t]] \rangle }}
 | sym g                        ::   :: Sym
 | g1 ;; g2                     ::   :: Trans
-| erase _ h t1 t2              ::   :: Erase
-  {{ tex [[erase]]_{[[h]]}\,[[t1]]\,[[t2]] }}
+| t1 ~= { h } t2               ::   :: Coherence
+  {{ tex [[t1]] [[~=]]_{[[h]]} [[t2]] }}
 | H { gs }                     ::   :: Con
   {{ tex [[H]]_{ \{ [[gs]] \} } }}
 | g w                          ::   :: App
@@ -428,6 +428,8 @@ eq :: 'Eq_' ::=
   %% ottdump builds
 | &=                        :: M :: Align
   {{ tex &= }}
+| /=                        ::   :: NotEqual
+  {{ tex \neq }}
 
 nil :: 'Nil_' ::=
 | empty                     ::   :: Empty
@@ -476,6 +478,7 @@ rewrite_rule :: 'Rewrite_' ::=
 | theta1 eq theta2                   ::   :: theta_rewrite
 | PI1 eq PI2                         ::   :: PI_rewrite
 | ealts1 eq ealts2                   ::   :: ealts_rewrite
+| e1 eq e2                           ::   :: e_rewrite
 
 util :: 'Util_' ::=
 | ||.||                              ::   :: terase_op
@@ -542,7 +545,7 @@ terminals :: 'terminals_' ::=
 | Just                                 ::   :: Just    {{ tex \mathsf{Just} }}
 | match                                ::   :: match   {{ tex \mathsf{match} }}
 | types                                ::   :: types   {{ tex \mathsf{types} }}
-| erase                                ::   :: erase   {{ tex \ottkw{erase} }}
+| ~=                                   ::   :: approx  {{ tex \approx }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -651,8 +654,8 @@ build_kpush_co ( g ; ps ) :: h :: build_kpush_co
 
 by
 build_kpush_co ( g ; empty ) === g
-build_kpush_co ( g ; ps, t ) === let c := build_kpush_co(g; ps) in c@(erase_c t (t |> argk c))
-build_kpush_co ( g ; ps,{t}) === let c := build_kpush_co(g; ps) in c@{erase_c t (t |> argk c)}
+build_kpush_co ( g ; ps, t ) === let c := build_kpush_co(g; ps) in c@(t ~={c} t |> argk c)
+build_kpush_co ( g ; ps,{t}) === let c := build_kpush_co(g; ps) in c@{t ~={c} t |> argk c}
 build_kpush_co ( g ; ps, h ) === let c := build_kpush_co(g; ps) in c@(h, sym (argk 1 c) ;; h ;; argk 2 c)
 
 fun

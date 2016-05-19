@@ -182,7 +182,7 @@ S;G |-co g1 ;; g2 : t1 [k1]~[k3] t3
 S;G |-co h : k1 [Type{}]~[Type{}] k2  // |t1| = |t2|
 S;G |-ty t1 : k1  //  S;G |-ty t2 : k2
 -------------------------------- :: Coherence
-S;G |-co erase_h t1 t2 : t1 [k1]~[k2] t2
+S;G |-co t1 ~={h} t2 : t1 [k1]~[k2] t2
 
 forall i: S;G |-co gi : si [ki]~[ki'] si'
 S;G |-ty H{ss} : k1  //  S;G |-ty H{ss'} : k2
@@ -497,7 +497,7 @@ S;G |-s t --> t'
 S;G |-s fix t --> fix t'
 
 S;Rel(G) |-co g0 : PI a :Rel k. s [Type{}]~[Type{}] PI a :Rel k'. s'
-g1 = sym (argk g0)      //   g2 = g0@(erase_(sym g1) (t |> g1) t)
+g1 = sym (argk g0)      //   g2 = g0@(t |> g1 ~={sym g1} t)
 % g0 : PI a:rel k. s ~ PI a:rel k'. s'
 % g1 : k' ~ k
 % g2 : s[(t |> g1)/a] ~ s'[t/a]
@@ -505,7 +505,7 @@ g1 = sym (argk g0)      //   g2 = g0@(erase_(sym g1) (t |> g1) t)
 S;G |-s (v |> g0) t --> v (t |> g1) |> g2
 
 S;Rel(G) |-co g0 : PI a :Irrel k. s [Type{}]~[Type{}] PI a :Irrel k'. s'
-g1 = sym (argk g0)      //   g2 = g0@(erase_(sym g1) (t |> g1) t)
+g1 = sym (argk g0)      //   g2 = g0@(t |> g1 ~={sym g1} t)
 % g0 : PI a:rel k. s ~ PI a:rel k'. s'
 % g1 : k' ~ k
 % g2 : s[(t |> g1)/a] ~ s'[t/a]
@@ -518,7 +518,7 @@ h' = g1 ;; h ;; sym g2  //  g3 = g0@(h', h)
 --------------------------------------------- :: CPush
 S;G |-s (v |> g0) h --> v h' |> g3
 
-g1 = UPI a:Irrel <k>. g // g2 = erase_<Type{}> t1 t2
+g1 = UPI a:Irrel <k>. g // g2 = t1 ~={<Type{}> } t2
 t1 = UPI a:Irrel k. (k1[a |> sym <k>/a]) // t2 = UPI a:Irrel k.k1
 ----------------------------------- :: APush
 S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (g1 ;; g2)
@@ -528,7 +528,7 @@ S;G |-s \a :Irrel k. (v |> g) --> (\a :Irrel k. v) |> (g1 ;; g2)
 % g2 = argk g0
 % g1 : k2 ~ k
 % g1 = g0@(erase_g2 a (a |> g2)) ; sym g2
-g1 = g0@(erase_g2 a (a |> g2)) ;; sym g2
+g1 = g0@(a ~={g2} a |> g2) ;; sym g2
 g2 = argk g0
 -------------------------------------- :: FPush
 S;G |-s fix ((\a:Rel k.s) |> g0) --> (fix (\a:Rel k. (s |> g1))) |> g2

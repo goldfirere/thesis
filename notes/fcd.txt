@@ -79,10 +79,10 @@ DESIGN DECISIONS:
    CPush.
  - Not erasing the {} parameters to tycons: we need the kinds of the types
    in Nth to be joinable.
- - Looseness in R_Pi and R_Lam: necessary for completeness of rewrite
+ - OLD! WRONG! Looseness in R_Pi and R_Lam: necessary for completeness of rewrite
    relation. Otherwise, the induction hypothesis would be needed with
    a coercion variable in the context.
- - NB: Consistency depends on preservation for the Step case.
+ - OLD! WRONG! NB: Consistency depends on preservation for the Step case.
  - In my ott code, I always write the kinds as a self-check.
  - res must handle many cases at once, because we use it to look past
    the PIs in a partially-applied constant, and later telescope kinds
@@ -119,6 +119,9 @@ DESIGN DECISIONS:
    how hard this is.
  - "split" is a viable extension. But it's technically painful (requires a very
    baroque push rule and more kinds to be kept in the coercion-erased language).
+ - The c ~# g trick from the nokinds paper is needed to get consistency to
+   go through. But this doesn't diminish Haskell expressiveness ever -- equality
+   over polytypes is never needed in Haskell due to its predicative nature.
 
 Example about partially-applied GADT data constructors:
 

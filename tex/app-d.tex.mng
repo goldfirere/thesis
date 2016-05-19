@@ -35,9 +35,9 @@ it is merely a typesetting convenience to elide the kinds.
 
 \begin{notation}
 \label{note:almost-free}
-Define $[[c ~# g]]$ to mean that the coercion variable $[[c]]$
+Define $[[c ~# g]]$ (pronounced ``$[[g]]$ is almost devoid of $[[c]]$'') to mean that the coercion variable $[[c]]$
 appears nowhere in $[[g]]$ except, perhaps, in one of the types
-related by an $[[erase]]$ coercion.
+related by a $[[t1 ~={h} t2]]$ coercion.
 \end{notation}
 
 \section{Structural properties}
@@ -954,14 +954,14 @@ are done by assumption and \rul{Cev\_Nil}.
 \item[Case \rul{Cev\_TyRel}:]
 In this case, we have $[[ps = ps0, t0]]$ and $[[D = D0, b :Rel k]]$
 with $[[S;G |-cev ps0 : D0[ts/as] ]]$ and $[[S;G |-ty t0 : k[ts/as][ps0/dom(D0)] ]]$.
-We can see that $[[build_kpush_co(h; ps0, t0) = let c := build_kpush_co(h; ps0) in c@(erase_c t0 (t0 |> argk c)) ]]$.
+We can see that $[[build_kpush_co(h; ps0, t0) = let c := build_kpush_co(h; ps0) in c@(t0 ~={c} t0 |> argk c) ]]$.
 The induction hypothesis tells us that
 $[[S;Rel(G) |-co c : (MPI b :Rel k.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (MPI b:Rel k.s)[ts'/as][ps0'/dom(D0)] ]]$. We can thus deduce the following:
 \begin{itemize}
 \item $[[S;Rel(G) |-co argk c : k[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] k[ts'/as][ps0'/dom(D0)] ]]$
 \item $[[S;Rel(G) |-ty t0 |> argk c : k[ts'/as][ps0'/dom(D0)] ]]$
-\item $[[S;Rel(G) |-co erase_c t0 (t0 |> argk c) : t0 [k[ts/as][ps0/dom(D0)] ]~[k[ts'/as][ps0'/dom(D0)] ] t0 |> argk c ]]$
-\item $[[S;Rel(G) |-co c@(erase_c t0 (t0 |> argk c)) : s[ts/as][ps0/dom(D0)][t0/b] [Type{}]~[Type{}] s[ts'/as][ps0'/dom(D0)][t0 |> argk c/b] ]]$
+\item $[[S;Rel(G) |-co t0 ~={c} t0 |> argk c : t0 [k[ts/as][ps0/dom(D0)] ]~[k[ts'/as][ps0'/dom(D0)] ] t0 |> argk c ]]$
+\item $[[S;Rel(G) |-co c@(t0 ~={c} t0 |> argk c) : s[ts/as][ps0/dom(D0)][t0/b] [Type{}]~[Type{}] s[ts'/as][ps0'/dom(D0)][t0 |> argk c/b] ]]$
 \end{itemize}
 Note that $[[cast_kpush_arg(t0;c) = t0 |> argk c]]$ and thus that we can say
 $[[t0' = t0 |> argk c]]$. Noting that the $[[ps0]]$ cannot have $[[b]]$ free due to
@@ -1006,7 +1006,7 @@ $[[UPI]]$, but with no need.
 \label{thm:preservation}
 If $[[S;G |-ty t : k]]$ and $[[S;G |-s t --> t']]$, then
 $[[S;G |-ty t' : k]]$.
-\end{lemma}
+\end{theorem}
 
 \begin{proof}
 By induction on the typing derivation.
@@ -1171,7 +1171,7 @@ Inversion and typing rules then give us the following facts:
 \item $[[S;Rel(G) |-co UPI a:Irrel <k>. g : UPI a:Irrel k. k0 [Type{}]~[Type{}] UPI a:Irrel k. (k1[a |> sym <k>/a]) ]]$ (by \rul{Co\_PiTy})
 \item $[[S;Rel(G) |-ty UPI a:Irrel k. (k1[a |> sym <k>/a]) : Type{} ]]$ (by \pref{lem:prop-reg})
 \item $[[S;Rel(G) |-ty UPI a:Irrel k.k1 : Type{}]]$ (by \pref{lem:kind-reg})
-\item $[[S;Rel(G) |-co erase_<Type{}> (UPI a:Irrel k. (k1[a |> sym <k>/a])) (UPI a:Irrel k. k1) : (UPI a:Irrel k. (k1[a |> sym <k>/a])) [Type{}]~[Type{}] (UPI a:Irrel k. k1)]]$ (by \rul{Co\_Coherence})
+\item $[[S;Rel(G) |-co (UPI a:Irrel k. (k1[a |> sym <k>/a])) ~={<Type{}>} (UPI a:Irrel k. k1) : (UPI a:Irrel k. (k1[a |> sym <k>/a])) [Type{}]~[Type{}] (UPI a:Irrel k. k1)]]$ (by \rul{Co\_Coherence})
 \end{itemize}
 We can then conclude, by \rul{Co\_Trans} and \rul{Ty\_Cast}, that the result
 has the same type, $[[UPI a:Irrel k. k1]]$ as the redex.
@@ -1209,15 +1209,15 @@ We can derive the following facts:
 \item $[[S;Rel(G) |-co argk g0 : k [Type{}]~[Type{}] k1]]$ (\rul{Co\_ArgK})
 \item $[[g2 = argk g0]]$ (premise of \rul{S\_FPush})
 \item $[[S;G,a:Rel k |-ty a |> g2 : k1]]$ (\rul{Ty\_Cast})
-\item $[[S;G,a:Rel k |-co erase_g2 a (a |> g2) : a [k]~[k1] a |> g2]]$ (\rul{Co\_Coherence})
-\item $[[S;G,a:Rel k |-co g0@(erase_g2 a (a |> g2)) : k2 [Type{}]~[Type{}] k1[a |> g2/a] ]]$ (\rul{Co\_InstRel})
+\item $[[S;G,a:Rel k |-co a ~={g2} a |> g2 : a [k]~[k1] a |> g2]]$ (\rul{Co\_Coherence})
+\item $[[S;G,a:Rel k |-co g0@(a ~={g2} a |> g2) : k2 [Type{}]~[Type{}] k1[a |> g2/a] ]]$ (\rul{Co\_InstRel})
 \item $[[S;Rel(G) |-ty UPI a:Rel k1.k1 : Type{}]]$ (\pref{lem:kind-reg})
 \item $[[S;Rel(G),a:Rel k1 |-ty k1 : Type{}]]$ (inversion on \rul{Ty\_Pi})
 \item $[[S;Rel(G) |-ty k1 : Type{}]]$ (\pref{lem:tyvar-reg} and \pref{lem:weakening})
 \item $[[k1[a |> g2/a] = k1]]$ (\pref{lem:scoping}, noting that $[[a # k1]]$)
-\item $[[S;G,a:Rel k |-co g0@(erase_g2 a (a |> g2)) : k2 [Type{}]~[Type{}] k1]]$ (substitution)
+\item $[[S;G,a:Rel k |-co g0@(a ~={g2} a |> g2) : k2 [Type{}]~[Type{}] k1]]$ (substitution)
 \item $[[S;G,a:Rel k |-co sym g2 : k1 [Type{}]~[Type{}] k]]$ (\rul{Co\_Sym} with \pref{lem:weakening})
-\item $[[g1 = g0@(erase_g2 a (a |> g2)) ;; sym g2]]$ (premise of \rul{S\_FPush})
+\item $[[g1 = g0@(a ~={g2} a |> g2) ;; sym g2]]$ (premise of \rul{S\_FPush})
 \item $[[S;G,a:Rel k |-co g1 : k2 [Type{}]~[Type{}] k]]$ (\rul{Co\_Trans})
 \item $[[S;G,a:Rel k |-ty s |> g1 : k]]$ (\rul{Ty\_Cast} and \pref{lem:increasing-rel})
 \item $[[S;G |-ty \a:Rel k. (s |> g1) : UPI a:Rel k.k]]$ (\rul{Ty\_Lam})
@@ -2097,7 +2097,7 @@ Assume $[[G]]$ has only irrelevant variable bindings.
 If $[[S;G |-ty t : k]]$, then either $[[t]]$ is a value $[[v]]$, $[[t]]$
 is a coerced value $[[t |> g]]$, or there exists $[[t']]$ such that
 $[[S;G |-s t --> t']]$.
-\end{lemma}
+\end{theorem}
 
 \begin{proof}
 By induction on the typing judgment.
@@ -2349,7 +2349,7 @@ By induction on the structure of $[[t]]$.
 \begin{description}
 \item[Case $[[t1 = H{ts} ps]]$:] Impossible, as $[[ ||t|| ]]$ is an expression value.
 \item[Otherwise:] Immediate, as $[[t]]$ is neither a value nor a coerced value.
-\end
+\end{description}
 \item[Case $[[t = PI d. t0]]$:] Impossible.
 \item[Case $[[t = t0 |> g]]$:] Since $[[ ||t0 |> g|| ]]$ is not an expression value,
 we know that $[[ ||t0|| ]]$ is not an expression value, because these expressions
@@ -2360,6 +2360,7 @@ a value or a coerced value. We thus know that $[[t0 |> g]]$ is not a coerced val
 \item[Case $[[t = \d.t0]]$:] Impossible.
 \item[Case $[[t = fix t0]]$:] Immediate.
 \end{description}
+\end{proof}
 
 \begin{lemma}[Expression values do not step]
 \label{lem:expr-value-no-step}
