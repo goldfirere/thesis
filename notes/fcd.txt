@@ -117,6 +117,8 @@ DESIGN DECISIONS:
    rules (see critical use of matching in Alt_Match as used in the KPush case in
    the Progress theorem). See "weird case" below for an illustrative example of
    how hard this is.
+ - "split" is a viable extension. But it's technically painful (requires a very
+   baroque push rule and more kinds to be kept in the coercion-erased language).
 
 Example about partially-applied GADT data constructors:
 
@@ -192,3 +194,6 @@ case_() (blah : MPI (a :Irrel Bool) (x :Rel Proxy Bool a). X) of
 case_() (blah : MPI (a :Irrel Type) (x :Rel Type). X) of
   MkX -> \ (k :Irrel Type) (c : blah [MPI (a:Irrel Type) (x :Rel Type). X]~[MPI (a :Irrel k) (x :Rel Proxy k a). X] MkX k) -> ()
 
+
+
+TODO: ~# still doesn't allow c in η.

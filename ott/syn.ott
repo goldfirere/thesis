@@ -699,3 +699,5 @@ Phi_IEquality <= Phi_Subst
 Arg_Ty <= Arg_Erased
 Arg_Co <= Arg_Erased
 Args_One <= Args_Erased
+
+Type_Pis <= Type_Subst

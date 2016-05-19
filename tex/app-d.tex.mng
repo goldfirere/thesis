@@ -2245,3 +2245,40 @@ We are done by \rul{S\_FPush}.
 \item[Case $[[S;G |-s t0 --> t0']]$:] We are done by \rul{S\_Fix\_Cong}.
 \end{description}
 \end{proof}
+
+%% \section{Proofs about the \ottkw{split} extension}
+
+%% \begin{proof}[Extra case for \pref{lem:kind-reg}, kind regularity]
+%% \begin{description}
+%% \item[Case \rul{Ty\_Split}:]
+%% Immediate.
+%% \end{description}
+%% \end{proof}
+
+%% \begin{proof}[Extra case for \pref{lem:prop-reg}, proposition regularity]
+%% \begin{description}
+%% \item[Case \rul{Co\_Split}:]
+%% Immediate.
+%% \end{description}
+%% \end{proof}
+
+%% \begin{proof}[Extra case for \pref{lem:preservation}, preservation]
+%% \begin{description}
+%% \item[Case \rul{Ty\_Split}:] We now have several cases:
+%% \begin{description}
+%% \item[Case \rul{S\_Split}:] We adopt the metavariable names from the rule:
+%% \[
+%% \ottdruleSXXSplit{}
+%% \]
+%% Suppose $[p']$ is really just $[s0]$, a type argument. The other cases (for an
+%% irrelevant type argument $[ {s0} ]$ or a coercion argument $[g0]$ are similar.
+%% We can derive the following facts:
+%% \begin{itemize}
+%% \item $[S;G |-ty split H{ts} ps s0 into s : k]$ (the typing judgment)
+%% \item By inversion on \rul{Ty\_Split}:
+%% \begin{itemize}
+%% \item $[S;G |-ty H{ts} ps s0 : MPI D. H'{} ts]$ (also using \pref{lem:tycon-inversion})
+%% \item $[S;G |-ty s : UPI (a :rel MPI d, D. H'{} ts), d, (c : t0 [MPI D. H'{} ts]~[MPI D. H'{} ts] a dom(d). k]$
+%% \end{itemize}
+%% \item $[S;G |-ty H{ts} ps : PI a :Rel k1. k2]$ (inversion of \rul{Ty\_AppRel})
+%% \item $[S;G |-ty s0 : k1]$ (same inversion)
