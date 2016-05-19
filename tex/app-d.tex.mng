@@ -2391,32 +2391,4 @@ irrelevant variable bindings. This means that the expression $[[ ||t|| ]]$ is cl
 as one would expect of a program that we wish to evaluate.
 \end{remark}
 
-\begin{lemma}[Substitution/coercion abstraction depth]
-\label{lem:subst-col}
-If $[[S |-col t => n]]$, then $[[S |-col t[s/a] => n]]$.
-\end{lemma}
 
-\begin{proof}
-By induction on the structure of $[[t]]$.
-
-\begin{description}
-\item[Case $[[t = a]]$:] 
-
-\begin{lemma}[Preservation of coercion abstraction depth]
-\label{lem:preservation-col}
-If $[[S |-col t => n]]$ and $[[S;G |-s t --> t']]$, then $[[S |-col t' => n]]$.
-\end{lemma}
-
-\begin{proof}
-By induction on the step relation.
-
-\begin{description}
-\item[Case \rul{S\_BetaRel}:] 
-
-\begin{theorem}[Coercion abstractions do not prevent evaluation]
-\label{thm:co-expr-eval}
-If $[[S |-col t : n]]$, $[[n <= 0]]$, and $[[S;G |-s t -->* v]]$, then
-$[[v]]$ is not a coercion abstraction.
-\end{theorem}
-
-\begin{proof}

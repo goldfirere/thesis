@@ -543,9 +543,6 @@ terminals :: 'terminals_' ::=
 | match                                ::   :: match   {{ tex \mathsf{match} }}
 | types                                ::   :: types   {{ tex \mathsf{types} }}
 | erase                                ::   :: erase   {{ tex \ottkw{erase} }}
-| max                                  ::   :: max     {{ tex \mathsf{max} }}
-| =>                                   ::   :: fatarr  {{ tex \Rightarrow }}
-| count_col                            ::   :: countcl {{ tex \mathsf{count\_co\lambda} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -558,8 +555,6 @@ terminals :: 'terminals_' ::=
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
-| |-col                                ::   :: Col_ent {{ tex \vdashy{co\lambda} }}
-| |-colalt                             ::   :: Cola_et {{ tex \vdashy{co\lambda{}a} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -756,18 +751,6 @@ fun
 
 by
 || H -> t ||   === H -> ||t||
-
-funs
-ColDepth ::=
-
-fun
-count_col ( D ) :: NN :: coldepth_tel
-  {{ tex [[count_col]]([[D]]) }}
-
-by
-count_col(empty)      === 0
-count_col(D, a:rel k) === count_col(D)
-count_col(D, c:phi)   === count_col(D) + 1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
