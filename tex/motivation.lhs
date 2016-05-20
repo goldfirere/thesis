@@ -20,23 +20,18 @@ dissertation, all the indented, typeset code
 is type-checked against my implementation
 every time the text is typeset.
 
-\begin{proposal}
-In this proposal, I elide the details of some of the motivating examples. Instead,
-I list them as stubs to be filled out later, when writing the dissertation
-proper.
-
 The code snippets throughout this proposal are presented on a variety of
 background colors. A \colorbox{working}{\workingcolorname} background
-highlights code that does not work in today's Haskell but does currently (May
-2015) work in my implementation. A \colorbox{notyet}{\notyetcolorname}
-background indicates code that does not work verbatim in my implementation,
+highlights code that newly works in GHC~8.0 due to my implementations
+of previously published papers~\cite{nokinds,visible-type-application}.
+A \colorbox{notyet}{\notyetcolorname}
+background indicates code that does not work verbatim,
 but could still be implemented via the use of singletons~\cite{singletons} and
 similar workarounds. A \colorbox{noway}{\nowaycolorname} background marks code
 that does not currently work in my implementation due to bugs and
 incompleteness in my implementation. To my knowledge, there is nothing more
 than engineering (and perhaps the use of singletons) to get these examples
 working.
-\end{proposal}
 
 \section{Eliminating erroneous programs}
 
@@ -260,7 +255,9 @@ Instead, we want to ensure that the small-step semantics respects the big-step
 semantics. That is, after every step, we want the value -- as given by the
 big-step semantics -- to remain the same. We thus want the small-step stepper
 to return a custom datatype, marrying the result of stepping with evidence
-that the value of this result agrees with the value of the original expression:
+that the value of this result agrees with the value of the original expression:\footnote{This example fails because it contains data constructors with constraints
+occurring after visible parameters, something currently unsupported by GHC.
+If the $\Pi$-bound parameters were invisible, this would work.}
 \begin{noway}
 \begin{spec}
 data StepResult :: Expr ![] ty -> * ^^ where

@@ -1,0 +1,108 @@
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%  Split  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% defns
+% JSplit :: '' ::=
+
+% defn
+% !!! S ; G |-ty t : k :: :: TySplit :: 'Ty_'
+%   {{ com \rae{You shouldn't see this.} }}
+% by
+
+% S;G |- t0 : k  //  S;G |- s3 : k0
+% S;G |- s1 : UPI (a1 :Irrel Type{}), (a0 :Rel (MPI b :Rel a1. k)), b :Rel a1, (c : t0 [k]~[k] a0 b). k0
+% S;G |- s2 : UPI (a1 :Irrel Type{}), (a2 :Irrel Type{}), (a3 :Irrel a1), (a4 :Irrel a2), (a0 :Rel (MPI c0:(a3 [a1]~[a2] a4). k)), (c0:a3 [a1]~[a2] a4), (c : t0 [k]~[k] a0 c0). k0
+% ------------------------------------------ :: Split
+% !!! S;G |-ty split t0 into ty -> s1; co -> s2; other -> s3 : k0
+
+% defn
+% !!! S ; G |-co g : phi :: :: CoSplit :: 'Co_'
+%   {{ com \rae{You shouldn't see this.} }}
+% by
+
+% TODO: Update.
+% S;G |-co g1 : t1 [k3]~[k4] t2  //  S;G |-co g2 : s1 [k1']~[k2'] s2
+% S;G |-ty split t1 into s1 : k1  // S;G |-ty split t2 into s2 : k2
+% ------------------------------ :: Split
+% !!! S;G |-co split g1 into g2 : split t1 into s1 [k1]~[k2] split t2 into s2
+
+% defn
+% !!! S ; G |-s t --> t' :: :: StepSplit :: 'S_'
+%   {{ com \rae{You shouldn't see this.} }}
+% by
+
+% S;G |-ty s0 : k0
+% --------------------------------------------------- :: SplitTy
+% !!! S;G |-s split H{ts} ps s0 into ty -> s1; co -> s2; other -> s3 --> s1 {k0} (H{ts} ps) s0 <H{ts} ps s0>
+
+% S;G |-co g : t1 (k1)~(k2) t2
+% ---------------------------------------- :: SplitCo
+% !!! S;G |-s split H{ts} ps g into ty -> s1; co -> s2; other -> s3 --> s2 {k1} {k2} {t1} {t2} (H{ts} ps) g <H{ts} ps g>
+
+% v is not an application
+% ---------------------------------- :: SplitOther
+% !!! S;G |-s split v into ty -> s1; co -> s2; other -> s3 --> s3
+
+% S;G |-s t --> t'
+% -------------------------- :: Split_Cong
+% !!! S;G |-s split t into ty -> s1; co -> s2; other -> s3 --> split t' into ty -> s1; co -> s2; other -> s3
+
+% % TODO: Should this be fleshed out?
+% S;G |-ty s3 : k0
+% g1 = UPI a1 :Irrel <Type{}>. UPI a0 :Rel (MPI b :Rel <a1>. sym g0). UPI b :Rel <a1>. UPI c : (erase_g0 v (v |> g0),<a0 b>). <k0>
+% g1' = erase_h t1 t2
+% g2 = UPI a1 :Irrel <Type{}>. UPI a2 :Irrel <Type{}>. UPI a3 :Irrel <a1>. UPI a4 :Irrel <a2>. UPI a0 :Rel (MPI c0:(<a3>,<a4>). sym g0). UPI c0:(<a3>,<a4>). UPI c:(erase_g0 v (v |> g0),<a0 c0>). <k0>
+% g2' = erase_h' t1' t2'
+% ------------------------------------- :: SPush
+% !!! S;G |-s split (v |> g0) into ty -> s1; co -> s2; other -> s3 --> split v into ty -> s1 |> (g1 ;; g1'); co -> s2 |> (g2 ;; g2'); other -> s3
+
+% defn
+% !!! t ~> t' :: :: RSplit :: 'R_'
+%   {{ com \rae{You shouldn't see this.} }}
+% by
+
+% t ~> t' // s1 ~> s1' // s2 ~> s2' // s3 ~> s3'
+% -------------------------------------- :: Split_Cong
+% !!! split t into ty -> s1; co -> s2; other -> s3 ~> split t' into ty -> s1'; co -> s2'; other -> s3'
+
+
+% !!! split H{ts} ps s0 into ty -> s1; co -> s2; other -> s3 ~> s1 
+
+--------------
+%% \section{Proofs about the \ottkw{split} extension}
+
+%% \begin{proof}[Extra case for \pref{lem:kind-reg}, kind regularity]
+%% \begin{description}
+%% \item[Case \rul{Ty\_Split}:]
+%% Immediate.
+%% \end{description}
+%% \end{proof}
+
+%% \begin{proof}[Extra case for \pref{lem:prop-reg}, proposition regularity]
+%% \begin{description}
+%% \item[Case \rul{Co\_Split}:]
+%% Immediate.
+%% \end{description}
+%% \end{proof}
+
+%% \begin{proof}[Extra case for \pref{lem:preservation}, preservation]
+%% \begin{description}
+%% \item[Case \rul{Ty\_Split}:] We now have several cases:
+%% \begin{description}
+%% \item[Case \rul{S\_Split}:] We adopt the metavariable names from the rule:
+%% \[
+%% \ottdruleSXXSplit{}
+%% \]
+%% Suppose $[p']$ is really just $[s0]$, a type argument. The other cases (for an
+%% irrelevant type argument $[ {s0} ]$ or a coercion argument $[g0]$ are similar.
+%% We can derive the following facts:
+%% \begin{itemize}
+%% \item $[S;G |-ty split H{ts} ps s0 into s : k]$ (the typing judgment)
+%% \item By inversion on \rul{Ty\_Split}:
+%% \begin{itemize}
+%% \item $[S;G |-ty H{ts} ps s0 : MPI D. H'{} ts]$ (also using \pref{lem:tycon-inversion})
+%% \item $[S;G |-ty s : UPI (a :rel MPI d, D. H'{} ts), d, (c : t0 [MPI D. H'{} ts]~[MPI D. H'{} ts] a dom(d). k]$
+%% \end{itemize}
+%% \item $[S;G |-ty H{ts} ps : PI a :Rel k1. k2]$ (inversion of \rul{Ty\_AppRel})
+%% \item $[S;G |-ty s0 : k1]$ (same inversion)

@@ -25,7 +25,7 @@ increased, Haskellers have started to integrate dependent types into their
 programs~\cite{singletons, hasochism, she, clash}, despite the fact that
 today's Haskell\footnote{Throughout this dissertation, a reference to
   ``today's Haskell'' refers to the language implemented by the Glasgow
-  Haskell Compiler (GHC), version 7.10, released in 2015.} does not internally
+  Haskell Compiler (GHC), version 8.0, released in 2016.} does not internally
 support dependent types. Indeed, the desire to program in Haskell but with
 support for dependent types influenced the creation of
 Agda~\cite{norell-thesis} and Idris~\cite{idris}; both are Haskell-like
@@ -39,8 +39,11 @@ language, known as System FC~\cite{systemfc}, and explain the changes to the
 surface language necessary to support dependent types. Naturally, I must also
 describe the elaboration from the surface language to the internal language,
 including type inference. Along with the textual description contained in this
-dissertation, I have also implemented support for dependent types in GHC directly;
-I expect a future release of the software to include this support.
+dissertation, I have also partially implemented these ideas
+into GHC directly; indeed, my contributions were one of the key factors
+in making the current release of GHC a new major version. It is my expectation
+that I will implement the internal language and type inference algorithm described in this
+work into GHC in the near future.
 Much of my work builds upon the critical work of
 \citet{gundry-thesis}; one of my chief contributions is adapting his work
 to work with the GHC implementation and further features of Haskell.
@@ -63,60 +66,71 @@ functional programming community, and examples of how dependent types can
 do real work (outside of theorem-proving, which is beyond the scope of
 dependent types in Haskell -- see \pref{sec:no-proofs}) are hard to come by.
 
-\item \pref{cha:system-fc} is a thorough treatment of System FC, as it
-has inspired today's GHC. Though there are many publications on System
-FC~\cite{systemfc,promotion,nokinds,closed-type-families,safe-coercions}, it has evolved much over the years and benefits
-from a solid, full treatment. Having a record of today's System FC also
-allows readers to understand the extensions I add in context.
-
-This chapter, however, does not prove
-type safety of this language, deferring the proof to the system that
-includes dependent types.
-
-\item \pref{cha:dep-haskell} presents Dependent Haskell, the language
+\item \pref{cha:dep-haskell} presents Dependent Haskell, the surface language
 I have designed in this dissertation. This chapter is written to be useful
 to practitioners, being a user manual of sorts of the new features. In
 combination with \pref{cha:motivation}, this chapter could serve to educate
 Haskellers on how to use the new features.
-\rae{Unique to Dependent Haskell is having two different dependent quantifiers.}
 
-\item \pref{cha:fcd} describes System FC with dependent types,
-which I have named System FCD. System FCD is an extension on System FC,
-with two major changes:
+In some ways, Dependent Haskell is similar to existing dependently typed
+languages, drawing no distinction between terms and types and allowing
+rich specifications in types. However, it
+differs in several key ways from existing approaches to dependent types:
 \begin{enumerate}
-\item System FCD supports first-class equalities among the kinds that classify
-the system's types, whereas System FC supports only \emph{type} equalities.
-Adding kind equalities is made simpler by also adding the \emph{Type-in-Type}
-axiom (or |* :: *|) and merging the grammar of types and kinds. This aspect
-of System FCD was originally presented in the work of \citet{nokinds}.
-\item System FCD also contains a proper $\Pi$-type, which quantifies over
-an argument made available in both a type and a term. It is the existence
-of $\Pi$-types that enables me to claim that the language is dependently
-typed.
+\item Dependent Haskell has the $\ottkw{Type} : \ottkw{Type}$ axiom, avoiding
+the need for an infinite hierarchy of sorts~\cite{???} used in other languages.
+
+\item A key issue when writing dependently typed programs is in figuring out
+what information is needed at runtime. Dependent Haskell's approach is to
+require the programmer to choose whether a quantified variable should be retained
+(making a proper $\Pi$-type) or discarded (making a $\forall$-type) during
+compilation.
+
+\item In contrast to many dependently typed languages, Dependent Haskell is
+agnostic to the issue of termination. There is no termination checker in the
+language, and termination is not a prerequisite of type safety. A drawback
+of this approach is that some proofs of type equivalence
+must be executed at runtime, as discussed in \pref{sec:running-proofs}.
+
+\item As elaborated in \pref{cha:type-inference}, Dependent Haskell retains important
+type inference characteristics that exist in previous versions of Haskell (e.g., those
+characteristics described by \citet{outsidein}).
+In particular, all programs accepted by today's GHC -- including those without
+type signatures -- are also valid in Dependent
+Haskell.
 \end{enumerate}
-This chapter contains the full prose and technical description of System FCD
-and well as a proof of type safety (though the details of many proofs are
-relegated to \pref{app:fc}).
 
-\item \pref{cha:haskell-spec} introduces a specification of the Dependent Haskell
-surface language. Though much formal work has been done on System FC --
-the \emph{internal} language -- there is much less formal work done on
-Haskell itself. This chapter builds a specification of the surface language,
-to be used when discussing type inference and elaboration into System FCD.
+\item \pref{cha:pico} presents \pico/, a new dependently-typed
+  $\lambda$-calculus, intended as an internal language suitable as a target
+  for compiling Dependent Haskell. \Pico/ allows full dependent types, has
+  the $\ottkw{Type} : \ottkw{Type}$ axiom, and yet has no computation in types.
+  Instead of allowing type equality to include, say, $\beta\eta$-equivalence
+  (as in Coq), type equality in \pico/ is just $\alpha$-equivalence. A richer
+  notion of type equivalence is permitted through coercions, which witness the
+  equivalence between two types. In this way, \pico/ is a direct descendent
+  of System FC~\cite{systemfc,promotion,nokinds,closed-type-families,safe-coercions} and of the \emph{evidence} language of \citet{gundry-thesis}.
 
-\item \pref{cha:type-inference} presents the type inference and elaboration
-  algorithm from Dependent Haskell to System FCD. As compared to Gundry's
+  In \pref{app:pico}, I prove the usual preservation and progress theorems
+  for \pico/ as well as a type erasure theorem that relates the operational
+  semantics of \pico/ to that of a simple $\lambda$-calculus with datatypes
+  and \ottkw{fix}. In this way, I show that all the fancy types really can
+  be erased at runtime.
+
+\item \pref{cha:type-inference} contains a technical presentation of the
+  Dependent Haskell surface language, providing typing rules and an
+  elaboration into \pico/. These typing rules contain an algorithmic
+  specification of Dependent Haskell, detailing which programs should
+  be accepted and which should be rejected.
+  As compared to Gundry's
   work~\cite{gundry-thesis}, the chief novelty here is that it adapts the type
   inference algorithm to work with (a slight variant of) the \outsidein/
-  algorithm~\cite{outsidein}. This chapter contains proofs of soundness with
-  respect both to the Haskell specification and System FCD. The inference
-  algorithm is not complete, however, though I do prove completeness for
-  subsets of Haskell. This lack of completeness follows directly from the
-  lack of completeness of \outsidein/. See \pref{sec:incomplete} for more
-  details.
+  algorithm~\cite{outsidein}. I prove that the elaborated program is always
+  well-typed in \pico/.
 
-\item \pref{cha:implementation} considers some of the implementation
-challenges inherent in building Dependent Haskell for wide distribution.
+\item \pref{cha:implementation} discusses implementation details, focusing
+on the released implementation of the system from \citet{nokinds}, which
+is part of GHC~8.0. Considerations about implementing full Dependent Haskell
+are also included here.
 
 \item \pref{cha:related} puts this work in context by comparing it to
 several other dependently typed systems, both theories and implementations.
@@ -127,11 +141,6 @@ available in today's Haskell that support dependently typed programming. This
 is included as a primer to these features for readers less experienced in
 Haskell, and also as a counterpoint to the features discussed as parts of
 Dependent Haskell.
-
-\begin{proposal}
-\pref{cha:proposal} contains a timeline of the work remaining toward completing
-this dissertation.
-\end{proposal}
 
 With an implementation of dependent types in Haskell available, I look forward
 to seeing how the Haskell community builds on top of my work and discovers

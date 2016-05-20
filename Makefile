@@ -7,7 +7,7 @@ BIB_FILES_FULL = bib/rae.bib
 FMT_FILES_BASE = rae
 HS_FILES_BASE = ThesisPreamble
 GHC_OPTS = -Werror -Wall
-GHC = ghc-nokinds
+GHC = ghc-8
 
 OTT_FILES_FULL = $(OTT_FILES_BASE:%=ott/%.ott)
 OTT_OUTPUT_BASE = ottdefns

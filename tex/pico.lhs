@@ -1,11 +1,7 @@
-\chapter{System~FCD}
-\label{cha:fcd}
+%% -*- mode: LaTeX -*-
 
-\begin{proposal}
-This chapter will build on \pref{cha:system-fc} by adding kind equalities
-and dependent types. It will be a combination of the systems in \citet{nokinds}
-and \citet{gundry-thesis}.
-\end{proposal}
+\chapter{\Pico/}
+\label{cha:pico}
 
 \section{Merging types and kinds}
 

@@ -13,21 +13,12 @@ dependencies (except Perl) though.
 
 Dependencies:
 
-* A recent build of my branch of GHC, available on the `nokinds`
-branch of https://github.com/goldfirere/ghc. (I suppose this could be a
-submodule, but that just doesn't work so well with my local setup, so I'm
-keeping it separate.) Requirements for building GHC are beyond the scope of
-this README, but you can start
-[here](https://ghc.haskell.org/trac/ghc/wiki/Building). Note that the submodules
-within GHC will work better if you clone from `git.haskell.org/ghc.git`, then
-`git submodule update --init`, and then
-set up my fork as a separate `git remote` and pull.
+* A working GHC 8.0.
 
-* Make sure that `ghc-nokinds` is in your path and points to the in-place stage 2
-binary for my branch of GHC.
+* Make sure that `ghc-8` is in your path and points to the GHC 8.0 executable.
 
 * Make sure that the packages in the `cab` directory of this repo are installed in
-the package database used by `ghc-nokinds`.
+the package database used by `ghc-8`.
 
 * [`ott`](http://www.cl.cam.ac.uk/~pes20/ott/), version 0.23 or greater
 

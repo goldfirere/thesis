@@ -48,9 +48,8 @@
 %include intro.lhs
 %include prelim.lhs
 %include motivation.lhs
-\include{system-fc}
 %include dep-haskell.lhs
-\include{fcd}
+%include pico.lhs
 %include haskell-spec.lhs
 \include{type-inference}
 \include{implementation}
@@ -68,7 +67,6 @@
 
 %include typo.lhs
 \include{app-d}
-\include{fc}
 \include{inference}
 
 \newpage

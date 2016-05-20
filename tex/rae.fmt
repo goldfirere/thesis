@@ -70,7 +70,9 @@
 	     StandaloneDeriving, ScopedTypeVariables,
 	     MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances,
 	     UndecidableInstances #-}
-{-# OPTIONS_GHC -Wall -fno-warn-unused-imports -fno-warn-name-shadowing #-}
+{-# OPTIONS_GHC -Wall -Wno-unused-imports
+                      -Wno-name-shadowing
+		      -Wno-redundant-constraints #-}
 
 module Chapter where
 
