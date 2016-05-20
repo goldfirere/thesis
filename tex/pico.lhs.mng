@@ -1,4 +1,8 @@
-%% -*- mode: LaTeX -*-
+%% -*- mode: LaTeX compile-command: "cd ..; make compile" -*-
+
+%if style == newcode
+%include rae.fmt
+%endif
 
 \chapter{\Pico/}
 \label{cha:pico}
@@ -6,6 +10,14 @@
 \section{Merging types and kinds}
 
 \section{Levity polymorphism}
+
+THis is a type: $[[t]]$.
+
+This is some type-checked code:
+\begin{code}
+foo :: a -> b -> a
+foo x _ = x
+\end{code}
 
 \begin{proposal}
 Levity polymorphism is described in a recent draft paper~\cite{equalities}.

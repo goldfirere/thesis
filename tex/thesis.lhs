@@ -66,7 +66,7 @@
 \setlist[description]{itemsep=0pt}
 
 %include typo.lhs
-\include{app-d}
+\include{app-pico}
 \include{inference}
 
 \newpage
