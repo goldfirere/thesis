@@ -235,6 +235,74 @@ $[[V]]$ passed into $[[match]]$.
 If $[[match_V(ts1; ts2) = Just theta]]$, then $[[ts1[theta] = ts2]]$.
 \end{property}
 
+\section{Determinacy}
+
+\begin{lemma}[Uniqueness of signatures] ~
+\label{lem:uniq-sig}
+Assume $[[|-sig S]]$.
+\begin{enumerate}
+\item If $[[T:(as:ks1) \in S]]$ and $[[T:(as:ks2) \in S]]$, then $[[ks1 = ks2]]$.
+\item If $[[K:(D1;T1) \in S]]$ and $[[K:(D2;T2) \in S]]$, then $[[D1 = D2]]$
+and $[[T1 = T2]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By the freshness conditions on $[[|-sig S]]$.
+\end{proof}
+
+\begin{lemma}[Uniqueness of contexts] ~
+\label{lem:uniq-ctx}
+Assume $[[S |-ctx G]]$.
+\begin{enumerate}
+\item If $[[a :rel1 k1 \in G]]$ and $[[a :rel2 k2 \in G]]$,
+then $[[rel1 = rel2]]$ and $[[k1 = k2]]$.
+\item If $[[c:phi1 \in G]]$ and $[[c:phi2 \in G]]$,
+then $[[phi1 = phi2]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By the freshness conditions on $[[S |-ctx G]]$.
+\end{proof}
+
+\begin{lemma}[Determinacy of type constants]
+\label{lem:determinacy-tycon}
+If $[[|-sig S]]$, $[[S |-tc H : D1;D1';H1]]$, and $[[S |-tc H : D2;D2';H2]]$, then $[[D1 = D2]]$, $[[D1' = D2']]$, and $[[H1 = H2]]$.
+\end{lemma}
+
+\begin{proof}
+From \pref{lem:uniq-sig}.
+\end{proof}
+
+\begin{lemma}[Values do not step]
+\label{lem:value-no-step}
+There exists no $[[t]]$ such that $[[S;G |-s v --> t]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of $[[v]]$.
+\end{proof}
+
+\begin{lemma}[Determinacy] ~
+\label{lem:determinacy}
+\begin{enumerate}
+\item If $[[S;G |-ty t : k1]]$ and $[[S;G |-ty t : k2]]$, then
+$[[k1 = k2]]$.
+\item If $[[S;G |-co g : phi1]]$ and $[[S;G |-co g : phi2]]$, then
+$[[phi1 = phi2]]$.
+\item If $[[S;G |-s t --> s1]]$ and $[[S;G |-s t --> s2]]$, then
+$[[s1 = s2]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By mutual induction, appealing to \pref{lem:uniq-ctx},
+\pref{lem:determinacy-tycon} (which
+requires a use of \pref{lem:ctx-reg} first), and
+\pref{lem:value-no-step}.
+\end{proof}
+
 \section{Vectors}
 
 \begin{lemma}
@@ -368,73 +436,61 @@ following:
 Straightforward induction on $[[S;G |-vec ps : D]]$.
 \end{proof}
 
-\section{Determinacy}
-
-\begin{lemma}[Uniqueness of signatures] ~
-\label{lem:uniq-sig}
-Assume $[[|-sig S]]$.
-\begin{enumerate}
-\item If $[[T:(as:ks1) \in S]]$ and $[[T:(as:ks2) \in S]]$, then $[[ks1 = ks2]]$.
-\item If $[[K:(D1;T1) \in S]]$ and $[[K:(D2;T2) \in S]]$, then $[[D1 = D2]]$
-and $[[T1 = T2]]$.
-\end{enumerate}
+\begin{lemma}[Application inversion]
+\label{lem:app-inversion}
+If $[[S;G |-ty t ps : k]]$ where $[[ps = ps0,ps1]]$,
+then $[[S;G |-ty t ps0 : MUPI D.k0]]$, $[[S;G |-vec ps1 : D]]$
+and $[[k = k0[ps1/dom(D)] ]]$.
 \end{lemma}
 
 \begin{proof}
-By the freshness conditions on $[[|-sig S]]$.
+Straightforward induction on $[[ps1]]$.
 \end{proof}
 
-\begin{lemma}[Uniqueness of contexts] ~
-\label{lem:uniq-ctx}
-Assume $[[S |-ctx G]]$.
-\begin{enumerate}
-\item If $[[a :rel1 k1 \in G]]$ and $[[a :rel2 k2 \in G]]$,
-then $[[rel1 = rel2]]$ and $[[k1 = k2]]$.
-\item If $[[c:phi1 \in G]]$ and $[[c:phi2 \in G]]$,
-then $[[phi1 = phi2]]$.
-\end{enumerate}
+\begin{lemma}[Telescope application]
+\label{lem:tel-app}
+If $[[S;G |-ty t : MUPI D.s]]$ and $[[S;G |-vec ps : D]]$,
+then $[[S;G |-ty t ps : s[ps/dom(D)] ]]$.
 \end{lemma}
 
 \begin{proof}
-By the freshness conditions on $[[S |-ctx G]]$.
+By straightforward induction on $[[S;G |-vec ps : D]]$.
 \end{proof}
 
-\begin{lemma}[Determinacy of type constants]
-\label{lem:determinacy-tycon}
-If $[[|-sig S]]$, $[[S |-tc H : D1;D1';H1]]$, and $[[S |-tc H : D2;D2';H2]]$, then $[[D1 = D2]]$, $[[D1' = D2']]$, and $[[H1 = H2]]$.
+\begin{lemma}[Telescope instantiation]
+\label{lem:tel-inst}
+If $[[S;G |-co h : MPI D.s [Type{}]~[Type{}] MPI D'.s']]$,
+ $(\forall [[i]], [[S;G |-co gi : ti [ki]~[ki'] ti']])$,
+$[[S;G |-vec ts : D]]$, and $[[S;G |-vec ts' : D']]$,
+then $[[S;G |-co h@gs : s[ts/dom(D)] [Type{}]~[Type{}] s'[ts'/dom(D')] ]]$.
 \end{lemma}
 
 \begin{proof}
-From \pref{lem:uniq-sig}.
+By induction on the structure of the list $[[gs]]$.
+
+\begin{description}
+\item[Case $[[gs = empty]]$:] By \pref{lem:vec-length}, we can see that $[[D]]$
+and $[[D']]$ must both be empty. We are done by assumption.
+\item[Case $[[gs = g0, gs1]]$:] In this case, we know $[[S;G |-vec t0, ts1 : D]]$
+and thus that $[[D = a :Rel k0, D1]]$
+with $[[S;G |-ty t0 : k0]]$ and $[[S;G |-vec ts1 : D1[t0/a] ]]$.
+Similarly, we have $[[S;G |-ty t0' : k0']]$ and $[[S;G |-vec ts1' : D1'[t0'/a] ]]$.
+We must show $[[S;G |-co (h@g0)@gs1 : s[t0/a,ts1/dom(D1)] [Type{}]~[Type{}] s'[t0'/a,ts1'/dom(D1')] ]]$.
+We can rewrite our assumption (expanding $[[D]]$ and $[[D']]$) to be
+$[[S;G |-co h : MPI a:Rel k0, D1.s [Type{}]~[Type{}] MPI a:Rel k0',D1'.s']]$
+and thus derive
+$[[S;G |-co h@g0 : MPI (D1[t0/a]).(s[t0/a]) [Type{}]~[Type{}] MPI (D1'[t0'/a]).(s'[t0'/a]) ]]$.
+We can then use the induction hypothesis to get
+$[[S;G |-co (h@g0)@gs : s[t0/a][ts1/dom(D1)] [Type{}]~[Type{}] s'[t0'/a][ts1'/dom(D1')] ]]$, which (noting that $[[t0]]$ cannot have any of the $[[dom(D1)]]$ free)
+is what we wish to prove.
+\end{description}
 \end{proof}
 
-\begin{lemma}[Values do not step]
-\label{lem:value-no-step}
-There exists no $[[t]]$ such that $[[S;G |-s v --> t]]$.
-\end{lemma}
-
-\begin{proof}
-By induction on the structure of $[[v]]$.
-\end{proof}
-
-\begin{lemma}[Determinacy] ~
-\label{lem:determinacy}
-\begin{enumerate}
-\item If $[[S;G |-ty t : k1]]$ and $[[S;G |-ty t : k2]]$, then
-$[[k1 = k2]]$.
-\item If $[[S;G |-co g : phi1]]$ and $[[S;G |-co g : phi2]]$, then
-$[[phi1 = phi2]]$.
-\item If $[[S;G |-s t --> s1]]$ and $[[S;G |-s t --> s2]]$, then
-$[[s1 = s2]]$.
-\end{enumerate}
-\end{lemma}
-
-\begin{proof}
-By mutual induction, appealing to \pref{lem:uniq-ctx},
-\pref{lem:determinacy-tycon} (which
-requires a use of \pref{lem:ctx-reg} first), and
-\pref{lem:value-no-step}.
-\end{proof}
+\begin{remark}
+The above \pref{lem:tel-inst} could be made more general, to work with
+$[[UPI]]$ as well as $[[MPI]]$. However, doing so would make the statement
+and proof more cluttered, and it is only ever needed with $[[MPI]]$.
+\end{remark}
 
 \section{Substitution}
 
@@ -660,6 +716,23 @@ get from \pref{lem:tycon-tel}. We are done.
 \end{description}
 \end{proof}
 
+\begin{lemma}[Type constant inversion]
+\label{lem:tycon-inversion}
+If $[[S;G |-ty H{ts} ps : k]]$, then:
+\begin{enumerate}
+\item $[[S |-tc H : as :Irrel ks;D;H' ]]$
+\item $[[S;Rel(G) |-vec ts : as :Rel ks]]$
+\item $[[D1,D2 = D[ts/as] ]]$
+\item $[[S;G |-vec ps : D1 ]]$
+\item $[[k = MPI (D2[ps/dom(D1)]). H'{} ts]]$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By \pref{lem:app-inversion}, \pref{lem:tel-app}, and \pref{lem:determinacy},
+and inversion and application of typing rules.
+\end{proof}
+
 \section{Regularity, Part II}
 
 \begin{lemma}[Kind regularity] ~
@@ -859,79 +932,6 @@ $[[S;Rel(G) |-ty t1 : k1]]$.
 
 \section{Preservation}
 
-\begin{lemma}[Application inversion]
-\label{lem:app-inversion}
-If $[[S;G |-ty t ps : k]]$ where $[[ps = ps0,ps1]]$,
-then $[[S;G |-ty t ps0 : MUPI D.k0]]$, $[[S;G |-vec ps1 : D]]$
-and $[[k = k0[ps1/dom(D)] ]]$.
-\end{lemma}
-
-\begin{proof}
-Straightforward induction on $[[ps1]]$.
-\end{proof}
-
-\begin{lemma}[Telescope application]
-\label{lem:tel-app}
-If $[[S;G |-ty t : MUPI D.s]]$ and $[[S;G |-vec ps : D]]$,
-then $[[S;G |-ty t ps : s[ps/dom(D)] ]]$.
-\end{lemma}
-
-\begin{proof}
-By straightforward induction on $[[S;G |-vec ps : D]]$.
-\end{proof}
-
-\begin{lemma}[Type constant inversion]
-\label{lem:tycon-inversion}
-If $[[S;G |-ty H{ts} ps : k]]$, then:
-\begin{enumerate}
-\item $[[S |-tc H : as :Irrel ks;D;H' ]]$
-\item $[[S;Rel(G) |-vec ts : as :Rel ks]]$
-\item $[[D1,D2 = D[ts/as] ]]$
-\item $[[S;G |-vec ps : D1 ]]$
-\item $[[k = MPI (D2[ps/dom(D1)]). H'{} ts]]$
-\end{enumerate}
-\end{lemma}
-
-\begin{proof}
-By \pref{lem:app-inversion}, \pref{lem:tel-app}, and \pref{lem:determinacy},
-and inversion and application of typing rules.
-\end{proof}
-
-\begin{lemma}[Telescope instantiation]
-\label{lem:tel-inst}
-If $[[S;G |-co h : MPI D.s [Type{}]~[Type{}] MPI D'.s']]$,
- $(\forall [[i]], [[S;G |-co gi : ti [ki]~[ki'] ti']])$,
-$[[S;G |-vec ts : D]]$, and $[[S;G |-vec ts' : D']]$,
-then $[[S;G |-co h@gs : s[ts/dom(D)] [Type{}]~[Type{}] s'[ts'/dom(D')] ]]$.
-\end{lemma}
-
-\begin{proof}
-By induction on the structure of the list $[[gs]]$.
-
-\begin{description}
-\item[Case $[[gs = empty]]$:] By \pref{lem:vec-length}, we can see that $[[D]]$
-and $[[D']]$ must both be empty. We are done by assumption.
-\item[Case $[[gs = g0, gs1]]$:] In this case, we know $[[S;G |-vec t0, ts1 : D]]$
-and thus that $[[D = a :Rel k0, D1]]$
-with $[[S;G |-ty t0 : k0]]$ and $[[S;G |-vec ts1 : D1[t0/a] ]]$.
-Similarly, we have $[[S;G |-ty t0' : k0']]$ and $[[S;G |-vec ts1' : D1'[t0'/a] ]]$.
-We must show $[[S;G |-co (h@g0)@gs1 : s[t0/a,ts1/dom(D1)] [Type{}]~[Type{}] s'[t0'/a,ts1'/dom(D1')] ]]$.
-We can rewrite our assumption (expanding $[[D]]$ and $[[D']]$) to be
-$[[S;G |-co h : MPI a:Rel k0, D1.s [Type{}]~[Type{}] MPI a:Rel k0',D1'.s']]$
-and thus derive
-$[[S;G |-co h@g0 : MPI (D1[t0/a]).(s[t0/a]) [Type{}]~[Type{}] MPI (D1'[t0'/a]).(s'[t0'/a]) ]]$.
-We can then use the induction hypothesis to get
-$[[S;G |-co (h@g0)@gs : s[t0/a][ts1/dom(D1)] [Type{}]~[Type{}] s'[t0'/a][ts1'/dom(D1')] ]]$, which (noting that $[[t0]]$ cannot have any of the $[[dom(D1)]]$ free)
-is what we wish to prove.
-\end{description}
-\end{proof}
-
-\begin{remark}
-The above \pref{lem:tel-inst} could be made more general, to work with
-$[[UPI]]$ as well as $[[MPI]]$. However, doing so would make the statement
-and proof more cluttered, and it is only ever needed with $[[MPI]]$.
-\end{remark}
-
 \begin{lemma}[$[[build_kpush_co]]$]
 \label{lem:build-kpush-co}
 Assume $[[S;G |-cev ps : D[ts/as] ]]$ and let $[[gi = build_kpush_co(h; ps_{1..i-1})]]$
@@ -1075,10 +1075,10 @@ Note that the last fact proves this case.
 We know $[[S;G |-ty (v |> g1) |> g2 : k]]$. Inversion and typing rules
 give us the following:
 \begin{itemize}
-\item $[[S;G |-co g2 : k2 [Type{}]~[Type{}] k]]$
-\item $[[S;G |-co g1 : k3 [Type{}]~[Type{}] k2]]$
+\item $[[S;Rel(G) |-co g2 : k2 [Type{}]~[Type{}] k]]$
+\item $[[S;Rel(G) |-co g1 : k3 [Type{}]~[Type{}] k2]]$
 \item $[[S;G |-ty v : k3]]$
-\item $[[S;G |-co g1 ;; g2 : k3 [Type{}]~[Type{}] k]]$
+\item $[[S;Rel(G) |-co g1 ;; g2 : k3 [Type{}]~[Type{}] k]]$
 \item $[[S;G |-ty v |> (g1 ;; g2) : k]]$
 \end{itemize}
 Note that the last fact proves this case.

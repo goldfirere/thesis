@@ -1,4 +1,4 @@
-C = app-d
+C = app-pico
 
 OTT_FILES_BASE = syn rules
 PAPER_BASE = thesis

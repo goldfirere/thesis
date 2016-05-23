@@ -122,6 +122,22 @@ DESIGN DECISIONS:
  - The c ~# g trick from the nokinds paper is needed to get consistency to
    go through. But this doesn't diminish Haskell expressiveness ever -- equality
    over polytypes is never needed in Haskell due to its predicative nature.
+ - Attempt to get representation polymorphism working (see tag rep-poly). The
+   problem arises when proving that ArgK is sound. We can't know the rep
+   of the argument from the kind of an arrow (which, for relevant arrows, is
+   always LazyPtr). So we're stuck. The way out is to label (relevant) colons
+   with the representation of the kind. But then to get Inst working, we also
+   need to label relevant Pis with the rep of the result. Ircch. In the end,
+   what is representation polymorphism? A gross hack. It's something we do during
+   type inference because we don't want meta-rep-vars or something -- we're
+   hooking into the existent system for solving for types. We don't really
+   need rep polymorphism in the internal language, especially when doing so
+   would mean labeling every Pi. We can just pretend with have a finite number
+   of "undefined"s and "error"s that cover the space and a whole bunch of Pis.
+   There's not much point in formalising it.
+ - About point above: it doesn't address the weird variable-escape that can
+   happen with representation polymorphism. May need to think a bit more about
+   that.
 
 Example about partially-applied GADT data constructors:
 
@@ -199,3 +215,4 @@ case_() (blah : MPI (a :Irrel Type) (x :Rel Type). X) of
 
 
 
+TODO: make case work for open types. "exhaustive" is wrong. Need a default pattern. Urgh.
