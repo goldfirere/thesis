@@ -171,7 +171,7 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 
 alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
 | alt                    ::   :: One
-| alt1 ; .... ; alti     ::   :: Many
+| alts1 ; .... ; altsi   ::   :: Many
 | nil                    ::   :: Nil
 | '|' alts '|'           :: M :: Erased
   {{ tex \lfloor [[alts]] \rfloor }}
@@ -179,11 +179,11 @@ alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
   {{ tex \overline{[[alt]]} }}
 
 alt :: 'Alt_' ::=
-| p -> t                 ::   :: Alt
+| pat -> t               ::   :: Alt
 | alt [ theta ]          :: M :: Subst
 | ( alt )                :: M :: Parens
 
-pat, p {{ tex \pi }} :: 'Pat_' ::=
+pat {{ tex \pi }} :: 'Pat_' ::=
 | H                 ::   :: Con
 | _                 ::   :: Default
 
@@ -255,7 +255,7 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 | nths g                       :: M :: Nths
 
 calt :: 'CAlt_' ::=
-| p -> g                        ::   :: Alt
+| pat -> g                        ::   :: Alt
 
 calts {{ tex \overline{\ottnt{calt} } }} :: 'CAlts_' ::=
 | calt                   ::   :: One
@@ -393,7 +393,7 @@ exp, e, ev {{ tex \ottnt{w} }} :: 'E_' ::=
 | e [ esubsts ]                 :: M :: Subst
 
 ealt :: 'EAlt_' ::=
-| p -> e                        ::   :: EAlt
+| pat -> e                        ::   :: EAlt
 
 ealts {{ tex \overline{\ottnt{ealt} } }} :: 'EAlts_' ::=
 | ealt                          ::   :: One
@@ -597,6 +597,10 @@ formula :: 'formula_' ::=
   | ps ~>* ps' *<~ ps''                ::   :: confluence
   | d1 ~> d3 <~ d2                     ::   :: d_diamond
   | c ~# g                             ::   :: almost_free
+  | no alternative in alts matches H   ::   :: no_matches
+    {{ tex \text{no alternative in } [[alts]] \text{ matches } [[H]] }}
+  | no alternative in ealts matches H  ::   :: e_no_matches
+    {{ tex \text{no alternative in } [[ealts]] \text{ matches } [[H]] }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -724,7 +728,7 @@ fun
   {{ tex \lfloor [[alt0]] \rfloor }}
 
 by
-|p -> t|  === p -> |t|
+|pat -> t|  === pat -> |t|
 
 funs
 TErase ::=
@@ -752,7 +756,7 @@ fun
   {{ tex \llfloor [[alt]] \rrfloor }}
 
 by
-|| p -> t ||   === p -> ||t||
+|| pat -> t ||   === pat -> ||t||
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -790,3 +794,8 @@ Arg_Co <= Arg_Erased
 Args_One <= Args_Erased
 
 Type_Pis <= Type_Subst
+
+Type_erase_type <= Type_erase_type
+Args_Types <= Args_Erased
+Types_Erased <= Types_Erased
+Types_One <= Types_Erased
