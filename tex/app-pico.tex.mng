@@ -1113,7 +1113,15 @@ of $[[D0]]$, $[[D1]]$, $[[D3]]$, and $[[D4]]$)
 \item $[[S;G |-ty t0 ps <H {ts} ps> : k]]$ (\rul{Co\_Refl} and \rul{Ty\_CApp}, where the $[[k]]$ needs no substitution
 by \pref{lem:scoping})
 \end{itemize}
-Note that thie last fact proves this case.
+Note that this last fact proves this case.
+\item[Case \rul{S\_Default}:] We adopt the metavariable names of the rule:
+\[
+\ottdruleSXXDefault{}
+\]
+By \rul{Ty\_Case}, the redex has kind $[[k]]$; inversion also gives us
+$[[S;G;s0;t |-alt _ -> s : k]]$. Inverting \rul{Alt\_Default} gives us
+our goal.
+\item[Case \rul{S\_DefaultCo}:] Similar to previous case.
 \item[Case \rul{S\_Case\_Cong}:] By induction.
 \item[Case \rul{S\_KPush}:] We adopt the metavariable names of the rule:
 \[
@@ -1341,6 +1349,12 @@ Choose $[[t5 = t4[ps'/zs] ]]$ and $[[ps0'' = ps0'[ps'/zs] ]]$.
 We must show that $[[t3[ps/zs] ~> t4[ps'/zs] ]]$ and
 $[[ps0[ps/zs] ~> ps0'[ps'/zs] ]]$. Both of these follow from the
 induction hypothesis, and so we are done.
+\item[Case \rul{R\_Default}:] It must be that:
+\begin{itemize}
+\item $[[t1 = case_k H{ss} ps0 of _ -> s0; alts]]$
+\item $[[t2 = s0']]$ where $[[s0 ~> s0']]$
+\end{itemize}
+We are done by the induction hypothesis.
 \item[Case \rul{R\_Unroll}:] It must be that:
 \begin{itemize}
 \item $[[t1 = fix (\a:Rel k1.t3)]]$
@@ -1470,6 +1484,17 @@ $[[ps' ~> ps''' <~ ps'']]$.
 Choose $[[t3 = eei''' ps''' o]]$. We must show both $[[t1 ~> t3]]$
 and $[[t2 ~> t3]]$. The first is by \rul{R\_Match}. The second is by
 repeated use of \rul{R\_AppRel}/\rul{R\_AppIrrel}/\rul{R\_CApp}.
+\item[Case \rul{R\_Case}/\rul{R\_Default}:] It must be that:
+\begin{itemize}
+\item $[[t0 = case_k H{ss} ps of _ -> s0; alts]]$
+\item $[[t1 = case_k' H{ss'} ps' of _ -> s0'; alts']]$ where
+$[[k ~> k']]$, $[[ss ~> ss']]$, $[[ps ~> ps']]$, $[[s0 ~> s0']]$, and
+$[[alts ~> alts']]$
+\item $[[t2 = s0'']]$ where $[[s0 ~> s0'']]$
+\end{itemize}
+The induction hypothesis gives us $[[ee]]$ such that $[[s0' ~> ee <~ s0'']]$.
+We can see that $[[t1]]$ can step by \rul{R\_Default} (as the type constant
+$[[H]]$ does not change), and thus that $[[t1 ~> ee <~ t2]]$. We are done.
 \item[Case \rul{R\_Match}/\rul{R\_Match}:] It must be that:
 \begin{itemize}
 \item $[[t0 = case_k H{ss} ps of alts]]$
@@ -1483,6 +1508,9 @@ The induction hypothesis gives us $[[k1''']]$ and $[[ps''']]$ such that:
 \item $[[ps' ~> ps''' <~ ps'']]$
 \end{itemize}
 Choose $[[t3 = k1'''[ps'''/zs] ]]$ and we are done by \pref{lem:red-subst-par}.
+\item[Case \rul{R\_Match}/\rul{R\_Default}:] Impossible, as the premises
+contradict each other.
+\item[Case \rul{R\_Default}/\rul{R\_Default}:] By induction.
 \end{description}
 \item[Case $[[t0 = \d0.s0]]$:] By induction and \rul{R\_Lam}.
 \item[Case $[[t0 = fix s0]]$:] We have several cases:
@@ -1693,6 +1721,8 @@ We now must consider the different step rules:
 \item[Case \rul{S\_BetaIrrel}:] By \rul{R\_BetaIrrel}.
 \item[Case \rul{S\_CBeta}:] By \rul{R\_CBeta} and \pref{lem:co-subst-erase}.
 \item[Case \rul{S\_Match}:] By \rul{R\_Match}.
+\item[Case \rul{S\_Default}:] By \rul{R\_Default}.
+\item[Case \rul{S\_DefaultCo}:] By \rul{R\_Default}.
 \item[Case \rul{S\_Unroll}:] By \rul{R\_Unroll}.
 \item[Case \rul{S\_Trans}:] $[[|t1| = |t2|]]$ in this case.
 \item[Congruence rules:] By induction.
@@ -1943,6 +1973,7 @@ be $[[H{ts} ps]]$. We are done by \pref{lem:app-red}.
 \item[Case \rul{R\_BetaIrrel}:] Impossible.
 \item[Case \rul{R\_CBeta}:] Impossible.
 \item[Case \rul{R\_Match}:] Impossible.
+\item[Case \rul{R\_Default}:] Impossible.
 \item[Case \rul{R\_Unroll}:] Impossible.
 \end{description}
 \end{proof}
@@ -2177,8 +2208,9 @@ using \pref{lem:canon-form}.
 \item $[[D' = D]]$, $[[H' = H'']]$, and $[[ts = ss]]$ (\pref{lem:determinacy})
 \end{itemize}
 Since we have $[[S |-tc H : D1;D2;H']]$ and $[[alts are exhaustive for H' (wrt S)]]$,
-we can conclude that there exists $[[H -> t1 \in alts]]$. We can thus
-use \rul{S\_Match} and we are done.
+we can conclude that either there exists $[[H -> t1 \in alts]]$ or
+there exists $[[_ -> t1 \in alts]]$. In the former case, we use
+\rul{S\_Match} and we are done; in the latter case, we use \rul{S\_Default}.
 \item[Case $[[t0 = v |> g]]$:] We can derive the following:
 \begin{itemize}
 \item $[[S;G |-ty v |> g : MPI D. H'{} ss]]$ (from a premise of \rul{Ty\_Case})
@@ -2192,8 +2224,11 @@ use \rul{S\_Match} and we are done.
 \item $[[S;G |-ty H{ts} ps : MPI (D4[ps/dom(D3)]). H''{} ts]]$ where $[[D3,D4 = D2[ts/as] ]]$ (same invocation of \pref{lem:tycon-inversion})
 \item $[[k0 = MPI (D4[ps/dom(D3)]). H''{} ts]]$ (\pref{lem:determinacy})
 \item $[[H'' = H']]$ and $[[length D = length D4]]$ (repeated inversion on $[[k0 ! MPI D. H'{} ss]]$)
-\item $[[H -> s0 \in alts]]$ for some $[[s0]]$ (from the fact that $[[alts]]$
-are exhaustive and we have a well-typed $[[H{ts} ps]]$ available)
+\end{itemize}
+There are now two possibilities: either $[[H -> s0 \in alts]]$ or there is a default
+case that matches. In the latter case, we are done by \rul{S\_DefaultCo}.
+We thus assume the former.
+\begin{itemize}
 \item $[[S;G;MPI D. H'{} ss; v |> g |-alt H -> s0 : k]]$ (a premise of \rul{Ty\_Case})
 \item From the premises of \rul{Alt\_Match}:
 \begin{itemize}
@@ -2320,6 +2355,8 @@ By induction on $[[S;G |-s t --> t']]$.
 by \pref{lem:irrel-expr-subst}.
 \item[Case \rul{S\_CBeta}:] By \rul{E\_CBeta} and \pref{lem:co-expr-subst}.
 \item[Case \rul{S\_Match}:] By \rul{E\_Match}.
+\item[Case \rul{S\_Default}:] By \rul{E\_Default}.
+\item[Case \rul{S\_DefaultCo}:] By \rul{E\_Default}.
 \item[Case \rul{S\_Unroll}:] By \rul{E\_Unroll}.
 \item[Case \rul{S\_Trans}:] Both expressions are equal by the definition
 of $[[ ||.|| ]]$.

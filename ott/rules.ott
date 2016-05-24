@@ -153,6 +153,10 @@ S;G |-ty t : MUPI D3, c: t0 [MPI D'.H'{} ss]~[MPI D4.H'{} ss] H{ss} dom(D3). k
 -------------------------- :: Match
 S;G;MPI D'.H'{} ss;t0 |-alt H -> t : k
 
+S;G |-ty t : k
+------------------------- :: Default
+S;G;s;t0 |-alt _ -> t : k
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -218,10 +222,10 @@ S;G |-co PI c:(h1,h2).g : (PI c:t1 [k3]~[k5] s1. k1) [Type{}]~[Type{}] (PI c:t2 
 
 S;G |-co h : k1 [Type{}]~[Type{}] k2  //  S;G |-co g0 : t1 [k3]~[k4] t2
 forall i: S;G |-co gi : si [k5i]~[k6i] s'i
-alts1 = list of Hi -> si  // alts2 = list of Hi -> s'i
+alts1 = list of pi -> si  // alts2 = list of pi -> s'i
 S;G |-ty case_k1 t1 of alts1 : k1  // S;G |-ty case_k2 t2 of alts2 : k2
 ------------------------------ :: Case
-S;G |-co case_h g0 of list of Hi -> gi : case_k1 t1 of alts1 [k1]~[k2] case_k2 t2 of alts2
+S;G |-co case_h g0 of list of pi -> gi : case_k1 t1 of alts1 [k1]~[k2] case_k2 t2 of alts2
 
 S;G |-co h : k1 [Type{}]~[Type{}] k2
 S;G, a :rel k1 |-co g : t1 [s1]~[s2] t2
@@ -469,6 +473,14 @@ alti = H -> t0
 ---------------------------- :: Match
 S;G |-s case_k H{ts} ps of alts --> t0 ps <H{ts} ps>
 
+alti = _ -> s // no alternative in alts matches H
+----------------------------- :: Default
+S;G |-s case_k H{ts} ps of alts -> s
+
+alti = _ -> s // no alternative in alts matches H
+----------------------------------------- :: DefaultCo
+S;G |-s case_k H{ts} ps |> g of alts -> s
+
 t = \a:Rel k.s
 ---------------------------- :: Unroll
 S;G |-s fix t --> s[fix t/a]
@@ -539,6 +551,7 @@ S;Rel(G) |-co h : MPI (D2[ts/as][ps/dom(D1)]). H'{} ts [Type{}]~[Type{}] MPI (D2
 S;Rel(G) |-vec ts' : as:Rel ks
 forall i: gi = build_kpush_co(<k>@(nths (res^n h));ps_{0..i-1})
 forall i: pi' = cast_kpush_arg(pi;gi)
+H -> k' \in alts
 % kind K = MPI as :Irrel ks. MPI D. T as
 % si' = s' |> argk (kind K @ nths h @ ...)
 ----------------------------------------------------------------- :: KPush
@@ -581,7 +594,7 @@ PI d.t ~> PI d'.t'
 
 k ~> k'  //  t ~> t'  //  ss ~> ss'
 ---------------- :: Case
-case_k t of list of H -> s ~> case_k' t' of list of H -> s'
+case_k t of list of p -> s ~> case_k' t' of list of p -> s'
 
 d ~> d' // t ~> t'
 -------------- :: Lam
@@ -606,6 +619,10 @@ t ~> t'
 alti = H -> t0  // ps ~> ps' // t0 ~> t0'
 ----------------------------------- :: Match
 case_k H{ts} ps of alts ~> t0' ps' o
+
+alti = _ -> s // no alternative in alts matches H // s ~> s'
+---------------------- :: Default
+case_k H{ts} ps of alts ~> s'
 
 s ~> s' // k ~> k'
 ------------------- :: Unroll
@@ -653,6 +670,10 @@ by
 ealti = H -> e
 ------------------- :: Match
 case H ys of ealts --> e ys o
+
+ealti = _ -> e // no alternative in ealts matches H
+---------------------- :: Default
+case H ys of ealts --> e
 
 ------------------------------ :: Unroll
 fix (\a.e) --> e[fix (\a.e)/a]

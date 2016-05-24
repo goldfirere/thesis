@@ -179,9 +179,13 @@ alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
   {{ tex \overline{[[alt]]} }}
 
 alt :: 'Alt_' ::=
-| H -> t                 ::   :: Alt
+| p -> t                 ::   :: Alt
 | alt [ theta ]          :: M :: Subst
 | ( alt )                :: M :: Parens
+
+pat, p {{ tex \pi }} :: 'Pat_' ::=
+| H                 ::   :: Con
+| _                 ::   :: Default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Proposition  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -193,9 +197,6 @@ prop, phi {{ tex \phi }} :: 'Phi_' ::=
 | t1 [ k1 ]~[ k2 ] t2          :: M :: IEquality
   {{ tex [[t1]] \mathrel{ {}^{\supp{[[k1]]} } {\sim}^{\supp{[[k2]]} } } [[t2]] }}
 | phi [ theta ]                :: M :: Subst
-% TODO: Remove?
-| coercionKind _ S ; G ( g )   :: M :: CoKind
-  {{ tex [[coercionKind]]_{[[S]];[[G]]}([[g]]) }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -254,7 +255,7 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 | nths g                       :: M :: Nths
 
 calt :: 'CAlt_' ::=
-| H -> g                        ::   :: Alt
+| p -> g                        ::   :: Alt
 
 calts {{ tex \overline{\ottnt{calt} } }} :: 'CAlts_' ::=
 | calt                   ::   :: One
@@ -392,7 +393,7 @@ exp, e, ev {{ tex \ottnt{w} }} :: 'E_' ::=
 | e [ esubsts ]                 :: M :: Subst
 
 ealt :: 'EAlt_' ::=
-| H -> e                        ::   :: EAlt
+| p -> e                        ::   :: EAlt
 
 ealts {{ tex \overline{\ottnt{ealt} } }} :: 'EAlts_' ::=
 | ealt                          ::   :: One
@@ -581,8 +582,6 @@ formula :: 'formula_' ::=
   | zs # ps                            ::   :: a_not_free
   | alts are exhaustive for H ( wrt S ) ::   :: exhaustive
     {{ tex [[alts]] \text{ are exhaustive and distinct for } [[H]] \text{, (w.r.t.~} [[S]] \text{)} }}
-  | calts are exhaustive for H         ::   :: cexhaustive
-    {{ tex [[calts]] \text{ are exhaustive and distinct for } [[H]] }}
   | fvset1 \subseteq fvset2            ::   :: subset
   | zs fresh                           ::   :: fresh
     {{ tex [[zs]] \text{ fresh} }}
@@ -725,7 +724,7 @@ fun
   {{ tex \lfloor [[alt0]] \rfloor }}
 
 by
-|H -> t|  === H -> |t|
+|p -> t|  === p -> |t|
 
 funs
 TErase ::=
@@ -753,7 +752,7 @@ fun
   {{ tex \llfloor [[alt]] \rrfloor }}
 
 by
-|| H -> t ||   === H -> ||t||
+|| p -> t ||   === p -> ||t||
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

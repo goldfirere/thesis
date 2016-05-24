@@ -138,6 +138,7 @@ DESIGN DECISIONS:
  - About point above: it doesn't address the weird variable-escape that can
    happen with representation polymorphism. May need to think a bit more about
    that.
+ - Need DefaultCo because KPush requires the premises of Alt_Match.
 
 Example about partially-applied GADT data constructors:
 
@@ -215,4 +216,5 @@ case_() (blah : MPI (a :Irrel Type) (x :Rel Type). X) of
 
 
 
-TODO: make case work for open types. "exhaustive" is wrong. Need a default pattern. Urgh.
+
+
