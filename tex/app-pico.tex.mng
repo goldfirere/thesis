@@ -797,6 +797,7 @@ We'll adopt the metavariable names from the rule:
 The induction hypothesis tells us $[[S;Rel(G) |-ty UPI a:Rel k.k : Type{} ]]$.
 Inversion on \rul{Ty\_Pi} tells us $[[S;Rel(G),a:Rel k |-ty k : Type{} ]]$.
 \pref{lem:strengthening} gives us $[[S;Rel(G) |-ty k : Type{} ]]$ as desired.
+\item[Case \rul{Ty\_Absurd}:] Immediate.
 \end{description}
 \end{proof}
 
@@ -895,6 +896,7 @@ and we are done by \pref{lem:increasing-rel}.
 \item[Case \rul{Co\_CLam}:]
 Similar to previous case and the case for \rul{Co\_PiCo}.
 \item[Case \rul{Co\_Fix}:] Immediate.
+\item[Case \rul{Co\_Absurd}:] By induction and \rul{Ty\_Absurd}.
 \item[Case \rul{Co\_ArgK}:] By induction, inversion, \pref{lem:ctx-reg},
 and \pref{lem:tyvar-reg}.
 \item[Case \rul{Co\_CArgK1}:] By induction, inversion, \pref{lem:ctx-reg},
@@ -1234,6 +1236,7 @@ We can derive the following facts:
 \end{itemize}
 The last item proves this case.
 \end{description}
+\item[Case \rul{Ty\_Absurd}:] Impossible, as $[[absurd g t]]$ does not step.
 \end{description}
 \end{proof}
 
@@ -1294,6 +1297,7 @@ mutual induction on the structure of $[[t]]$/$[[d]]$.
 %% \item[Case $[[t = case_k s of alts]]$:] By induction and \rul{R\_Case}.
 %% \item[Case $[[t = \d.s]]$:] By induction and \rul{R\_Lam}.
 %% \item[Case $[[t = fix s]]$:] By induction and \rul{R\_Fix}.
+%% \item[Case $[[t = absurd o t]]$:] By induction and \rul{R\_Absurd}.
 %% \item[Case $[[d = a :rel k]]$:] By induction and \rul{R\_TyBinder}.
 %% \item[Case $[[d = o : t1 (k1)~(k2) t2]]$:] By induction and \rul{R\_CoBinder}
 %% \end{description}
@@ -1539,6 +1543,7 @@ $[[k2 ~> k4 <~ k3]]$ and $[[s2 ~> s4 <~ s3]]$.
 Choose $[[t3 = s4[fix (\a:Rel k4.s4)/a] ]]$ and we are done
 by \pref{lem:red-subst-par}.
 \end{description}
+\item[Case $[[t0 = absurd g s0]]$:] By induction and \rul{R\_Absurd}.
 \item[Case $[[d0 = a:rel k0]]$:] By induction and \rul{R\_TyBinder}.
 \item[Case $[[d0 = o:t1 [k1]~[k2] t1]]$:] By induction and \rul{R\_CoBinder}.
 \end{description}
@@ -1667,6 +1672,7 @@ bother.
 \item[Case \rul{Co\_CLam}:] Similar to \rul{Co\_PiCo}. Once again, the
 premise of $[[c ~# g]]$ is critical.
 \item[Case \rul{Co\_Fix}:] By induction and repeated use of \rul{R\_Fix}.
+\item[Case \rul{Co\_Absurd}:] By induction.
 \item[Case \rul{Co\_ArgK}:]
 The induction hypothesis gives us $[[ee0]]$ such that
 $[[|PI a:rel k1.s1| ~>* ee0 *<~ |PI a:rel k2.s2|]]$.
@@ -1828,6 +1834,7 @@ The induction hypothesis gives us $[[ee0]]$ such that
 $[[|PI1 a:Rel k1.k1| ~>* ee0 *<~ |PI2 a:Rel k2.k2|]]$.
 Use of \pref{lem:pi-red} gives us $[[ee1]]$ such that $[[|k1| ~>* ee1 *<~ |k2|]]$
 and we are done.
+\item[Case \rul{Co\_Absurd}:] By induction.
 \item[Case \rul{Co\_ArgK}:]
 Here is the rule with all kinds included:
 \[
@@ -1969,6 +1976,7 @@ be $[[H{ts} ps]]$. We are done by \pref{lem:app-red}.
 \item[Case \rul{R\_Case}:] Impossible.
 \item[Case \rul{R\_Lam}:] Immediate.
 \item[Case \rul{R\_Fix}:] Impossible.
+\item[Case \rul{R\_Absurd}:] Impossible.
 \item[Case \rul{R\_BetaRel}:] Impossible.
 \item[Case \rul{R\_BetaIrrel}:] Impossible.
 \item[Case \rul{R\_CBeta}:] Impossible.
@@ -2067,6 +2075,7 @@ using the induction hypothesis.
 \item[Case $[[t1 = case_k t of alts]]$:] Impossible.
 \item[Case $[[t1 = \d.s]]$:] Similar to case for $[[H{ts} ]]$.
 \item[Case $[[t1 = fix s]]$:] Impossible.
+\item[Case $[[t1 = absurd g t0]]$:] Impossible.
 \end{description}
 \end{proof}
 
@@ -2189,6 +2198,7 @@ identical structure as the previous case.)
 \item[Case \rul{Ty\_Pi}:] Immediate, as all $[[PI]]$-types are values.
 \item[Case \rul{Ty\_Cast}:] In this case, we know $[[t = t0 |> g]]$.
 Using the induction hypothesis on $[[t0]]$ gives us several cases:
+\begin{description}
 \item[Case $[[t0 = v]]$:] $[[v |> g]]$ is a coerced value and so we are done.
 \item[Case $[[t0 = v |> h]]$:] We have $[[t = (v |> h) |> g]]$. We are done
 by \rul{S\_Trans}.
@@ -2279,6 +2289,12 @@ We can derive the following facts:
 We are done by \rul{S\_FPush}.
 \item[Case $[[S;G |-s t0 --> t0']]$:] We are done by \rul{S\_Fix\_Cong}.
 \end{description}
+\item[Case \rul{Ty\_Absurd}:] We know here that
+$[[t = absurd g t0]]$ where $[[S;Rel(G) |-co g : H1{ts1} ps1 [k1]~[k2] H2{ts2} ps2]]$.
+By \pref{lem:consistency}, we also know that $[[H1{ts1} ps1 ! H2{ts2} ps2]]$. Both
+of these types are values, so this could only be by \rul{C\_TyCon}, but that rule
+requires $[[H1 = H2]]$, which is a contradiction. This case cannot happen.
+\end{description}
 \end{proof}
 
 \section{Type erasure}
@@ -2328,6 +2344,7 @@ to because of the use of the $[[Rel(G)]]$ context.
 \item[Case \rul{Ty\_Case}:] By induction, not looking at the kind.
 \item[Case \rul{Ty\_Lam}:] By induction, not looking at the classifier of the binder.
 \item[Case \rul{Ty\_Fix}:] By induction.
+\item[Case \rul{Ty\_Absurd}:] Immediate from the definition of $[[ ||.|| ]]$.
 \end{description}
 \end{proof}
 
@@ -2396,6 +2413,7 @@ a value or a coerced value. We thus know that $[[t0 |> g]]$ is not a coerced val
 \item[Case $[[t = case_k t0 of alts]]$:] Immediate.
 \item[Case $[[t = \d.t0]]$:] Impossible.
 \item[Case $[[t = fix t0]]$:] Immediate.
+\item[Case $[[t = absurd g s]]$:] Impossible.
 \end{description}
 \end{proof}
 

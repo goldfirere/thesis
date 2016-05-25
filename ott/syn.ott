@@ -29,6 +29,8 @@ Prim, P :: 'PrimTyCon_' ::=
 | Type             ::   :: Type
 
 ADT, T :: 'ADT_' ::=
+| Maybe            ::   :: Maybe
+  {{ tex \id{Maybe} }}
 
 tycon, H :: 'TyCon_' ::=
 | T                ::   :: ADT
@@ -139,6 +141,7 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | !!! \ d . t                  ::   :: Lam
   {{ tex [[\]] [[d]]. \, [[t]] }}
 | fix t                        ::   :: Fix
+| absurd g t                   ::   :: Absurd
 
 | t ps                         :: M :: Apps
 | H {}                         :: M :: HEmpty
@@ -225,6 +228,7 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | \ c : ( h1 , h2 ) . g        ::   :: CLam
   {{ tex [[\]] [[c]] {:} ([[h1]],[[h2]]).\,[[g]] }}
 | fix g                        ::   :: Fix
+| absurd ( g1 , g2 ) h         ::   :: Absurd
 | argk g                       ::   :: ArgK
 | argk I g                     ::   :: CArgK
   {{ tex {[[argk]]}^{[[I]]}\,[[g]] }}
@@ -707,6 +711,7 @@ by
 |case_k t of alts| === case_|k| |t| of |alts|
 |\d.t|             === \|d|.|t|
 |fix t|            === fix |t|
+|absurd g t|       === absurd o |t|
 
 fun
 '|' d0 '|' :: d :: erase_binder
@@ -750,6 +755,7 @@ by
 || \a :Irrel k. t || === ||t||
 || \c:phi.t ||       === \o.||t||
 || fix t ||          === fix ||t||
+|| absurd g t ||     === PI
 
 fun
 || alt || :: ealt :: terase_alt

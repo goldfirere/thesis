@@ -137,6 +137,11 @@ S;G |-ty t : UPI a:Rel k.k
 ------------------ :: Fix
 S;G |-ty fix t : k
 
+S;Rel(G) |-co g : H1{ts1} ps1 [k1]~[k2] H2{ts2} ps2  // H1 /= H2
+S;Rel(G) |-ty t : Type{}
+----------------------- :: Absurd
+S;G |-ty absurd g t : t
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Case  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -243,6 +248,12 @@ S;G |-co g : t1 [k3]~[k4] t2
 S;G |-ty fix t1 : k1 // S;G |-ty fix t2 : k2
 -------------------------------- :: Fix
 S;G |-co fix g : fix t1 [k1]~[k2] fix t2
+
+S;G |-co g1 : H1{ts1} ps1 [k3]~[k3'] H1'{ts1'} ps1'  // H1 /= H1'
+S;G |-co g2 : H2{ts2} ps2 [k4]~[k4'] H2'{ts2'} ps2'  // H2 /= H2'
+S;G |-co h : k1 [Type{}]~[Type{}] k2
+--------------------------------- :: Absurd
+S;G |-co absurd (g1,g2) h : absurd g1 k1 [k1]~[k2] absurd g2 k2
 
 S;G |-co g : PI a:rel k1. s1 [Type{}]~[Type{}] PI a:rel k2. s2
 ------------------------- :: ArgK
@@ -603,6 +614,10 @@ d ~> d' // t ~> t'
 t ~> t'
 --------------- :: Fix
 fix t ~> fix t'
+
+t ~> t'
+------------------------ :: Absurd
+absurd o t ~> absurd o t'
 
 t1 ~> t1'  // t2 ~> t2'
 ------------------------------ :: BetaRel
