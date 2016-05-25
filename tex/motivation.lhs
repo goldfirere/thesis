@@ -44,8 +44,8 @@ working.
 
 It is straightforward to write an interpreter for the simply typed lambda
 calculus (STLC) in Haskell. However, how can we be sure that our interpreter
-is written correctly? Using some features of dependent types -- notably,
-generalized algebraic datatypes, or GADTs -- we can incorporate the STLC's
+is written correctly? Using some features of dependent types---notably,
+generalized algebraic datatypes, or GADTs---we can incorporate the STLC's
 type discipline into our interpreter. Using the extra features in Dependent
 Haskell, we can then write both a big-step semantics and a small-step
 semantics and have GHC check that they correspond.
@@ -252,8 +252,8 @@ function that steps an expression either to another expression or to
 a value. But we want better than this.
 
 Instead, we want to ensure that the small-step semantics respects the big-step
-semantics. That is, after every step, we want the value -- as given by the
-big-step semantics -- to remain the same. We thus want the small-step stepper
+semantics. That is, after every step, we want the value---as given by the
+big-step semantics---to remain the same. We thus want the small-step stepper
 to return a custom datatype, marrying the result of stepping with evidence
 that the value of this result agrees with the value of the original expression:\footnote{This example fails because it contains data constructors with constraints
 occurring after visible parameters, something currently unsupported by GHC.
@@ -309,8 +309,8 @@ inspect a |ctx| to discover that it is empty, Coq, by default, forgets the
 equality |ctx = []|. It then, naturally, fails to use the equality to rewrite
 the types of the right-hand sides of the pattern match. This can be overcome through
 various tricks, but it is far from easy. Furthermore, even once these challenges
-are surmounted, it is necessary to prove that |eval| terminates -- a non-trivial
-task -- for Coq to
+are surmounted, it is necessary to prove that |eval| terminates---a non-trivial
+task---for Coq to
 accept the function.
 
 \item Agda does a better job with indexed types, but it is not designed around
@@ -346,7 +346,7 @@ final dissertation.
 
 We have built up a small-step stepper whose behavior is verified against a
 big-step evaluator. Despite this extra checking, the |step| function will run
-in an identical manner to one that is unchecked -- there is no runtime effect
+in an identical manner to one that is unchecked---there is no runtime effect
 of the extra verification. We can be sure of this because we can audit the
 types involved and see that only the expression itself is around at runtime;
 the rest of the arguments (the indices and the equality proofs) are erased.
@@ -424,7 +424,7 @@ applicable in the context of Cloud Haskell. Cloud Haskell~\cite{cloud-haskell}
 is an ongoing project, aiming to support writing a Haskell program that can
 operate on several machines in parallel, communicating over a network. To
 achieve this goal, we need a way of communicating data of all types over a
-wire -- in other words, we need dynamic types. On the receiving end, we would
+wire---in other words, we need dynamic types. On the receiving end, we would
 like to be able to inspect a dynamically typed datum, figure out its type, and
 then use it at the encoded type. For more information about how kind
 equalities fit into Cloud Haskell, please see the GHC wiki at
@@ -432,8 +432,8 @@ equalities fit into Cloud Haskell, please see the GHC wiki at
 
 Reflection of this sort has been possible for some
 time using the |Typeable| mechanism~\cite{syb}. However, the lack of kind
-equalities -- the ability to learn about a type's kind via pattern matching
--- has hindered some of the usefulness of Haskell's reflection facility.
+equalities---the ability to learn about a type's kind via pattern matching---has
+hindered some of the usefulness of Haskell's reflection facility.
 In this section, we explore how this is the case and how the problem is fixed.
 
 \subsubsection{Heterogeneous propositional equality}
@@ -542,8 +542,8 @@ and other functions below can live outside the trusted code base.
 
 Suppose we were to send an
 object with a function type, say |Bool -> Int| over the network. For the time
-being, let's ignore the complexities of actually serializing a function --
-there is a solution to that
+being, let's ignore the complexities of actually serializing a function---there
+is a solution to that
 problem\footnote{\url{https://ghc.haskell.org/trac/ghc/wiki/StaticPointers}},
 but here we are concerned only with the types. We would want to apply the
 received function to some argument. What we want is this:
@@ -569,7 +569,7 @@ dynApply _ _ = Nothing
 \end{code}
 \end{working}
 %
-We first match against the expected type structure -- the first |Dyn| argument
+We first match against the expected type structure---the first |Dyn| argument
 must be a function type. We then confirm that the |TyCon| |tarrow| is indeed
 the representation for |(->)| (the construct |tyCon :: TyCon (->)| retrieves
 the compiler-generated representation for |(->)|) and that the actual
@@ -679,7 +679,7 @@ Other than these two trouble spots, all programs that compiled previously
 continue to do so.
 
 The requirement of backward compatibility ``keeps me honest'' in my design of
-type inference -- I cannot cheat by asking the user for more information. The
+type inference---I cannot cheat by asking the user for more information. The
 technical content of this statement is discussed in \pref{cha:type-inference}
 by comparison with the work of \citet{outsidein}. A further advantage of
 working in Haskell is that the type inference of Haskell is well-studied in

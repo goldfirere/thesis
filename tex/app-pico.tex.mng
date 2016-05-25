@@ -1,4 +1,4 @@
-\chapter{Proofs about System~D}
+\chapter{Proofs about \pico/}
 \label{app:d}
 
 \section{Auxiliary definitions}
@@ -1800,7 +1800,7 @@ We must show $[[|k4[s1/a]| ~>* ee4[ee2/a] *<~ |k6[s2/a]|]]$.
 $[[|k4|[|s1|/a] ~>* ee4[ee2/a] *<~ |k6|[|s2|/a] ]]$.
 We are done by two uses of \pref{lem:red-star-subst}.
 \item[Case \rul{Co\_AppIrrel}:] Similar to previous case.
-\item[Case \rul{Co\_CApp}:] Similar to (but easier than -- no argument
+\item[Case \rul{Co\_CApp}:] Similar to (but easier than---no argument
 to worry about) previous case.
 \item[Case \rul{Co\_PiTy}:] Immediate. Both kinds are $[[Type{}]]$.
 \item[Case \rul{Co\_PiCo}:] Immediate. Both kinds are $[[Type{}]]$.

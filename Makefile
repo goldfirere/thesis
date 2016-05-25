@@ -1,4 +1,5 @@
-C = app-pico
+C = pico
+C_EXT = $(if $(wildcard tex/$(C).lhs*),$(C).lhs,$(C).tex)
 
 OTT_FILES_BASE = syn rules
 PAPER_BASE = thesis
@@ -17,7 +18,7 @@ MNG_FILES_BASE =
 OTT_DUMP_BASE = ottdump
 OTT_OPTS = -tex_show_meta false -tex_wrap false -picky_multiple_parses $(OTT_PICKY)
 ALL_TEX_FILES = $(wildcard tex/*.tex) $(patsubst %.tex.mng,%.tex,$(wildcard tex/*.tex.mng))
-ALL_LHS_FILES = $(filter-out tex/thesis.lhs,$(wildcard tex/*.lhs) $(patsubst %.lhs.mng,%.lhs,$(wildcard tex/*.lhs.mng)))
+ALL_LHS_FILES = $(filter-out tex/thesis.lhs tex/chapter.lhs,$(wildcard tex/*.lhs) $(patsubst %.lhs.mng,%.lhs,$(wildcard tex/*.lhs.mng)))
 
 PDF_DIR_MARKER = pdf/.dir_exists
 AUX_DIR_MARKER = aux/.dir_exists
@@ -49,12 +50,13 @@ $(OTT_OUTPUT_FULL): $(OTT_FILES_FULL)
 	ott $(OTT_OPTS) -o $@ $^
 
 aux/$(PAPER_BASE).tex: $(ALL_LHS_FILES:tex/%=aux/%)
+aux/chapter.tex: aux/thechapter.lhs
 
-aux/chapter.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex aux/thesispreamble.tex aux/thechapter.tex
+aux/chapter.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex aux/thesispreamble.tex
 aux/ottdump.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex
 aux/thesis.pdf: $(OTT_OUTPUT_FULL) $(BIB_FILES_FULL) $(ALL_TEX_FILES:tex/%=aux/%)
 
-aux/thechapter.tex: aux/$(C).tex
+aux/thechapter.lhs: aux/$(C_EXT)
 	cp $< $@
 
 aux/%.pdf: aux/%.tex $(AUX_DIR_MARKER)

@@ -316,7 +316,7 @@ standard library function):
 showSomething :: Some Show -> String
 showSomething (Some thing) = show thing
 \end{code}
-Note that there is no |Show a| constraint in the function signature -- we get
+Note that there is no |Show a| constraint in the function signature---we get
 the constraint from pattern-matching on |Some|, instead.
 
 The type |Some| is useful if, say, we want a heterogeneous list such that every
@@ -369,8 +369,8 @@ castWith :: (a :~: b) -> a -> b
 castWith Refl x = x
 \end{code}
 %
-Here, the |castWith| function takes a term of type |a :~: b| -- evidence
-that |a| equals |b| -- and a term of type |a|. It can immediately return
+Here, the |castWith| function takes a term of type |a :~: b|---evidence
+that |a| equals |b|---and a term of type |a|. It can immediately return
 this term, |x|, because GHC knows that |a| and |b| are the same type. Thus,
 |x| also has type |b| and the function is well typed.
 
@@ -392,7 +392,7 @@ In this variant, I define the type using the Haskell98-style syntax for
 datatypes. This says that the |Refl| constructor takes no arguments, but
 does require the constraint that |a ~ b|. The constraint |(~)| is GHC's
 notation for a proper type equality constraint. Accordingly, to use
-|Refl| at a type |tau :~: sigma|, GHC must know that |tau ~ sigma| -- in
+|Refl| at a type |tau :~: sigma|, GHC must know that |tau ~ sigma|---in
 other words, that |tau| and |sigma| are the same type. When |Refl| is matched
 against, this constraint |tau ~ sigma| becomes available for use in the
 body of the pattern match.

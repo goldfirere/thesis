@@ -14,8 +14,8 @@ in the proposal.
 \end{proposal}
 
 Haskell has become a wonderful and rich playground for type system
-experimentation. Despite its relative longevity -- at roughly 25 years
-old~\cite{history-of-haskell} -- type theorists still turn to
+experimentation. Despite its relative longevity---at roughly 25 years
+old~\cite{history-of-haskell}---type theorists still turn to
 Haskell as a place to build new type system ideas and see how they work in a
 practical setting~\cite{fundeps, chak1, chak2, arrows, syb,
   closed-type-families, generics-with-closed-type-families, safe-coercions,
@@ -64,7 +64,7 @@ gathering these examples together is a true contribution of this dissertation.
 At the time of writing, dependent types are still rather esoteric in the
 functional programming community, and examples of how dependent types can
 do real work (outside of theorem-proving, which is beyond the scope of
-dependent types in Haskell -- see \pref{sec:no-proofs}) are hard to come by.
+dependent types in Haskell---see \pref{sec:no-proofs}) are hard to come by.
 
 \item \pref{cha:dep-haskell} presents Dependent Haskell, the surface language
 I have designed in this dissertation. This chapter is written to be useful
@@ -95,8 +95,8 @@ must be executed at runtime, as discussed in \pref{sec:running-proofs}.
 \item As elaborated in \pref{cha:type-inference}, Dependent Haskell retains important
 type inference characteristics that exist in previous versions of Haskell (e.g., those
 characteristics described by \citet{outsidein}).
-In particular, all programs accepted by today's GHC -- including those without
-type signatures -- are also valid in Dependent
+In particular, all programs accepted by today's GHC---including those without
+type signatures---are also valid in Dependent
 Haskell.
 \end{enumerate}
 

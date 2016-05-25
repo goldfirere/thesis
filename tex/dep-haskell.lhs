@@ -50,8 +50,8 @@ quantifier body.
 
 Dependent Haskell adds a new dependent quantifier, |pi|, as discussed below.
 
-A key requirement of dependent arguments -- that is, concrete choices of
-instantiations of dependent quantifiees -- is that they are expressible
+A key requirement of dependent arguments---that is, concrete choices of
+instantiations of dependent quantifiees---is that they are expressible
 in types. See \pref{sec:shared-subset} for a discussion of how this plays
 out in practice.
 

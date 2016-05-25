@@ -7,6 +7,163 @@
 \chapter{\Pico/}
 \label{cha:pico}
 
+This chapter presents \pico/, the internal language Dependent Haskell compiles
+into. I have proved type safety (via the usual preservation
+and progress theorems, \pref{thm:preservation} and \pref{thm:progress})
+and type erasure (\pref{thm:type-erasure} and \pref{thm:expr-eval}).
+I believe \pico/ would make a strong candidate for the internal language
+in a future version of GHC.
+
+\section{Overview}
+
+\Pico/ descends directly from the long line of work on System FC~\cite{systemfc}.
+It is most closely related to the version of System FC presented in my prior
+work~\cite{fckinds} and in Gundry's thesis~\cite{gundry-thesis}.
+
+\Pico/
+sits in the $\lambda$-cube~\cite{lambda-cube}
+ on the same vertex as the Calculus of Constructions~\cite{coquand-cc}, but
+with a very different notion of equality. A typical dependently typed
+calculus contains a \emph{conversion} rule, something like this:
+\[
+\ottdrule{\ottpremise{\tau : \kappa_1 \qquad \kappa_1 \equiv \kappa_2}}{\tau : \kappa_2}{\rul{Conv}}
+\]
+This rule encapsulates the point of type equivalence: if a type $\tau$ is found
+to have some kind $\kappa_1$ and $\kappa_1$ is known to be equivalent to
+some $\kappa_2$, then we can say that $\tau$ has kind $\kappa_2$.\footnote{I tend
+to use the word ``kind'' when referring to the classification of a type. However,
+in the languages considered in this dissertation, kinds and types come from the
+same grammar; the terms ``type'' and ``kind'' are technically equivalent.
+Nevertheless, I find that discerning between these two words can aid intuition
+and will continue to do so throughout the dissertation. \rae{Do I discuss elsewhere??}}
+This rule is flexible and helps a language to be succinct. It has a major
+drawback, however: it is not syntax directed. In general, determining
+whether $\kappa_1 \equiv \kappa_2$ might not be easy. Indeed, type equivalence
+in \pico/ is undecidable, so we would have a hard time building a type-checker
+with a \rul{Conv} rule such as this one. Other dependently typed languages
+are forced to restrict expressiveness in order to keep type-checking
+decidable; this need for decidable type equivalence is one motivation to design
+a dependently typed language to be strongly normalizing.
+
+\Pico/'s approach to type equivalence (and the \rul{Conv} rule) derives from
+the \emph{coercions} that provide the ``C'' in ``System FC''. Instead of relying
+on a non-syntax-directed equivalence relation, \pico/'s type equivalence
+requires evidence of equality in the form of coercions. Here is a simplified
+version of \pico/'s take
+of the \rul{Conv} rule:
+\[
+\ottdrule{\ottpremise{[[t]] : [[k1]] \qquad [[g]] : [[k1 [Type{}]~[Type{}] k2]]}}{[[t |> g]] : [[k2]]}{\rul{Ty\_Cast}}
+\]
+In this rule, the metavariable $[[g]]$ stands for a \emph{coercion}, a proof
+of the equality between two types. Here, we see that $[[g]]$ proves that
+kinds $[[k1]]$ and $[[k2]]$ are equivalent. Thus, we can type $[[t |> g]]$
+at $[[k2]]$ as long as $[[t]]$ can be typed at $[[k1]]$. Note the critical
+appearance of $[[g]]$ in the conclusion of the rule: this rule is syntax-directed.
+The type-checker simply needs to check the equality proofs against a set of
+(also syntax-directed) rules, not to check some more general equivalence relation.
+
+The grammar for coercions (in~\pref{fig:coercions}) allows for a wide variety
+of coercion forms, giving \pico/ a powerful notion of type equivalence.
+However, this grammar includes no evaluation or proper $\lambda$-abstractions.\footnote{There is a coercion form that starts with $\lambda$; it is only a
+congruence form for $\lambda$-abstractions in types, not a $\lambda$-abstraction
+in the coercion language. See \pref{sec:lambda-coercion}.}
+Thus, the fact that evaluation in \pico/ might not terminate does not threaten
+the type safety of the language. Coercions are held separate from types,
+and proving consistency of the coercion language (\pref{sec:consistency})---in
+other words, that we cannot prove |Int ~ Bool|---is the heart of the
+type safety proof. It does not, naturally, depend on any termination proof,
+nor any termination checking of the program being checked. The independence
+of \pico/'s type safety result from termination means that \pico/ can avoid
+many potential traps that have snagged other dependently typed languages
+that rely on intricate termination checks~\cite{...}.
+
+\subsection{Features of \pico/}
+
+\Pico/ is a dependently typed $\lambda$-calculus with algebraic datatypes
+and a fixpoint operator. Recursion is modeled only via this fixpoint operator;
+there is no recursive |let|. Other than the way in which the operational
+semantics deals with coercions in the form of \emph{push rules}, the
+small-step semantics is what you might expect. 
+
+The typing relations, however, have a few features worth mentioning up front:
+
+\paragraph{Relevance annotations and type erasure}
+A key concern when compiling a dependently typed language is type erasure.
+Given that terms and types can intermingle, what should be erased during
+compilation? And what data is necessary to be retained until runtime.
+Dependent Haskell (and, in turn, \pico/) forces the user to specify this
+detail at each quantifier (\pref{sec:relevance}). In the formal grammar
+of \pico/, we distinguish between $[[PI]] [[a:Rel k]].\, ...$ and
+$[[PI]] [[a:Irrel k]].\, ...$. The former is the type of an abstraction
+that is retained at runtime, written with a |pi| in Haskell;
+the latter abstraction, written with |forall| is fully erased.
+In order to back up this claim of full erasure of irrelevant quantification,
+evaluation happens under irrelevant abstractions; see \pref{sec:step-under-abs}.
+
+So that we can be sure a variable's relevance is respected at use sites,
+variable contexts $[[G]]$ track the relevance of bound variables. Only
+relevant variables may appear in the ``level'' in which they were bound;
+when a typing premise refers to a higher ``level'', the context is altered to
+mark all variables as relevant. For example, the \ottkw{case} construct
+$[[case_k t of alts]]$ includes the return kind of the entire \ottkw{case}
+expression as its $[[k]]$ subscript. This kind is type-checked in a context
+where all variables are marked as relevant; because the kind is erased
+during compilation, the use of an irrelevant variable there is allowed.
+As they are also erased, coercions are considered fully irrelevant as well.
+
+My treatment of resetting the context is precisely like what is done
+by \citet{erasure-pure-type-systems}.
+
+\paragraph{Matching on partially-applied constants}
+\Pico/ does not contain type families. Instead, it uses $\lambda$-abstractions
+and \ottkw{case} expressions, as are more familiar to functional programmers.
+And yet, I wish for \pico/ to support the variety of ways in which type families
+are used in today's Haskell. One curiosity of today's Haskell is that it allows
+matching on partially-applied data constructors:
+\begin{code}
+type family IsLeft a where
+  IsLeft !Left  = !True
+  IsLeft !Right = !False
+\end{code}
+The type family |IsLeft| is inferred to have kind
+|forall k. (k -> Either k k) -> Bool|. That is, it matches on the |Left|
+and |Right| constructors, even though these are not applied to arguments.
+While it may seem that |IsLeft| is matching on a \emph{function}---after all,
+the type of |IsLeft|'s argument appears to be an arrow type---it is not.
+It is matching only on constructors, because the kind-level |->| classifies
+only type constants. \rae{Flesh this out once I know how I'm dealing with the
+two arrows in Haskell.}
+
+To get this partially-applied matching to work in \pico/, it is necessary
+to have two different $[[PI]]$-quantifiers: $[[MPI]]$ and $[[UPI]]$. The
+former is called a \emph{matchable} $[[PI]]$, the latter is \emph{unmatchable}.
+Type constants are classified by $[[MPI]]$, whereas $\lambda$-abstractions
+are classified by $[[UPI]]$.
+Only matchable $[[MPI]]$-types are allowed as \ottkw{case} scrutinees.
+
+\paragraph{Matching on $[[Type]]$}
+
+\rae{talk about exhaustivity}
+\rae{TODO: add absurdity}
+
+\paragraph{Other extensions}
+
+\rae{representation polymorphism}
+\rae{split}
+\rae{$[[->]]$}
+\rae{|Equals|}
+
+\subsection{Design requirements for \pico/}
+
+\rae{syntax-directed, decidable, fast, encoding the derivation in the terms}
+\rae{erasability}
+
+\subsection{Other applications of \pico/}
+
+\rae{Not just Haskell}
+\rae{In dissertation, a balance between exhaustive coverage and wider
+applicability}
+
 \section{Merging types and kinds}
 
 \section{Levity polymorphism}
