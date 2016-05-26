@@ -154,8 +154,6 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | ( t )                        :: M :: Parens
 
 | t [ theta ]                  :: M :: Subst
-| typeKind _ S ; G ( t )       :: M :: TypeKind
-  {{ tex [[typeKind]]_{[[S]];[[G]]}([[t]]) }}
 
 typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
   ks {{ tex \overline{\kappa} }}, ees {{ tex \overline{\epsilon} }}

@@ -463,6 +463,8 @@ the choice between these export modes will require a small change to export
 and import lists, as will be detailed here.
 \end{proposal}
 
+\rae{Need to define generativity and injectivity, in this chapter or elsewhere}
+
 %%  LocalWords:  newcode rae fmt TypeLits endif quantifiee pred outsidein FCD
 %%  LocalWords:  mytrue bool Vec theSimons FromNat Succ infixr SNat SZero Num
 %%  LocalWords:  SSucc fromInteger unsafeCoerce abs signum MkAge newtype frob

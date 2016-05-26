@@ -51,20 +51,6 @@ Erasure:
    Admittedly, a let-floated coercion abstraction might cause stuckness,
    but it is up to the optimizer to make sure this doesn't happen.
 
-Unnecessary coercions:
-  App
-  PiCo
-  Case
-  Lam
-  Fix
-  ArgKLam
-  InstLam
-  Kind
-
-  Con
-
-  (Actually, just look it up in the git history.)
-
 DESIGN DECISIONS:
  - Two instantiation operators: to make inversion work. Well, really, to
    make promotion work, but we've scrapped promotion. (I have undone this

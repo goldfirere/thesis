@@ -301,6 +301,7 @@ Metavariables:
 &\bnfor& \multicolumn{2}{l}{[[case_h g of calts]] \bnfor [[fix g]]
 \bnfor [[\a :rel h.g]] \bnfor [[\c:(h1,h2).g]]  
 \bnfor [[absurd (h1,h2) g]]} \\
+&\bnfor& [[t1 ~={h} t2]] & \text{coherence} \\
 &\bnfor& [[argk g]] \bnfor [[argk n g]] \bnfor [[res^n g]] \bnfor [[g@w]] & \text{$[[PI]]$-type decomposition} \\
 &\bnfor& [[nth n g]] & \text{injectivity} \\
 &\bnfor& [[kind g]] & \text{``John Major'' equality} \\
@@ -322,9 +323,35 @@ Metavariables:
 \label{fig:pico-grammar}
 \end{figure}
 
-The full grammar of \pico/ appears in \pref{fig:pico-grammar}. Later
-sections of this chapter will cover portions of the typing rules; for
+\begin{figure}
+\[
+\begin{array}{rcl}
+\overline{\;} &\defeq& \text{(an overbar) indicates a list} \\
+[[_]] &\defeq& \text{a fresh variable whose name is not used} \\
+[[dom(D)]] &\defeq& \text{the list of variables bound in $[[D]]$} \\
+[[prefix]](\cdot) &\defeq& \text{a prefix of a list; length specified elsewhere} \\
+[[fv]](\cdot) &\defeq& \text{extract all free variables, as a set} \\
+[[H]] &\defeq& [[H{blank}]] \text{ (when appearing in a type)} \\
+[[PI D. t]] &\defeq& \text{nested $[[PI]]$s} \\
+[[MUPI D. t]] &\defeq& \text{nested $[[PI]]$s, where the individual $[[PI]]$s used might differ} \\
+[[\D.t]] &\defeq& \text{nested $[[\ ]]$s} \\
+[[t1 [k1]~[k2] t2]] &\defeq& [[t1 (k1)~(k2) t2]] \text{ (when the kinds are obvious or unimportant)} \\
+[[o]] &\defeq& \text{an erased coercion} \\
+[[#]] &\defeq& \text{the sets of free variables of two entities are distinct} \\
+\lfloor \cdot \rfloor &\defeq& \text{coercion erasure (\pref{sec:coercion-erasure})} \\
+\llfloor \cdot \rrfloor &\defeq& \text{type erasure (\pref{sec:type-erasure})} \\
+\ottkw{let} &\text{is}& \text{used in the metatheory only and should be eagerly expanded}\\
+
+\caption{Notation conventions of \pico/}
+\label{fig:pico-notation}
+\end{figure}
+
+The full grammar of \pico/ appears in \pref{fig:pico-grammar} and
+notation conventions appear in \pref{fig:pico-notation}. Later
+sections of this chapter will cover portions of the typing rules, but for
 a full listing of all the typing rules of the language, please see
 \pref{app:pico}.
 
 \rae{Must introduce $[[ee]]$ when appropriate.}
+
+\rae{Extensions: split, |Equals|, representation polymorphism, |(->)|, compression (\ottkw{step} becoming $\ottkw{step}]^n$).}

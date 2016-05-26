@@ -1,6 +1,8 @@
 \chapter{Proofs about \pico/}
 \label{app:d}
 
+\rae{add typing rules and a reference to \pref{fig:pico-grammar}.}
+
 \section{Auxiliary definitions}
 
 \begin{definition}[Values]
