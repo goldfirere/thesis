@@ -42,6 +42,7 @@
 %format pi = "\Pi"
 %format tau = "\tau"
 %format sigma = "\sigma"
+%format Type = "\ottkw{Type}"
 
 % suppress some built-in formatting of lhs2TeX:
 %format not = "\id{not}"

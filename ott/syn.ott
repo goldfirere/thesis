@@ -25,9 +25,6 @@ grammar
 %%  Constants  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Prim, P :: 'PrimTyCon_' ::=
-| Type             ::   :: Type
-
 ADT, T :: 'ADT_' ::=
 | Maybe            ::   :: Maybe
   {{ tex \id{Maybe} }}
@@ -35,7 +32,7 @@ ADT, T :: 'ADT_' ::=
 tycon, H :: 'TyCon_' ::=
 | T                ::   :: ADT
 | K                ::   :: DataCon
-| P                ::   :: Primitive
+| Type             ::   :: Type
 
 adt_kind {{ tex ( \overline{\ottmv{a} } {:} \overline{\kappa} ) }} :: 'AdtKi_' ::=
 | ( a1 : k1 , .... , ai : ki )   ::   :: Vars
@@ -229,6 +226,7 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   {{ tex [[\]] [[c]] {:} ([[h1]],[[h2]]).\,[[g]] }}
 | fix g                        ::   :: Fix
 | absurd ( g1 , g2 ) h         ::   :: Absurd
+  {{ tex \ottkw{absurd}\,([[g1]],[[g2]])\,[[h]] }}
 | argk g                       ::   :: ArgK
 | argk I g                     ::   :: CArgK
   {{ tex {[[argk]]}^{[[I]]}\,[[g]] }}

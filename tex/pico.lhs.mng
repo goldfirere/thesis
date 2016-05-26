@@ -79,11 +79,12 @@ that rely on intricate termination checks~\cite{...}.
 
 \subsection{Features of \pico/}
 
-\Pico/ is a dependently typed $\lambda$-calculus with algebraic datatypes
-and a fixpoint operator. Recursion is modeled only via this fixpoint operator;
+\Pico/ is a dependently typed $\lambda$-calculus with algebraic datatypes and
+a fixpoint operator. Recursion is modeled only via this fixpoint operator;
 there is no recursive |let|. Other than the way in which the operational
 semantics deals with coercions in the form of \emph{push rules}, the
-small-step semantics is what you might expect. 
+small-step semantics is what you might expect for a call-by-name
+$\lambda$-calculus.
 
 The typing relations, however, have a few features worth mentioning up front:
 
@@ -140,61 +141,190 @@ former is called a \emph{matchable} $[[PI]]$, the latter is \emph{unmatchable}.
 Type constants are classified by $[[MPI]]$, whereas $\lambda$-abstractions
 are classified by $[[UPI]]$.
 Only matchable $[[MPI]]$-types are allowed as \ottkw{case} scrutinees.
+When I write the unadorned $[[PI]]$, I actually mean a metavariable which
+might be instantiated either to $[[MPI]]$ or $[[UPI]]$.
 
 \paragraph{Matching on $[[Type]]$}
 
-\rae{talk about exhaustivity}
-\rae{TODO: add absurdity}
+Today's Haskell also has the ability, through its type families, to match on
+members of $[[Type]]$. For example:
+\begin{code}
+type family IntLike x where
+  IntLike Integer = !True
+  IntLike Int     = !True
+  IntLike _       = !False
+\end{code}
+This ability for a function to inspect the choice of a type---and not a code
+for a type---is unique to Haskell, as far as I am aware. With the type families
+in today's Haskell, discerning between types is done by simple pattern matching.
+However, if we compile type families to \ottkw{case} statements, we need a way
+to deal with this construct.
 
-\paragraph{Other extensions}
+Fortunately, types like |Either| resemble data constructors like |Just|:
+both are classified by matchable quantification(s) over a type headed by another
+type constant. In the case of |Either|, we have $|Either| : 
+[[MPI _:Rel Type{}, _:Rel Type{}. Type{} ]]$;\footnote{Why $[[Rel]]$? See
+\pref{sec:relevance-of-datatypes}.} note that the body of the
+$[[PI]]$-type is headed by the constant $[[Type{}]]$. For |Just|,
+we have $|Just|_{[[ {a} ]]} : [[MPI _ :Rel a. Maybe{} a]]$.\footnote{The
+$[[ {a} ]]$ subscript is explain in \pref{sec:universals}.}
+With this similarity, it is not hard to create a typing rule for a \ottkw{case}
+statement that can handle both data constructors (like |Just|) and types
+(like |Either|).
 
-\rae{representation polymorphism}
-\rae{split}
-\rae{$[[->]]$}
-\rae{|Equals|}
+A key feature, however, that is needed to support matching on $[[Type]]$ is
+default patterns. For a closed datatype, where all the constructors can be
+enumerated, default patterns are merely a convenience; any default can be
+expanded to list all possible constructors. For an open type, like $[[Type]]$,
+the availability of the default pattern is essential. It is for this reason alone
+that I have chosen to include default patterns in \pico/.
 
 \subsection{Design requirements for \pico/}
 
-\rae{syntax-directed, decidable, fast, encoding the derivation in the terms}
-\rae{erasability}
+In the course of any language design, there needs to be a guiding principle
+to aid in making free design decisions. The chief motivator for the design
+of \pico/ is that it should be suitable for use as the internal language
+of a Haskell compiler. This use case provides several desiderata:
+
+\paragraph{Decidable, syntax-directed, efficient type-checking}
+The use of types in a compiler's intermediate language serves only as a check
+of the correctness of the compiler. Any programmer errors are caught before
+the intermediate language code is emitted, and so a correct compiler should
+only produce well-typed intermediate-language programs, if it produces such
+programs at all. In addition, a correct compiler performing program transformations
+on the intermediate language should take a well-typed program to a well-typed
+program. However, not all compilers are correct, and thus it is helpful
+to have a way to check that intermediate-language program generation and
+transformation is at least type-preserving. To check this property, we need
+to type-check the intermediate language, both after it is originally
+produced and after every transformation. It thus must be easy and efficient
+to do so.
+
+\Pico/ essentially encodes a typing derivation right in the syntax of types
+and coercions. It is thus very easy to write a type-checker for the language.
+Type-checking is manifestly decidable and can be done in one pass over the
+program text, with no constraint solving.\footnote{I do not claim that it
+is strictly linear, as a formal analysis of its running time is beyond the
+scope of this dissertation. In particular, one rule
+(see \pref{sec:case-expressions}) requires the use of a unification algorithm
+and likely breaks linearity.} \Pico/'s lack of a termination requirement
+also significantly lowers the burden of implementation of a type-checker
+for the language.
+
+\paragraph{Erasability}
+
+An intermediate-language program should make clear what information can be
+erased at runtime. After all, when the compiler is done performing optimizations,
+runtime code generation must take place, and we thus need to know what
+information can be dropped. It is for this reason that \pico/ includes the
+relevance annotations.
 
 \subsection{Other applications of \pico/}
 
-\rae{Not just Haskell}
-\rae{In dissertation, a balance between exhaustive coverage and wider
-applicability}
+It is my hope that \pico/ sees application beyond just in Haskell. In designing
+it, I have tried to permit certain Haskell idioms (call-by-name semantics,
+the extra capabilities of \ottkw{case} expressions outlined above) while
+still retaining a general enough flavor that it could be adapted to other
+settings. I believe that the arguments above about \pico/'s design mean
+that it is a suitable starting-point for the design of an
+intermediate language for any dependently typed surface language. Other uses
+might want call-by-value instead of call-by-name or to remove the somewhat
+fiddly distinction between $[[MPI]]$ and $[[UPI]]$. These changes should be
+rather straightforward to make.
 
-\section{Merging types and kinds}
+In certain areas, I have decided not to support certain existing Haskell
+constructs directly in \pico/ because doing so would clutter the language,
+making its applicability beyond Haskell harder to envision. Various
+extensions of \pico/---which would likely appear in an implementation of
+\pico/ within GHC---are discussed in \pref{sec:pico-extensions}. These
+include representation polymorphism and support for the $([[->]])$ type 
+constructor, for example.
 
-\section{Levity polymorphism}
+\subsection{No roles in \pico/}
 
-THis is a type: $[[t]]$.
+Recent versions of System FC have included \emph{roles}~\cite{coercible},
+which distinguish between two different notions of type equality:
+nominal equality is the equality relation embodied in Haskell's |(~)|
+operator, whereas representational equality relates types that have
+bit-for-bit identical runtime representations. Tracking these two
+equality relations is important for allowing zero-cost conversions
+between types known to have the same representation, and it is an
+important feature to boost performance of programs that use |newtype|
+to enforce abstraction.
 
-This is some type-checked code:
-\begin{code}
-foo :: a -> b -> a
-foo x _ = x
-\end{code}
+However, roles greatly clutter the language
+and its proofs. Including them throughout this dissertation would distract
+us from the main goal of understanding a dependently typed language
+with $[[Type{}]] : [[Type{}]]$ and
+at ease with non-termination. It is for this reason that I have chosen
+to omit roles entirely from this work. I am confident that, in time, roles
+can be integrated with the language presented here, perhaps along the
+lines I have articulated in a draft paper~\cite{overabundance-of-equalities},
+though the treatment there still leaves something to be desired.
+Regardless of clutter, having a solid approach to combining roles with
+dependent types will be a prerequisite of releasing a performant
+implementation of dependent types in GHC.
 
-\begin{proposal}
-Levity polymorphism is described in a recent draft paper~\cite{equalities}.
-\end{proposal}
+\section{Grammar}
 
-\section{Roles and dependent types}
+\begin{figure}
+Metavariables:
+\[
+\begin{array}{rl@@{\qquad}rl}
+[[T]] & \text{algebraic datatype} & [[K]] & \text{data constructor} \\
+[[a,b,x]] & \text{type/term variable} & [[c]] & \text{coercion variable} \\
+[[i, j, kk, n]] & \text{natural number/index}
+\end{array}
+\]
+\[
+\begin{array}{rcl@@{\quad}l}
+[[PI]] &\bnfeq& [[MPI]] & \text{matchable dep.~quantifier} \\
+&\bnfor& [[UPI]] & \text{unmatchable dep.~quantifier} \\
+[[z]] &\bnfeq& [[a]] \bnfor [[c]] & \text{type or coercion variable} \\
+[[H]] &\bnfeq& [[T]] \bnfor [[K]] \bnfor [[Type]] & \text{constant} \\
+[[rel]] &\bnfeq& [[Rel]] \bnfor [[Irrel]] & \text{relevance annotation} \\
+[[d]] &\bnfeq& [[a :rel k]] \bnfor [[c : phi]] & \text{binder} \\
+[[phi]] &\bnfeq& [[t1 (k1)~(k2) t2]] & \text{heterogeneous equality} \\
+[[t, s, k]] &\bnfeq& [[a]] \bnfor [[t p]] \bnfor [[PI d.t]] \bnfor [[\d.t]] 
+                   & \text{dependent types} \\
+&\bnfor& [[H{ts}]] & \text{constant applied to universals} \\
+&\bnfor& [[t |> g]] & \text{kind cast} \\
+&\bnfor& [[case_k t of alts]] & \text{case-splitting} \\
+&\bnfor& [[fix t]] & \text{recursion} \\
+&\bnfor& [[absurd g t]] & \text{absurdity elimination} \\
+[[p]] &\bnfeq& [[t]] \bnfor [[{t}]] \bnfor [[g]] & \text{argument} \\
+[[alt]] &\bnfeq& [[pat -> t]] & \text{case alternative} \\
+[[pat]] &\bnfeq& [[H]] \bnfor [[_]] & \text{pattern} \\
+[[g,h]] &\bnfeq& [[c]] & \text{coercion assumption} \\
+&\bnfor& [[<t>]] \bnfor [[sym g]] \bnfor [[g1 ;; g2]] & \text{equivalence} \\
+&\bnfor& [[H{gs}]] \bnfor [[g w]] \bnfor [[PI a:rel h.g]] \bnfor [[PI c:(h1,h2).g]]   & \text{congruence} \\
+&\bnfor& \multicolumn{2}{l}{[[case_h g of calts]] \bnfor [[fix g]]
+\bnfor [[\a :rel h.g]] \bnfor [[\c:(h1,h2).g]]  
+\bnfor [[absurd (h1,h2) g]]} \\
+&\bnfor& [[argk g]] \bnfor [[argk n g]] \bnfor [[res^n g]] \bnfor [[g@w]] & \text{$[[PI]]$-type decomposition} \\
+&\bnfor& [[nth n g]] & \text{injectivity} \\
+&\bnfor& [[kind g]] & \text{``John Major'' equality} \\
+&\bnfor& [[step t]] & \text{$\beta$-equivalence} \\
+[[calt]] &\bnfeq& [[pat -> g]] & \text{case alternative in coercion} \\
+[[w]] &\bnfeq& [[g]] \bnfor [[{g}]] \bnfor [[(g1,g2)]] & \text{coercion argument} \\[1ex]
+[[S]] &\bnfeq& [[empty]]  & \text{signature} \\
+&\bnfor& [[S, T:(as:ks)]] & \text{algebraic datatype} \\
+&\bnfor& [[S, K:(D;T)]] & \text{data constructor} \\
+[[G,D]] &\bnfeq& [[empty]] \bnfor [[G, d]] & \text{context/telescope} \\
+[[theta]] &\bnfeq& [[empty]] \bnfor [[theta, t/a]] \bnfor [[theta, g/c]] & \text{substitution} \\[1ex]
+[[e]] &\bnfeq& [[a]] \bnfor [[H]] \bnfor [[e y]] \bnfor [[PI]] \bnfor [[case e of ealts]] & \text{erased expression} \\
+& \bnfor & [[\a.e]] \bnfor [[\o.e]] \bnfor [[fix e]] \\
+[[y]] &\bnfeq& [[e]] \bnfor [[o]] & \text{erased argument} \\
+[[ealt]] &\bnfeq& [[pat -> e]] & \text{erased alternative} \\
+\end{array}
+\]
+\caption{The grammar of \pico/}
+\label{fig:pico-grammar}
+\end{figure}
 
-\begin{proposal}
-In contrast to \pref{sec:roles-and-dependent-types}, which will describe
-the user-facing interaction between roles and dependent types, this section
-will describe the internals.
-\end{proposal}
+The full grammar of \pico/ appears in \pref{fig:pico-grammar}. Later
+sections of this chapter will cover portions of the typing rules; for
+a full listing of all the typing rules of the language, please see
+\pref{app:pico}.
 
-\section{Metatheory}
-
-\begin{proposal}
-This section will sketch the necessary lemmas needed to prove type safety,
-along with the so-called Lifting Lemma, which demonstrates an important
-property of the coercion language. The actual proofs will appear in
-\pref{app:fc}.
-\end{proposal}
-
-%%  LocalWords:  FCD cha nokinds gundry app
+\rae{Must introduce $[[ee]]$ when appropriate.}
