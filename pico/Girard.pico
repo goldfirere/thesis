@@ -1,0 +1,21 @@
+
+let P : Type -> Type
+    P = \(s :Rel Type). s -> Type
+
+    Bot : Type
+    Bot = UPI (p :Rel Type). p
+
+    Not : Type -> Type
+    Not = \ (p :Rel Type). p -> Bot
+
+    U : Type
+    U = UPI (x :Rel Type). (P (P x) -> x) -> P (P x)
+
+    tau = \ (t :Rel P (P U))
+            (X :Rel Type)
+	    (f :Rel P (P X) -> X)
+	    (p :Rel P X).
+	    t (\ (x :Rel U). p (f (x X f)))
+
+    sigma = \ (s :Rel U).
+            s U (\ (t : P (P U)). tau t)
