@@ -7,6 +7,7 @@
 import GHC.TypeLits ( type (-) )
 import Prelude hiding ( replicate )
 import Unsafe.Coerce
+import Data.Kind ( type (*) )
 \end{code}
 
 %endif

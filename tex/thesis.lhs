@@ -66,6 +66,7 @@
 \setlist[description]{itemsep=0pt}
 
 %include typo.lhs
+\include{app-rules}
 \include{app-pico}
 \include{inference}
 

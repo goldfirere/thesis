@@ -15,7 +15,13 @@ embed {{ tex-preamble
 %%  Metavariables  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-metavar K                                     ::=   {{ com Data constructors }}
+metavar Tcc ::= {{ lex Alphanum }}
+                {{ texvar \id{[[Tcc]]} }}
+metavar Dcc ::= {{ lex Alphanum }}
+                {{ texvar \id{[[Dcc]]} }}
+
+metavar Blockname ::= {{ lex alphanum0 }}
+                      {{ texvar \id{[[Blockname]]} }}
 
 indexvar i, j, kk {{ tex k }}, n ::= {{ com Indices }}
 
@@ -26,8 +32,14 @@ grammar
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ADT, T :: 'ADT_' ::=
-| Maybe            ::   :: Maybe
-  {{ tex \id{Maybe} }}
+| & Tcc           ::   :: Lit
+  {{ tex [[Tcc]] }}
+  {{ coq (ADT_Lit (trim "[[Tcc]]")) }}
+
+DataCon, K :: 'DataCon_' ::=
+| & Dcc           ::   :: Lit
+  {{ tex [[Dcc]] }}
+  {{ coq (DataCon_List (trim "[[Dcc]]")) }}
 
 tycon, H :: 'TyCon_' ::=
 | T                ::   :: ADT
@@ -38,6 +50,8 @@ adt_kind {{ tex ( \overline{\ottmv{a} } {:} \overline{\kappa} ) }} :: 'AdtKi_' :
 | ( a1 : k1 , .... , ai : ki )   ::   :: Vars
 | ( as : ks )                    :: M :: Telescope
   {{ tex ([[as]]{:}[[ks]]) }}
+  {{ coq (AdtKi_Vars (zip ([[as]]) ([[ks]]))) }}
+| ( nil )                        :: M :: Nil
 
 con_type {{ tex ( \Delta; \ottmv{T} ) }} :: 'ConTy_' ::=
 | ( D ; T )       ::   :: Pair
@@ -48,27 +62,27 @@ con_type {{ tex ( \Delta; \ottmv{T} ) }} :: 'ConTy_' ::=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 var, a, b, x :: 'Var_' ::= {{ com Variables }}
-| _                     :: M :: Blank
+| _                     :: M :: Blank          {{ coq "_" }}
 
 covar, c :: 'CoVar_' ::= {{ com Coercion variables }}
-| _                     :: M :: Blank
+| _                     :: M :: Blank          {{ coq "_" }}
 
 vars, as {{ tex \overline{\ottnt{a} } }}, bs {{ tex \overline{\ottnt{b} } }},
-  xs {{ tex \overline{\ottnt{x} } }} :: 'Vars_' ::=
+  xs {{ tex \overline{\ottnt{x} } }} :: 'vars_' ::=
 | a                     ::   :: One
-| as1 , .... , asi      ::   :: Many
+| as1 , .... , asi      ::   :: Many        
 | nil                   :: M :: Nil
 | prefix ( as )         :: M :: Prefix
   {{ tex [[prefix]]([[as]]) }}
 
 tycovar, z :: 'TyCoVar_' ::=
-| a                     ::   :: Ty
-| c                     ::   :: Co
+| a                     ::   :: Ty  {{ coq [[a]] }}
+| c                     ::   :: Co  {{ coq [[c]] }}
 
-mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'MixedVars_' ::=
+mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'mixedVars_' ::=
 | z                                  ::   :: One
 | mixed_vars1 , .... , mixed_varsi   ::   :: Many
-| nil                                :: M :: Empty
+| nil                                :: M :: Nil
 | dom ( G )                          :: M :: DomCtx
   {{ tex [[dom]]([[G]]) }}
 | xs                                 :: M :: Tys
@@ -101,6 +115,7 @@ relevance, rel {{ tex \mathsf{r} }} :: 'Rel_' ::=
 colon {{ tex {:}^\mathsf{r} }} :: 'Colon_' ::=
 | : rel                       ::   :: Colon
   {{ tex {:}^{[[rel]]} }}
+  {{ coq [[rel]] }}
 
 bnd, d {{ tex \delta }} :: 'Bnd_' ::=
 | a colon t                        ::   :: Type
@@ -141,23 +156,28 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | absurd g t                   ::   :: Absurd
 
 | t ps                         :: M :: Apps
+  {{ coq (foldl Type_App ([[t]]) ([[ps]])) }}
 | H {}                         :: M :: HEmpty
   {{ tex [[H]] }}
+  {{ coq (Type_TyCon ([[H]]) []) }}
 | PI D .  t                    :: M :: Pis
   {{ tex [[PI]] [[D]].\, [[t]] }}
+  {{ coq (foldr (Type_Pi ([[PI]])) ([[t]]) ([[D]])) }}
 | MUPI D . t                   :: M :: Mupis
   {{ tex [[MUPI]] [[D]].\, [[t]] }}
 | \ D . t                      :: M :: Lams
   {{ tex [[\]] [[D]].\, [[t]] }}
-% | t1 -> t2                     :: M :: Arrow
+  {{ coq (foldr Type_Lam ([[t]]) ([[D]])) }}
+| t1 -> t2                     :: M :: Arrow
 % | t1 ~> t2                     :: M :: FFArrow
 | ( t )                        :: M :: Parens
+  {{ coq [[t]] }}
 
 | t [ theta ]                  :: M :: Subst
 
 typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
   ks {{ tex \overline{\kappa} }}, ees {{ tex \overline{\epsilon} }}
-  :: 'Types_' ::=
+  :: 'types_' ::=
 | t                       ::   :: One
 | ts1 , .... , tsi        ::   :: Many
 | nil                     :: M :: Nil  
@@ -167,7 +187,7 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 | '|' ts '|'              :: M :: Erased
   {{ tex \lfloor [[ts]] \rfloor }}
 
-alts {{ tex \overline{\ottnt{alt} } }} :: 'Alts_' ::=
+alts {{ tex \overline{\ottnt{alt} } }} :: 'alts_' ::=
 | alt                    ::   :: One
 | alts1 ; .... ; altsi   ::   :: Many
 | nil                    ::   :: Nil
@@ -194,6 +214,7 @@ prop, phi {{ tex \phi }} :: 'Phi_' ::=
   {{ tex [[t1]] \mathrel{ {}^{[[k1]]} {\sim}^{[[k2]]} } [[t2]] }}
 | t1 [ k1 ]~[ k2 ] t2          :: M :: IEquality
   {{ tex [[t1]] \mathrel{ {}^{\supp{[[k1]]} } {\sim}^{\supp{[[k2]]} } } [[t2]] }}
+  {{ coq (Phi_Equality ([[t1]]) ([[k1]]) ([[k2]]) ([[t2]])) }}
 | phi [ theta ]                :: M :: Subst
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -238,14 +259,16 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | step t                       ::   :: Step
 
 | ( g )                        :: M :: Parens
+  {{ coq [[g]] }}
 
 | o                            :: M :: Erased
 | g @ ws                       :: M :: Insts
+  {{ coq (foldl Co_Inst ([[g]]) ([[ws]])) }}
 | let c := h in g              :: M :: Let  
 | g [ theta ]                  :: M :: Subst
 
 coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
-  :: 'Cos_' ::=
+  :: 'cos_' ::=
 | g                            ::   :: One
 | gs1 , .... , gsi             ::   :: Many
 | nil                          :: M :: Empty
@@ -257,7 +280,7 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 calt :: 'CAlt_' ::=
 | pat -> g                        ::   :: Alt
 
-calts {{ tex \overline{\ottnt{calt} } }} :: 'CAlts_' ::=
+calts {{ tex \overline{\ottnt{calt} } }} :: 'calts_' ::=
 | calt                   ::   :: One
 | calts1 ; .... ; caltsi ::   :: Many
 | nil                    :: M :: Nil
@@ -275,7 +298,7 @@ arg, p {{ tex \psi }} :: 'Arg_' ::=
 | '|' p '|'           :: M :: Erased
   {{ tex \lfloor [[p]] \rfloor }}
 
-args, ps {{ tex \overline{\psi} }} :: 'Args_' ::=
+args, ps {{ tex \overline{\psi} }} :: 'args_' ::=
 | p                     ::   :: One
 | args1 .... argsi      ::   :: Many
 | args1 , .... , argsi  :: M :: ManyComma
@@ -295,7 +318,7 @@ coarg, w {{ tex \omega }} :: 'CoArg_' ::=
 | { g }                ::   :: TyIrrel
 | ( g1 , g2 )          ::   :: Co
 
-coargs, ws {{ tex \overline{\omega} }} :: 'CoArgs_' ::=
+coargs, ws {{ tex \overline{\omega} }} :: 'coargs_' ::=
 | w                    ::   :: One
 | ws1 .... wsi         ::   :: Many
 | nil                  :: M :: Nil
@@ -305,7 +328,7 @@ coargs, ws {{ tex \overline{\omega} }} :: 'CoArgs_' ::=
 %%  Signatures  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-sig, S {{ tex \Sigma }} :: 'Sig_' ::=
+sig, S {{ tex \Sigma }} :: 'sig_' ::=
 | sig_bnd                      ::   :: One
 | S1 , .... , Si               ::   :: Many
 | nil                          :: M :: Nil  
@@ -320,7 +343,7 @@ sig_bnd :: 'SigBnd_' ::=
 %%  Contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'Ctx_' ::=
+context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'ctx_' ::=
 | d                            ::   :: One
 | G1 , .... , Gi               ::   :: Many
 | nil                          :: M :: Nil
@@ -355,8 +378,8 @@ subst :: 'Subst_' ::=
 | g / c                  ::   :: CoVar
 
 unif_result :: 'UnifResult_' ::=
-| Nothing                     ::   :: Nothing
-| Just theta                  ::   :: Just
+| Nothing                     ::   :: Nothing   {{ coq Nothing }}
+| Just theta                  ::   :: Just      {{ coq (Just ([[theta]])) }}
 | match _ V ( ts1 ; ts2 ) :: M :: match
   {{ tex [[match]]_{[[V]]}([[ts1]];[[ts2]]) }}
 
@@ -568,7 +591,7 @@ formula :: 'formula_' ::=
   | judgement                          ::   :: judgement
   | </ formulai // '//' // i />        ::   :: dots
   | forall i : formula                 ::   :: forall
-    {{ tex [[forall]] [[i]]{:}\; [[formula]] }}
+    {{ tex [[forall]] [[i]],\; [[formula]] }}
   | rewrite_rule                       ::   :: rewrite
   | I1 = I2 = I3                       ::   :: three_way_I_eq
   | bnd \in G                          ::   :: ctx_in
@@ -601,6 +624,10 @@ formula :: 'formula_' ::=
     {{ tex \text{no alternative in } [[alts]] \text{ matches } [[H]] }}
   | no alternative in ealts matches H  ::   :: e_no_matches
     {{ tex \text{no alternative in } [[ealts]] \text{ matches } [[H]] }}
+  | '{{' Blockname user_syntax '}}'              ::   :: exec_code
+    {{ tex [[user_syntax]] }}
+    {{ coq \begin{code}
+$( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -769,35 +796,35 @@ parsing
 Type_Pis <= Type_Apps
 % Type_Arrow right Type_Arrow
 % Type_Pis right Type_Arrow
-Ctx_Many <= Ctx_Subst
-% Ctx_Telescope <= Ctx_Subst
-% Ctx_Many <= Ctx_Telescope
+ctx_Many <= ctx_Subst
+% ctx_Telescope <= ctx_Subst
+% ctx_Many <= ctx_Telescope
 
-Vars_One <= Ctx_ZipKs
+vars_One <= ctx_ZipKs
 
-Ctx_One <= Ctx_Subst
-Types_One <= Types_Subst
+ctx_One <= ctx_Subst
+types_One <= types_Subst
 
-Types_One <= formula_many_red
-Alts_One <= formula_alts_red
+types_One <= formula_many_red
+alts_One <= formula_alts_red
 
-Args_One <= Substs_Telescope
+args_One <= Substs_Telescope
 
-Types_One <= Args_Types
-Cos_One <= Args_Cos
-Cos_One <= CoArgs_Coercions
+types_One <= args_Types
+cos_One <= args_Cos
+cos_One <= coargs_Coercions
 
-Args_Many <= Rewrite_ts_rewrite
+args_Many <= Rewrite_ts_rewrite
 
 Phi_IEquality <= Phi_Subst
 
 Arg_Ty <= Arg_Erased
 Arg_Co <= Arg_Erased
-Args_One <= Args_Erased
+args_One <= args_Erased
 
 Type_Pis <= Type_Subst
 
 Type_erase_type <= Type_erase_type
-Args_Types <= Args_Erased
-Types_Erased <= Types_Erased
-Types_One <= Types_Erased
+args_Types <= args_Erased
+types_Erased <= types_Erased
+types_One <= types_Erased

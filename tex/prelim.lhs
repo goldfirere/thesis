@@ -11,6 +11,7 @@ import Data.Vector ( Vector )
 import Prelude hiding ( Maybe(..), Bool(..) )
 import GHC.Exts ( Constraint )
 import Data.List ( intercalate )
+import Data.Kind ( type (*) )
 \end{code}
 
 %endif

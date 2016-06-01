@@ -66,7 +66,7 @@ JTyCon :: '' ::=
 
 defn
 S |-tc H : D1 ; D2 ; H' :: :: Tc :: 'Tc_'
-  {{ com Type constant kinds, with universals [[D1]], existentials [[D2]], and result [[H']] }}
+  {{ com \begin{minipage}{.7\textwidth}Type constant kinds, with universals [[D1]],\\ existentials [[D2]], and result [[H']]\end{minipage} }}
 by
 
 T : (as:ks) \in S
@@ -152,8 +152,9 @@ S ; G ; s ; t |-alt alt : k :: :: Alt :: 'Alt_'
   {{ tex [[S]];[[G]];[[s]] [[|-alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
 by
 
-S |-tc H : D1;D2;H'  //  D3,D4 = D2[ss/dom(D1)]  //
-dom(D4) = dom(D') //  match_{dom(D3)}(types(D4);types(D')) = Just theta
+S |-tc H : D1;D2;H'  //  D3,D4 = D2[ss/dom(D1)]
+dom(D4) = dom(D')
+match_{dom(D3)}(types(D4);types(D')) = Just theta
 S;G |-ty t : MUPI D3, c: t0 [MPI D'.H'{} ss]~[MPI D4.H'{} ss] H{ss} dom(D3). k
 -------------------------- :: Match
 S;G;MPI D'.H'{} ss;t0 |-alt H -> t : k
@@ -222,8 +223,9 @@ S;G |-co PI a :rel h. g : (PI a:rel k1.s1) [Type{}]~[Type{}] (PI a:rel k2.(s2[a 
 
 S;G |-co h1 : t1 [k3]~[k4] t2  //  S;G |-co h2 : s1 [k5]~[k6] s2
 S;G,c:t1 [k3]~[k5] s1 |-co g : k1 (Type{})~(Type{}) k2  //  c ~# g
+h3 = h1 ;; c ;; sym h2
 ------------------------------ :: PiCo
-S;G |-co PI c:(h1,h2).g : (PI c:t1 [k3]~[k5] s1. k1) [Type{}]~[Type{}] (PI c:t2 [k4]~[k6] s2.(k2[h1 ;; c ;; sym h2/c]))
+S;G |-co PI c:(h1,h2).g : (PI c:t1 [k3]~[k5] s1. k1) [Type{}]~[Type{}] (PI c:t2 [k4]~[k6] s2.(k2[h3/c]))
 
 S;G |-co h : k1 [Type{}]~[Type{}] k2  //  S;G |-co g0 : t1 [k3]~[k4] t2
 forall i: S;G |-co gi : si [k5i]~[k6i] s'i
@@ -241,8 +243,9 @@ S;G |-co \a :rel h . g : \a:rel k1.t1 [UPI a:rel k1.s1]~[UPI a:rel k2.(s2[a |> s
 
 S;G |-co h1 : t1 [k3]~[k4] t2 // S;G |-co h2 : s1 [k5]~[k6] s2
 S;G,c:t1 [k3]~[k5] s1 |-co g : k1 [k7]~[k8] k2 // c ~# g
+h3 = h1 ;; c ;; sym h2
 ------------------------------- :: CLam
-S;G |-co \c:(h1,h2).g : (\c:t1 [k3]~[k5] s1.k1) [UPI c: t1 [k3]~[k5] s1. k7]~[UPI c:t2 [k4]~[k6] s2.(k8[h1 ;; c ;; sym h2 / c])] (\c:t2 [k4]~[k6] s2.(k2[h1 ;; c ;; sym h2 / c]))
+S;G |-co \c:(h1,h2).g : (\c:t1 [k3]~[k5] s1.k1) [UPI c: t1 [k3]~[k5] s1. k7]~[UPI c:t2 [k4]~[k6] s2.(k8[h3/c])] (\c:t2 [k4]~[k6] s2.(k2[h3/c]))
 
 S;G |-co g : t1 [k3]~[k4] t2
 S;G |-ty fix t1 : k1 // S;G |-ty fix t2 : k2
@@ -558,7 +561,9 @@ S;G |-s fix ((\a:Rel k.s) |> g0) --> (fix (\a:Rel k. (s |> g1))) |> g2
 
 S |-tc H : as:Irrel ks;D;H'  //  D = D1,D2  // n = length D2
 k = MPI as:Irrel ks, D. H'{} as
-S;Rel(G) |-co h : MPI (D2[ts/as][ps/dom(D1)]). H'{} ts [Type{}]~[Type{}] MPI (D2[ts'/as][ps'/dom(D1)]). H'{} ts'
+s = MPI (D2[ts/as][ps/dom(D1)]). H'{} ts
+s' = MPI (D2[ts'/as][ps'/dom(D1)]). H'{} ts'
+S;Rel(G) |-co h : s [Type{}]~[Type{}] s'
 S;Rel(G) |-vec ts' : as:Rel ks
 forall i: gi = build_kpush_co(<k>@(nths (res^n h));ps_{0..i-1})
 forall i: pi' = cast_kpush_arg(pi;gi)

@@ -6,7 +6,7 @@ PAPER_BASE = thesis
 OTT_PICKY = false
 BIB_FILES_FULL = bib/rae.bib
 FMT_FILES_BASE = rae
-HS_FILES_BASE = ThesisPreamble
+HS_FILES_BASE = ThesisPreamble # Pico/Ott Pico/Syn Pico/Util Pico/Rules
 GHC_OPTS = -Werror -Wall
 GHC = ghc-8
 
@@ -17,12 +17,15 @@ FMT_FILES_FULL = $(FMT_FILES_BASE:%=tex/%.fmt)
 MNG_FILES_BASE =
 OTT_DUMP_BASE = ottdump
 OTT_OPTS = -tex_show_meta false -tex_wrap false -picky_multiple_parses $(OTT_PICKY)
+COQ_OTT_OPTS = -coq_expand_list_types false
 ALL_TEX_FILES = $(wildcard tex/*.tex) $(patsubst %.tex.mng,%.tex,$(wildcard tex/*.tex.mng))
 ALL_LHS_FILES = $(filter-out tex/thesis.lhs tex/chapter.lhs,$(wildcard tex/*.lhs) $(patsubst %.lhs.mng,%.lhs,$(wildcard tex/*.lhs.mng)))
 
 PDF_DIR_MARKER = pdf/.dir_exists
 AUX_DIR_MARKER = aux/.dir_exists
 O_DIR_MARKER = o/.dir_exists
+
+BUILD_WITH_LHS = thesis chapter
 
 default: thesis compile
 all: default
@@ -71,11 +74,16 @@ pdf/%.pdf: aux/%.pdf $(PDF_DIR_MARKER)
 aux/%: aux/%.mng $(OTT_FILES_FULL)
 	ott $(OTT_OPTS) -tex_filter $< $@ $(OTT_FILES_FULL)
 
-aux/%.tex: aux/%.lhs $(FMT_FILES_FULL:tex/%=aux/%)
+aux/%.hs: aux/%.lhs.mng $(OTT_FILES_FULL) $(FMT_FILES_FULL:tex/%=aux/%)
+	ott $(COQ_OTT_OPTS) -coq_filter aux/$*.lhs.mng aux/$*.temp.lhs $(OTT_FILES_FULL)
+	cd aux && lhs2TeX --newcode -o $*.hs $*.temp.lhs
+	perl -pi -e "s/TICK/\'/g" $@
+	perl -pi -e "s/\'\\[\\]/[]/g" $@
+
+$(BUILD_WITH_LHS:%=aux/%.tex): aux/%.tex: aux/%.lhs $(FMT_FILES_FULL:tex/%=aux/%)
 	cd aux && lhs2TeX --poly -o $*.tex $*.lhs
 
 aux/%.o: aux/%.hs $(HS_FILES_BASE:%=o/%.o)
-	perl -pi -e "s/TICK/\'/g" $<
 	$(GHC) $(GHC_OPTS) -io -o $@ -c $<
 
 o/%.o: hs/%.hs $(O_DIR_MARKER)
@@ -83,6 +91,7 @@ o/%.o: hs/%.hs $(O_DIR_MARKER)
 
 aux/%.hs: aux/%.lhs $(FMT_FILES_FULL:tex/%=aux/%)
 	cd aux && lhs2TeX --newcode -o $*.hs $*.lhs
+	perl -pi -e "s/TICK/\'/g" $@
 
 clean:
 	rm -rf $(OTT_OUTPUT_FULL)

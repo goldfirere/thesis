@@ -2,6 +2,11 @@
 
 %if style == newcode
 %include rae.fmt
+
+\begin{code}
+import Data.Kind ( type (*) )
+\end{code}
+
 %endif
 
 

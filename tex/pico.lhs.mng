@@ -2,6 +2,14 @@
 
 %if style == newcode
 %include rae.fmt
+
+\begin{code}
+-- import Pico.Ott
+-- import Pico.Syn
+import Prelude hiding ( Either(..) )
+import Data.Kind ( Type )
+\end{code}
+
 %endif
 
 \chapter{\Pico/}
@@ -16,7 +24,8 @@ in a future version of GHC.
 
 \section{Overview}
 
-\Pico/ descends directly from the long line of work on System FC~\cite{systemfc}.
+\Pico/ (pronounced like ``$\Pi$-co'', never ``peek-o'')
+descends directly from the long line of work on System FC~\cite{systemfc}.
 It is most closely related to the version of System FC presented in my prior
 work~\cite{fckinds} and in Gundry's thesis~\cite{gundry-thesis}.
 
@@ -86,7 +95,9 @@ semantics deals with coercions in the form of \emph{push rules}, the
 small-step semantics is what you might expect for a call-by-name
 $\lambda$-calculus.
 
-The typing relations, however, have a few features worth mentioning up front:
+The typing relations, however, have a few features worth mentioning up front;
+other unusual features are best explained after the detailed coverage of
+\pico/; see \pref{sec:pico-design-decisions}.
 
 \paragraph{Relevance annotations and type erasure}
 A key concern when compiling a dependently typed language is type erasure.
@@ -166,7 +177,7 @@ type constant. In the case of |Either|, we have $|Either| :
 [[MPI _:Rel Type{}, _:Rel Type{}. Type{} ]]$;\footnote{Why $[[Rel]]$? See
 \pref{sec:relevance-of-datatypes}.} note that the body of the
 $[[PI]]$-type is headed by the constant $[[Type{}]]$. For |Just|,
-we have $|Just|_{[[ {a} ]]} : [[MPI _ :Rel a. Maybe{} a]]$.\footnote{The
+we have $|Just|_{[[ {a} ]]} : [[MPI _ :Rel a. &Maybe{} a]]$.\footnote{The
 $[[ {a} ]]$ subscript is explain in \pref{sec:universals}.}
 With this similarity, it is not hard to create a typing rule for a \ottkw{case}
 statement that can handle both data constructors (like |Just|) and types
@@ -178,6 +189,16 @@ enumerated, default patterns are merely a convenience; any default can be
 expanded to list all possible constructors. For an open type, like $[[Type]]$,
 the availability of the default pattern is essential. It is for this reason alone
 that I have chosen to include default patterns in \pico/.
+
+\paragraph{Hypothetical equality}
+
+\Pico/ allows abstraction over coercions, much like any $\lambda$-calculus
+allows abstraction over expressions (or, in a call-by-value calculus,
+values). Coercion abstraction means that a type equality may be \emph{assumed}
+in a given type. When we wish to evaluate a term that assumes an equality,
+we must apply that term to evidence that the equality holds---an actual coercion.
+It is this ability, to assume an equality, that allows \pico/ to have
+GADTs. See the example in \pref{sec:pico-gadt-example} for the details.
 
 \subsection{Design requirements for \pico/}
 
@@ -218,6 +239,51 @@ erased at runtime. After all, when the compiler is done performing optimizations
 runtime code generation must take place, and we thus need to know what
 information can be dropped. It is for this reason that \pico/ includes the
 relevance annotations.
+
+\paragraph{A balance between ease of proving and ease of implementation}
+\Pico/ serves two goals: to be a template for an implementation, and also
+to be a calculus used to prove type safety. These goals are sometimes at
+odds with each other.
+
+These two goals of System~FC have tugged in
+different directions since the advent of FC. Historically, published
+versions of the language have greatly simplified certain details. 
+No previously published treatment of FC has included support for recursion,
+either through \ottkw{letrec} or \ottkw{fix}. In contrast, the implemented
+version of FC makes certain choices for efficiency; for example, applied
+type constructors, such as |Either Int Bool|, have a different representation
+than do applied type variables, such as |a Int Bool|. The former is stored
+as the head constructor with a list of arguments, and the latter is stored
+as nested binary applications. This is convenient when implementing but
+meddlesome when proving properties. The divergence between published FC
+and the implemented version (more often called GHC Core) have led to a
+separate document just to track the implemented version~\cite{ghc-core-spec}.
+
+In the design of \pico/, I have aimed for balance between these two needs.
+Because of the risk that non-termination might cause unsoundness, I have
+explicitly included \ottkw{fix} in the design, just to make sure that
+the non-termination is obvious.\footnote{With $[[Type{}]] : [[Type{}]]$, we
+have the possibility of Girard's paradox~\cite{girard-paradox} and thus
+can have non-termination even without \ottkw{fix}, but making the non-termination
+more obvious clarifies that we can achieve type safety without termination.}
+I have not, however, included an explicit \ottkw{let} or \ottkw{letrec}
+construct, as the specification of these would be quite involved, and yet
+desugaring these constructs into $[[\]]$ and \ottkw{fix} is straightforward.
+(See \pref{sec:let-desugaring}.)
+
+On the other hand, I have included \ottkw{case}. Having \ottkw{case} in the
+language also significantly complicates the presentation, but here in a
+useful way: the existence of \ottkw{case} (over unsaturated constructors)
+motivates the distinction between $[[UPI]]$ and $[[MPI]]$. The desugaring
+of \ottkw{case} into recursive types built, say, with \ottkw{fix} is not
+nearly as simple as the desugaring of \ottkw{let}.
+
+In the end, choices
+such as these are somewhat arbitrary and come down to taste. I believe
+that the choices I have made here bring us to a useful formalization with
+the right points of complexity. Some of these design decisions are considered
+in more depth after \pico/ has been presented;
+see \pref{sec:pico-design-decisions}.
 
 \subsection{Other applications of \pico/}
 
@@ -265,7 +331,7 @@ Regardless of clutter, having a solid approach to combining roles with
 dependent types will be a prerequisite of releasing a performant
 implementation of dependent types in GHC.
 
-\section{Grammar}
+\section{A formal specification of \pico/}
 
 \begin{figure}
 Metavariables:
@@ -326,7 +392,7 @@ Metavariables:
 \begin{figure}
 \[
 \begin{array}{rcl}
-\overline{\;} &\defeq& \text{(an overbar) indicates a list} \\
+\overline{\text{\phantom{T}}} &\defeq& \text{(an overbar) indicates a list} \\
 [[_]] &\defeq& \text{a fresh variable whose name is not used} \\
 [[dom(D)]] &\defeq& \text{the list of variables bound in $[[D]]$} \\
 [[prefix]](\cdot) &\defeq& \text{a prefix of a list; length specified elsewhere} \\
@@ -341,17 +407,438 @@ Metavariables:
 \lfloor \cdot \rfloor &\defeq& \text{coercion erasure (\pref{sec:coercion-erasure})} \\
 \llfloor \cdot \rrfloor &\defeq& \text{type erasure (\pref{sec:type-erasure})} \\
 \ottkw{let} &\text{is}& \text{used in the metatheory only and should be eagerly expanded}\\
-
+\end{array}
+\]
 \caption{Notation conventions of \pico/}
 \label{fig:pico-notation}
 \end{figure}
 
+\begin{figure}
+\[\def\arraystretch{1.5}
+\begin{array}{cl}
+[[S |-tc H : D1;D2;H']] & \text{\parbox{.7\textwidth}{Constant $[[H]]$ has universals $[[D1]]$,
+existentials $[[D2]]$, and belongs to parent type $[[H']]$.}} \\
+[[S;G |-ty t : k]] & \text{Type $[[t]]$ has kind $[[k]]$.} \\
+[[S;G;s;t0 |-alt pat -> t : k]] & \text{\parbox{.7\textwidth}{Case alternative $[[pat -> t]]$
+yields something of kind $[[k]]$ when used with a scrutinee $[[t0]]$ of
+type $[[s]]$.}} \\
+[[S;G |-co g : phi]] & \text{Coercion $[[g]]$ proves proposition $[[phi]]$.} \\
+[[S;G |-prop phi]] & \text{Proposition $[[phi]]$ is well formed.} \\
+[[S;G |-vec ps : D]] & \text{Vector $[[ps]]$ is classified by telescope $[[D]]$.} \\
+[[S;G |-cev ps : D]] & \text{\parbox{.7\textwidth}{Vector $[[ps]]$ is classified by telescope $[[D]]$
+(with induction defined from the end).}} \\
+[[|-sig S]] & \text{Signature $[[S]]$ is well formed.} \\
+[[S |-ctx G]] & \text{Context $[[G]]$ is well formed.} \\
+[[S;G |-s t --> t']] & \text{Type $[[t]]$ reduces to type $[[t']]$ in one step.}
+\end{array}
+\]
+\caption{Judgments used in the definition of \pico/}
+\label{fig:pico-judgments}
+\end{figure}
+
 The full grammar of \pico/ appears in \pref{fig:pico-grammar} and
-notation conventions appear in \pref{fig:pico-notation}. Later
+notation conventions appear in \pref{fig:pico-notation}. We will cover
+these in detail in the following sections. Later
 sections of this chapter will cover portions of the typing rules, but for
 a full listing of all the typing rules of the language, please see
-\pref{app:pico}.
+\pref{app:pico-rules}. \pref{fig:pico-judgments} includes the judgment
+forms. All of the metatheory lemmas, theorems, and proofs appear in
+\pref{app:pico-proofs}. This section mentions several key lemmas and
+theorems, but the ordering here is intended for readability and
+lemma statements may be abbreviated; please
+see the appendix for the correct dependency ordering and full statements.
+
+You will see that the \pico/ language is centered around what I call types,
+represented by metavariables $[[t]]$, $[[s]]$, and $[[k]]$. As \pico/ is a
+full dependently typed language with a unified syntax for terms, types, and
+kinds, this production could be called ``expressions'' and could be assigned
+the metavariable $[[e]]$. However, I have decided to reserve $[[e]]$ (and the
+moniker ``expression'') for \emph{erased} expressions only, after all the types
+have been removed. These expressions are used only in the type erasure theorem
+(\pref{sec:type-erasure}); the rest of the metatheory is about types. Nevertheless,
+a program written in \pico/ intended to be run will technically be a type,
+and types in \pico/ have an operational semantics
+(\pref{sec:operational-semantics}).
+
+Note also the definition for arguments $[[p]]$: the application form $[[t p]]$
+applies a type to an argument, which can be a type, an irrelevant type,
+or a coercion. It would be equivalent to have three productions in the definition
+for types, but having a separate definition for arguments allows us to easily
+discuss what I call \emph{vectors},\footnote{I have adopted this terminology
+from \citet{gundry-thesis}.} which are lists of arguments $[[ps]]$.
+
+As you will see in \pref{fig:pico-notation}, my presentation of \pico/ uses
+several abbreviations and elisions in its typesetting. In particular, I
+frequently write types like $[[PI D. t]]$ to represents a nested $[[PI]]$-type,
+binding the variables listed in $[[D]]$ (which, as you can see, is just a list
+of binders $[[d]]$). An equality proposition in \pico/ lists both the related
+types and their kinds. Often, the kinds are redundant, obvious, or unimportant,
+and so I elide them in those cases.
+
+All of the metatheory in this dissertation is typeset using
+\package{ott}~\cite{ott}. This tool effectively type-checks my work,
+preventing me from writing, say, the nonsense $[[a]]{:}[[phi]]$, which is
+rightly a parsing error.\footnote{Indeed, to include that example in the text,
+  I had to avoid rendering the example in \package{ott} syntax.} In addition,
+I have configured my use of \package{ott} to require me to write the kinds
+of an equality proposition even when I intend for them to be elided in the
+rendered output, as a check to make sure these parameters can indeed be written
+with the information to hand.
+
+\section{Examples}
+
+Though these may make sense more fully after reading the sections below, it
+may be helpful to see a few short examples of \pico/ programs. 
+
+\rae{vectors}
+\rae{isEmpty}
+\rae{replicate}
+\rae{append}
+\rae{safeHead}
+\rae{safeHead returning a maybe}
+
+\section{Contexts $[[G]]$ and relevance annotations}
+
+One of the distinctive aspects of \pico/ is its use of relevance annotations
+on binders. Every type variable binding $[[a :rel k]]$ comes with a relevance
+annotation $[[rel]]$, which can be either $[[Rel]]$ or $[[Irrel]]$. A
+typing context $[[G]]$ is just a list of such binders (along with, perhaps,
+coercion variable binders) and so retains the relevance annotation. These
+annotations come into play only in the rule for checking variable occurrences:
+\[
+\ottdruleTyXXVar{}
+\]
+Note that this rule requires $[[a:Rel k \in G]]$, with a relevant binder.
+Thus, only variables that are considered relevant---that is, variables that
+will remain at runtime---can be used in an expression. As described briefly
+above, when we ``go up a level'', we reset the context, making all variables
+marked as relevant. This resetting is done by the $[[Rel(G)]]$ operation,
+defined recursively on the structure of $[[G]]$ as follows:
+\begin{align*}
+[[Rel(empty) &= empty]] \\
+[[Rel(G, a :rel k) &= Rel(G), a :Rel k]] \\
+[[Rel(G, c:phi) &= Rel(G), c:phi]]
+\end{align*}
+The $[[Rel(G)]]$ operation is used, for example, in the judgment to check
+contexts for validity:\\[\baselineskip]
+\ottdefnCtx{}
+
+Here, we see that a binding $[[a :rel k]]$ can be appended onto a context
+$[[G]]$ when the $[[a]]$ is fresh and the $[[k]]$ is well-typed at $[[Type{}]]$
+in $[[Rel(G)]]$. The reason for using $[[Rel(G)]]$ instead of $[[G]]$ here
+is that the kind $[[k]]$ does not exist at runtime, regardless of the
+relevance annotation on $[[a]]$. We are thus free to essentially ignore
+the relevance annotations on $[[G]]$, which is what $[[Rel(G)]]$ does.
+The same logic applies to the use of $[[Rel(G)]]$ in the \rul{Ctx\_CoVar}
+rule. Indeed, all premises involving coercions use $[[Rel(G)]]$, as all
+coercions are erased and are thus irrelevant.
+
+\paragraph{Regularity}
+Regularity is an important property of \pico/, allowing us to easily
+assume well-formed contexts and signatures:
+
+\begin{lemma*}[Context regularity (\pref{lem:ctx-reg})]
+If:
+\begin{enumerate}
+\item $[[S;G |-ty t : k]]$, OR
+\item $[[S;G |-co g : phi]]$, OR
+\item $[[S;G |-prop phi]]$, OR
+\item $[[S;G;s0;t0 |-alt alt : k]]$, OR
+\item $[[S;G |-vec ps : D]]$, OR
+\item $[[S |-ctx G]]$
+\end{enumerate}
+Then $[[S |-ctx prefix(G)]]$ and $[[|-sig S]]$, where $[[prefix(G)]]$ is an
+arbitrary prefix of $[[G]]$. Furthermore, both resulting derivations are no
+larger than the input derivations.
+\end{lemma*}
+
+\section{Signatures $[[S]]$ and type constants $[[H]]$}
+
+The typing rules in \pico/ are all parameterized by both a signature
+$[[S]]$ and a context $[[G]]$. Signatures contain bindings for all global
+constants: type and data constructors. In contrast, contexts contain
+local bindings, for type and coercion variables. Several treatments of
+System FC assume a fixed, global signature, but I find it more precise
+here to make dependency on this signature explicit.
+
+\subsection{Signature validity}
+
+The judgment to check the validity of a signature follows:\\[\baselineskip]
+\ottdefnSig{}
+
+We see here the two different entities that can be added to a signature,
+an algebraic datatype (ADT) $[[T]]$ or a data constructor $[[K]]$.
+
+An ADT is classified only by its list of universally quantified variables
+(often shortened to \emph{universals}), as this is the only piece of information
+that varies between ADTs. For example, the Haskell type \id{Int} contains
+no universals, while \id{Either} contains two (both of kind $[[Type]]$),
+and \id{Proxy}'s universals are $[[(a : Type{}, b : a)]]$. The relevance
+of universals is predetermined (see \pref{sec:adt-relevance}) and so
+no relevance annotations appear on ADT specifications. Additionally,
+coercion variables are not permitted here---coercion variables would
+be very much akin to Haskell's misfeature of datatype
+contexts~\cite{datatype-contexts} and so are excluded.
+
+A data constructor is classified by a telescope $[[D]]$ of existentially
+bound variables (or \emph{existentials})
+and the ADT to which it belongs. The grammar for telescopes
+is the same as that for contexts, but we use the metavariables $[[G]]$
+and $[[D]]$ in distinct ways: $[[G]]$ is used as the context for typing judgments,
+whereas $[[D]]$ is more often used as some component of a type. A telescope
+is a list of binders---both type variables and coercion variables---where
+later binders may depend on earlier ones. A data constructor's existentials are
+the data that cannot be determined from an applied data constructor's type.
+In this formulation, the term \emph{existential} also includes what would
+normally be considered term-level arguments.
+
+For example, let's consider these
+Haskell definitions:
+%
+\begin{code}
+data Tuple a where
+  MkTuple :: forall a. Int -> Char -> a -> Tuple a
+data Ex a where
+  MkEx :: forall a b. b -> a -> Ex a
+\end{code}
+%
+If I have a value of type |Tuple Double|, then I know the types of the data
+stored in a |MkTuple|, but I do not know the |Int|, the |Char|, or the
+|Double|---these are the existentials. Similarly, if I have a value of type
+|Ex Char|, then I know that the type of one argument to |MkEx|, but I do not
+know the type of the other; I also know neither value. In this case, the
+second type, |b|, is existential, as are both values (of types |b| and |a|,
+respectively).
+
+The use of the term \emph{existential} to refer to term-level arguments
+may be non-standard, but it is quite convenient (while remaining
+ technically accurate)
+in the context of a pure
+type system with ADTs.
+
+\subsection{Looking up type constants}
+
+Information about type constants is retrieved via the following
+judgment:\\[\baselineskip]
+\ottdefnTc{}
+
+The judgment $[[S |-tc H : D1;D2;H']]$
+retrieves three pieces of data about a type constant
+$[[H]]$: its universals, its existentials, and the root of the result type.
+This judgment is best understood in concert with the typing rule that handles
+type constants:
+\[
+\ottdruleTyXXCon{}
+\]
+Let's tackle these in order of complexity.
+
+\subsubsection{The constant $[[Type]]$}
+The constant $[[Type]]$ has no universals, no existentials, and $[[Type]]$'s
+type is $[[Type]]$, as \rul{Tc\_Type} tells us. Thus, in the use of
+\rul{Ty\_Con} when $[[H{ts}]]$ is just $[[Type{blank}]]$ (normally, we omit
+such empty braces), we see that $[[D1]]$, $[[D2]]$, and $[[ts]]$ are all empty,
+meaning that we get $[[S;G |-ty Type{} : Type{}]]$, as desired.
+
+\subsubsection{Algebraic datatypes}
+Let's consider \id{Maybe} as an example. We see that the list of universals
+$[[D1]]$ is empty for all ADTs. Thus, the list of universal arguments $[[ts]]$
+must be empty in \rul{Ty\_Con}. The list of existentials $[[D2]]$ is
+$[[a :Rel Type{}]]$ and the result type
+root is $[[Type]]$, both by \rul{Tc\_ADT}. We thus get
+$[[S;G |-ty &Maybe{} : MPI a :Rel Type{}. Type{}]]$, as desired. (Note that
+$[[a]]$ is unused in the body of the $[[MPI]]$ and thus that this type
+could also be written as $[[Type{} -> Type{}]]$.)
+
+I have argued here how the rules work out this case correctly,
+but it may surprise the reader to see that the argument to \id{Maybe} is
+treated as an \emph{existential} here---part of $[[D2]]$---and not a
+universal. This could best be understood if we consider $[[Type]]$ itself
+to be an open ADT (that is, an extensible ADT) with no universal parameters.
+To make this even more concrete, here is how it might look in Haskell:
+%
+% NB: The ^^ after Int below is to prevent lhs2TeX from centering the
+% column of constructors.
+\begin{spec}
+data Type where
+  Bool    ::  Type
+  Int ^^  ::  Type
+  Maybe   ::  Type -> Type
+  Proxy   ::  forall (k :: Type). k -> Type
+  ...
+\end{spec}
+%
+Thinking of ADTs this way, we can see why the argument to |Maybe| is
+existential, just like other arguments to constructors. We can also see
+that the kind parameter |k| to |Proxy| is also considered an existential
+in this context.
+
+The last detail to cover here is the relevance annotation on the $[[as]]$,
+as assigned in \rul{Tc\_ADT}: all the variables are considered relevant.
+This is a free choice in the design of \pico/. Any choice of relevance
+annotations would work, including allowing the user to decide on a case-by-case
+basis. I have chosen to mark them as relevant, however, with the consideration
+that these ADTs might be present at runtime. There is nothing in \pico/ that
+restricts ADTs to be present only at compile time; the user might write a
+runtime computation that returns |Bool|, for example.\footnote{This
+statement does not mean that you can extract the value |Maybe Int| from
+|Just 3|, which would require preserving all types for runtime.} (Such a facility
+replaces Haskell's current |TypeRep| facility~\cite{typerep}.) By marking
+the ADT parameters as relevant, a runtime decision can be made between, say,
+|Maybe Int| and |Maybe Bool|. This seems useful, and so I have decided to make
+these parameters relevant.
+
+\subsubsection{Data constructors}
+
+The most involved case is that for data constructors, where both the
+universals and the existentials can be non-empty. We'll try to understand
+\rul{Ty\_Con} first by an example inspired by the Haskell
+expression |Left True :: Either Bool Char|. Let's recall the definition
+of |Either|, a basic sum type:
+%
+\begin{code}
+data Either :: Type -> Type -> Type where
+  Left   :: a -> Either a b
+  Right  :: b -> Either a b
+\end{code}
+In \pico/ this looks like the following:
+\[
+\begin{array}{l@@{\,}l}
+[[S]] =& [[ &Either : (a : Type{}, b : Type{}), &Left : (x :Rel a; &Either), &Right : (x :Rel b; &Either)]], \\
+& [[&Bool : (empty), &True : (empty; &Bool), &False : (empty; &Bool), &Char : (empty)]]\\[1ex]
+\multicolumn{2}{l}{
+[[S; empty |-ty &Left{&Bool{}, &Char{} } &True{} : &Either{} &Bool{} &Char{} ]]}
+\end{array}
+\]
+%
+We see how the universal arguments |Bool| and |Char| to the constructor |Left|
+are specified in the subscript; without these arguments, there would be no way
+to get the type of |Left True| in a syntax-directed way.
+
+\paragraph{Universal argument saturation}
+The grammar for type constant occurrences in types requires them to appear
+fully saturated with respect to universals but perhaps unsaturated with
+resepct to existentials. There are several reasons for this seemingly-peculiar
+design:
+\begin{itemize}
+\item It is helpful to separate universals from existentials in a variety of
+  contexts. For example, existentials are brought into scope on a
+  \ottkw{case}-match, while universals are not. Separating out these arguments
+  is also essential in the step rule \rul{S\_KPush}.
+
+\item If \pico/ did not allow matching on unsaturated constants, it might
+be most natural to require saturation with respect to both universals
+and existentials (while still keeping these different arguments separate).
+This would allow, for example, for a simple statement of the canonical
+forms lemma (\pref{lem:canon-form}),
+because only a $[[\ ]]$-expression would have a $[[PI]]$-type.
+
+However, since \pico/ does allow matching on unsaturated constants, the
+grammar must permit this form. Because of \pico/'s discernment between
+matchable $[[MPI]]$ and unmatchable $[[UPI]]$, we retain the simplicity
+of the canonical forms lemma, as any expression classified by a $[[MPI]]$
+must be a partially applied constant and any expression classified by a
+$[[UPI]]$ must be a $[[\ ]]$.
+
+\item All univeral arguments are always irrelevant and erased during
+type erasure (\pref{sec:type-erasure}). It is thus natural to separate
+these from existentials in the grammar.
+\end{itemize}
+
+As with many design decisions, it is possible to redesign \pico/ and
+avoid this unusual choice, but in my opinion, this design pays its
+weight nicely.
+
+\paragraph{Typing rules for data constructors}
+The \rul{Tc\_DataCon} rule looks up a data constructor $[[K]]$ in the
+signature $[[S]]$ to find its telescope of existentials $[[D]]$
+and parent datatype $[[T]]$. The second premise of the rule then
+looks up $[[T]]$ to get the universals. The universals are annotated
+with $[[Irrel]]$, as universals are always irrelevant in data
+constructors---universal arguments are properly part of the type
+of a data constructor and are thus not needed at runtime. The
+telescope of existentials $[[D]]$ and datatype $[[T]]$ are also
+returned from $[[|-tc]]$.
+
+Rule \rul{Ty\_Con} checks the supplied arguments $[[ts]]$ against
+the telescope of universals, here named $[[D1]]$. Note that $[[ts]]$
+are checked against $[[Rel(D1)]]$; the braces that appear in the
+production $[[H{ts}]]$ are part of the concrete syntax and do not
+represent wrapping each individual $[[t]] \in [[ts]]$ in braces
+(cf.~\pref{sec:type-app-irrelevant}). Rule \rul{Ty\_Con} then
+builds the result type, a $[[MPI]]$-type binding the existentials
+and producing $[[H']]$---that is, the parent type $[[T]]$---applied
+to all of the universals.
+
+\section{Types $[[t]]$}
+
+We have already seen the typing rules for variables and constants
+(\rul{Ty\_Var} and \rul{Ty\_Con}). This section discusses the remainder
+of the typing rules.
+
+\subsection{Abstractions}
+
+The definition for types $[[t]]$ includes the usual productions for a pure
+type system, including both a $[[PI]]$-form and a $[[\ ]]$-form:
+\begin{gather*}
+\ottdruleTyXXPi{}\\
+\ottdruleTyXXLam{}
+\end{gather*}
+%
+The only novel component of these rules is the use of $[[Rel(G)]]$ in the
+premise to \rul{Ty\_Pi}. Resetting the context here is appropriate because
+we still wish to use irrelevant variables in types. As an example, the
+use of $[[Rel(G)]]$ here is necessary to allow
+the type of Haskell's |undefined|: $[[UPI a:Irrel Type{}. a]]$.
+
+\subsection{Applications}
+
+Terms with a $[[PI]]$-type (either type constants or $[[\ ]]$-terms)
+can be applied to arguments, via these rules:
+\begin{gather*}
+\ottdruleTyXXAppRel{}\\
+\ottdruleTyXXAppIrrel{}\\
+\ottdruleTyXXCApp{}
+\end{gather*}
+%
+We see in these rules that the argument form for an abstraction over an
+irrelevant binder requires braces. (See the conclusion of \rul{Ty\_AppIrrel}.)
+The system would remain syntax-directed without marking off irrelevant
+arguments, but type erasure (\pref{sec:type-erasure}) would then need to
+be type-directed. It seems easier just to separate relevant arguments
+from irrelevant arguments syntactically.
+
+Note also the use of $[[Rel(G)]]$ in \rul{Ty\_AppIrrel} and \rul{Ty\_CApp};
+resetting the context here happens because irrelevant arguments and coercions
+are erased in the running program.
+
+\subsection{Kind casts}
+
+We can always use an equality to change the kind of a type:
+\[
+\ottdruleTyXXCast{}
+\]
+In this rule, a type of kind $[[k1]]$ is cast by $[[g]]$ to have a type
+$[[k2]]$. As always, the coercion is checked in a reset context $[[Rel(G)]]$.
+The final premise, $[[S;Rel(G) |-ty k2 : Type{}]]$ is implied by
+the first premise (which is actually
+$[[S;Rel(G) |-co g : k1 (Type{})~(Type{}) k2]]$) via proposition regularity
+(\pref{sec:prop-reg}), but we must include it in order to prove
+kind regularity (\pref{sec:kind-reg}) before we prove coercion regularity.
+
+\subsection{\ottkw{fix}}
+
+\Pico/ supports fixpoints via the following rule:
+\[
+\ottdruleTyXXFix{}
+\]
+The rule requires type $[[t]]$ to have an unmatchable $[[UPI]]$ so that
+we can be sure that $[[t]]$'s canonical form is indeed a $[[\ ]]$; otherwise
+the progress theorem (\pref{sec:progress}) would not hold.
+
+\subsection{\ottkw{case}}
+
+\rae{RAE was here.}
 
 \rae{Must introduce $[[ee]]$ when appropriate.}
 
-\rae{Extensions: split, |Equals|, representation polymorphism, |(->)|, compression (\ottkw{step} becoming $\ottkw{step}]^n$).}
+\rae{Extensions: split, |Equals|, representation polymorphism, |(->)|, compression (\ottkw{step} becoming $\ottkw{step}^n$).}

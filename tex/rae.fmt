@@ -70,10 +70,11 @@
              TypeFamilies, CPP, ConstraintKinds, RankNTypes,
 	     StandaloneDeriving, ScopedTypeVariables,
 	     MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances,
-	     UndecidableInstances #-}
+	     UndecidableInstances, TemplateHaskell, TypeInType #-}
 {-# OPTIONS_GHC -Wall -Wno-unused-imports
                       -Wno-name-shadowing
-		      -Wno-redundant-constraints #-}
+		      -Wno-redundant-constraints
+		      -Wno-missing-signatures #-}
 
 module Chapter where
 

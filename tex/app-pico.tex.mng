@@ -1,7 +1,8 @@
 \chapter{Proofs about \pico/}
-\label{app:d}
+\label{app:pico-proofs}
 
-\rae{add typing rules and a reference to \pref{fig:pico-grammar}.}
+You may find the full grammar for \pico/ in \pref{fig:pico-grammar}
+and its notation conventions in \pref{fig:pico-notation}.
 
 \section{Auxiliary definitions}
 
