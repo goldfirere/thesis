@@ -6,8 +6,16 @@
 \begin{code}
 -- import Pico.Ott
 -- import Pico.Syn
-import Prelude hiding ( Either(..) )
+import Prelude hiding ( Either(..), replicate )
 import Data.Kind ( Type )
+import qualified GHC.TypeLits as TL
+import Data.Singletons.TH
+import Data.Singletons.Prelude
+
+type family UU n where
+  UU 0 = !Zero
+  UU n = !Succ (UU (n TL.- 1))
+
 \end{code}
 
 %endif
@@ -351,7 +359,7 @@ Metavariables:
 [[rel]] &\bnfeq& [[Rel]] \bnfor [[Irrel]] & \text{relevance annotation} \\
 [[d]] &\bnfeq& [[a :rel k]] \bnfor [[c : phi]] & \text{binder} \\
 [[phi]] &\bnfeq& [[t1 (k1)~(k2) t2]] & \text{heterogeneous equality} \\
-[[t, s, k]] &\bnfeq& [[a]] \bnfor [[t p]] \bnfor [[PI d.t]] \bnfor [[\d.t]] 
+[[t]], [[s]], [[k]] &\bnfeq& [[a]] \bnfor [[t p]] \bnfor [[PI d.t]] \bnfor [[\d.t]] 
                    & \text{dependent types} \\
 &\bnfor& [[H{ts}]] & \text{constant applied to universals} \\
 &\bnfor& [[t |> g]] & \text{kind cast} \\
@@ -485,19 +493,21 @@ of an equality proposition even when I intend for them to be elided in the
 rendered output, as a check to make sure these parameters can indeed be written
 with the information to hand.
 
-\section{Examples}
-
-Though these may make sense more fully after reading the sections below, it
-may be helpful to see a few short examples of \pico/ programs. 
-
-\rae{vectors}
-\rae{isEmpty}
-\rae{replicate}
-\rae{append}
-\rae{safeHead}
-\rae{safeHead returning a maybe}
+This chapter proceeds by explaining all of the various typing judgments
+individually. \pref{sec:contexts-rel-annots} explains contexts $[[G]]$,
+along with relevance annotations. \pref{sec:signatures} explains
+signatures $[[S]]$, which contain specifications for constants $[[H]]$.
+Having explained the more unexpected aspects of the syntax, I then
+present examples of \pico/ programs in \pref{sec:pico-examples}.
+Types come next, in \pref{sec:pico-types}, followed by coercions
+in \pref{sec:pico-coercions}. The metatheory is discussed in
+\pref{sec:metatheory}. The chapter concludes in \pref{sec:pico-extensions}
+by considering a variety of extensions to \pico/ that are needed for
+full, backward-compatible support for Haskell as embodied in GHC~8.
 
 \section{Contexts $[[G]]$ and relevance annotations}
+\label{sec:contexts-rel-annots}
+\label{sec:ty-var}
 
 One of the distinctive aspects of \pico/ is its use of relevance annotations
 on binders. Every type variable binding $[[a :rel k]]$ comes with a relevance
@@ -553,6 +563,7 @@ larger than the input derivations.
 \end{lemma*}
 
 \section{Signatures $[[S]]$ and type constants $[[H]]$}
+\label{sec:signatures}
 
 The typing rules in \pico/ are all parameterized by both a signature
 $[[S]]$ and a context $[[G]]$. Signatures contain bindings for all global
@@ -562,6 +573,7 @@ System FC assume a fixed, global signature, but I find it more precise
 here to make dependency on this signature explicit.
 
 \subsection{Signature validity}
+\label{sec:term-arguments-are-existentials}
 
 The judgment to check the validity of a signature follows:\\[\baselineskip]
 \ottdefnSig{}
@@ -617,6 +629,7 @@ in the context of a pure
 type system with ADTs.
 
 \subsection{Looking up type constants}
+\label{sec:ty-con}
 
 Information about type constants is retrieved via the following
 judgment:\\[\baselineskip]
@@ -703,7 +716,7 @@ data Either :: Type -> Type -> Type where
 In \pico/ this looks like the following:
 \[
 \begin{array}{l@@{\,}l}
-[[S]] =& [[ &Either : (a : Type{}, b : Type{}), &Left : (x :Rel a; &Either), &Right : (x :Rel b; &Either)]], \\
+[[S]] =& [[ &Either : (&&ax : Type{}, &&bx : Type{}), &Left : (&&xx :Rel &&ax; &Either), &Right : (&&xx :Rel &&bx; &Either)]], \\
 & [[&Bool : (empty), &True : (empty; &Bool), &False : (empty; &Bool), &Char : (empty)]]\\[1ex]
 \multicolumn{2}{l}{
 [[S; empty |-ty &Left{&Bool{}, &Char{} } &True{} : &Either{} &Bool{} &Char{} ]]}
@@ -769,11 +782,372 @@ builds the result type, a $[[MPI]]$-type binding the existentials
 and producing $[[H']]$---that is, the parent type $[[T]]$---applied
 to all of the universals.
 
+\section{Examples}
+
+Though these may make sense more fully after reading the sections below, it
+may be helpful at this point to see a few short examples of \pico/ programs. 
+
+We will work with a definition of length-indexed vectors, a tried-and-true
+example of the design of GADTs. Here is how they are declared in Haskell
+(further explanation is available in \pref{sec:length-indexed-vectors}):
+%if style == poly
+%format (UU x) = x
+%endif
+\begin{code}
+data Nat = Zero | Succ Nat
+data Vec :: Type -> Nat -> Type where
+  VNil   :: Vec a (UU 0)
+  VCons  :: a -> Vec a n -> Vec a (!Succ n)
+\end{code}
+If \pico/ had a concrete syntax, these declarations would be transformed
+roughly into the following:
+\begin{spec}
+Nat   ::  Type
+Zero  ::  Nat
+Succ  ::  Nat -> Nat
+
+Vec    ::  Type -> Nat -> Type
+VNil   ::  forall (a :: Type) (n :: Nat). (n ~ Zero) -> Vec a n
+VCons  ::  forall (a :: Type) (n :: Nat). 
+           forall (m :: Nat). (n ~ Succ m) -> a -> Vec a m -> Vec a n
+\end{spec}
+The change seen here is just the transformation between specifying a GADT
+equality constraint
+via a return type in a declaration to using an explicit existential variable
+with an explicit equality constraint.
+
+In the abstract syntax of \pico/,
+these declarations are represented by this signature $[[S0]]$:
+\[
+\begin{array}{r@@{\,}l}
+[[S0]] = & [[&Nat : (empty)]], \\
+& [[ &Zero : (empty; &Nat)]], \\
+& [[ &Succ : (_ :Rel &Nat{}; &Nat)]], \\
+ & [[&Vec : (&&ax : Type{}, &&nx : &Nat{})]], \\
+& [[ &VNil : (c : &&nx [&Nat{}]~[&Nat{}] #0{}; &Vec)]], \\
+& [[&VCons : (&&mx :Irrel &Nat{}, c : &&nx [&Nat{}]~[&Nat{}] &Succ{} &&mx, _ :Rel &&ax, _ :Rel &Vec{} &&ax &&mx; &Vec)]]
+\end{array}
+\]
+Let's walk through these declarations.
+Our binding for |Nat| includes an empty list
+of universally quantified type variables. This binding is followed
+by specifications for |Zero|, which lists no existential variables and
+is a constructor of the datatype |Nat|, and |Succ|, which has one 
+(anonymous) existential
+variable and also belongs to |Nat|. 
+The bindings for |Vec| and its constructors are similar, but with more
+parameters. Note the coercion bindings in the telescopes associated with
+|VNil| and |VCons|, as well as the irrelevant binding for the existential
+|m| of |VCons|. The design we see here, echoing the Haskell, does not permit
+runtime extraction of the length of a vector. If we changed the |m| to be
+relevant, then runtime length extraction would be trivial.
+
+We will now look at a few simple operations on vectors, first in Haskell
+and then in \pico/.\footnote{In these examples, I assume the use of numerals
+to specify elements of type |Nat|, and I also assume the existence of, e.g.,
+|Bool|.}
+
+\subsection{|isEmpty|}
+First, a very simple test for emptiness, in order to familiarize ourselves
+with pattern-match syntax in \pico/:
+\begin{code}
+isEmpty :: Vec a n -> Bool
+isEmpty VNil        = True
+isEmpty (VCons {})  = False
+\end{code}
+Translated to \pico/, we get the following:
+\[
+\begin{array}{r@@{\,}c@@{\,}l}
+[[&isEmpty]] &:& [[UPI (&&ax :Irrel Type{}), (&&nx :Irrel &Nat{}), (&&vx :Rel &Vec{} &&ax &&nx). &Bool{}]] \\
+[[&isEmpty]] &=& [[\ ]] [[(&&ax :Irrel Type{}), (&&nx :Irrel &Nat{}), (&&vx :Rel &Vec{} &&ax &&nx)]]. \\
+&& [[case_&Bool{} &&vx of blank]] \\
+&& \quad
+\begin{array}{l@@{\,}l}
+ [[&VNil]] &[[->]] [[\ (c : &&nx [&Nat{}]~[&Nat{}] #0{}), (c0 : &&vx [&Vec{} &&ax &&nx]~[&Vec{} &&ax &&nx] &VNil{&&ax,&&nx} c). &True{}]] \\
+ [[&VCons]] &[[->]]
+\begin{array}[t]{@@{}l@@{}l}
+ [[\ ]] & [[ (&&mx :Irrel &Nat{}), (c : &&nx [&Nat{}]~[&Nat{}] &Succ{} &&mx), (&&xx :Rel &&ax), (&&xsx :Rel &Vec{} &&ax &&mx)]], \\
+& [[ (c0 : &&vx [&Vec{} &&ax &&nx]~[&Vec{} &&ax &&nx] &VCons{&&ax,&&nx} &&mx c &&xx &&xsx)]]. \\
+\multicolumn{2}{@@{}l}{[[ &False{}]]}
+\end{array}
+\end{array}
+\end{array}
+\]
+The most striking feature about this \pico/ code is the form of the \ottkw{case}
+expression. Unlike the concrete syntax of Haskell, patterns in \pico/ do not
+directly bind any arguments. Note that there are no variable bindings to the left
+of the arrows in the case-branches. Instead, I have chosen to have $\lambda$s
+to the right of the arrow. This design choice greatly simplifies the typing
+and scoping
+rules for pattern matches, because it removes a binding site in the grammar
+(leaving us with two: $[[PI]]$ and $[[\ ]]$). Because of the typing rule
+for \ottkw{case} expressions (\pref{sec:pico-case}),
+we still must bind all of the existentials
+of a data constructor when matching against it---even when these existentials
+are ignored, as we see here.
+
+The matches also bind a variable not mentioned in the data constructors'
+existentials: the coercion variable $[[c0]]$. This coercion witnesses the
+equality between the scrutinee ($[[&&vx]]$, in this case) and the applied
+data constructor that introduces the case-branch. This coercion variable
+is bound in all matches, meaning that all pattern matching in \pico/
+is dependent pattern matching.\footnote{Contrast to Gundry \citep{gundry-thesis},
+which has two separate constructs, \ottkw{case} and \ottkw{dcase}, only
+the latter of which does dependent matching.}
+
+\subsection{|replicate|}
+Let's now look at |replicate|, one of the simplest functions that requires
+a proper $[[PI]]$-type. First, in Haskell: \rae{Should this be colored?}
+%
+\begin{spec}
+replicate :: pi n -> a -> Vec a n
+replicate Zero      _ = VNil
+replicate (Succ m)  x = VCons x (replicate m x)
+\end{spec}
+
+%if style == newcode
+\begin{code}
+$(genSingletons [''Nat])
+
+replicate :: Sing n -> a -> Vec a n
+replicate SZero _ = VNil
+replicate (SSucc m) x = VCons x (replicate m x)
+\end{code}
+%endif
+
+\noindent
+Now, in \pico/:
+\[
+\begin{array}{r@@{\,}c@@{\,}l}
+[[&replicate]] &:& [[UPI (&&ax :Irrel Type{}), (&&nx :Rel &Nat{}), (&&xx :Rel &&ax). &Vec{} &&ax &&nx]] \\
+[[&replicate]] &=& [[\ ]] [[&&ax :Irrel Type{}]]. \\
+&&
+\begin{array}{l@@{\,}l@@{}l}
+\ottkw{fix} & [[\ ]] & [[(&&rx :Rel UPI (&&nx :Rel &Nat{}), (&&xx :Rel &&ax). &Vec{} &&ax &&nx)]], \\
+&& [[(&&nx :Rel &Nat{}), (&&xx :Rel &&ax)]]. \\
+& \multicolumn{2}{@@{\,}l}{%
+\begin{array}{l}
+[[case_{{&Vec{} &&ax &&nx}} &&nx of blank]] \\
+\quad \begin{array}{l@@{\,}l}
+[[&Zero]] &[[->]] [[\ c0 : &&nx [&Nat{}]~[&Nat{}] &Zero{}. &VNil{&&ax,&&nx} c0]] \\
+[[&Succ]] &[[->]] [[\ &&mx :Rel &Nat{}, c0 : &&nx [&Nat{}]~[&Nat{}] &Succ{} &&mx. &VCons{&&ax,&&nx} {&&mx} c0 &&xx (&&rx &&mx &&xx)]]
+\end{array}
+\end{array}}
+\end{array}
+\end{array}
+\]
+
+This example shows the (standard) use of \ottkw{fix} as well as some of the
+more exotic features of \pico/. In the case-branches, we see how we pass
+universal arguments to the data constructors |VNil| and |VCons|. We also
+see how we have to wrap irrelevant arguments (the $[[{&&mx}]]$ in the last
+line) in braces. This example also shows where the coercion variable
+$[[c0]]$ comes into play: it's needed to provide the coercion to the
+|VNil| and |VCons| constructors to prove that the universal argument
+$[[&&nx]]$ is indeed of the shape required for these constructors.
+Without the ability to do a dependent pattern match, this example would
+be impossible to write.\footnote{Unless you fake dependent types using
+singletons or some other technique.}
+
+\subsection{|append|}
+We'll now examine how to append two vectors. This operation will also
+require the use of an addition operation, defined using prefix notation
+so as not to provide a parsing challenge: \rae{color?}
+%
+\begin{spec}
+plus :: Nat -> Nat -> Nat
+plus Zero      n = n
+plus (Succ m)  n = Succ (plus m n)
+
+append :: Vec a m -> Vec a n -> Vec a (!plus m n)
+append VNil          ys = ys
+append (VCons x xs)  ys = VCons x (append xs ys)
+\end{spec}
+
+%if style == newcode
+\begin{code}
+$(singletons [d|
+  plus :: Nat -> Nat -> Nat
+  plus Zero      n = n
+  plus (Succ m)  n = Succ (plus m n)
+  |])
+
+append :: Vec a m -> Vec a n -> Vec a (Plus m n)
+append VNil ys = ys
+append (VCons x xs) ys = VCons x (append xs ys)
+\end{code}
+%endif  
+
+\begin{comment}
+plus : pi (m : Nat) (n : Nat). Nat
+plus = \ m n.
+       case_Nat m of
+         Zero -> \ c0 . n
+         Succ -> \ m' c0 . Succ (plus m' n)
+
+append : pi (a : Type) (m : Nat) (n : Nat) (xs : Vec a m) (ys : Vec a n).
+            Vec a (plus m n)
+append = \ a.
+         fix \ (app : pi (m : Nat) (n : Nat) (xs : Vec a m) (ys : Vec a n).
+                      Vec a (plus m n))
+               (m : Nat) (n : Nat) (xs : Vec a m) (ys : Vec a n).
+             case_(Vec a (plus m n)) xs of
+               VNil -> \ (c : m ~ Zero) c0.
+                       let c1 := <plus> c <n> in
+                       let c2 := step^k (plus 0 n) in
+                       ys ||> sym (<Vec> <a> (c1 ;; c2))
+               VCons -> \ (m' : Nat) (c : m ~ Succ m') (x : a) (xs' : Vec a m')
+                          (c0 : xs ~ VCons {m'} c x xs').
+                        let c1 := <plus> c <n> in
+                        let c2 := step^k (plus (Succ m') n) in
+                        VCons{a,plus m n} {plus m' n} (c1 ;; c2) x (app m' n xs' ys)
+
+g : plus m n ~ n
+g = g1 ;; g2
+
+g1 : plus m n ~ plus 0 n
+g1 = <plus> c <n>
+
+g2 : plus 0 n ~ n
+
+step (plus 0 n) : plus 0 n ~ 
+
+g3 : plus m n ~ Succ (plus m' n)
+g3 = g4 ;; g5
+
+g4 : plus m n ~ plus (Succ m') n
+g4 = <plus> c <n>
+
+g5 : plus (Succ m') n ~ Succ (plus m' n)
+g5 = step^k' plus (Succ m') n
+\end{comment}
+
+\noindent And in \pico/ (where I elide the uninteresting |plus| for
+brevity):
+\[
+\begin{array}{r@@{\,}c@@{\,}l@@{}}
+[[&append]] &:& 
+\begin{array}[t]{@@{}l@@{}l@@{}}
+[[UPI]] & [[(&&ax :Irrel Type{}), (&&mx :Irrel &Nat{}), (&&nx :Irrel &Nat{}), (&&xsx :Rel &Vec{} &&ax &&mx), (&&ysx :Rel &Vec{} &&ax &&nx)]].\\
+& [[&Vec{} &&ax (&plus &&mx &&nx)]]
+\end{array} \\
+[[&append]] &=&
+\begin{array}[t]{@@{}l@@{}l@@{}}
+[[\ ]] & [[(&&ax :Irrel Type{})]]. \\
+& \ottkw{fix}\,
+\begin{array}[t]{@@{}l@@{}l@@{}}
+[[\ ]] & ([[&app]] [[:Rel]]
+\begin{array}[t]{@@{}l@@{}l@@{}}
+[[ UPI]] & [[ (&&mx :Irrel &Nat{}), (&&nx :Irrel &Nat{}), (&&xsx :Rel &Vec{} &&ax &&mx), (&&ysx :Rel &Vec{} &&ax &&nx)]]. \\
+& [[ &Vec{} &&ax (&plus &&mx &&nx) ]]),
+\end{array} \\
+& [[(&&mx :Irrel &Nat{}), (&&nx :Irrel &Nat{}), (&&xsx :Rel &Vec{} &&ax &&mx), (&&ysx :Rel &Vec{} &&ax &&nx)]]. \\
+\multicolumn{2}{@@{}l@@{}}{
+[[case_{{&Vec{} &&ax (&plus &&mx &&nx)}} &&xsx of blank]]} \\
+\multicolumn{2}{@@{}l@@{}}{
+\quad \begin{array}{l@@{\,}c@@{\,}l@@{}}
+[[&VNil]] &[[->]]& [[\ ]] [[(c : &&mx [&Nat{}]~[&Nat{}] &Zero{}), (c0 : &&xsx [&Vec{} &&ax &&mx]~[&Vec{} &&ax &&mx] &VNil{&&ax,&&mx} c)]]. \\
+&& [[let c1 := <&plus> c <&&nx> in blank]] \\
+&& [[let c2 := step^j (&plus &Zero{} &&nx) in blank]] \\
+&& [[&&ysx |> sym (&Vec{} <&&ax> (c1 ;; c2))]] \\
+[[&VCons]] &[[->]]& [[\ ]]
+\begin{array}[t]{@@{}l@@{}}
+ [[(&&m'x :Irrel &Nat{}), (c : &&mx [&Nat{}]~[&Nat{}] &Succ{} &&m'x), (&&xx :Rel &&ax), (&&xs'x :Rel &Vec{} &&ax &&m'x)]] \\
+[[(c0 : &&xsx [&Vec{} &&ax &&mx]~[&Vec{} &&ax &&mx] &VCons{&&ax,&&mx} {&&m'x} c &&xx &&xs'x)]].
+\end{array}\\
+&& [[let c1 := <&plus> c <&&nx> in blank]] \\
+&& [[let c2 := step^kk (&plus (&Succ{} &&m'x) &&nx) in blank]] \\
+&& [[&VCons{&&ax, &plus &&mx &&nx} {&plus &&m'x &&nx} (c1 ;; c2) &&xx (&app {&&m'x} {&&nx} &&xs'x &&ysx)]]
+\end{array}}
+\end{array}
+\end{array}
+\end{array}
+\]
+
+This is the first example where we are required to write non-trivial
+coercions. Let's start by considering the right-hand side of the
+|VNil| case. As we see in the Haskell version, we wish to return |ys|.
+However, |ys| has type |Vec a n|, and we need to return something of
+type |Vec a (plus m n)|. We must, accordingly, cast |ys| to have type
+|Vec a (plus m n)|. This is what the coercion $[[sym (&Vec{} <&&ax> (c1 ;; c2))]]$
+is doing; it proves that |Vec a n| is in fact equal to |Vec a (plus m n)|.
+Both the starting type |Vec a n| and the ending type |Vec a (plus m n)| have
+the same prefix of |Vec a|. We use a congruence coercion
+(\pref{sec:congruence-coercions}) $[[&Vec{} <&&ax> g]]$ to simplify our
+problem. Now, we need only a coercion
+$[[g]]$ that proves |plus m n| equals |n|.
+(The use of \ottkw{sym} helpfully has reversed our proof obligation.)
+This $[[g]]$ is built in two steps, tied together by using our transitivity
+operator $[[;;]]$: $[[c1]]$, which uses our reflexivity operator
+$\langle \cdot \rangle$, proves that |plus m n| equals |plus 0 n|
+by using $[[c]]$, the GADT equality constraint from the |VNil| constructor;
+and $[[c2]]$ proves that |plus 0 n| equals |n|.\footnote{Recall (\pref{fig:pico-notation}) that \ottkw{let} is defined by simple expansion. It is not
+properly a language construct but instead is just a convenient abbreviation
+in this writeup.} For this last coercion,
+we use the \ottkw{step} coercion that reduces a type by one step. It is
+fiddly (and unenlightening) to calculate the precise number of steps
+necessary to get from |plus 0 n| to |n|, so I have just written that this
+takes $j$ steps. It is straightforward to calculate $j$ in practice.
+
+The coercion manipulations in the |VCons| case are similar.
+
+Also of note in this example is the interplay between relevant variables
+and irrelevant ones. We see that the lengths |m| and |n| are irrelevant
+throughout this function. Indeed, we do not need lengths at runtime
+to append two vectors. Accordingly, we can see that all uses of |m| and
+|n| (or |m'|) occur in irrelevant contexts, such as coercions or
+irrelevant arguments to functions.
+
+\subsection{|safeHead|}
+
+With length-indexed vectors, we can write a safe |head| operation, allowed
+only when we know that the vector has a non-zero length:
+%
+\begin{code}
+safeHead :: Vec a (!Succ n) -> a
+safeHead (VCons x _) = x
+\end{code}
+%
+Note that |safeHead| contains a total pattern match; the |VNil| alternative
+is impossible given the type signature of the function.
+This function translates to \pico/ thusly:
+\[
+\begin{array}{r@@{\,}c@@{\,}l@@{}}
+[[&safeHead]] &:& [[UPI (&&ax :Irrel Type{}), (&&nx :Irrel &Nat{}), (&&vx :Rel &Vec{} &&ax (&Succ{} &&nx)). &&ax]] \\
+[[&safeHead]] &=& [[\ ]] [[(&&ax :Irrel Type{}), (&&nx :Irrel &Nat{}), (&&vx :Rel &Vec{} &&ax (&Succ{} &&nx))]]. \\
+&& [[case_&&ax &&vx of blank]] \\
+&& \quad
+\begin{array}{@@{}l@@{\,}l}
+[[&VNil]] &[[->]] [[\ (c : &Succ{} &&nx [&Nat{}]~[&Nat{}] &Zero{}), (c0 : &&vx [&Vec{} &&ax (&Succ{} &&nx)]~[&Vec{} &&ax (&Succ{} &&nx)] &VNil{a,&Succ{} &&nx} c). absurd c &&ax]] \\
+[[&VCons]] &[[->]] 
+\begin{array}[t]{@@{}l@@{}l}
+[[\ ]] & [[(&&mx :Irrel &Nat{}), (c : &Succ{} &&nx [&Nat{}]~[&Nat{}] &Succ{} &&mx), (&&xx :Rel &&ax), (&&xsx :Rel &Vec{} &&ax &&mx)]], \\
+& [[(c0 : &&vx [&Vec{} &&ax (&Succ{} &&nx)]~[&Vec{} &&ax (&Succ{} &&nx)] &VCons{&&ax, &Succ{} &&nx} {&&mx} c &&xx &&xsx)]]. \\
+\multicolumn{2}{@@{}l}{[[ &&xx]]}
+\end{array}
+\end{array}
+\end{array}
+\]
+
+The new feature demonstrated in this example is the \ottkw{absurd} operator,
+which appears in the body of the |VNil| case.
+In order to be sure that \ottkw{case} expressions do not get stuck,
+the typing rules
+require that all matches are exhaustive. However, in general, in can be
+undecidable to determine whether the type of a scrutinee indicates that
+a certain constructor can be excluded. In order to step around this
+potential trap, \pico/ supports absurdity elmination through \ottkw{absurd}.
+The coercion passed into \ottkw{absurd} ($[[c]]$, above) must prove that
+one constant equals another. This is, of course, impossible, and so we
+allow $[[absurd g t]]$ to have any type $[[t]]$.
+
 \section{Types $[[t]]$}
 
-We have already seen the typing rules for variables and constants
-(\rul{Ty\_Var} and \rul{Ty\_Con}). This section discusses the remainder
-of the typing rules.
+Having gone through several examples explaining the flavor of \pico/ code,
+let's now walk through the remaining typing rules of the system.
+Recall that we have already seen the typing rules for variables,
+\rul{Ty\_Var} in \pref{sec:ty-var}, and constants, \rul{Ty\_Con} in
+\pref{sec:ty-con}.
 
 \subsection{Abstractions}
 
@@ -836,8 +1210,46 @@ we can be sure that $[[t]]$'s canonical form is indeed a $[[\ ]]$; otherwise
 the progress theorem (\pref{sec:progress}) would not hold.
 
 \subsection{\ottkw{case}}
+\label{sec:pico-case}
 
-\rae{RAE was here.}
+Unsurprisingly, the typing rules to support pattern matching are the most
+involved, presented here with the rules to type-check \ottkw{case}
+branches:
+\[
+\ottdruleTyXXCase{}
+\]
+\ottdefnAlt{}
+
+Most of the premises of \rul{Ty\_Case} are easy enough to explain:
+\begin{itemize}
+\item The result kind of a \ottkw{case}, $[[k]]$ is given right in the
+syntax; the first premise $[[S;Rel(G) |-ty k : Type{}]]$ ensures that
+it is a valid result kind.
+\item We also must check the kind of the scrutinee, $[[t]]$. This kind
+must have the form $[[MPI D. H{} ss]]$ (note the matchable $[[MPI]]$),
+where the $[[ss]]$ cannot mention any of the variables bound in $[[D]]$.
+(The $[[S;Rel(G) |-ty H{} ss : Type{}]]$ premise checks this scoping
+condition.) Note that the scrutinee's type may be a $[[MPI]]$-type
+in order to support matching against partially applied type and data
+constructors.
+\item The alternatives must be exhaustive and distinct. Exhaustivity
+is needed to prove that a well-typed \ottkw{case} cannot get stuck,
+and distinctness is necessary to prove that the reduction relation is
+deterministic.
+\end{itemize}
+
+We are left to consider type-checking the alternatives. This is done
+via the judgment with schema $[[S;G;s;t |-alt alt : k]]$. When 
+$[[S;G;s;t |-alt alt : k]]$ holds, we know that the expression in the
+case alternative $[[alt]]$ produces a type of kind $[[k]]$ when 
+considered with signature $[[S]]$ and typing context $[[G]]$ and when
+matched against a scrutinee $[[t]]$ of type $[[s]]$. The premises
+of \rul{Ty\_Case} indeed check that all alternatives satisfy this
+judgment.
+
+\subsubsection{Checking \ottkw{case} alternatives}
+
+The rule \rul{Alt\_Match} is intricate.
 
 \rae{Must introduce $[[ee]]$ when appropriate.}
 

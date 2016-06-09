@@ -19,6 +19,14 @@ metavar Tcc ::= {{ lex Alphanum }}
                 {{ texvar \id{[[Tcc]]} }}
 metavar Dcc ::= {{ lex Alphanum }}
                 {{ texvar \id{[[Dcc]]} }}
+metavar xcc ::= {{ lex alphanum0 }}
+                {{ texvar \id{[[xcc]]} }}
+
+% This next one strips the last character before printing. Useful
+% to avoid an ott non-terminal collision
+metavar xcd ::= {{ lex alphanum0 }}
+                {{ texvar \id{\StrGobbleRight{[[xcd]]}{1}%
+} }}
 
 metavar Blockname ::= {{ lex alphanum0 }}
                       {{ texvar \id{[[Blockname]]} }}
@@ -39,7 +47,9 @@ ADT, T :: 'ADT_' ::=
 DataCon, K :: 'DataCon_' ::=
 | & Dcc           ::   :: Lit
   {{ tex [[Dcc]] }}
-  {{ coq (DataCon_List (trim "[[Dcc]]")) }}
+  {{ coq (DataCon_Lit (trim "[[Dcc]]")) }}
+| # I             ::   :: NumLit
+  {{ tex [[I]] }}
 
 tycon, H :: 'TyCon_' ::=
 | T                ::   :: ADT
@@ -63,6 +73,11 @@ con_type {{ tex ( \Delta; \ottmv{T} ) }} :: 'ConTy_' ::=
 
 var, a, b, x :: 'Var_' ::= {{ com Variables }}
 | _                     :: M :: Blank          {{ coq "_" }}
+| & xcc                 ::   :: Lit
+  {{ tex [[xcc]] }}
+  {{ coq (Var_Lit (trim "[[xcc]]")) }}
+| && xcd                :: M :: Lit2
+  {{ tex [[xcd]] }}
 
 covar, c :: 'CoVar_' ::= {{ com Coercion variables }}
 | _                     :: M :: Blank          {{ coq "_" }}
@@ -172,6 +187,10 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 % | t1 ~> t2                     :: M :: FFArrow
 | ( t )                        :: M :: Parens
   {{ coq [[t]] }}
+| '{{' t '}}'                  :: M :: IParens
+ {{ tex [[t]] }}
+| blank                        :: M :: Omitted
+| let c := h in t              :: M :: Let  
 
 | t [ theta ]                  :: M :: Subst
 
@@ -262,10 +281,14 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   {{ coq [[g]] }}
 
 | o                            :: M :: Erased
+| H {}                         :: M :: NoUnivs
+  {{ tex [[H]] }}
 | g @ ws                       :: M :: Insts
   {{ coq (foldl Co_Inst ([[g]]) ([[ws]])) }}
 | let c := h in g              :: M :: Let  
 | g [ theta ]                  :: M :: Subst
+| step ^ I t                   :: M :: ManyStep
+  {{ tex \ottkw{step}^{[[I]]}\, [[t]] }}
 
 coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
   :: 'cos_' ::=
@@ -489,6 +512,8 @@ nats, Is {{ tex \overline{\ottnt{i} } }}, NNs {{ tex \overline{\ottnt{n} } }}
 
 rewrite_rule :: 'Rewrite_' ::=
 | ps1 eq ps2                         ::   :: ts_rewrite
+% this next one is needed because of Type_Apps <= Arg_Ty
+| t1 eq t2                           ::   :: t_rewrite
 | w1 eq w2                           ::   :: w_rewrite
 | phi1 eq phi2                       ::   :: phi_rewrite
 | G1 eq G2                           ::   :: G_rewrite
@@ -828,3 +853,20 @@ Type_erase_type <= Type_erase_type
 args_Types <= args_Erased
 types_Erased <= types_Erased
 types_One <= types_Erased
+
+Var_Blank <= Type_Var
+Var_Blank <= E_Var
+
+% These are useful optimizations
+mixedVars_One <= args_Vars
+vars_One <= mixedVars_Tys
+Type_Apps <= Arg_Ty
+Type_Apps <= Type_Apps
+Type_Lams <= Arg_Ty
+types_One <= user_syntax__typs
+args_One <= user_syntax__args
+Arg_Ty <= user_syntax__arg
+
+% This is an optimization, preferring ADT_Lit over DataCon_Lit
+% when both are possible.
+DataCon_Lit <= TyCon_DataCon
