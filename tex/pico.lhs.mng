@@ -9,7 +9,7 @@
 import Prelude hiding ( Either(..), replicate )
 import Data.Kind ( Type )
 import qualified GHC.TypeLits as TL
-import Data.Singletons.TH
+import Data.Singletons.TH hiding ( Proxy(..) )
 import Data.Singletons.Prelude
 
 type family UU n where
@@ -142,8 +142,8 @@ are used in today's Haskell. One curiosity of today's Haskell is that it allows
 matching on partially-applied data constructors:
 \begin{code}
 type family IsLeft a where
-  IsLeft !Left  = !True
-  IsLeft !Right = !False
+  IsLeft !Left   = !True
+  IsLeft !Right  = !False
 \end{code}
 The type family |IsLeft| is inferred to have kind
 |forall k. (k -> Either k k) -> Bool|. That is, it matches on the |Left|
@@ -701,6 +701,7 @@ the ADT parameters as relevant, a runtime decision can be made between, say,
 these parameters relevant.
 
 \subsubsection{Data constructors}
+\label{sec:pico-either}
 
 The most involved case is that for data constructors, where both the
 universals and the existentials can be non-empty. We'll try to understand
@@ -1099,6 +1100,7 @@ to append two vectors. Accordingly, we can see that all uses of |m| and
 irrelevant arguments to functions.
 
 \subsection{|safeHead|}
+\label{sec:pico-example-absurd}
 
 With length-indexed vectors, we can write a safe |head| operation, allowed
 only when we know that the vector has a non-zero length:
@@ -1249,7 +1251,467 @@ judgment.
 
 \subsubsection{Checking \ottkw{case} alternatives}
 
-The rule \rul{Alt\_Match} is intricate.
+The rule \rul{Alt\_Match} is intricate. This rule assumes we have
+a scrutinee $[[t0]]$ of type $[[MPI D'. H'{} ss]]$, and we are checking
+a case alternative $[[H -> t]]$.
+
+First, we must verify that the constant $[[H]]$ is classified by $[[H']]$---that
+is, either $[[H]]$ is a data constructor of the datatype $[[H']]$ or
+$[[H]]$ is a datatype and $[[H']]$ is $[[Type]]$. We say that $[[H']]$ is
+the \emph{parent} of $[[H]]$. This check is done by the
+$[[S |-tc H : D1;D2;H']]$ premise, which also extracts the
+universals $[[D1]]$ and existentials $[[D2]]$.
+
+The next premise (reading
+to the right) uses $[[D2[ss/dom(D1)] ]]$ to instantiate
+the existentials with the known choices for
+the universals. These known choices $[[ss]]$ are obtained from
+determining the type of the scrutinee; see the appearance of
+$[[ss]]$ in the type appearing before the $[[|-alt]]$ in the
+conclusion of the rule. The second premise also splits the
+instantiated existentials into two telescopes, $[[D3]]$ and $[[D4]]$.
+
+Note that $[[D']]$ is an input to this rule; it is extracted from
+the type of the scrutinee.
+Accordingly, the third premise $[[dom(D4) = dom(D')]]$ serves two roles:
+it fixes
+the length of $[[D4]]$ (and, hence, $[[D3]]$) and it also forces any
+renaming of bound variables necessary to line up the telescopes $[[D']]$
+and $[[D4]]$. Keeping the names of the bound variables consistent between
+these telescopes simplifies this rule. Note that, in the event that the
+scrutinee is a fully-saturated datatype or data constructor,
+$[[D4 = D']] = [[empty]]$ and $[[D3 = D2[ss/dom(D1)] ]]$.
+
+The next premise uses a unification algorithm to make sure that the bound
+telescope in the scrutinee's type, $[[D']]$, matches the expected shape
+$[[D4]]$. We will return to this in \pref{sec:alt-match-matching}, below.
+In the common case of $[[D' = empty]]$ (that is, full saturation of
+the scrutinee), this premise is trivially satisfied. Also note that we do
+not use the output of this premise, $[[theta]]$, anywhere in the rule, so
+skipping it on a first reading is appropriate.
+
+Lastly, we must check that the body of the alternative, $[[t]]$, has the
+right type. This type must bind (by any combination of matchable $[[MPI]]$
+and unmatchable $[[UPI]]$) all of the existentials in $[[D3]]$, as well
+as the coercion variable witnessing the equality between $[[t0]]$ (the
+scrutinee) and the applied $[[H]]$. In this rule the use of
+$[[dom(D3)]]$ as a list of arguments to $[[H{ss}]]$ is a small pun;
+we must imagine braces surrounding any variable in $[[dom(D3)]]$ that is
+irrelevantly bound. The return type of the abstraction in $[[t]]$ must
+be $[[k]]$, the result kind of the overall match.
+
+For examples of this in action---at least in the fully saturated case---see
+the worked out examples above (\pref{sec:pico-examples}).
+
+\subsubsection{Unification in \rul{Alt\_Match}}
+\label{sec:alt-match-matching}
+
+Let's examine the use of unification in \rul{Alt\_Match} more carefully.
+We will proceed by examining two examples, a simple one where unification
+is unnecessary and a more involved one showing why we need this.
+
+Our first example was given above, when first describing unsaturated matching
+(\pref{sec:unsaturated-match-example}):
+%{
+%if style == newcode
+%format IsLeft = "IsLeft2"
+%endif
+\begin{code}
+type family IsLeft x where
+  IsLeft !Left   = !True
+  IsLeft !Right  = !False
+\end{code}
+%}
+The translation of |Either| into \pico/ appears in \pref{sec:pico-either}.
+This type family translated into the following \pico/ function (rewritten
+to be lowercase according to Haskell naming requirements):
+\[
+\begin{array}{r@@{\,}c@@{\,}l}
+[[&isLeft]] &:& [[UPI (&&ax :Irrel Type{}), (&&xx :Rel MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax). &Bool{}]] \\
+[[&isLeft]] &=& [[\ ]] [[(&&ax :Irrel Type{}), (&&xx :Rel MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax)]] . \\
+&& [[case_&Bool{} &&xx of blank]] \\
+&& \quad
+\begin{array}{l@@{\,}l}
+[[&Left]] &[[->]] [[\ (c0 : &&xx [MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax]~[MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax] &Left{&&ax,&&ax}). &True{}]] \\
+[[&Right]] &[[->]] [[\ (c0 : &&xx [MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax]~[MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax] &Right{&&ax,&&ax}). &False{}]]
+\end{array}
+\end{array}
+\]
+Comparing the first alternative against \rul{Alt\_Match}, we see the following
+concrete instantiations of metavariables:
+\[
+\begin{array}{c@@{\quad}c}
+\begin{array}{r@@{\,}l}
+[[H &= &Left]] \\
+[[D1 &= &&sx :Irrel Type{}, &&tx :Irrel Type{}]] \\
+[[D2 &= &&yx :Rel &&sx]] \\
+[[H' &= &Either]] \\
+[[t0 &= &&xx]] \\
+[[D' &= &&yx :Rel &&ax]]
+\end{array}
+&
+\begin{array}{r@@{\,}l}
+[[ss &= &&ax, &&ax]] \\
+[[D3 &= empty]] \\
+[[D4 &= &&yx :Rel &&ax]] \\
+[[theta &= empty]] \\
+[[t &= \ (c0 : &&xx [MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax]~[MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax] &Left{&&ax,&&ax}). &True{}]] \\
+[[k &= &Bool{}]]
+\end{array}
+\end{array}
+\]
+
+In this example, the constructor is not applied to any existential variables, and
+so $[[D3]]$, the telescope of binders that are to be bound by the match, is empty.
+The only variable bound in the match body is the $[[c0]]$ dependent-match coercion
+variable. Also note that $[[D4]]$, the instantiated suffix of the telescope of
+existential arguments to |Left|, and $[[D']]$, the telescope of binders in the type
+of the scrutinee, coincide. Accordingly, the match operation succeeds with an empty
+substitution $[[theta = empty]]$.
+
+In contrast, the following example shows why we need unification in \rul{Alt\_Match}:
+\begin{code}
+data X where
+  MkX :: a -> a -> X
+    -- NB: |a| is existential; no universals here
+
+type family UnX x :: Bool where
+  UnX (!MkX y) = y
+\end{code}
+
+\noindent Note that we're extracting the first (visible) argument from
+an unsaturated use of |MkX|. This Haskell code translates to the following \pico/:
+\[
+\begin{array}{@@{}l@@{}}
+\begin{array}{r@@{\,}l}
+[[S]] =
+& [[&X : (empty)]], \\
+& [[&MkX : (&&ax :Irrel Type{}, &&yx :Rel &&ax, &&zx :Rel &&ax; &X)]]
+\end{array}
+\\[4ex]
+\begin{array}{r@@{\,}c@@{\,}l}
+[[&unX]] &:& [[UPI (&&xx :Rel MPI (&&zx :Rel &Bool{}). &X{}). &Bool{}]] \\
+[[&unX]] &=& [[\ ]] [[(&&xx :Rel MPI (&&zx :Rel &Bool{}). &X{})]] . \\
+&& [[case_&Bool{} &&xx of blank]] \\
+&& \quad
+[[&MkX]] [[->]]
+\begin{array}[t]{@@{}l}
+[[ \ ]] [[(&&ax :Irrel Type{}), (&&yz :Rel &&ax), (c0 : &&xx (MPI (&&zx :Rel &Bool{}). &X{})~(MPI (&&zx :Rel &&ax). &X{}) &MkX{} &&ax &&yz)]]. \\
+[[&&yx |> sym (argk (kind c0))]]
+\end{array}
+\end{array}
+\end{array}
+\]
+Before we get into the minutiae of \rul{Alt\_Match}, let's dwell a moment
+on the cast necessary in the last line. According to both the type of
+|unX| and the return type provided in the \ottkw{case}, the match must return
+something of type |Bool|. Yet the body of a match must bind precisely the
+existential variables of a data constructor; according to the definition of
+|MkX|, the variable |y| has type |a|, not |Bool|. We thus must cast |y| from
+|a| to |Bool|. We do this by extracting out the right coercion from $[[c0]]$.
+This $[[c0]]$ is heterogeneous; I have typeset the code above with the kinds
+explicit to show this. The left-hand kind is the declared type of |x|, binding
+|z| of type |Bool|. The right-hand kind is the kind of |MkX a y|, which binds
+|z| of type |a|. By using \ottkw{kind} (which extracts a kind equality from
+a heterogeneous coercion; see \pref{sec:pico-kind-coercion}), followed by
+\ottkw{argk} (which extracts a coercion between the kinds of the arguments
+of $\Pi$-types; see \pref{sec:pico-argk-coercion}), and then \ottkw{sym} (which
+reverses the orientation of a coercion), we get the coercion needed, of
+type $[[&&ax [Type{}]~[Type{}] &Bool{}]]$.
+
+Now, we'll try to understand the matching in \rul{Alt\_Match}. Let's once
+again examine the concrete instantiations of the metavariables in
+the rule:
+\[
+\begin{array}{c@@{\quad}c}
+\begin{array}{r@@{\,}l}
+[[H &= &MkX]] \\
+[[D1 &= empty]] \\
+[[D2 &= &&ax :Irrel Type{}, &&yx :Rel &&ax, &&zx :Rel &&ax]] \\
+[[H' &= &X]] \\
+[[t0 &= &&xx]] \\
+[[D' &= &&zx :Rel &Bool{} ]]
+\end{array}
+&
+\begin{array}{r@@{\,}l}
+[[ss &= empty]] \\
+[[D3 &= &&ax :Irrel Type{}, &&yx :Rel &&ax]] \\
+[[D4 &= &&zx :Rel &&ax]] \\
+[[theta &= &Bool{}/&&ax]] \\
+[[t]] &= \langle \text{as above} \rangle \\
+[[k &= &Bool{}]]
+\end{array}
+\end{array}
+\]
+Recall that $[[D3]]$ and $[[D4]]$ are the prefix and suffix, respectively,
+of the telescope of existentials $[[D2]]$, after this telescope has been
+instantiated with the known arguments for the universals. However, with |MkX|,
+there are no universals at all (the datatype |X| takes no arguments), and
+so this instantiation is a no-op. (The lack of universals shows up in the
+equations above via an empty $[[D1]]$ and an empty $[[ss]]$.)
+We thus have $[[D3,D4 = D2]]$, where the length of $[[D4]]$ must match
+the length of $[[D']]$, the telescope of variable bound in the type
+of the scrutinee. We see that the scrutinee $[[&&xx]]$ has type
+$[[MPI (&&zx :Rel &Bool{}). &X{}]]$ and so $[[D' = &&zx :Rel &Bool{}]]$.
+Thus $[[D3]]$---the existentials bound by the pattern match---has two
+elements (|a| and |y|) and $[[D4]]$ has one (|z|).
+
+We now must make sure that the shape of the types in $[[D']]$ match the
+template given by the types in $[[D4]]$. That is, $[[D']]$ must be some
+instance of $[[D4]]$, as determined by a unification algorithm
+(discussed in more depth in \pref{sec:unification}). In this case,
+the unification succeeds, assigning the type variable |a| to be |Bool|,
+as shown in the choice for $[[theta]]$, above. Accordingly, the match
+is well-typed.
+
+Requiring this unification simply reduces the set of well-typed programs. It
+is thus important to understand why the restriction is necessary. What goes
+wrong if we omit it? The problem comes up in the proof for progress, in the
+case where the scrutinee has a top-level cast. We will use step rule
+\rul{S\_KPush} (see \pref{sec:pico-kpush}); that rule has several typing
+premises\footnote{These unexpected typing premises to a small-step reduction
+  rule are addressed in \pref{sec:typing-premises-in-reduction}.} which can
+be satisfied only when this match succeeds. The restriction is
+quite technical in nature, but any alternative not ruled out by the type
+of the scrutinee should be acceptable. See the proof of progress in
+\pref{app:progress-proof} for the precise details.
+
+\subsubsection{Default alternatives}
+
+\Pico/ supports \emph{default alternatives} through the form
+$[[_ -> t]]$. This is a catchall case, to be used only when no
+other case matches. In a language with a simpler treatment for
+\ottkw{case} statements, a default would be unnecessary; every 
+\ottkw{case} could simply enumerate all possible constructors.
+However, \pico/ has two features that makes defaults indispensable:
+\begin{itemize}
+\item When matching on a scrutinee of kind $[[Type]]$ (or, say,
+a function returning a $[[Type]]$), it would be 
+impossible to enumerate all possibilities of this open type. Such
+matches must have a default alternative.
+\item If a scrutinee is partially applied, the typing rules dictate
+a delicate unification process to make sure alternatives are well-typed.
+(See \pref{sec:alt-match-matching}.) Given the design of \rul{Alt\_Match},
+it is possible some of the constructors of a datatype would be ill-typed
+as patterns in an unsaturated match. It might therefore be challenging to
+detect whether an unsaturated match is exhaustive. To avoid this problem,
+unsaturated matches may use a default alternative in order to be
+unimpeachably exhaustive.
+\end{itemize}
+
+Happily, the typing rule \rul{Alt\_Default} for default alternatives
+could hardly be simpler.
+
+\subsubsection{Absurdity}
+
+We saw in |safeHead| example (\pref{sec:pico-example-absurd}) the need
+for absurdity elimination via the \ottkw{absurd} operator. Here is the
+typing rule:
+\[
+\ottdruleTyXXAbsurd{}
+\]
+This rule requires that the coercion argument to \ottkw{absurd},
+$[[g]]$, relate two unequal type constants $[[H1]]$ and $[[H2]]$.
+The type $[[absurd g t]]$ can have any well-formed kind,
+as chosen by $[[t]]$. Because $[[t]]$ is needed only to choose
+the overall kind of the type, it is checked a context reset by
+$[[Rel]]$.
+
+As explained with the example, absurdity eliminiation is sometimes
+needed in the
+body of case alternatives that can never be reached.
+
+\section{Operational semantics}
+
+Now that we have seen the static semantics of types, we are well-placed
+to explore their dynamic semantics---how the types can reduce to values.
+The dynamic semantics of types is expressed in \pico/ via a small-step
+operational semantics, captured in the judgment
+$[[S;G |-s t --> t']]$. Rules in this judgment are prefixed by
+``\rul{S\_}''. It must be parameterized over typing environment because
+of the push rules, as explained in \pref{sec:push-rules}.
+
+The operational semantics obeys preservation and
+progress theorems.
+
+\begin{theorem*}[Preservation (\pref{thm:preservation})]
+If $[[S;G |-ty t : k]]$ and $[[S;G |-s t --> t']]$, then
+$[[S;G |-ty t' : k]]$.
+\end{theorem*}
+
+\begin{theorem*}[Progress (\pref{thm:progress})]
+Assume $[[G]]$ has only irrelevant variable bindings.
+If $[[S;G |-ty t : k]]$, then either $[[t]]$ is a value $[[v]]$, $[[t]]$
+is a coerced value $[[v |> g]]$, or there exists $[[t']]$ such that
+$[[S;G |-s t --> t']]$.
+\end{theorem*}
+
+The progress theorem is non-standard in two different ways:
+\begin{itemize}
+\item As discussed shortly (\pref{sec:reduction-under-irrel-abs}),
+reduction can take place in a context with irrelevant variable
+bindings.
+\item The progress theorem guarantees that a stuck type is \emph{either}
+a value $[[v]]$ or a coerced value $[[v |> g]]$. This statement of
+the theorem follows previous work (such as \citet{nokinds}) and is
+applicable in the right spot in the proof of type erasure
+(\pref{sec:type-erasure}).
+\end{itemize}
+
+The operational semantics are also deterministic.
+
+\begin{lemma*}[Determinacy (\pref{lem:determinacy})]
+If $[[S;G |-s t --> s1]]$ and $[[S;G |-s t --> s2]]$, then
+$[[s1 = s2]]$.
+\end{lemma*}
+
+\subsection{Values}
+\label{sec:evaluation-under-irrel-abs}
+A subset of the types $[[t]]$ are considered values, written with the
+metavariable $[[v]]$:
+
+\begin{definition*}[Values]
+Let values $[[v]]$ be defined by the following subgrammar of $[[t]]$:
+\[
+[[v]] \bnfeq [[H{ts} ps]] \bnfor [[PI d. t]] \bnfor [[\a:Rel k. t]]
+                          \bnfor [[\a:Irrel k. v]] \bnfor [[\c:phi.t]]
+\]
+\end{definition*}
+As we can see, values include applied constants, $\Pi$-types, and some
+$\lambda$-types. However, note a subtle but important part of this definition:
+the production for irrelevant abstractions is recursive. An irrelevant
+abstraction $[[\a:Irrel k.t]]$ is a value if and only if $[[t]]$, the body,
+is also a value. This choice is important in order to prove type erasure.
+
+During compilation, we wish to erase irrelevant components of an expression
+completely. This includes irrelevant abstractions. Thus, the erasure operation,
+written $[[ ||.|| ]]$ and further explored in \pref{sec:type-erasure},
+includes this equation,
+\[
+[[ ||\a:Irrel k.t|| = ||t|| ]],
+\]
+erasing the abstraction entirely. 
+Yet we must make sure to maintain the following lemma, referring to the
+definition of values on erased expressions:
+
+\begin{lemma*}[Expression redexes (\pref{lem:expr-redex})]
+If $[[||t||]]$ is not an expression value, then $[[t]]$ is not a type
+value.
+\end{lemma*}
+
+If we erase irrelevant abstractions but call all irrelevant abstractions
+type values, then this lemma becomes false. We thus have a recursive
+definition of values for irrelevant abstractions and, accordingly,
+evaluate under irrelevant abstractions as well. See rule
+\rul{S\_IrrelAbs\_Cong} in \pref{sec:step-congruence}.
+
+\subsection{Reduction}
+
+Several of the small-step rules perform actual reduction in a type:
+\begin{gather*}
+\ottdruleSXXBetaRel{}\\
+\ottdruleSXXBetaIrrel{}\\
+\ottdruleSXXCBeta{}\\
+\ottdruleSXXMatch{}\\
+\ottdruleSXXDefault{}\\
+\ottdruleSXXDefaultCo{}\\
+\ottdruleSXXUnroll{}
+\end{gather*}
+Note that \rul{S\_BetaIrrel} requires a value $[[v1]]$ in the body
+of the abstraction in order to keep the rules deterministic. The only
+other surprising feature in these rules is the way that \rul{S\_Match}
+works, by applying the body of the alternative $[[t0]]$ to the actual
+existential arguments to $[[H{ts}]]$ and a reflexive coercion. This
+follows directly from my design of having \ottkw{case} alternatives
+avoid a special binding form and use the existings forms in the language.
+
+\subsection{Congruence forms}
+\Pico/ has several uninteresting congruence forms,
+\begin{gather*}
+\ottdruleSXXAppXXCong{}\\
+\ottdruleSXXCastXXCong{}\\
+\ottdruleSXXCaseXXCong{}\\
+\ottdruleSXXFixXXCong{}
+\end{gather*}
+and one more unusual one,
+\[
+\ottdruleSXXIrrelAbsXXCong{}
+\]
+This last rule allows for evaluation under irrelevant abstractions,
+as described in \pref{sec:evaluation-under-irrel-abs}. It must add the
+new irrelevant variable to the context, but is otherwise unexceptional.
+
+\subsection{Push rules}
+
+\begin{figure}[p]
+\newlength{\pushrulespace}
+\setlength{\pushrulespace}{3ex}
+\begin{gather*}
+\ottdruleSXXTrans{} \\[\pushrulespace]
+\ottdruleSXXPushRel{} \\[\pushrulespace]
+\ottdruleSXXPushIrrel{} \\[\pushrulespace]
+\ottdruleSXXCPush{} \\[\pushrulespace]
+\ottdruleSXXAPush{} \\[\pushrulespace]
+\ottdruleSXXFPush{} \\[\pushrulespace]
+\ottdruleSXXKPush{}
+\end{gather*}
+\caption{Push rules}
+\label{fig:push-rules}
+\end{figure}
+
+A system with explicit coercions like \pico/ must deal with the possibility
+that coercions get in the way of reduction. For example, what happens when
+we try to reduce
+\[
+[[ ((\ &&xx :Rel &Bool{}. &&xx) |> <&Bool{}>) &True{} ]] \quad ?
+\]
+Casting by a reflexive coercion should hardly matter, and yet no rule
+yet described applies here. In particular, \rul{S\_BetaRel} does not.
+
+To deal with this and similar scenarios, \pico/ follows the System FC
+tradition and contains so-called \emph{push rules}, as shown in
+\pref{fig:push-rules}. These rules are fiddly
+but---ignoring \rul{S\_KPush} for a moment---straightforward. They simply serve to
+rephrase a type with a coercion in the ``wrong'' place to an equivalent
+type with the coercion moved out of the way. The rules can be derived
+simply by following the typing rules and a desire to push the coercion aside.
+Compared to previous work, the novelty here is in rules \rul{S\_APush}
+(which handles reduction under irrelevant abstractions and must take into
+account the awkward substitution in \rul{Co\_PiTy}; see \pref{sec:pico-co-pity})
+and \rul{S\_FPush} (which handles \ottkw{fix}, never before seen in System FC),
+but these rules again pose no design challenge other than the need for
+attention to detail.
+
+Many of the push rules share an odd feature: they have typing judgment
+premises. These premises are the reason that the stepping judgment
+is parameterized on a typing context. In order to prove the progress
+theorem, it is necessary to prove \emph{consistency} (\pref{sec:consistency}),
+which basically says that no coercion (made without assumptions) can prove,
+say, |Int ~ Bool|. Still ignoring \rul{S\_KPush}, the consistency lemma
+is enough to admit the typing premises to the push rules. However,
+using consistency here would mean that the preservation theorem depends
+on the consistency lemma, while consistency is normally used only to
+prove progress. In seems to lead to cleaner proofs to avoid the dependency
+of preservation on consistency, and so these typing premises are necessary.
+
+\subsection{The \rul{S\_KPush} rule}
+
+The \rul{S\_KPush} rule handles the case where the scrutinee of a \ottkw{case}
+expression is headed by a cast. As in all previous work on System FC, this
+push rule is the most intricate. However, in this dissertation, I have taken
+a new approach to \rul{S\_KPush} that does not require the so-called ``lifting
+lemma'' of previous work.\footnote{See for example, \citet{nokinds}, which
+contains a good, detailed explication of the lifting lemma.} Instead,
+I rely on instantiating the type of a type constant, and on the fact that
+type constant types are always closed. As the computation content of the
+\rul{S\_KPush} rule must actually be implemented as part of a compiler that
+uses \pico/, this (slightly) simpler statement of \rul{S\_KPush}
+may prove to be a
+measurable optimization
+in practice.
+
+
+
 
 \rae{Must introduce $[[ee]]$ when appropriate.}
 

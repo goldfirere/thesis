@@ -2099,6 +2099,7 @@ Finally, \pref{lem:erase-cons} gives us $[[t1 ! t2]]$ as desired.
 \end{proof}
 
 \section{Progress}
+\label{app:progress-proof}
 
 \begin{lemma}[Canonical forms] ~
 \label{lem:canon-form}
@@ -2138,7 +2139,7 @@ By case analysis on $[[S |-tc H : D1;D2;H']]$
 \label{thm:progress}
 Assume $[[G]]$ has only irrelevant variable bindings.
 If $[[S;G |-ty t : k]]$, then either $[[t]]$ is a value $[[v]]$, $[[t]]$
-is a coerced value $[[t |> g]]$, or there exists $[[t']]$ such that
+is a coerced value $[[v |> g]]$, or there exists $[[t']]$ such that
 $[[S;G |-s t --> t']]$.
 \end{theorem}
 
@@ -2414,7 +2415,17 @@ are the same. We thus use the induction hypothesis to discover that $[[t0]]$ is 
 a value or a coerced value. We thus know that $[[t0 |> g]]$ is not a coerced value
 (and is obviously not a value).
 \item[Case $[[t = case_k t0 of alts]]$:] Immediate.
-\item[Case $[[t = \d.t0]]$:] Impossible.
+\item[Case $[[t = \a:Rel k0.t0]]$:] Impossible.
+\item[Case $[[t = \a:Irrel k0.t0]]$:] We have two cases:
+\begin{description}
+\item[Case $[[||t0||]]$ is an expression value:] In this case
+$[[||\a:Irrel k0.t0||]]$ is also an expression value, a contradiction.
+\item[Case $[[||t0||]]$ is not an expression value:] By induction,
+$[[t0]]$ is neither a value nor a coerced value. Thus,
+$[[t = \a:Irrel k0.t0]]$ must also not be a value. (It is clearly not a coerced
+value.)
+\end{description}
+\item[Case $[[t = \c:phi.t0]]$:] Impossible.
 \item[Case $[[t = fix t0]]$:] Immediate.
 \item[Case $[[t = absurd g s]]$:] Impossible.
 \end{description}
