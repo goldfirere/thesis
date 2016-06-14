@@ -462,25 +462,6 @@ S;Rel(G) |-co g : phi[ps/dom(D)]
 -------------------------- :: Co
 S;G |-cev ps, g : D, c:phi
 
-defn
-S ; G |-lc Psi : D :: :: Lc :: 'LC_'
-  {{ com Lifting context formation }}
-by
-
----------------------- :: Nil
-S;G |-lc empty : empty
-
-S;G |-lc Psi : D   //  G' = G,D,a:Rel k[Psi_left]
-S;G' |-ty s1 : k[Psi_left] // S;G' |-ty s2 : k[Psi_right]
-S;G' |-co g : s1 [k[Psi_left] ]~[k[Psi_right] ] s2
----------------------------------------- :: Ty
-S;G |-lc Psi, a |-> (s1, s2, g) : D, a:rel k
-
-S;G |-lc Psi : D  //  G' = G,D,c:phi[Psi_left]
-S;G' |-co h1 : phi[Psi_left]  // S;G' |-co h2 : phi[Psi_right]
---------------------------------------- :: Co
-S;G |-lc Psi, c |-> (h1, h2) : D, c:phi
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Reduction  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

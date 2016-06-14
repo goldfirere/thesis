@@ -435,6 +435,7 @@ following:
 \item $[[p = {t}]]$ and $[[S;Rel(G) |-ty t : k]]$ for some $[[k]]$
 \item $[[p = g]]$ and $[[S;Rel(G) |-co g : phi]]$ for some $[[phi]]$
 \end{enumerate}
+The resulting derivation is smaller than the input derivation.
 \end{lemma}
 
 \begin{proof}
@@ -2465,96 +2466,130 @@ as one would expect of a program that we wish to evaluate.
 
 \section{Congruence}
 
-The following theorem replaces the Lifting Lemma of previous works (such
-as \citet{nokinds}). See also \pref{sec:congruence}.
-
-\begin{definition}[Lifting contexts]
-Define lifting contexts $[[Psi]]$ by the following grammar:
-\[
-[[Psi]] \bnfeq [[empty]] \bnfor [[Psi, a |-> (s1,s2,g)]] \bnfor [[Psi, c |-> (h1,h2)]]
-\]
-\end{definition}
-
-\begin{definition}[Lifting substitutions]
-Let $[[Psi _left]]$ and $[[Psi _right]]$ denote substitutions $[[theta]]$ 
-according to the following equations:
-\[
-\begin{array}{cc}
-\begin{array}{r@{\,}l}
-[[empty_left &= empty]] \\
-[[(Psi, a |-> (s1,s2,g))_left &= Psi_left, s1/a]] \\
-[[(Psi, c |-> (h1,h2))_left &= Psi_left, h1/c]]
-\end{array}
-&
-\begin{array}{r@{\,}l}
-[[empty_right &= empty]] \\
-[[(Psi, a |-> (s1,s2,g))_right &= Psi_right, s2/a]] \\
-[[(Psi, c |-> (h1,h2))_right &= Psi_right, h2/c]]
-\end{array}
-\end{array}
-\]
-\end{definition}
-
-\begin{definition}[Lifting context formation]
-Define a new judgment according to the following:\\
-
-\ottdefnLc{}
-\end{definition}
-
-\begin{definition}[Lifting]
-Define lifting $[[Psi(t) = g]]$
-and $[[Psi(alt) = calt]]$
-recursively on the structure of types by the following
-equations, tried in order from top to bottom:
-\ottfundefnlift{}
-\ottfundefnliftXXalt{}
-\end{definition}
-
-\begin{lemma}[Lifting context domains]
-\label{lem:lc-dom}
-If $[[S;G |-lc Psi : D]]$, then $[[dom(Psi)]] = [[dom(D)]] = [[dom(Psi_left)]] = [[dom(Psi_right)]]$.
-\end{lemma}
-
-\begin{proof}
-Straightforward induction on the structure of $[[D]]$.
-\end{proof}
-
-\begin{theorem}[Congruence] 
+\begin{theorem}[Congruence]
 \label{thm:congruence}
-If $[[S;G |-lc Psi : D]]$ and $[[S;G,D |-ty t : k0]]$,
-then $[[S;G |-co t[Psi_left] (k0[Psi_left])~(k0[Psi_right]) t[Psi_right] ]]$.
+If $[[S;Rel(G) |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:rel k,G' |-ty t : k0]]$,
+then there exists $[[h]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co h : t[s1/a] (k0[s1/a])~(k0[s2/a]) t[s2/a] ]]$
+and for every $[[c \in dom(G')]]$, $[[c ~# h]]$.
 \end{theorem}
 
 \begin{proof}
-By induction on $[[S;G,D |-ty t : k0]]$.
+By induction on the size of the derivation of $[[S;G,a:rel k,G' |-ty t : k0]]$.
 
 \begin{description}
-\item[Case \rul{Ty\_Pi}:] 
-We adopt the metavariable names from the rule:
-\[
-\ottdruleTyXXPi{}
-\]
-We have several cases.
+\item[Case \rul{Ty\_Var}:]
+Here $[[t = b]]$. We have several cases:
 \begin{description}
-\item[Case $[[d = a:rel k1]]$:]
-By \pref{lem:ctx-reg}, we know $[[S |-ctx G,a :Rel k1]]$.
-By \pref{lem:tyvar-reg}, we know $[[S;Rel(G) |- k1 : Type{}]]$
-and that this derivation is smaller than $[[S;G,D |-ty PI a:rel k1.k : k0]]$.
-We can thus use the induction hypothesis to get
-$[[S;G |-co Psi(k1) : k1[Psi_left] [Type{}]~[Type{}] k1[Psi_right] ]]$.
-Let $[[Psi' = Psi, a |-> (a, a |> Psi(k1), a ~=(Psi(k1)) a |> Psi(k1) )]]$.
-We must first show $[[S;G |-lc Psi' : D, a :Rel k1]]$, which will be
-by \rul{LC\_Ty}, the premises of which are straightforwardly satisfied.
-We can now use the induction hypothesis on
-$[[S;G,D,a:Rel k1 |-ty k : Type{}]]$ to get
-$[[S;G |-co Psi'(k) : k[Psi'_left] [Type{}]~[Type{}] k[Psi'_right] ]]$.
-Now, we see that
+\item[Case $[[b \in dom(G)]]$:]
+By \pref{lem:scoping}, $[[a # k0]]$. We are done, choosing $[[h = <b>]]$.
+\item[Case $[[b = a]]$:]
+By \pref{lem:scoping}, $[[a # k0]]$. We are done, choosing $[[h = g]]$.
+Note that $[[g # G']]$ by \pref{lem:scoping} and thus the almost-devoid
+condition is satisfied.
+\item[Case $[[b \in dom(G')]]$:]
+We know $[[G' = G1,b :Rel k0,G2]]$.
+\pref{lem:ctx-reg} and \pref{lem:tyvar-reg} give us
+$[[S;Rel(G,a:rel k,G1) |-ty k0 : Type{}]]$ with a derivation smaller than that
+with which we started. Use the induction hypothesis to get
+$[[S;Rel(G,G1[s1/a]) |-ty h0 : k0[s1/a] [Type{}]~[Type{}] k0[s2/a] ]]$.
+Choose $[[h = b ~={h0} b |> h0]]$ and we are done.
+\end{description}
+\item[Case \rul{Ty\_Con}:]
+By \pref{lem:vec-kind}, repeated use of the induction hypothesis,
+\pref{lem:ty-subst}, and \rul{Co\_Con}.
+\item[Case \rul{Ty\_AppRel}:]
+By the induction hypothesis, \pref{lem:ty-subst}, and \rul{Co\_AppRel}.
+\item[Case \rul{Ty\_AppIrrel}:]
+By the induction hypothesis, \pref{lem:ty-subst}, and \rul{Co\_AppIrrel}.
+\item[Case \rul{Ty\_CApp}:]
+By the induction hypothesis, \pref{lem:ty-subst}, and \rul{Co\_CApp}.
+\item[Case \rul{Ty\_Pi}:]
+We have several cases, depending on the shape of the binder:
+\begin{description}
+\item[Type variable binder:]
+In this case, we know that $[[t = PI b :rel' k1. t0]]$ and $[[k0 = Type{}]]$.
+The induction hypothesis gives us $[[h1]]$ such that
+$[[S;Rel(G,G'[s1/a]),b :Rel k1[s1/a] |-co h1 : t0[s1/a] [Type{}]~[Type{}] t0[s2/a] ]]$.
+We can also use \pref{lem:ctx-reg} and \pref{lem:tyvar-reg} to
+see that $[[S;Rel(G,a:rel k,G') |-ty k1 : Type{}]]$, with a smaller derivation
+height than $[[S;G,a:rel k,G'|-ty PI b:rel' k1. t0 : Type{}]]$. We
+can thus use the induction hypothesis again to get $[[h2]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co h2 : k1[s1/a] [Type{}]~[Type{}] k1[s2/a] ]]$.
+Choose $[[h = (PI b:rel' h2. h1) ;; h3]]$, where
+\begin{itemize}
+\item $[[h3 = s3 ~={<Type{}>} s4]]$
+\item $[[s3 = PI b:rel' k1[s2/a].(t0[s2/a][b |> sym h2/b]) ]]$
+\item $[[s4 = PI b:rel' k1[s2/a].t0[s2/a] ]]$
+\end{itemize}
+We must show $[[S;Rel(G,G'[s1/a]) |-co h : (PI b:rel' k1. t0)[s1/a] [Type{}]~[Type{}] (PI b:rel' k1. t0)[s2/a] ]]$. We will do this by proving both of these:
+\begin{description}
+\item[$[[S;Rel(G,G'[s1/a]) |-co PI b:rel' h2. h1 : (PI b:rel' k1[s1/a]. t0[s1/a]) [Type{}]~[Type{}] s3]]$]
+This is straightforward from \rul{Co\_PiTy}.
+\item[$[[S;Rel(G,G'[s1/a]) |-co s3 ~={<Type{}>} s4 : s3 [Type{}]~[Type{}] s4]]$]
+We must prove that both the left-hand type and right-hand type have kind $[[Type{}]]$. The left-hand result comes from \pref{lem:prop-reg} on the result of the
+previous branch of this list of things to prove.
+The right-hand result comes from \pref{lem:prop-reg} on our assumption about
+$[[g]]$ and \pref{lem:ty-subst} (using \pref{lem:increasing-rel} in the
+$[[rel = Irrel]]$ case).
+Now we must prove that the erasure of the two types equal, which boils down
+to proving $[[|t0[s2/a][b |> sym h2/b]| = |t0[s2/a]|]]$. By \pref{lem:subst-erase},
+the LHS becomes $[[|t0[s2/a]|[|b |> sym h2|/b] ]]$. We can see that
+$[[|b |> sym h2| = b]]$ and thus the two sides of the equation are equal.
+\end{description}
+Note that the induction hypothesis guarantees the almost-devoid condition
+on $[[h]]$.
+\item[Coercion variable binder:]
+In this case, we know that $[[t = PI c:phi. t0]]$ and $[[k0 = Type{}]]$.
+The induction hypothesis gives us $[[h1]]$ such that
+$[[S;Rel(G,G'[s1/a]),c:phi[s1/a] |-co h1 : t0[s1/a] [Type{}]~[Type{}] t0[s2/a] ]]$.
+Let $[[phi = k1 (k1')~(k2') k2]]$.
+We can also use \pref{lem:ctx-reg}, \pref{lem:covar-reg}, and inversion on
+\rul{Prop\_Equality} to
+see that $[[S;Rel(G,a:rel k,G') |-ty k1 : k1']]$ and
+$[[S;Rel(G,a:rel k,G') |-ty k2 : k2']]$, both with a smaller derivation
+height than $[[S;G,a:rel k,G'|-ty PI c:phi. t0 : Type{}]]$. We
+can thus use the induction hypothesis again to get $[[h2]]$ and
+$[[h3]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co h2 : k1[s1/a] [k1'[s1/a] ]~[k1'[s2/a] ] k1[s2/a] ]]$
+and
+$[[S;Rel(G,G'[s1/a]) |-co h3 : k2[s1/a] [k2'[s1/a] ]~[k2'[s2/a] ] k2[s2/a] ]]$.
+Choose $[[h = (PI c: (h2,h3). h1) ;; h4]]$, where
+\begin{itemize}
+\item $[[h4 = s3 ~={<Type{}>} s4]]$
+\item $[[s3 = PI c:phi[s2/a].(t0[s2/a][h5/c]) ]]$
+\item $[[s4 = PI c:phi[s2/a].t0[s2/a] ]]$
+\item $[[h5 = h2 ;; c ;; sym h3]]$
+\end{itemize}
+We must show $[[S;Rel(G,G'[s1/a]) |-co h : (PI c:phi. t0)[s1/a] [Type{}]~[Type{}] (PI c:phi. t0)[s2/a] ]]$. We will do this by proving both of these:
+\begin{description}
+\item[$[[S;Rel(G,G'[s1/a]) |-co PI c: (h2,h3). h1 : (PI c:phi[s1/a]. t0[s1/a]) [Type{}]~[Type{}] s3]]$]
+This is straightforward from \rul{Co\_PiCo}. Note that the $[[c ~# h1]]$ condition
+is guaranteed by the induction hypothesis.
+\item[$[[S;Rel(G,G'[s1/a]) |-co s3 ~={<Type{}>} s4 : s3 [Type{}]~[Type{}] s4]]$]
+We must prove that both the left-hand type and right-hand type have kind $[[Type{}]]$. The left-hand result comes from \pref{lem:prop-reg} on the result of the
+previous branch of this list of things to prove.
+The right-hand result comes from \pref{lem:prop-reg} on our assumption about
+$[[g]]$ and \pref{lem:ty-subst} (using \pref{lem:increasing-rel} in the
+$[[rel = Irrel]]$ case).
+Now we must prove that the erasure of the two types equal, which boils down
+to proving $[[|t0[s2/a][h5/c]| = |t0[s2/a]|]]$. This holds by
+\pref{lem:co-subst-erase}.
+\end{description}
+Note that the induction hypothesis guarantees the almost-devoid condition
+on $[[h]]$.
+\end{description}
+\item[Case \rul{Ty\_Cast}:]
+We adopt the metavariable names from the rule (but renaming the coercion used
+in the case to $[[g']]$):
 \[
-[[Psi(PI a:rel k1. k) = let c0 := Psi(k) in \\ PI a:rel c0. Psi'(k)]]
+\ottdruleTyXXCast{}
 \]
-We must show that
-$[[S;G |-co PI a:rel Psi(k1). Psi'(k) : (PI a:rel k1[Psi_left]. k[Psi_left]) [Type{}]~[Type{}] (PI a:rel k1[Psi_right]. k1[Psi_right]) ]]$.
-
-
-The induction hypothesis tells us that
-$[[S;G |-co t
+The induction hypothesis gives us $[[h1]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co h1 : t[s1/a] (k1[s1/a])~(k1[s2/a]) t[s2/a] ]]$.
+Let $[[h2 = ((t[s1/a] |> g'[s1/a]) ~={sym g'[s1/a]} t[s1/a]) ]]$ and
+$[[h3 = (t[s2/a] ~={g'[s2/a]} (t[s2/a] |> g'[s2/a]))]]$. It is easy to
+see (using \pref{lem:ty-subst}) that $[[h2]]$ and $[[h3]]$ are well-typed.
+Choose $[[h = h2 ;; h1 ;; h3]]$, and we are done.
+\end{description}
+\end{proof}

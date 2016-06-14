@@ -116,10 +116,6 @@ mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'mixedVars_' ::=
 | dom ( G )                          :: M :: DomCtx
   {{ tex [[dom]]([[G]]) }}
 | xs                                 :: M :: Tys
-| dom ( Psi )                        :: M :: DomLC
-  {{ tex [[dom]]([[Psi]]) }}
-| dom ( theta )                      :: M :: DomTheta
-  {{ tex [[dom]]([[theta]]) }}
 
 fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
 | { zs }                             :: M :: Set
@@ -317,8 +313,6 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 | gs1 , .... , gsi             ::   :: Many
 | nil                          :: M :: Empty
 | ( gs )                       :: M :: Parens
-| Psi ( ts )                   :: M :: LiftedTys
-  {{ tex [[Psi]]([[ts]]) }}
 | nths g                       :: M :: Nths
 
 calt :: 'CAlt_' ::=
@@ -330,8 +324,6 @@ calts {{ tex \overline{\ottnt{calt} } }} :: 'calts_' ::=
 | nil                    :: M :: Nil
 | list of calt           :: M :: List
   {{ tex \overline{[[calt]]} }}
-| Psi ( alts )           :: M :: Lifted
-  {{ tex [[Psi]]([[alts]]) }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Arguments  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -414,8 +406,6 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
 | substs1 , .... , substsi          ::   :: Many
 | nil                               :: M :: Nil  
 | ps / zs                           :: M :: Telescope
-| Psi _ lr                          :: M :: PsiLR
-  {{ tex [[Psi]]_{[[lr]]} }}
 | ( theta )                         :: M :: Parens
 
 subst :: 'Subst_' ::=
@@ -427,20 +417,6 @@ unif_result :: 'UnifResult_' ::=
 | Just theta                  ::   :: Just      {{ coq (Just ([[theta]])) }}
 | match _ V ( ts1 ; ts2 ) :: M :: match
   {{ tex [[match]]_{[[V]]}([[ts1]];[[ts2]]) }}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  Lifting contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-lc_bnd :: 'LC1_' ::=
-| a |-> ( s1 , s2 , g )  ::   :: Ty
-| c |-> ( g1 , g2 )      ::   :: Co
-
-lc, Psi {{ tex \Psi }} :: 'LC_' ::=
-| lc_bnd               ::   :: One
-| lc1 , .... , lci     ::   :: Many
-| nil                  :: M :: Nil
-| ( Psi )              :: M :: Parens
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Expressions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -683,36 +659,6 @@ $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 funs
-Lifting ::=
-
-fun
-Psi ( t ) :: g :: lift
-  {{ tex [[Psi]]([[t]]) }}
-
-by
-(Psi, a |-> (s1,s2,g))(a)     === g
-Psi(b)                === <b>
-Psi(H{ts})            === H{Psi(ts)}
-Psi(t1 t2)            === Psi(t1) Psi(t2)
-Psi(t1 {t2})          === Psi(t1) {Psi(t2)}
-Psi(t g)              === Psi(t1) (g[Psi_left], g[Psi_right])
-Psi(PI a :rel k. t)   === let c0 := Psi(k) in \\ PI a:rel c0. (Psi, a |-> (a, a |> c0, a ~={c0} a |> c0))(t)
-Psi(PI c:s1 [k1]~[k2] s2.t) === let c1 := Psi(s1) in \\ let c2 := Psi(s2) in \\ PI c:(c1,c2). (Psi, c |-> (c, sym c1 ;; c ;; c2))(t)
-Psi(t |> g)           === ((t |> g)[Psi_left] ~={sym g} t[Psi_left]) ;; Psi(t) ;; (t[Psi_right] ~={g} (t |> g)[Psi_right])
-Psi(case_k t of alts) === case_Psi(k) Psi(t) of Psi(alts)
-Psi(\ a:rel k . t)    === let c0 := Psi(k) in \\ \ a:rel c0. (Psi, a |-> (a, a|> c0, a ~={c0} a |> c0))(t)
-Psi(\ c:s1 [k1]~[k2] s2.t) === let c1 := Psi(s1) in \\ let c2 := Psi(s2) in \\ \ c:(c1,c2). (Psi, c |-> (c, sym c1 ;; c ;; c2))(t)
-Psi(fix t)            === fix Psi(t)
-Psi(absurd g t)       === absurd (g[Psi_left], g[Psi_right]) Psi(t)
-
-fun
-Psi ( alt ) :: calt :: lift_alt
-  {{ tex [[Psi]]([[alt]]) }}
-
-by
-Psi(pat -> t) === pat -> Psi(t)
-
-funs
 Util ::=
 
 fun
@@ -754,16 +700,6 @@ by
 cast_kpush_arg(t;g)   === t |> argk g
 cast_kpush_arg({t};g) === {t |> argk g}
 cast_kpush_arg(g;h)   === sym (argk 1 h) ;; g ;; argk 2 h
-
-% fun
-% build_subst ( Psi ; D ; theta ) :: substs :: build_subst
-%   {{ tex \mathsf{build\_subst}([[Psi]];[[D]];[[theta]]) }}
-
-% by
-% build_subst(Psi; empty; theta)       === theta
-% build_subst(Psi; a :rel k, D; theta) === build_subst(Psi, a |-> Psi_S;G(k); D; theta, a |> sym Psi_S;G(k) / a)
-% %% RAE: Out-of-scope contexts above and below.
-% build_subst(Psi; c:phi, D; theta)    === build_subst(Psi, c |-> Psi_S;G(phi); D; theta, nth 3 Psi(phi) ;; c ;; sym (nth 4 Psi(phi)) / c)
 
 funs
 Erase ::=

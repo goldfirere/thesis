@@ -204,3 +204,47 @@ case_() (blah : MPI (a :Irrel Type) (x :Rel Type). X) of
 
 
 
+-----------------------
+Stuff about lack of congruence:
+
+x:Int |- \ (c : Int ~ Bool). x |> c : PI (c : Int ~ Bool). Bool
+
+Suppose g : 3 ~ 4
+
+g2 : \ (c : Int ~ Bool). 3 |> c   ~   \ (c : Int ~ Bool). 4 |> c
+
+BAD: g2 = \c : (<Int>,<Bool>). (3 |> c ~={sym c} 3) ;; g ;; (4 ~={sym c} 4 |> c)
+
+GOOD?: g2 = g3 ;; g4 ;; g5
+
+g3 : \c:Int ~ Bool. 3 |> c     ~     \c:Int ~ Bool.3
+g3 = (\c:Int ~ Bool. 3 |> c) ~={g6} (\c:Int ~ Bool. 3)
+
+g6 : PI c:Int~Bool. Bool ~ PI c:Int~Bool. Int   <== DOES NOT EXIST.
+
+g4 = \c : (<Int>,<Bool>). g : \c:Int ~ Bool.3   ~   \c:Int ~ Bool.4
+
+
+---------------------------------------------------------------
+
+x:Int |- PI (c : Int ~ Bool). Proxy Bool (x |> c) : Type
+Suppose empty |- g : Id 3 ~ 3
+
+Want:
+x:Int |- h : PI (c : Int ~ Bool). Proxy Bool (Id 3 |> c)   ~    PI (c : Int ~ Bool). Proxy Bool (3 |> c)
+
+Ψ = x ↦ (Id 3, 3, g)
+
+h = Ψ(τ)
+  = Ψ(PI (c : Int ~ Bool). Proxy Bool (x |> c))
+  = PI (c1,c2) : (Ψ(Int), Ψ(Bool)). (Ψ, c ↦ (c1, c2))(Proxy Bool (x |> c))
+  = PI (c1,c2) : (<Int>,<Bool>). <Proxy Bool> (Ψ, c ↦ (c1, c2))(x |> c)
+  = PI (c1,c2) : (<Int>,<Bool>). <Proxy Bool> (g ▹ (Ψ₁(c) ~ Ψ₂(c)))
+  = PI (c1,c2) : (<Int>,<Bool>). <Proxy Bool> (g ▹ (c1 ~ c2))
+  = PI (c1,c2) : (<Int>,<Bool>). <Proxy Bool> ((sym ((sym g) ▹ c2)) ▹ c1)
+
+----------------------------------------
+empty |- h0 : forall (c1 : Int ~ Bool). Int   ~   forall (c2 : Int ~ Bool). Bool
+
+h0 = forall_(<Int>,<Bool>) (c1,c2). kind (<3> |> c1)
+
