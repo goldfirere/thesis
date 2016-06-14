@@ -31,6 +31,7 @@ I believe \pico/ would make a strong candidate for the internal language
 in a future version of GHC.
 
 \section{Overview}
+\label{sec:conv-rule}
 
 \Pico/ (pronounced like ``$\Pi$-co'', never ``peek-o'')
 descends directly from the long line of work on System FC~\cite{systemfc}.
@@ -493,6 +494,7 @@ of an equality proposition even when I intend for them to be elided in the
 rendered output, as a check to make sure these parameters can indeed be written
 with the information to hand.
 
+\rae{Is this outline still accurate?}
 This chapter proceeds by explaining all of the various typing judgments
 individually. \pref{sec:contexts-rel-annots} explains contexts $[[G]]$,
 along with relevance annotations. \pref{sec:signatures} explains
@@ -1305,6 +1307,7 @@ the worked out examples above (\pref{sec:pico-examples}).
 
 \subsubsection{Unification in \rul{Alt\_Match}}
 \label{sec:alt-match-matching}
+\label{sec:example-using-kind-co}
 
 Let's examine the use of unification in \rul{Alt\_Match} more carefully.
 We will proceed by examining two examples, a simple one where unification
@@ -1694,6 +1697,123 @@ on the consistency lemma, while consistency is normally used only to
 prove progress. In seems to lead to cleaner proofs to avoid the dependency
 of preservation on consistency, and so these typing premises are necessary.
 
+The \rul{S\_KPush} rule is very intricate and makes use of a variety of
+coercions. Explicating this rule in its entirety is best saved until after
+we have covered coercions in more depth.
+
+\section{Coercions $[[g]]$}
+
+\Pico/ comes with a very rich theory of equality, embodied in the large
+number of coercion forms. We will examine these forms in terms of the
+properties they imbue on the equality relation. Note that the coercion
+language is far from orthogonal; it is often possible to prove one thing
+in multiple ways. Indeed, GHC comes with a
+\emph{coercion optimizer}~\cite{coercion-optimization} that transforms
+a coercion proving a certain proposition into another, simpler one proving
+the same proposition. Enhancing this optimizer is beyond the scope of
+this dissertation, however. It is needed only has a optimization in the
+speed of compilation and is not central to the theory or metatheory of
+the language.
+
+All coercions are erased before runtime. (\pref{sec:type-erasure}) Accordingly,
+we check for well-typed coercions (via the judgment
+$[[S;G |-co g : phi]]$) only in contexts reset by the $[[Rel]](\cdot)$ operator.
+
+\subsection{Equality is heterogeneous}
+
+The equality relation in \pico/ is heterogeneous, allowing |~| to relate
+two types of different kinds. This is most clearly demonstrated in the
+rule for the well-formedness of propositions:\footnote{This rule is the
+entire judgment---there is no other form of proposition supported in
+\pico/.} \\
+
+\ottdefnProp{}
+
+\noindent Note that the kinds $[[k1]]$ and $[[k2]]$ are allowed to differ.
+
+The particular flavor of hetergeneous equality in \pico/ is so-called
+``John Major'' equality~\cite{jmeq-mcbride-thesis}, where an equality between two
+types implies the equality between the kinds:
+\[
+\ottdruleCoXXKind{}
+\]
+As we can see, the \ottkw{kind} coercion form extracts a kind coercion
+from a type coercion.
+
+It's worth pausing here for a moment to consider two other meanings of
+heterogeneous equality:
+\paragraph{Zombie equality} \rae{better name?}
+The language Zombie~\cite{zombie}, of the Trellys project~\cite{trellys},
+supports a heterogeneous equality with no equivalent of the \ottkw{kind}
+coercion. That is, if we have a proof of $[[t1 (k1)~(k2) t2]]$, then there
+is no way to prove $[[k1 [Type{}]~[Type{}] k2]]$ (absent other information).
+Indeed, Zombie equality (that is, omitting the \rul{Co\_Kind} rule) would work
+in \pico/; that coercion form is never needed in the metatheory. But it would
+weaken \pico/'s equational theory; for example, it seems that the second
+example in \pref{sec:example-using-kind-co} would be impossible without
+\ottkw{kind}.
+
+\paragraph{Flexible homogeneous equality}
+Another possible meaning of heterogeneous equality is that $[[k1]]$ and $[[k2]]$
+might not be definitionally equal, but they are provably equal.\footnote{I
+am distinguishing here between \emph{definitional} equality and \emph{propositional} equality. The former, in \pico/, refers to $\alpha$-equivalence. Definitional
+equality is the equality used implicitly in typing rules when we use the
+same metavariable twice. If written explicitly, it is sometimes written
+$\equiv$. Propositional equality, on the other hand, means an equality
+that must be accompanied by a proof; in \pico/, |~| is the propositional
+equality relation. Languages with a \rul{Conv} rule (\pref{sec:conv-rule})
+import propositional equality into their definitional equality. \Pico/ does
+not do this, requiring a cast to use a propositional equality.} Such
+an equality would use this rule (not part of \pico/):
+\[
+\ottdrule{\ottpremise{[[S;G |-ty t1 : k1  //  S;G |-ty t2 : k2]]}%
+\ottpremise{[[S;G |-co g : k1 [Type{}]~[Type{}] k2]]}}{[[S]];[[G]] [[|-prop]] [[t1]] \mathrel{{}^{[[k1]]}\sim_{[[g]]}^{[[k2]]}} [[t2]] \ok}{\rul{Prop\_Homogeneous}}
+\]
+Note how |~| is indexed by $[[g]]$, the proof that the kinds are equal.
+I call this equality homogeneous, because even to form the equality |t1 ~ t2|,
+we must know that the kinds are equal. Contrast to \rul{Prop_Equality}, where
+the proposition itself is well-formed even when the kinds and/or types are
+not provably equal.
+
+\subsection{Equality is hypothetical}
+
+A key property of equality in \pico/ is that programs can \emph{assume} an
+equality proof. This is how GADTs are implemented, by packing an equality
+proof into a nugget of data and then extracting it again on pattern match.
+In the body of the pattern match, we can assume the packed equality. Here
+is the typing rule:
+\[
+\ottdruleCoXXVar{}
+\]
+Coercion variables are brought into scope by $\Pi$ and $\lambda$ over 
+coercion binders.
+
+\subsection{Equality is an equivalence}
+
+The equality relation |~| is explicitly an equivalence relation, via these
+rules:
+\[
+\ottdruleCoXXRefl{}
+\ottdruleCoXXSym{}
+\ottdruleCoXXTrans{}
+\]
+Note the use of $[[<t>]]$ to denote a reflexive coercion over the type
+$[[t]]$.
+
+\subsection{Equality is congruent}
+
+If we know that two corresponding parts of two types are equal (and the rest
+of the types are the same), then the types themselves can be proven equal.
+In other words:
+
+\begin{theorem*}[Congruence (\pref{thm:congruence})]
+If $[[S;G |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:Irrel k |-ty t : k0]]$,
+then there exists $[[h]]$ such that $[[S;G |-co h : t[s1/a] (k0[s1/a])~(k0[s2/a]) t[s2/a] ]]$.
+\end{theorem*}
+
+If we know that $[[g]]$ proves $[[ s1 [k1]~[k2] s2]]$, then we can make a
+proof from $[[t[s1/a] [k[s1/a] ]~[k[s2/a] ] t[s2/a] ]]$.
+
 \subsection{The \rul{S\_KPush} rule}
 
 The \rul{S\_KPush} rule handles the case where the scrutinee of a \ottkw{case}
@@ -1710,8 +1830,121 @@ may prove to be a
 measurable optimization
 in practice.
 
+A few examples can demonstrate the general idea. First off, note that in
+\rul{S\_KPush}, only the scrutinee matters; the alternatives remain
+the same before and after the reduction. With that in mind, we can see
+scrutinees before and after pushing in \pref{tab:kpush-examples}.
 
+\begin{table}
+\newcommand{\pushrow}[1]{\multicolumn{3}{l}{#1}}
+\begin{center}
+\rowcolors{1}{white}{gray!25}
+\setlength{\arrayrulewidth}{.1em}
+\begin{tabular}{llc}
+Original scrutinee & Assumptions / Notes \\
+\pushrow{Pushed scrutinee} \\ \hline
+$[[&True{} |> <&Bool{}>]]$ & simple case; no universals & (1)\\
+\pushrow{$[[&True{}]]$} \\[2ex]
+$[[&&Justx{&Int{}} #3{} |> g]]$ &
+$\begin{array}[t]{@@{}l@@{}}
+[[S;G |-co g : &Maybe{} &Int{} [Type{}]~[Type{}] &Maybe{} &&bx]] \\
+[[&&bx :Irrel Type{} \in G]]
+\end{array}$ & (2)\\
+\pushrow{$
+[[&&Justx{&&bx} (#3{} |> argk (<MPI &&ax :Irrel Type{}, &&xx :Rel &&ax. &Maybe{} &&ax>@(nth 1 g)))]]$} \\[2ex]
+%
+$[[&MkG{&Bool{}} <&Bool{}> |> g]]$ &
+$\begin{array}[t]{@@{}l@@{}}
+[[S;G |-co g : &&Gx{} &Bool{} [Type{}]~[Type{}] &&Gx{} &&bx]] \\
+[[&&bx :Irrel Type{} \in G]]
+\end{array}$  & (3) \\
+\pushrow{
+$\begin{array}[t]{@@{}l@@{}}
+[[&MkG{&&bx} (sym (argk 1 h) ;; <&Bool{}> ;; argk 2 h)]] \text{, where} \\
+\quad [[h = <MPI (&&ax :Irrel Type{}), (c : &&ax [Type{}]~[Type{}] &Bool{}). &&Gx{} &&ax>@(nth 1 g)]] \\[2ex]
+\end{array}$} \\[2ex]
+%
+$[[(&Pack{&Bool{}} &True{} &MkP{&Bool{},&True{}}) |> g]]$ &
+$\begin{array}[t]{@@{}l@@{}}
+[[S;G |-co g : MPI d1. &Ex{} &Bool{} [Type{}]~[Type{}] MPI d2. &Ex{} &&bx]] \\
+[[d1 = &&yx :Rel &Proxy{} &Bool{} &True{}]]\\
+[[d2 = &&yx :Rel &Proxy{} &&bx (&True{} |> g2)]]\\
+[[S;G |-co g2 : &Bool{} [Type{}]~[Type{}] &&bx]] \\
+[[&&bx :Irrel Type{} \in G]]
+\end{array}$ & (4) \\
+\pushrow{
+$\begin{array}[t]{@@{}l@@{}}
+[[&Pack{&&bx} {&True{} |> h0'} (&MkP{&Bool{},&True{}} |> h1')]] \text{, where} \\
+\quad [[k = MPI (&&kx :Irrel Type{}), (&&ax :Irrel &&kx), (&&xx :Rel &Proxy{} &&kx &&ax), (&&yx :Rel &Proxy{} &&kx &&ax). &Ex{} &&kx]] \\
+\quad [[h0 = <k>@(nth 1 (res^1 g))]] \\
+\quad [[h0' = argk h0]] \\
+\quad [[h1 = h0@(&True{} ~={h0'} &True{} |> h0')]] \\
+\quad [[h1' = argk h1]] \\
+\end{array}$} \\
+%
+\end{tabular}
+\end{center}
 
+The reductions above assume the following datatypes:
+%{
+%if style == newcode
+%format Ex = "Ex2"
+%format Bool = "Bool2"
+%format True = "True2"
+%format False = "False2"
+%format Maybe = "Maybe2"
+%format Just = "Just2"
+%format Nothing = "Nothing2"
+%endif
+\begin{code}
+data Bool = False | True
+data Maybe a = Just a | Nothing
+data G a where
+  MkG :: G Bool
+data Proxy (a :: k) = MkP
+data Ex k where
+  Pack :: forall (a :: k). Proxy a -> Proxy a -> Ex k
+\end{code}
+%}
+And in \pico/:
+\[
+\begin{array}{r@@{\,}l}
+[[S]] = &
+[[&Bool : (empty), &False : (empty; &Bool), &True : (empty; &Bool)]] \\
+& [[&Maybe : (&&ax : Type{}), &&Justx : (&&xx :Rel &&ax; &Maybe), &&Nothingx : (empty; &Maybe)]] \\
+& [[&&Gx : (&&ax : Type{}), &MkG : (c : &&ax [Type{}]~[Type{}] &Bool{}; &&Gx)]] \\
+& [[&Proxy : (&&kx : Type{}, &&ax : &&kx), &MkP : (empty; &Proxy)]] \\
+& [[&Ex : (&&kx : Type{}), &Pack : (&&ax :Irrel &&kx, &&xx :Rel &Proxy{} &&kx &&ax, &&yx :Rel &Proxy{} &&kx &&ax; &Ex)]]
+\end{array}
+\]
+\caption{Examples of \rul{S\_KPush}}
+\label{tab:kpush-examples}
+\end{table}
+
+\paragraph{Example (1)}
+In this example, there are no universals of the type in question (|Bool|), and
+so ``pushing'' is extraordinarily simple: just drop the coercion. We can see
+this in terms of \rul{S\_KPush} in that both $[[ts]]$ and $[[ps]]$ are empty.
+Note that if we had a non-reflexive coercion in the scrutinee---that is, if
+the scrutinee were, say, $[[&True{} |> g]]$ with $[[S;G |-co g : &Bool{} [Type{}]~[Type{}] &&ax]]$---the \ottkw{case} expression would not be well-typed.
+Rule \rul{Ty\_Case} requires the type of a scrutinee to be of the form
+$[[MPI D.H{} ss]]$. The type |a| does not have this form, and so such a
+scrutinee is disallowed.
+Also note that we cannot have $[[&True{} |> g]]$ with $[[S;G |-co g : &Bool{} [Type{}]~[Type{}] &Int{}]]$ due to the consistency lemma (\pref{sec:consistency}).
+
+\paragraph{Example (2)}
+This is the simplest non-trivial example. We need to push a coercion
+$[[g]]$ proving |Maybe Int ~ Maybe b| into $[[&&Justx{&Int{}} #3{}]]$.
+This casted scrutinee has type |Maybe b|; the pushed scrutinee must have the
+same type. We thus know it must start with $[[&&Justx{&&bx}]]$.
+The only challenge left is to cast the argument, |3|, with a coercion
+that proves |Int ~ b|. We will always be able to extract this coercion
+from the coercion casting the scrutinee, $[[g]]$. But how, in general?
+
+The coercion needed to cast each (existential) argument to a constructor
+must surely depend on the type of the constructor. Previous versions of
+System FC did a transformation on this type to produce the coercion. 
+In this work, I instantiate the type using the $[[@]]$ operator 
 
 \rae{Must introduce $[[ee]]$ when appropriate.}
 

@@ -1,4 +1,4 @@
-C = pico
+C = app-pico
 C_EXT = $(if $(wildcard tex/$(C).lhs*),$(C).lhs,$(C).tex)
 
 OTT_FILES_BASE = syn rules
@@ -59,8 +59,13 @@ aux/chapter.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex aux/thesispreamble.tex
 aux/ottdump.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex
 aux/thesis.pdf: $(OTT_OUTPUT_FULL) $(BIB_FILES_FULL) $(ALL_TEX_FILES:tex/%=aux/%)
 
-aux/thechapter.lhs: aux/$(C_EXT)
+ifneq ($(wildcard tex/$(C).lhs*),)
+aux/thechapter.lhs: aux/$(C).lhs
 	cp $< $@
+else
+aux/thechapter.lhs: aux/$(C).tex
+	echo "\input{$(C)}" > $@
+endif
 
 aux/%.pdf: aux/%.tex $(AUX_DIR_MARKER)
 	latexmk -pdf -cd $<

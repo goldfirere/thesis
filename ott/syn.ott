@@ -9,6 +9,10 @@ embed {{ tex-preamble
 \newcommand{\gobble}[1]{}
 \let\supp\gobble
 \newcommand{\nosupp}[1]{\begingroup\let\supp\relax#1\endgroup}
+\newenvironment{vertmath}{\begin{array}[t]{@{}l@{}%
+}%
+}{\end{array}%
+}
 }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -17,8 +21,14 @@ embed {{ tex-preamble
 
 metavar Tcc ::= {{ lex Alphanum }}
                 {{ texvar \id{[[Tcc]]} }}
+metavar Tcd ::= {{ lex Alphanum }}
+                {{ texvar \id{\StrGobbleRight{[[Tcd]]}{1}%
+} }}
 metavar Dcc ::= {{ lex Alphanum }}
                 {{ texvar \id{[[Dcc]]} }}
+metavar Dcd ::= {{ lex Alphanum }}
+                {{ texvar \id{\StrGobbleRight{[[Dcd]]}{1}%
+} }}
 metavar xcc ::= {{ lex alphanum0 }}
                 {{ texvar \id{[[xcc]]} }}
 
@@ -43,11 +53,16 @@ ADT, T :: 'ADT_' ::=
 | & Tcc           ::   :: Lit
   {{ tex [[Tcc]] }}
   {{ coq (ADT_Lit (trim "[[Tcc]]")) }}
+| && Tcd          ::   :: Litx
+  {{ tex [[Tcd]] }}
 
 DataCon, K :: 'DataCon_' ::=
 | & Dcc           ::   :: Lit
   {{ tex [[Dcc]] }}
   {{ coq (DataCon_Lit (trim "[[Dcc]]")) }}
+| && Dcd          ::   :: Litx
+  {{ tex [[Dcd]] }}
+
 | # I             ::   :: NumLit
   {{ tex [[I]] }}
 
@@ -101,6 +116,10 @@ mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'mixedVars_' ::=
 | dom ( G )                          :: M :: DomCtx
   {{ tex [[dom]]([[G]]) }}
 | xs                                 :: M :: Tys
+| dom ( Psi )                        :: M :: DomLC
+  {{ tex [[dom]]([[Psi]]) }}
+| dom ( theta )                      :: M :: DomTheta
+  {{ tex [[dom]]([[theta]]) }}
 
 fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
 | { zs }                             :: M :: Set
@@ -127,9 +146,9 @@ relevance, rel {{ tex \mathsf{r} }} :: 'Rel_' ::=
 | Rel              ::   :: Rel
 | Irrel            ::   :: Irrel
 
-colon {{ tex {:}^\mathsf{r} }} :: 'Colon_' ::=
+colon {{ tex {:}_\mathsf{r} }} :: 'Colon_' ::=
 | : rel                       ::   :: Colon
-  {{ tex {:}^{[[rel]]} }}
+  {{ tex {:}_{[[rel]]} }}
   {{ coq [[rel]] }}
 
 bnd, d {{ tex \delta }} :: 'Bnd_' ::=
@@ -267,13 +286,13 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   {{ tex \ottkw{absurd}\,([[g1]],[[g2]])\,[[h]] }}
 | argk g                       ::   :: ArgK
 | argk I g                     ::   :: CArgK
-  {{ tex {[[argk]]}^{[[I]]}\,[[g]] }}
+  {{ tex {[[argk]]}_{[[I]]}\,[[g]] }}
 | res ^ I g                    ::   :: Res
   {{ tex [[res]]^{[[I]]}\,[[g]] }}
 | !!! g @ w                    ::   :: Inst
 | g @\ w                       ::   :: InstLam
 | nth I g                      ::   :: Nth
-  {{ tex {[[nth]]}^{[[I]]}\,[[g]] }}
+  {{ tex {[[nth]]}_{[[I]]}\,[[g]] }}
 | kind g                       ::   :: Kind
 | step t                       ::   :: Step
 
@@ -285,7 +304,9 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   {{ tex [[H]] }}
 | g @ ws                       :: M :: Insts
   {{ coq (foldl Co_Inst ([[g]]) ([[ws]])) }}
-| let c := h in g              :: M :: Let  
+| let c := h in g              :: M :: Let
+| let c := h in \\ g           :: M :: LetBreak
+  {{ tex \begin{vertmath} \ottkw{let}\ [[c]] [[:=]] [[h]]\ \ottkw{in} \\ [[g]] \end{vertmath} }}
 | g [ theta ]                  :: M :: Subst
 | step ^ I t                   :: M :: ManyStep
   {{ tex \ottkw{step}^{[[I]]}\, [[t]] }}
@@ -296,8 +317,8 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 | gs1 , .... , gsi             ::   :: Many
 | nil                          :: M :: Empty
 | ( gs )                       :: M :: Parens
-| Psi _ S ; G ( ts )           :: M :: LiftedTys
-  {{ tex [[Psi]]_{[[S]];[[G]]}([[ts]]) }}
+| Psi ( ts )                   :: M :: LiftedTys
+  {{ tex [[Psi]]([[ts]]) }}
 | nths g                       :: M :: Nths
 
 calt :: 'CAlt_' ::=
@@ -309,6 +330,8 @@ calts {{ tex \overline{\ottnt{calt} } }} :: 'calts_' ::=
 | nil                    :: M :: Nil
 | list of calt           :: M :: List
   {{ tex \overline{[[calt]]} }}
+| Psi ( alts )           :: M :: Lifted
+  {{ tex [[Psi]]([[alts]]) }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Arguments  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -334,7 +357,6 @@ args, ps {{ tex \overline{\psi} }} :: 'args_' ::=
   {{ tex {[[ps]]}_{[[I1]] \ldots [[I2]]} }}
 | '|' ps '|'            :: M :: Erased
   {{ tex \lfloor [[ps]] \rfloor }}
-
 
 coarg, w {{ tex \omega }} :: 'CoArg_' ::=
 | g                    ::   :: Ty
@@ -372,9 +394,9 @@ context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'ctx_' ::=
 | nil                          :: M :: Nil
 | G [ theta ]                  :: M :: Subst
 | as : rel ks                  :: M :: ZipKs
-  {{ tex [[as]]{:}^{[[rel]]} [[ks]] }}
+  {{ tex [[as]]{:}_{[[rel]]} [[ks]] }}
 % | as : rel D                   :: M :: Telescope
-%   {{ tex [[as]]{:}^{[[rel]]} [[D]] }}
+%   {{ tex [[as]]{:}_{[[rel]]} [[D]] }}
 | ( G )                        :: M :: Parens
 | Rel ( G )                    :: M :: ApplyRel
   {{ tex [[Rel]]([[G]]) }}
@@ -411,8 +433,8 @@ unif_result :: 'UnifResult_' ::=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 lc_bnd :: 'LC1_' ::=
-| a |-> g           ::   :: Ty
-| c |-> ( g1 , g2 ) ::   :: Co
+| a |-> ( s1 , s2 , g )  ::   :: Ty
+| c |-> ( g1 , g2 )      ::   :: Co
 
 lc, Psi {{ tex \Psi }} :: 'LC_' ::=
 | lc_bnd               ::   :: One
@@ -528,6 +550,7 @@ rewrite_rule :: 'Rewrite_' ::=
 | PI1 eq PI2                         ::   :: PI_rewrite
 | ealts1 eq ealts2                   ::   :: ealts_rewrite
 | e1 eq e2                           ::   :: e_rewrite
+| calt1 eq calt2                     ::   :: calt_rewrite
 
 util :: 'Util_' ::=
 | ||.||                              ::   :: terase_op
@@ -607,6 +630,7 @@ terminals :: 'terminals_' ::=
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
+| |-lc                                 ::   :: Lc_ent  {{ tex \vdashy{lc} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -658,35 +682,35 @@ $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% funs
-% Lifting ::=
+funs
+Lifting ::=
 
-% fun
-% Psi _ S ; G ( t ) :: g :: lift
-%   {{ tex [[Psi]]_{[[S]];[[G]]}([[t]]) }}
+fun
+Psi ( t ) :: g :: lift
+  {{ tex [[Psi]]([[t]]) }}
 
-% by
-% (Psi, a |-> g)_S;G(a)     === g
-% Psi_S;G(b)                === <b>
-% Psi_S;G(H[ts])            === H[Psi_S;G(ts)]
-% Psi_S;G(t1 t2)            === Psi_S;G(t1) Psi_S;G(t2)
-% Psi_S;G(PI a :rel k. t)   === let c0 := Psi_S;G(k) in PI a:rel c0. (Psi, a |-> erase_c0 a (a |> c0))_S;G,a:rel k[Psi_left] (t)
-% Psi_S;G(PI c:phi.t)       === let c0 := Psi_S;G(phi) in PI c:c0. (Psi, c |-> (c, sym (nth 3 c0) ;; c ;; nth 4 c0))_S;G,c:phi[Psi_left] (t)
-% Psi_S;G(t |> g)           === erase_sym g (t |> g)[Psi_left] t[Psi_left] ;; Psi_S;G(t) ;; erase_g t[Psi_right] (t |> g)[Psi_right]
-% Psi_S;G(g)                === erase_Psi_S;G(coercionKind_S;G(g)) g[Psi_left] g[Psi_right]
-% Psi_S;G(case_k t of alts) === case_Psi_S;G(k) Psi_S;G(t) of Psi_S;G(alts)
-% Psi_S;G(\ a:rel k . t)    === let c0 := Psi_S;G(k) in \ a:rel c0. (Psi, a |-> erase_c0 a (a |> c0))_S;G,a: rel k[Psi_left] (t)
-% Psi_S;G(fix t)            === fix Psi_S;G(t)
+by
+(Psi, a |-> (s1,s2,g))(a)     === g
+Psi(b)                === <b>
+Psi(H{ts})            === H{Psi(ts)}
+Psi(t1 t2)            === Psi(t1) Psi(t2)
+Psi(t1 {t2})          === Psi(t1) {Psi(t2)}
+Psi(t g)              === Psi(t1) (g[Psi_left], g[Psi_right])
+Psi(PI a :rel k. t)   === let c0 := Psi(k) in \\ PI a:rel c0. (Psi, a |-> (a, a |> c0, a ~={c0} a |> c0))(t)
+Psi(PI c:s1 [k1]~[k2] s2.t) === let c1 := Psi(s1) in \\ let c2 := Psi(s2) in \\ PI c:(c1,c2). (Psi, c |-> (c, sym c1 ;; c ;; c2))(t)
+Psi(t |> g)           === ((t |> g)[Psi_left] ~={sym g} t[Psi_left]) ;; Psi(t) ;; (t[Psi_right] ~={g} (t |> g)[Psi_right])
+Psi(case_k t of alts) === case_Psi(k) Psi(t) of Psi(alts)
+Psi(\ a:rel k . t)    === let c0 := Psi(k) in \\ \ a:rel c0. (Psi, a |-> (a, a|> c0, a ~={c0} a |> c0))(t)
+Psi(\ c:s1 [k1]~[k2] s2.t) === let c1 := Psi(s1) in \\ let c2 := Psi(s2) in \\ \ c:(c1,c2). (Psi, c |-> (c, sym c1 ;; c ;; c2))(t)
+Psi(fix t)            === fix Psi(t)
+Psi(absurd g t)       === absurd (g[Psi_left], g[Psi_right]) Psi(t)
 
-% fun
-% Psi _ S ; G ( alt ) :: calt :: lift_alt
-%   {{ tex [[Psi]]_{[[S]];[[G]]}([[alt]]) }}
+fun
+Psi ( alt ) :: calt :: lift_alt
+  {{ tex [[Psi]]([[alt]]) }}
 
-% by
-% Psi_S;G(H zs -> c. t) === TODO
-% %% This is going pear shaped. Perhaps it would be better to separate out coercions
-% %% after all. Then I don't think I'd need to parameterize over S;G throughout
-% %% lifting. This would dilute the complexity.
+by
+Psi(pat -> t) === pat -> Psi(t)
 
 funs
 Util ::=
@@ -709,8 +733,8 @@ build_kpush_co ( g ; ps ) :: h :: build_kpush_co
 
 by
 build_kpush_co ( g ; empty ) === g
-build_kpush_co ( g ; ps, t ) === let c := build_kpush_co(g; ps) in c@(t ~={c} t |> argk c)
-build_kpush_co ( g ; ps,{t}) === let c := build_kpush_co(g; ps) in c@{t ~={c} t |> argk c}
+build_kpush_co ( g ; ps, t ) === let c := build_kpush_co(g; ps) in c@(t ~={argk c} t |> argk c)
+build_kpush_co ( g ; ps,{t}) === let c := build_kpush_co(g; ps) in c@{t ~={argk c} t |> argk c}
 build_kpush_co ( g ; ps, h ) === let c := build_kpush_co(g; ps) in c@(h, sym (argk 1 c) ;; h ;; argk 2 c)
 
 fun
@@ -870,3 +894,4 @@ Arg_Ty <= user_syntax__arg
 % This is an optimization, preferring ADT_Lit over DataCon_Lit
 % when both are possible.
 DataCon_Lit <= TyCon_DataCon
+

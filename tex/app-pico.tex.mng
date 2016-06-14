@@ -1,6 +1,8 @@
 \chapter{Proofs about \pico/}
 \label{app:pico-proofs}
 
+\rae{Are all ott-defined functions listed in the text somewhere?}
+
 You may find the full grammar for \pico/ in \pref{fig:pico-grammar}
 and its notation conventions in \pref{fig:pico-notation}.
 
@@ -959,14 +961,14 @@ are done by assumption and \rul{Cev\_Nil}.
 \item[Case \rul{Cev\_TyRel}:]
 In this case, we have $[[ps = ps0, t0]]$ and $[[D = D0, b :Rel k]]$
 with $[[S;G |-cev ps0 : D0[ts/as] ]]$ and $[[S;G |-ty t0 : k[ts/as][ps0/dom(D0)] ]]$.
-We can see that $[[build_kpush_co(h; ps0, t0) = let c := build_kpush_co(h; ps0) in c@(t0 ~={c} t0 |> argk c) ]]$.
+We can see that $[[build_kpush_co(h; ps0, t0) = let c := build_kpush_co(h; ps0) in c@(t0 ~={argk c} t0 |> argk c) ]]$.
 The induction hypothesis tells us that
 $[[S;Rel(G) |-co c : (MPI b :Rel k.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (MPI b:Rel k.s)[ts'/as][ps0'/dom(D0)] ]]$. We can thus deduce the following:
 \begin{itemize}
 \item $[[S;Rel(G) |-co argk c : k[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] k[ts'/as][ps0'/dom(D0)] ]]$
 \item $[[S;Rel(G) |-ty t0 |> argk c : k[ts'/as][ps0'/dom(D0)] ]]$
-\item $[[S;Rel(G) |-co t0 ~={c} t0 |> argk c : t0 [k[ts/as][ps0/dom(D0)] ]~[k[ts'/as][ps0'/dom(D0)] ] t0 |> argk c ]]$
-\item $[[S;Rel(G) |-co c@(t0 ~={c} t0 |> argk c) : s[ts/as][ps0/dom(D0)][t0/b] [Type{}]~[Type{}] s[ts'/as][ps0'/dom(D0)][t0 |> argk c/b] ]]$
+\item $[[S;Rel(G) |-co t0 ~={argk c} t0 |> argk c : t0 [k[ts/as][ps0/dom(D0)] ]~[k[ts'/as][ps0'/dom(D0)] ] t0 |> argk c ]]$
+\item $[[S;Rel(G) |-co c@(t0 ~={argk c} t0 |> argk c) : s[ts/as][ps0/dom(D0)][t0/b] [Type{}]~[Type{}] s[ts'/as][ps0'/dom(D0)][t0 |> argk c/b] ]]$
 \end{itemize}
 Note that $[[cast_kpush_arg(t0;c) = t0 |> argk c]]$ and thus that we can say
 $[[t0' = t0 |> argk c]]$. Noting that the $[[ps0]]$ cannot have $[[b]]$ free due to
@@ -2461,4 +2463,98 @@ irrelevant variable bindings. This means that the expression $[[ ||t|| ]]$ is cl
 as one would expect of a program that we wish to evaluate.
 \end{remark}
 
+\section{Congruence}
 
+The following theorem replaces the Lifting Lemma of previous works (such
+as \citet{nokinds}). See also \pref{sec:congruence}.
+
+\begin{definition}[Lifting contexts]
+Define lifting contexts $[[Psi]]$ by the following grammar:
+\[
+[[Psi]] \bnfeq [[empty]] \bnfor [[Psi, a |-> (s1,s2,g)]] \bnfor [[Psi, c |-> (h1,h2)]]
+\]
+\end{definition}
+
+\begin{definition}[Lifting substitutions]
+Let $[[Psi _left]]$ and $[[Psi _right]]$ denote substitutions $[[theta]]$ 
+according to the following equations:
+\[
+\begin{array}{cc}
+\begin{array}{r@{\,}l}
+[[empty_left &= empty]] \\
+[[(Psi, a |-> (s1,s2,g))_left &= Psi_left, s1/a]] \\
+[[(Psi, c |-> (h1,h2))_left &= Psi_left, h1/c]]
+\end{array}
+&
+\begin{array}{r@{\,}l}
+[[empty_right &= empty]] \\
+[[(Psi, a |-> (s1,s2,g))_right &= Psi_right, s2/a]] \\
+[[(Psi, c |-> (h1,h2))_right &= Psi_right, h2/c]]
+\end{array}
+\end{array}
+\]
+\end{definition}
+
+\begin{definition}[Lifting context formation]
+Define a new judgment according to the following:\\
+
+\ottdefnLc{}
+\end{definition}
+
+\begin{definition}[Lifting]
+Define lifting $[[Psi(t) = g]]$
+and $[[Psi(alt) = calt]]$
+recursively on the structure of types by the following
+equations, tried in order from top to bottom:
+\ottfundefnlift{}
+\ottfundefnliftXXalt{}
+\end{definition}
+
+\begin{lemma}[Lifting context domains]
+\label{lem:lc-dom}
+If $[[S;G |-lc Psi : D]]$, then $[[dom(Psi)]] = [[dom(D)]] = [[dom(Psi_left)]] = [[dom(Psi_right)]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on the structure of $[[D]]$.
+\end{proof}
+
+\begin{theorem}[Congruence] 
+\label{thm:congruence}
+If $[[S;G |-lc Psi : D]]$ and $[[S;G,D |-ty t : k0]]$,
+then $[[S;G |-co t[Psi_left] (k0[Psi_left])~(k0[Psi_right]) t[Psi_right] ]]$.
+\end{theorem}
+
+\begin{proof}
+By induction on $[[S;G,D |-ty t : k0]]$.
+
+\begin{description}
+\item[Case \rul{Ty\_Pi}:] 
+We adopt the metavariable names from the rule:
+\[
+\ottdruleTyXXPi{}
+\]
+We have several cases.
+\begin{description}
+\item[Case $[[d = a:rel k1]]$:]
+By \pref{lem:ctx-reg}, we know $[[S |-ctx G,a :Rel k1]]$.
+By \pref{lem:tyvar-reg}, we know $[[S;Rel(G) |- k1 : Type{}]]$
+and that this derivation is smaller than $[[S;G,D |-ty PI a:rel k1.k : k0]]$.
+We can thus use the induction hypothesis to get
+$[[S;G |-co Psi(k1) : k1[Psi_left] [Type{}]~[Type{}] k1[Psi_right] ]]$.
+Let $[[Psi' = Psi, a |-> (a, a |> Psi(k1), a ~=(Psi(k1)) a |> Psi(k1) )]]$.
+We must first show $[[S;G |-lc Psi' : D, a :Rel k1]]$, which will be
+by \rul{LC\_Ty}, the premises of which are straightforwardly satisfied.
+We can now use the induction hypothesis on
+$[[S;G,D,a:Rel k1 |-ty k : Type{}]]$ to get
+$[[S;G |-co Psi'(k) : k[Psi'_left] [Type{}]~[Type{}] k[Psi'_right] ]]$.
+Now, we see that
+\[
+[[Psi(PI a:rel k1. k) = let c0 := Psi(k) in \\ PI a:rel c0. Psi'(k)]]
+\]
+We must show that
+$[[S;G |-co PI a:rel Psi(k1). Psi'(k) : (PI a:rel k1[Psi_left]. k[Psi_left]) [Type{}]~[Type{}] (PI a:rel k1[Psi_right]. k1[Psi_right]) ]]$.
+
+
+The induction hypothesis tells us that
+$[[S;G |-co t
