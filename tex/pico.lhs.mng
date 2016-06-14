@@ -1809,7 +1809,9 @@ a coercion relating the types themselves. For example, if we know that
 $[[S;G |-co g1 : t1 [PI a:Rel k1'.k1]~[PI a:Rel k2'.k2] s1]]$
 and $[[S;G |-co g2 : t2 [k1']~[k2'] s2]]$, then we can build
 $[[S;G |-co g1 g2 : t1 t2 [k1[t2/a] ]~[k2[s2/a] ] s1 s2]]$.
-The congruence rules 
+The congruence rules follow:
+\[
+\ottdrule
 
 If we know that two corresponding parts of two types are equal (and the rest
 of the types are the same), then the types themse
