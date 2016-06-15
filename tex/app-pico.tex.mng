@@ -38,12 +38,12 @@ a rule during a proof. This does not change the meaning of the rule;
 it is merely a typesetting convenience to elide the kinds.
 \end{notation}
 
-\begin{notation}
-\label{note:almost-free}
+\begin{definition}[``Almost devoid'']
+\label{defn:almost-devoid}
 Define $[[c ~# g]]$ (pronounced ``$[[g]]$ is almost devoid of $[[c]]$'') to mean that the coercion variable $[[c]]$
 appears nowhere in $[[g]]$ except, perhaps, in one of the types
 related by a $[[t1 ~={h} t2]]$ coercion.
-\end{notation}
+\end{definition}
 
 \section{Structural properties}
 
@@ -741,9 +741,9 @@ and inversion and application of typing rules.
 
 \section{Regularity, Part II}
 
-\begin{lemma}[Kind regularity] ~
+\begin{lemma}[Kind regularity]
 \label{lem:kind-reg}
-\item If $[[S;G |-ty t : k]]$, then $[[S;Rel(G) |-ty k : Type{} ]]$.
+If $[[S;G |-ty t : k]]$, then $[[S;Rel(G) |-ty k : Type{} ]]$.
 \end{lemma}
 
 \begin{proof}
@@ -2463,5 +2463,3 @@ Note in the statement of \pref{thm:expr-eval} that the context $[[G]]$ must have
 irrelevant variable bindings. This means that the expression $[[ ||t|| ]]$ is closed,
 as one would expect of a program that we wish to evaluate.
 \end{remark}
-
-

@@ -2,3 +2,6 @@ practical-erasure (2015) (by Tejiščák & Brady) describes Idris's whole progra
 analysis erasure technique
 
 erasure-pure-type-systems (2008) (by Mishra-Linger & Sheard) does basically exactly what I'm doing. More in Mishra-Linger's thesis.
+
+vanDoorn.pdf: This paper presents a very similar calculus to nokinds'. It does
+not have coercion abstraction, though.

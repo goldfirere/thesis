@@ -1,4 +1,4 @@
-C = app-pico
+C = pico
 C_EXT = $(if $(wildcard tex/$(C).lhs*),$(C).lhs,$(C).tex)
 
 OTT_FILES_BASE = syn rules

@@ -20,6 +20,8 @@ type family UU n where
 
 %endif
 
+\newcommand{\rulesep}{\\[1ex]}
+
 \chapter{\Pico/}
 \label{cha:pico}
 
@@ -441,6 +443,12 @@ type $[[s]]$.}} \\
 [[S;G |-s t --> t']] & \text{Type $[[t]]$ reduces to type $[[t']]$ in one step.}
 \end{array}
 \]
+\begin{lemma*}[Kind regularity (\pref{lem:kind-reg})]
+If $[[S;G |-ty t : k]]$, then $[[S;Rel(G) |-ty k : Type{} ]]$.
+\end{lemma*}
+\begin{lemma*}[Prop.~regularity (\pref{lem:prop-reg})]
+If $[[S;G |-co g : phi]]$, then $[[S;Rel(G) |-prop phi]]$.
+\end{lemma*}
 \caption{Judgments used in the definition of \pico/}
 \label{fig:pico-judgments}
 \end{figure}
@@ -451,7 +459,8 @@ these in detail in the following sections. Later
 sections of this chapter will cover portions of the typing rules, but for
 a full listing of all the typing rules of the language, please see
 \pref{app:pico-rules}. \pref{fig:pico-judgments} includes the judgment
-forms. All of the metatheory lemmas, theorems, and proofs appear in
+forms and two key lemmas, useful in understanding the judgments.
+All of the metatheory lemmas, theorems, and proofs appear in
 \pref{app:pico-proofs}. This section mentions several key lemmas and
 theorems, but the ordering here is intended for readability and
 lemma statements may be abbreviated; please
@@ -1154,11 +1163,12 @@ Recall that we have already seen the typing rules for variables,
 \pref{sec:ty-con}.
 
 \subsection{Abstractions}
+\label{sec:pico-type-abstractions}
 
 The definition for types $[[t]]$ includes the usual productions for a pure
 type system, including both a $[[PI]]$-form and a $[[\ ]]$-form:
 \begin{gather*}
-\ottdruleTyXXPi{}\\
+\ottdruleTyXXPi{}\rulesep
 \ottdruleTyXXLam{}
 \end{gather*}
 %
@@ -1173,8 +1183,8 @@ the type of Haskell's |undefined|: $[[UPI a:Irrel Type{}. a]]$.
 Terms with a $[[PI]]$-type (either type constants or $[[\ ]]$-terms)
 can be applied to arguments, via these rules:
 \begin{gather*}
-\ottdruleTyXXAppRel{}\\
-\ottdruleTyXXAppIrrel{}\\
+\ottdruleTyXXAppRel{}\rulesep
+\ottdruleTyXXAppIrrel{}\rulesep
 \ottdruleTyXXCApp{}
 \end{gather*}
 %
@@ -1612,12 +1622,12 @@ evaluate under irrelevant abstractions as well. See rule
 
 Several of the small-step rules perform actual reduction in a type:
 \begin{gather*}
-\ottdruleSXXBetaRel{}\\
-\ottdruleSXXBetaIrrel{}\\
-\ottdruleSXXCBeta{}\\
-\ottdruleSXXMatch{}\\
-\ottdruleSXXDefault{}\\
-\ottdruleSXXDefaultCo{}\\
+\ottdruleSXXBetaRel{}\rulesep
+\ottdruleSXXBetaIrrel{}\rulesep
+\ottdruleSXXCBeta{}\rulesep
+\ottdruleSXXMatch{}\rulesep
+\ottdruleSXXDefault{}\rulesep
+\ottdruleSXXDefaultCo{}\rulesep
 \ottdruleSXXUnroll{}
 \end{gather*}
 Note that \rul{S\_BetaIrrel} requires a value $[[v1]]$ in the body
@@ -1631,9 +1641,9 @@ avoid a special binding form and use the existings forms in the language.
 \subsection{Congruence forms}
 \Pico/ has several uninteresting congruence forms,
 \begin{gather*}
-\ottdruleSXXAppXXCong{}\\
-\ottdruleSXXCastXXCong{}\\
-\ottdruleSXXCaseXXCong{}\\
+\ottdruleSXXAppXXCong{}\rulesep
+\ottdruleSXXCastXXCong{}\rulesep
+\ottdruleSXXCaseXXCong{}\rulesep
 \ottdruleSXXFixXXCong{}
 \end{gather*}
 and one more unusual one,
@@ -1771,7 +1781,7 @@ an equality would use this rule (not part of \pico/):
 \]
 Note how |~| is indexed by $[[g]]$, the proof that the kinds are equal.
 I call this equality homogeneous, because even to form the equality |t1 ~ t2|,
-we must know that the kinds are equal. Contrast to \rul{Prop_Equality}, where
+we must know that the kinds are equal. Contrast to \rul{Prop\_Equality}, where
 the proposition itself is well-formed even when the kinds and/or types are
 not provably equal.
 
@@ -1792,11 +1802,11 @@ coercion binders.
 
 The equality relation |~| is explicitly an equivalence relation, via these
 rules:
-\[
-\ottdruleCoXXRefl{}
-\ottdruleCoXXSym{}
+\begin{gather*}
+\ottdruleCoXXRefl{}\rulesep
+\ottdruleCoXXSym{}\rulesep
 \ottdruleCoXXTrans{}
-\]
+\end{gather*}
 Note the use of $[[<t>]]$ to denote a reflexive coercion over the type
 $[[t]]$.\footnote{Reflexivity is actually admissible, given the coherence
   coercion form (\pref{sec:coherence}); it is retained here as it is
@@ -1809,9 +1819,158 @@ a coercion relating the types themselves. For example, if we know that
 $[[S;G |-co g1 : t1 [PI a:Rel k1'.k1]~[PI a:Rel k2'.k2] s1]]$
 and $[[S;G |-co g2 : t2 [k1']~[k2'] s2]]$, then we can build
 $[[S;G |-co g1 g2 : t1 t2 [k1[t2/a] ]~[k2[s2/a] ] s1 s2]]$.
-The congruence rules follow:
+The form $[[g1 g2]]$ is typed by a congruence rule; each form of type
+has an associated congruence rule. The rules that do not bind variables
+appear in \pref{fig:simple-cong-rules}; I'll call these the simple congruence
+rules. Rules that do bind variables are
+subtler; they appear in \pref{fig:binding-cong-rules}.
+
+\begin{figure}
+\begin{gather*}
+\ottdruleCoXXCon{}\rulesep
+\ottdruleCoXXAppRel{}\rulesep
+\ottdruleCoXXAppIrrel{}\rulesep
+\ottdruleCoXXCApp{}\rulesep
+\ottdruleCoXXCase{}\rulesep
+\ottdruleCoXXFix{}\rulesep
+\ottdruleCoXXAbsurd{}
+\end{gather*}
+\caption{Congruence rules that do not bind variables}
+\label{fig:simple-cong-rules}
+\end{figure}
+
+\begin{figure}
+\begin{gather*}
+\ottdruleCoXXPiTy{}\rulesep
+\ottdruleCoXXPiCo{}\rulesep
+\ottdruleCoXXLam{}\rulesep
+\ottdruleCoXXCLam{}
+\end{gather*}
+\caption{Congruence rules that bind variables}
+\label{fig:binding-cong-rules}
+\end{figure}
+
+The simple congruence rules simply build up larger coercions from smaller ones.
+With the exception of \rul{Co\_Absurd}, they assert that the types related
+by the coercion are well-formed; it is easier simply to check the types than
+to repeat all the conditions in the relevant typing rules. The typing premises
+for \ottkw{absurd} are simple enough on their own, however.
+
+The notation I use for congruence rules deliberately mimics that of types.
+However, do not be fooled: the coercion $[[g1 g2]]$ does \emph{not} apply
+a ``coercion function'' $[[g1]]$ to some argument. The coercion $[[g1 g2]]$
+never $\beta$-reduces to become some $[[g[g2/c] ]]$. Similarly, the
+$\lambda$-coercion (one of the binding congruence forms) does \emph{not}
+define a $\lambda$-abstraction over coercions; it witnesses the equality
+between two $\lambda$-abstraction types.
+
+\subsubsection{Binding congruence forms}
+
+The binding coercions forms (\pref{fig:binding-cong-rules}) all have a
+particular challenge to meet. Suppose we know that
+$[[S;G |-co h : k1 [Type{}]~[Type{}] k2]]$ and we wish to prove equality
+between $[[PI a:rel k1. t1]]$ and $[[PI a:rel k2. t2]]$. We surely must
+have a coercion $[[g]]$ relating $[[t1]]$ to $[[t2]]$. But in what context
+should we check $[[g]]$? We
+cannot assign $[[a]]$ both $[[k1]]$ and $[[k2]]$.
+
+In \pico/, I have chosen to favor the left-hand kind in the context
+and do a substitution in the result. Let's examine \rul{Co\_PiTy}
+closely. The coercion $[[h]]$ indeed relates $[[k1]]$ and $[[k2]]$.
+The coercion $[[g]]$ is checked in the context $[[G, a:Rel k1]]$---note 
+the use of $[[k1]]$ there.\footnote{Regardless of the relevance annotation
+$[[rel]]$ on the coercion, the context is extended with a binding marked
+$[[Rel]]$, echoing the use of $[[Rel(d)]]$ in the premise to \rul{Ty\_Pi}
+(\pref{sec:pico-type-abstractions}).}
+Accordingly, the types related by $[[g]]$ ($[[s1]]$ and $[[s2]]$) might
+mention $[[a]]$, assumed to be of type $[[k1]]$. For $[[s1]]$, that assumption
+is correct; the left-hand type in the result is $[[PI a:rel k1.s1]]$.
+However, for $[[s2]]$, this assumption is wrong: we wish $[[a]]$ to have
+kind $[[k2]]$ in the right-hand result type. In order to fix up the mess,
+the conlusion of \rul{Co\_PiTy} does an unusual substitution, mentioning the
+type $[[ s2[a |> sym h/a] ]]$. This takes $[[s2]]$---well-typed in a context
+where $[[a]]$ has kind $[[k1]]$---and changes it to expect $[[a]]$ to have
+kind $[[k2]]$. It does this by casting $[[a]]$ by $[[sym h]]$, a coercion
+from $[[k2]]$ to $[[k1]]$. We can thus use the (standard) substitution lemma
+(\pref{lem:ty-subst}) to show that this result type is itself well-typed,
+as needed to prove regularity (\pref{lem:prop-reg}). The other binding
+congruence forms use similar substitutions in their conclusions, for
+similar reasons.
+
+This extra substitution in the conclusion is indeed asymmetric and
+a bit unwieldy,\footnote{See the statement of the push rule \rul{S\_APush}
+(\pref{sec:pico-push-rules})
+for an example of how its unwieldiness can bite.} but this treatment is,
+on balance, better than the only known alternative. Other type systems
+similar to \pico/~\cite{nokinds,gundry-thesis,van-doorn}
+use
+an entirely different way of handling congruence coercions with binders:
+instead of trying to treat $[[a]]$ as a variable with two different kinds,
+they invent fresh variables. What I write as $[[PI a:rel h.g]]$, they would
+write as $[[PI]]_{[[h]]} ([[a1]],[[a2]],[[c]]).[[g]]$, binding $[[a1]] : [[k1]]$
+and $[[a2]] : [[k2]]$, as well as a coercion $[[c]] : [[a1 [k1]~[k2] a2]]$.
+You can see either of those works for the details, but I have found this 
+construction worse than the asymmetrical version. Other than the bookkeeping
+overhead of extra variables, the three-variable version also requires
+us to introduce a coercion variable even when making a congruence coercion
+over a $\Pi$-type over a type variable. Coercion variables in the context
+cause trouble (as discussed in \pref{sec:covar-restriction}), and my one-variable version helps to
+contain the trouble.\footnote{See \pref{sec:other-consistency-proofs}
+for more discussion.}
+
+As a further support to my choice of a one-variable binding form with an
+asymmetrical rule, I have implemented both versions in GHC. Initially, I
+implemented the three-variable form from \citet{nokinds}. This worked, but
+it was often hard to construct the coercions, and it was sometimes a small
+struggle to find names guaranteed to be fresh. When I refactored the code
+to use the one-variable version formalized here, the code became simpler.
+
+\subsubsection{Congruence over coercion binders}
+
+The congruence forms over types that bind coercion variables 
+(\rul{Co\_PiCo} and \rul{Co\_CLam}) have yet two
+more wrinkles. The first is that there is no equivalent of
+\rul{Co\_PiTy}'s $[[h]]$ coercion that relates two propositions; we must
+settle for the pair of coercions $([[h1]],[[h2]])$ that appear in
+\rul{Co\_PiCo} and \rul{Co\_CLam}. These coercions relate corresponding
+parts of the propositions. 
+The second wrinkle is in the $[[c ~# g]]$ premise of both of these rules.
+
+\begin{definition*}[``Almost devoid'' (\pref{defn:almost-devoid})]
+Define $[[c ~# g]]$ (pronounced ``$[[g]]$ is almost devoid of $[[c]]$'') to mean that the coercion variable $[[c]]$
+appears nowhere in $[[g]]$ except, perhaps, in one of the types
+related by a $[[t1 ~={h} t2]]$ coercion.
+\end{definition*}
+
+The almost-devoid condition on \rul{Co\_PiCo} and \rul{Co\_CLam} restricts
+where the bound variable $[[c]]$ can appear in the coercion body. This
+technical restriction, based on the original idea by \citet{nokinds},
+is necessary for my proof of consistency
+(\pref{sec:consistency}) to go through. The motivation for the restriction
+is discussed in depth in
+\pref{sec:covar-restriction}.
+
+The key example that this restriction forbids looks like this:
 \[
-\ottdrule
+[[S]];[[G]] \not[[|-co]] [[PI c:(<&Int{}>,<&Bool{}>). c]] : [[(PI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{}) [Type{}]~[Type{}] (PI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{}) ]]
+\]
+It would seem that this coercion would not cause harm, yet I know of no way
+to prove consistency while allowing it. See \pref{sec:other-consistency-proofs}
+for a discussion of other approaches.
+
+Happily, this restriction does not
+bite when considering translating Dependent Haskell programs into \pico/,
+as we can write functions witnessing the isomorphism between the two types
+related above:
+\[
+\begin{array}{r@@{\,}c@@{\,}l}
+[[&to]] &:& [[UPI (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{})). (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})]] \\
+[[&to]] &=& [[\ (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{})), (c : &Int{} [Type{}]~[Type{}] &Bool{}). (&&xx c) |> c]] \\[1ex]
+[[&from]] &:& [[UPI (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})). (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{})]] \\
+[[&from]] &=& [[\ (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})), (c : &Int{} [Type{}]~[Type{}] &Bool{}). (&&xx c) |> sym c]]
+\end{array}
+\]
+
 
 If we know that two corresponding parts of two types are equal (and the rest
 of the types are the same), then the types themse
@@ -1960,3 +2119,9 @@ In this work, I instantiate the type using the $[[@]]$ operator
 \rae{Must introduce $[[ee]]$ when appropriate.}
 
 \rae{Extensions: split, |Equals|, representation polymorphism, |(->)|, compression (\ottkw{step} becoming $\ottkw{step}^n$).}
+
+\rae{Orphan text: The proof of consistency by \citet{nokinds} 
+requires the notion of a ``good'' context in order to keep the good coercion
+variables introduced by congruence coercions apart from bad coercion variables
+introduced elsewhere. The idea of a ``good'' context does not need to appear
+in the metatheory here.}
