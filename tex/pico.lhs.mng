@@ -442,10 +442,10 @@ type $[[s]]$.}} \\
 [[S;G |-s t --> t']] & \text{Type $[[t]]$ reduces to type $[[t']]$ in one step.}
 \end{array}
 \]
-\begin{lemma*}[Kind regularity (\pref{lem:kind-reg})]
+\begin{lemma*}[Kind regularity {[\pref{lem:kind-reg}]}]
 If $[[S;G |-ty t : k]]$, then $[[S;Rel(G) |-ty k : Type{} ]]$.
 \end{lemma*}
-\begin{lemma*}[Prop.~regularity (\pref{lem:prop-reg})]
+\begin{lemma*}[Prop.~regularity {[\pref{lem:prop-reg}]}]
 If $[[S;G |-co g : phi]]$, then $[[S;Rel(G) |-prop phi]]$.
 \end{lemma*}
 \caption{Judgments used in the definition of \pico/}
@@ -558,7 +558,7 @@ coercions are erased and are thus irrelevant.
 In order for premises that use $[[Rel(G)]]$ to work in the metatheory,
 we must frequently use the following lemma:
 
-\begin{lemma*}[Increasing relevance (\pref{lem:increasing-rel})]
+\begin{lemma*}[Increasing relevance {[\pref{lem:increasing-rel}]}]
 Let $[[G]]$ and $[[G']]$ be the same except that some bindings
 in $[[G']]$ are labeled $[[Rel]]$ where those same bindings
 in $[[G]]$ are labeled $[[Irrel]]$. Any judgment about $[[G]]$
@@ -569,7 +569,7 @@ is also true about $[[G']]$.
 Regularity is an important property of \pico/, allowing us to easily
 assume well-formed contexts and signatures:
 
-\begin{lemma*}[Context regularity (\pref{lem:ctx-reg})]
+\begin{lemma*}[Context regularity {[\pref{lem:ctx-reg}]}]
 If:
 \begin{enumerate}
 \item $[[S;G |-ty t : k]]$, OR
@@ -1578,12 +1578,12 @@ of the push rules, as explained in \pref{sec:push-rules}.
 The operational semantics obeys preservation and
 progress theorems.
 
-\begin{theorem*}[Preservation (\pref{thm:preservation})]
+\begin{theorem*}[Preservation {[\pref{thm:preservation}]}]
 If $[[S;G |-ty t : k]]$ and $[[S;G |-s t --> t']]$, then
 $[[S;G |-ty t' : k]]$.
 \end{theorem*}
 
-\begin{theorem*}[Progress (\pref{thm:progress})]
+\begin{theorem*}[Progress {[\pref{thm:progress}]}]
 Assume $[[G]]$ has only irrelevant variable bindings.
 If $[[S;G |-ty t : k]]$, then either $[[t]]$ is a value $[[v]]$, $[[t]]$
 is a coerced value $[[v |> g]]$, or there exists $[[t']]$ such that
@@ -1604,7 +1604,7 @@ applicable in the right spot in the proof of type erasure
 
 The operational semantics are also deterministic.
 
-\begin{lemma*}[Determinacy (\pref{lem:determinacy})]
+\begin{lemma*}[Determinacy {[\pref{lem:determinacy}]}]
 If $[[S;G |-s t --> s1]]$ and $[[S;G |-s t --> s2]]$, then
 $[[s1 = s2]]$.
 \end{lemma*}
@@ -1629,7 +1629,7 @@ abstraction $[[\a:Irrel k.t]]$ is a value if and only if $[[t]]$, the body,
 is also a value. This choice is important in order to prove type erasure.
 
 Our definition of values also gives us this convenient property:
-\begin{lemma*}[Value types (\pref{lem:val-type})]
+\begin{lemma*}[Value types {[\pref{lem:val-type}]}]
 If $[[S;G |-ty v : k]]$, then $[[k]]$ is a value.
 \end{lemma*}
 
@@ -1644,7 +1644,7 @@ erasing the abstraction entirely.
 Yet we must make sure to maintain the following lemma, referring to the
 definition of values on erased expressions:
 
-\begin{lemma*}[Expression redexes (\pref{lem:expr-redex})]
+\begin{lemma*}[Expression redexes {[\pref{lem:expr-redex}]}]
 If $[[||t||]]$ is not an expression value, then $[[t]]$ is not a type
 value.
 \end{lemma*}
@@ -2037,7 +2037,7 @@ settle for the pair of coercions $([[h1]],[[h2]])$ that appear in
 parts of the propositions. 
 The second wrinkle is in the $[[c ~# g]]$ premise of both of these rules.
 
-\begin{definition*}[``Almost devoid'' (\pref{defn:almost-devoid})]
+\begin{definition*}[``Almost devoid'' {[\pref{defn:almost-devoid}]}]
 Define $[[c ~# g]]$ (pronounced ``$[[g]]$ is almost devoid of $[[c]]$'') to mean that the coercion variable $[[c]]$
 appears nowhere in $[[g]]$ except, perhaps, in one of the types
 related by a $[[t1 ~={h} t2]]$ coercion.
@@ -2123,14 +2123,14 @@ $[[t[#3{}/&&xx] [UPI (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &Bool{}]~[UPI (c' 
 
 Instead of proving congruence, I am left proving almost-congruence, as follows:
 
-\begin{definition*}[Unrestricted coercion variables (\pref{defn:co-star})]
+\begin{definition*}[Unrestricted coercion variables {[\pref{defn:co-star}]}]
 Define a new judgment $[[|-co*]]$ to be identical to $[[|-co]]$, except with
 the $[[c ~# g]]$ premises removed from rules \rul{Co\_PiCo} and
 \rul{Co\_CLam} and all recursive uses of $[[|-co]]$ replaced with $[[|-co*]]$.
 \end{definition*}
 
 Now, the proof for the following theorem is straightforward:
-\begin{theorem*}[(Almost) Congruence (\pref{thm:almost-congruence})]
+\begin{theorem*}[(Almost) Congruence {[\pref{thm:almost-congruence}]}]
 Equality is congruent, when checked with $[[|-co*]]$.
 \end{theorem*}
 
@@ -2560,7 +2560,7 @@ built with $[[~=]]$. Indeed, this is the whole point of $[[build_kpush_co]]$---u
 coherence to alter the types of later exisentials depending on earlier ones.
 Here is the critical correctness property of $[[build_kpush_co]]$:
 
-\begin{lemma*}[Correctness of $[[build_kpush_co]]$ (\pref{lem:build-kpush-co})]
+\begin{lemma*}[Correctness of $[[build_kpush_co]]$ {[\pref{lem:build-kpush-co}]}]
 Assume $[[S;G |-cev ps : D[ts/as] ]]$, and let $[[gi = build_kpush_co(h; ps_{1..i-1})]]$
 and $[[pi' = cast_kpush_arg(pi;gi)]]$.
 If $[[S;Rel(G) |-co h : (MPI D.s)[ts/as] [Type{}]~[Type{}] (MPI D.s)[ts'/as] ]]$, then:
@@ -2605,7 +2605,7 @@ is as expected.
 On the other hand, progress is a challenge. We proceed by proving consistency
 and then using that to prove progress.
 
-\begin{lemma*}[Consistency (\pref{lem:consistency})]
+\begin{lemma*}[Consistency {[\pref{lem:consistency}]}]
 If $[[G]]$ contains only irrelevant type variable bindings and
 $[[S;G |-co g : t1 [k1]~[k2] t2]]$
 then $[[t1 ! t2]]$.
@@ -2726,7 +2726,7 @@ The relation is almost a non-deterministic, strong version of normal reduction (
 \pref{fig:rewrite-rel-ty}), the relation definition recurs in every component,
 as necessary to support the following lemma:
 
-\begin{lemma*}[Parallel reduction substitution in parallel (\pref{lem:red-subst-par})]
+\begin{lemma*}[Parallel reduction substitution in parallel {[\pref{lem:red-subst-par}]}]
 Assume $[[ps ~> ps']]$.
 \begin{enumerate}
 \item If $[[t1 ~> t2]]$, then $[[t1[ps/zs] ~> t2[ps'/zs] ]]$.
@@ -2747,7 +2747,7 @@ prove confluence.
 This reduction relation is confluent (that is, has the Church-Rosser property).
 I prove this by proving a local diamond lemma:
 
-\begin{lemma*}[Local diamond (\pref{lem:local-diamond})] ~
+\begin{lemma*}[Local diamond {[\pref{lem:local-diamond}]}] ~
 \begin{enumerate}
 \item
 If $[[t0 ~> t1]]$ and $[[t0 ~> t2]]$, then there exists $[[t3]]$ such
@@ -2768,7 +2768,7 @@ not otherwise challenging. The local diamond lemma implies confluence.
 Having written a confluent rewrite relation, we must also connect this relation
 to our equality relation. This is done via the following lemma:
 
-\begin{lemma*}[Completeness of type reduction (\pref{lem:complete-red})] ~
+\begin{lemma*}[Completeness of type reduction {[\pref{lem:complete-red}]}] ~
 If $[[S;G |-co g : t1 (k1)~(k2) t2]]$ and $[[c ~# g]]$ for every $[[c:phi \in G]]$,
 then:
 \begin{enumerate}
@@ -2823,11 +2823,11 @@ Having established the relationship between $[[S;G |-co g : phi]]$ and
 joinability with respect to the rewrite relation, we must only show that
 the rewrite relation relates compatible types. Here are the key lemmas:
 
-\begin{lemma*}[Joinable types are consistent (\pref{lem:joinable-cons})]
+\begin{lemma*}[Joinable types are consistent {[\pref{lem:joinable-cons}]}]
 If $[[ee1 ~>* ee3 *<~ ee2]]$, then $[[ee1 ! ee2]]$.
 \end{lemma*}
 
-\begin{lemma*}[Erasure/consistency (\pref{lem:erase-cons})]
+\begin{lemma*}[Erasure/consistency {[\pref{lem:erase-cons}]}]
 If $[[|t1| ! |t2|]]$, then $[[t1 ! t2]]$.
 \end{lemma*}
 
@@ -3031,7 +3031,7 @@ up.}
 
 Here is the simulation property we seek:
 
-\begin{theorem*}[Type erasure (\pref{thm:type-erasure})]
+\begin{theorem*}[Type erasure {[\pref{thm:type-erasure}]}]
 If $[[S;G |-s t --> t']]$, then either $[[||t|| --> ||t'||]]$ or
 $[[||t|| = ||t'||]]$.
 \end{theorem*}
@@ -3048,7 +3048,7 @@ calculus can step even though the
 \pico/ type from which it was derived is a normal form. The property we need
 is embodied in this theorem:
 
-\begin{theorem*}[Types do not prevent evaluation (\pref{thm:expr-eval})]
+\begin{theorem*}[Types do not prevent evaluation {[\pref{thm:expr-eval}]}]
 Suppose $[[S;G |-ty t : k]]$ and $[[G]]$ has only irrelevant variable bindings.
 If $[[ ||t|| --> e' ]]$, then $[[ S;G |-s t --> t']]$ and either $[[ ||t'|| = e']]$ or 
 $[[||t'|| = ||t||]]$.
@@ -3060,7 +3060,7 @@ for example.
 The proof depends on both the progress theorem and the type erasure (simulation)
 theorem above, as well as this key lemma:
 
-\begin{lemma*}[Expression redexes (\pref{lem:expr-redex})]
+\begin{lemma*}[Expression redexes {[\pref{lem:expr-redex}]}]
 If $[[ ||t|| ]]$ is not an expression value, then $[[t]]$ is neither
 a value nor a coerced value.
 \end{lemma*}
