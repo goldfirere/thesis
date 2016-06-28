@@ -55,7 +55,7 @@ $(OTT_OUTPUT_FULL): $(OTT_FILES_FULL)
 aux/$(PAPER_BASE).tex: $(ALL_LHS_FILES:tex/%=aux/%)
 aux/chapter.tex: aux/thechapter.lhs
 
-aux/chapter.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex aux/thesispreamble.tex
+aux/chapter.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex aux/thesispreamble.tex $(BIB_FILES_FULL)
 aux/ottdump.pdf: $(OTT_OUTPUT_FULL) aux/texpreamble.tex
 aux/thesis.pdf: $(OTT_OUTPUT_FULL) $(BIB_FILES_FULL) $(ALL_TEX_FILES:tex/%=aux/%)
 

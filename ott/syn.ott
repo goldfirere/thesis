@@ -250,6 +250,7 @@ prop, phi {{ tex \phi }} :: 'Phi_' ::=
   {{ tex [[t1]] \mathrel{ {}^{\supp{[[k1]]} } {\sim}^{\supp{[[k2]]} } } [[t2]] }}
   {{ coq (Phi_Equality ([[t1]]) ([[k1]]) ([[k2]]) ([[t2]])) }}
 | phi [ theta ]                :: M :: Subst
+| ( phi )                      :: M :: Parens
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Coercions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -430,6 +431,7 @@ exp, e, ev {{ tex \ottnt{w} }} :: 'E_' ::=
 | case e of ealts               ::   :: Case
 | \ a . e                       ::   :: Lam
 | \ o . e                       ::   :: CLam
+  {{ tex [[\]]{[[o]]}.[[e]] }}
 | fix e                         ::   :: Fix
 
 | e ys                          :: M :: Apps
@@ -532,6 +534,19 @@ util :: 'Util_' ::=
 | ||.||                              ::   :: terase_op
   {{ tex \llfloor {\cdot} \rrfloor }}
 
+fact :: 'Fact_' ::=
+  | alts1 ~> alts2                     ::   :: alts_red
+  | ps ~> ps' <~ ps''                  ::   :: diamond
+  | ps ~>* ps'                         ::   :: many_red_star
+  | d1 ~>* d2                          ::   :: many_red_star_d
+  | ps ~>* ps' *<~ ps''                ::   :: confluence
+  | d1 ~> d3 <~ d2                     ::   :: d_diamond
+  | fvset1 \subseteq fvset2            ::   :: subset
+  | G1 \subseteq G2                    ::   :: G_subseq
+  | a \notin fvset                     ::   :: var_notin_set
+  | S ; G |-co* g : phi                ::   :: co_star
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -594,6 +609,7 @@ terminals :: 'terminals_' ::=
 | match                                ::   :: match   {{ tex \mathsf{match} }}
 | types                                ::   :: types   {{ tex \mathsf{types} }}
 | ~=                                   ::   :: approx  {{ tex \approx }}
+| <=                                   ::   :: sub     {{ tex \le }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -607,6 +623,8 @@ terminals :: 'terminals_' ::=
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
 | |-lc                                 ::   :: Lc_ent  {{ tex \vdashy{lc} }}
+| |-co*                                ::   :: CoS_ent {{ tex \vdashy{co}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
+| |-ty*                                ::   :: TyS_ent {{ tex \vdashy{ty}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -630,20 +648,7 @@ formula :: 'formula_' ::=
   | zs # ps                            ::   :: a_not_free
   | alts are exhaustive for H ( wrt S ) ::   :: exhaustive
     {{ tex [[alts]] \text{ are exhaustive and distinct for } [[H]] \text{, (w.r.t.~} [[S]] \text{)} }}
-  | fvset1 \subseteq fvset2            ::   :: subset
-  | zs fresh                           ::   :: fresh
-    {{ tex [[zs]] \text{ fresh} }}
-  | G1 \subseteq G2                    ::   :: G_subseq
-  | a \notin fvset                     ::   :: var_notin_set
-  | t is not a value                   ::   :: not_value
-    {{ tex [[t]] \text{ is not a value} }}
   | ps ~> ps'                          ::   :: many_red
-  | alts1 ~> alts2                     ::   :: alts_red
-  | ps ~> ps' <~ ps''                  ::   :: diamond
-  | ps ~>* ps'                         ::   :: many_red_star
-  | d1 ~>* d2                          ::   :: many_red_star_d
-  | ps ~>* ps' *<~ ps''                ::   :: confluence
-  | d1 ~> d3 <~ d2                     ::   :: d_diamond
   | c ~# g                             ::   :: almost_free
   | no alternative in alts matches H   ::   :: no_matches
     {{ tex \text{no alternative in } [[alts]] \text{ matches } [[H]] }}
@@ -653,6 +658,8 @@ formula :: 'formula_' ::=
     {{ tex [[user_syntax]] }}
     {{ coq \begin{code}
 $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
+  | t is not a value                   ::   :: not_value
+    {{ tex [[t]] \text{ is not a value} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Defined functions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -679,18 +686,18 @@ build_kpush_co ( g ; ps ) :: h :: build_kpush_co
 
 by
 build_kpush_co ( g ; empty ) === g
-build_kpush_co ( g ; ps, t ) === let c := build_kpush_co(g; ps) in c@(t ~={argk c} t |> argk c)
-build_kpush_co ( g ; ps,{t}) === let c := build_kpush_co(g; ps) in c@{t ~={argk c} t |> argk c}
-build_kpush_co ( g ; ps, h ) === let c := build_kpush_co(g; ps) in c@(h, sym (argk 1 c) ;; h ;; argk 2 c)
+build_kpush_co ( g ; ps, t ) === let c := build_kpush_co(g; ps) in \\ c@(t ~={argk c} t |> argk c)
+build_kpush_co ( g ; ps,{t}) === let c := build_kpush_co(g; ps) in \\ c@{t ~={argk c} t |> argk c}
+build_kpush_co ( g ; ps, h ) === let c := build_kpush_co(g; ps) in \\ c@(h, sym (argk 1 c) ;; h ;; argk 2 c)
 
-fun
-mk_nth ( g ; I ; p1 ; p2 ) :: w :: mk_nth
-  {{ tex [[mk_nth]]([[g]];[[I]];[[p1]];[[p2]]) }}
+% fun
+% mk_nth ( g ; I ; p1 ; p2 ) :: w :: mk_nth
+%   {{ tex [[mk_nth]]([[g]];[[I]];[[p1]];[[p2]]) }}
 
-by
-mk_nth(g;I;t;s)     === nth I g
-mk_nth(g;I;{t};{s}) === nth I g
-mk_nth(g;I;h1;h2)   === (h1,h2)
+% by
+% mk_nth(g;I;t;s)     === nth I g
+% mk_nth(g;I;{t};{s}) === nth I g
+% mk_nth(g;I;h1;h2)   === (h1,h2)
 
 fun
 cast_kpush_arg ( p0 ; g ) :: p :: cast_kpush_arg
@@ -791,7 +798,7 @@ ctx_One <= ctx_Subst
 types_One <= types_Subst
 
 types_One <= formula_many_red
-alts_One <= formula_alts_red
+alts_One <= Fact_alts_red
 
 args_One <= Substs_Telescope
 
@@ -831,3 +838,5 @@ Arg_Ty <= user_syntax__arg
 % when both are possible.
 DataCon_Lit <= TyCon_DataCon
 
+Co_Let <= Co_Insts
+Co_LetBreak <= Co_Insts

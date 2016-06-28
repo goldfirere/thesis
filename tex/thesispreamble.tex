@@ -9,7 +9,6 @@
 
 \usepackage[top=1in, bottom=1in, left=1.5in, right=1in,includefoot,paperwidth=8.5in,paperheight=11in]{geometry}
 
-\usepackage[pdftex]{hyperref}
 \hypersetup{
     pdftitle={\Title},
     pdfauthor={\Author},
@@ -20,7 +19,7 @@
     naturalnames=true,
     pdfstartview=Fit,
     pdfpagemode=UseOutlines,
-    pdfpagelayout=TwoPageRight
+    final
 }
 
 % some cool stuff inherited from Brent
@@ -75,8 +74,10 @@
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}
 
-\newrefformat{defn}{Definition \ref{#1}}
-\newrefformat{axm}{Axiom \ref{#1}}
+\newrefformat{defn}{Definition~\ref{#1}}
+\newrefformat{axm}{Axiom~\ref{#1}}
+\newrefformat{fig}{Figure~\vref{#1}}
+\newrefformat{tab}{Table~\vref{#1}}
 
 % write proposal-only stuff in blue
 \ifproposal

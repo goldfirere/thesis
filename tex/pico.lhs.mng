@@ -390,10 +390,6 @@ Metavariables:
 &\bnfor& [[S, K:(D;T)]] & \text{data constructor} \\
 [[G,D]] &\bnfeq& [[empty]] \bnfor [[G, d]] & \text{context/telescope} \\
 [[theta]] &\bnfeq& [[empty]] \bnfor [[theta, t/a]] \bnfor [[theta, g/c]] & \text{substitution} \\[1ex]
-[[e]] &\bnfeq& [[a]] \bnfor [[H]] \bnfor [[e y]] \bnfor [[PI]] \bnfor [[case e of ealts]] & \text{erased expression} \\
-& \bnfor & [[\a.e]] \bnfor [[\o.e]] \bnfor [[fix e]] \\
-[[y]] &\bnfeq& [[e]] \bnfor [[o]] & \text{erased argument} \\
-[[ealt]] &\bnfeq& [[pat -> e]] & \text{erased alternative} \\
 \end{array}
 \]
 \caption{The grammar of \pico/}
@@ -461,7 +457,7 @@ a full listing of all the typing rules of the language, please see
 \pref{app:pico-rules}. \pref{fig:pico-judgments} includes the judgment
 forms and two key lemmas, useful in understanding the judgments.
 All of the metatheory lemmas, theorems, and proofs appear in
-\pref{app:pico-proofs}. This section mentions several key lemmas and
+\pref{app:pico-proofs}. This chapter mentions several key lemmas and
 theorems, but the ordering here is intended for readability and
 lemma statements may be abbreviated; please
 see the appendix for the correct dependency ordering and full statements.
@@ -553,6 +549,16 @@ the relevance annotations on $[[G]]$, which is what $[[Rel(G)]]$ does.
 The same logic applies to the use of $[[Rel(G)]]$ in the \rul{Ctx\_CoVar}
 rule. Indeed, all premises involving coercions use $[[Rel(G)]]$, as all
 coercions are erased and are thus irrelevant.
+
+In order for premises that use $[[Rel(G)]]$ to work in the metatheory,
+we must frequently use the following lemma:
+
+\begin{lemma*}[Increasing relevance (\pref{lem:increasing-rel})]
+Let $[[G]]$ and $[[G']]$ be the same except that some bindings
+in $[[G']]$ are labeled $[[Rel]]$ where those same bindings
+in $[[G]]$ are labeled $[[Irrel]]$. Any judgment about $[[G]]$
+is also true about $[[G']]$.
+\end{lemma*}
 
 \paragraph{Regularity}
 Regularity is an important property of \pico/, allowing us to easily
@@ -646,11 +652,18 @@ Information about type constants is retrieved via the following
 judgment:\\[\baselineskip]
 \ottdefnTc{}
 
+\begin{figure}
+\ottdefnVec{}
+\caption{Formation of vectors $[[ps]]$}
+\label{fig:vec-judgment}
+\end{figure}
+
 The judgment $[[S |-tc H : D1;D2;H']]$
 retrieves three pieces of data about a type constant
 $[[H]]$: its universals, its existentials, and the root of the result type.
 This judgment is best understood in concert with the typing rule that handles
-type constants:
+type constants, which also uses the typing judgment on vectors, presented
+in \pref{fig:vec-judgment}:
 \[
 \ottdruleTyXXCon{}
 \]
@@ -962,6 +975,7 @@ be impossible to write.\footnote{Unless you fake dependent types using
 singletons or some other technique.}
 
 \subsection{|append|}
+\label{sec:example-with-stepn}
 We'll now examine how to append two vectors. This operation will also
 require the use of an addition operation, defined using prefix notation
 so as not to provide a parsing challenge: \rae{color?}
@@ -1535,6 +1549,8 @@ needed in the
 body of case alternatives that can never be reached.
 
 \section{Operational semantics}
+\label{sec:pico-op-sem}
+\label{sec:progress-thm-statement}
 
 Now that we have seen the static semantics of types, we are well-placed
 to explore their dynamic semantics---how the types can reduce to values.
@@ -1580,6 +1596,7 @@ $[[s1 = s2]]$.
 
 \subsection{Values}
 \label{sec:evaluation-under-irrel-abs}
+\label{sec:value-defn}
 A subset of the types $[[t]]$ are considered values, written with the
 metavariable $[[v]]$:
 
@@ -1595,6 +1612,11 @@ $\lambda$-types. However, note a subtle but important part of this definition:
 the production for irrelevant abstractions is recursive. An irrelevant
 abstraction $[[\a:Irrel k.t]]$ is a value if and only if $[[t]]$, the body,
 is also a value. This choice is important in order to prove type erasure.
+
+Our definition of values also gives us this convenient property:
+\begin{lemma*}[Value types (\pref{lem:val-type})]
+If $[[S;G |-ty v : k]]$, then $[[k]]$ is a value.
+\end{lemma*}
 
 During compilation, we wish to erase irrelevant components of an expression
 completely. This includes irrelevant abstractions. Thus, the erasure operation,
@@ -1798,6 +1820,61 @@ is the typing rule:
 Coercion variables are brought into scope by $\Pi$ and $\lambda$ over 
 coercion binders.
 
+\subsection{Equality is coherent}
+\label{sec:coherence}
+\label{sec:coercion-erasure-intro}
+
+\Pico/'s equality relation is \emph{coherent}, in that the precise locations
+and structure
+of coercions within types is immaterial. This is a critical property,
+because it is intended for a compiler to create and place these coercions.
+Coherence is obtained through this coercion form:
+\[
+\ottdruleCoXXCoherence{}
+\]
+This coercion form requires two well-kinded types $[[t1]]$ and $[[t2]]$
+as well as a coercion $[[h]]$ that relates their kinds. It also requires
+the critical premise that $[[|t1| = |t2|]]$, where $\lfloor \cdot \rfloor$
+is a \emph{coercion erasure} operation. This operation is separate
+from (though
+similar to) the type erasure operation spelled $[[||.||]]$ and discussed
+several times thus far. The full definition of this operation is given
+in \pref{defn:co-erasure}. More briefly, coercion erasure is defined
+recursively on types, binders, case alternatives, and propositions
+by the following equations, treating other forms homomorphically:
+\begin{align*}
+[[|t g| &= |t| o]] &
+[[|t |> g| &= |t|]] \\
+[[|absurd g t| &= absurd o |t|]] &
+[[|(c:phi)| &= (o:|phi|)]]
+\end{align*}
+As we can see coercion erasure simply removes the coercions from a type.
+We use $[[o]]$ to stand in for an erased coercion application. I sometimes
+use the metavariable $[[ee]]$ to stand for a type that has its coercions
+erased, but $[[t]]$ and $[[s]]$ may also refer to a coercion-erased
+type, if that is clear from the context.
+
+By using coercion erasure in its premise, the coherence coercion can
+relate any two types that are the same, ignoring the coercions. This
+is precisely what we mean by coherence.
+
+The coherence rule implies that any two proofs of equality are considered
+interchangeable---in other words, \pico/ assumes the uniqueness of identity
+proofs (UIP)~\cite{hofmann-streicher}. This choice makes \pico/ ``anti-HoTT'',
+that is, incompatible with homotopy type theory~\cite{hott}, which takes
+as a key premise that there is more than one way to prove the identity
+between two types. While baking UIP into the language may limit its applicability,
+\pico/'s intended role as an intermediate language, where the coercions are
+inferrred by the compiler, makes this choice necessary. We would not want
+the static semantics of our programs to depend on the whims of how the
+compiler placed its equality proofs.
+
+Note that the coherence form in \pico/
+is rather more general than the coherence form
+used in my prior work~\cite{nokinds}. The way I have phrased coherence
+is critical for my consistency proof. See \pref{sec:other-consistency-proofs}
+for more discussion.
+
 \subsection{Equality is an equivalence}
 
 The equality relation |~| is explicitly an equivalence relation, via these
@@ -1865,6 +1942,7 @@ define a $\lambda$-abstraction over coercions; it witnesses the equality
 between two $\lambda$-abstraction types.
 
 \subsubsection{Binding congruence forms}
+\label{sec:binding-cong-forms}
 
 The binding coercions forms (\pref{fig:binding-cong-rules}) all have a
 particular challenge to meet. Suppose we know that
@@ -1915,7 +1993,7 @@ overhead of extra variables, the three-variable version also requires
 us to introduce a coercion variable even when making a congruence coercion
 over a $\Pi$-type over a type variable. Coercion variables in the context
 cause trouble (as discussed in \pref{sec:covar-restriction}), and my one-variable version helps to
-contain the trouble.\footnote{See \pref{sec:other-consistency-proofs}
+contain the trouble.\footnote{See \pref{sec:one-var-no-covar}
 for more discussion.}
 
 As a further support to my choice of a one-variable binding form with an
@@ -1926,6 +2004,7 @@ struggle to find names guaranteed to be fresh. When I refactored the code
 to use the one-variable version formalized here, the code became simpler.
 
 \subsubsection{Congruence over coercion binders}
+\label{sec:almost-devoid}
 
 The congruence forms over types that bind coercion variables 
 (\rul{Co\_PiCo} and \rul{Co\_CLam}) have yet two
@@ -1958,7 +2037,7 @@ It would seem that this coercion would not cause harm, yet I know of no way
 to prove consistency while allowing it. See \pref{sec:other-consistency-proofs}
 for a discussion of other approaches.
 
-Happily, this restriction does not
+Happily, this restriction is not likely to
 bite when considering translating Dependent Haskell programs into \pico/,
 as we can write functions witnessing the isomorphism between the two types
 related above:
@@ -1970,30 +2049,266 @@ related above:
 [[&from]] &=& [[\ (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})), (c : &Int{} [Type{}]~[Type{}] &Bool{}). (&&xx c) |> sym c]]
 \end{array}
 \]
+A compiler of Dependent Haskell creates functions such as these as
+it is compiling a subsumption relationship $[[<=]]$, as discussed further
+in \pref{sec:subsumption}. In other words, while we don't have
+$[[(PI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{}) [Type{}]~[Type{}] (PI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})]]$, these two types are related by $[[<=]]$, in
+both directions. This mean that
+a Dependent Haskell program that expects one of these types
+in a certain context, but gets the other type, is still well-typed.
 
+When can the lack of the equality proof bite? Only when that proof is needed
+as a coercion argument to some function or GADT constructor. As we've just
+seen, using it to cast is unnecessary, as we can just use one component of
+the isomorphism. The forbidden equalities all relate $\Pi$-types over
+coercions. Yet, in Dependent Haskell, an abstraction over an equality
+constraint is considered a polytype. Passing a polytype as an argument
+is considered a use of impredicativity, which is not supported.
+ (See \pref{sec:impredicativity}.) In particular, the equality constraint
+|((Int ~ Bool) => Int) ~ ((Int ~ Bool) => Bool)| is malformed in Dependent
+Haskell, because it passes polytypes as arguments to |~|. I thus conjecture
+that no Dependent Haskell program is ruled out because of the coercion variable
+restriction. Proving such a claim in all cases seems challenging, however,
+and remains as an exercise for the reader.
 
-If we know that two corresponding parts of two types are equal (and the rest
-of the types are the same), then the types themse
-In other words:
+\subsubsection{(Almost) Congruence}
 
-\begin{theorem*}[Congruence (\pref{thm:congruence})]
-If $[[S;G |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:Irrel k |-ty t : k0]]$,
+The coercion variable restriction means that equality is not quite congruent,
+according to the following definition:
+
+\begin{definition*}[Congruence]
+Equality is congruent
+if, whenever $[[S;G |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:rel k |-ty t : k0]]$,
 then there exists $[[h]]$ such that $[[S;G |-co h : t[s1/a] (k0[s1/a])~(k0[s2/a]) t[s2/a] ]]$.
+\end{definition*}
+
+If we were to try to prove that equality is congruent,
+it seems natural to proceed by induction
+on the typing derivation for $[[t]]$. However, in the proof, we are stuck when
+$[[t = PI c:phi.t0]]$. The congruence form for $\Pi$-types over coercions is
+no help because of the coercion variable restriction. If we strengthen the
+induction hypothesis to provide what we need in this case, then other cases
+fail, unable to obey the restriction.
+
+As a concrete example, consider this:
+Let $[[G = &&yx :Rel &Int{}, c : #3{} [&Int{}]~[&Int{}] &&yx]]$ and
+$[[t = \ (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &&xx |> c']]$.
+We know $[[S;G |-co c : #3{} [&Int{}]~[&Int{}] &&yx]]$ and
+$[[S;G,&&xx:Rel &Int{} |-ty t : UPI (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &Bool{}]]$.
+Yet there seems to be no way to construct a proof of
+$[[t[#3{}/&&xx] [UPI (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &Bool{}]~[UPI (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &Bool{}] t[&&yx/&&xx] ]]$.
+
+Instead of proving congruence, I am left proving almost-congruence, as follows:
+
+\begin{definition*}[Unrestricted coercion variables (\pref{defn:co-star})]
+Define a new judgment $[[|-co*]]$ to be identical to $[[|-co]]$, except with
+the $[[c ~# g]]$ premises removed from rules \rul{Co\_PiCo} and
+\rul{Co\_CLam} and all recursive uses of $[[|-co]]$ replaced with $[[|-co*]]$.
+\end{definition*}
+
+Now, the proof for the following theorem is straightforward:
+\begin{theorem*}[(Almost) Congruence (\pref{thm:almost-congruence})]
+Equality is congruent, when checked with $[[|-co*]]$.
 \end{theorem*}
 
-If we know that $[[g]]$ proves $[[ s1 [k1]~[k2] s2]]$, then we can make a
-proof from $[[t[s1/a] [k[s1/a] ]~[k[s2/a] ] t[s2/a] ]]$.
+What this means, in practice, is that we can often think of equality as
+congruent, and intuition about the equality relation stemming from
+congruence is often accurate. In particular, if the type $[[t]]$ in the
+statement of congruence has no coercion abstractions or $\Pi$-types, then
+congruence with repsect to $[[|-co]]$ holds.\footnote{This intuition is
+hard to state precisely, because of the possibility that the contexts have
+abstractions over coercions. We would somehow need a premise that states
+that no coercion abstractions are ``reachable'' from $[[t]]$, but defining
+such a property and then proving this claim seems not to pay its way.}
 
-\subsection{The \rul{S\_KPush} rule}
+\subsection{Equality can be decomposed}
+
+\Pico/ comes equipped with a large variety of ways of decomposing an equality
+to get out a smaller one---in some sense, these are the inverses of the
+congruence forms. We will approach these in batches.
+
+\subsubsection{The \ottkw{argk} forms}
+
+\begin{figure}
+\begin{gather*}
+\ottdruleCoXXArgK{}\rulesep
+\ottdruleCoXXCArgKOne{}\rulesep
+\ottdruleCoXXCArgKTwo{}\rulesep
+\ottdruleCoXXArgKLam{}\rulesep
+\ottdruleCoXXCArgKLamOne{}\rulesep
+\ottdruleCoXXCArgKLamTwo{}
+\end{gather*}
+\caption{The \ottkw{argk} rules of coercion formation}
+\label{fig:argk-rules}
+\end{figure}
+
+The coercion form \ottkw{argk} extracts a coercion between
+the kinds of the bound variables in a coercion relating abstractions.
+The rules appear in \pref{fig:argk-rules}. The rules are actually
+straightforward; look at \rul{Co\_ArgK} for a typical example.
+This form extracts the equality between $[[k1]]$ and $[[k2]]$ from
+the type of $[[g]]$. The other forms work analogously. The forms
+with $\ottkw{argk}_i$ are necessary because \pico/ has no built-in
+notion of an equality between equalities: If we tried to extract
+a relation between propositions like we do in \rul{Co\_ArgK}, we
+would need something that looks like $[[phi1]] [[~]] [[phi2]]$,
+which does not exist in \pico/. So, we have to extract either the
+left side of the propositions or the right side.
+
+Note that these rules are still syntax-directed even though their
+conclusions overlap: we can always find the proposition a coercion
+proves and then decide which \ottkw{argk} rule to use.
+
+\subsubsection{The instantiation forms}
+\label{sec:co-inst}
+
+Given a coercion between abstractions, we can instantiate the bound
+variable and get a coercion between the instantiated bodies. The
+rules for these coercions are in \pref{fig:inst-rules}.
+
+\begin{figure}
+\newcommand{\instrulesep}{\\[2ex]}
+\begin{gather*}
+\ottdruleCoXXInstRel{}\instrulesep
+\ottdruleCoXXInstIrrel{}\instrulesep
+\ottdruleCoXXCInst{}\instrulesep
+\ottdruleCoXXInstLamRel{}\instrulesep
+\ottdruleCoXXInstLamIrrel{}\instrulesep
+\ottdruleCoXXCInstLam{}\instrulesep
+\ottdruleCoXXRes{}\instrulesep
+\ottdruleCoXXResLam{}
+\end{gather*}
+\caption{Instantiation rules of coercion formation}
+\label{fig:inst-rules}
+\end{figure}
+
+These rules are essentially concrete instances of two rule schemas,
+one for instantiation coercions built with $[[@]]$, and the other
+for ``result'' coercions built with \ottkw{res}. The instantiation
+coercions can work with one of three arguments types (relevant type,
+irrelevant type, and coercion) and one of two forms ($\Pi$ and $\lambda$),
+leading to six very similar rules. Along the same lines, \ottkw{res}
+coercions work with both $\Pi$ and $\lambda$, though this form is
+agnostic to the argument flavor, so we get only two rules.
+
+The instantiation coercions are essential in writing the push rules
+(\pref{sec:push-rules}) of the operational semantics.\footnote{It is
+necessary for the system to allow instantiation on $\Pi$-types;
+$\lambda$-types, on the other hand, are not strictly necessary to
+instantiate in order to prove type safety. However, doing so is easy,
+and so I took the opportunity to make the equality relation stronger.}
+
+The \ottkw{res} coercions are a form of degenerate instantiation, usable
+when the body of an abstraction (either $\Pi$ or $\lambda$) does not
+mention the bound variable(s). Note that both \ottkw{res} rules require
+that the body types ($[[t1]]$ and $[[t2]]$) are well-typed without any
+of the bound variables in $[[D1]]$ or $[[D2]]$. These coercions also
+allow for the possibility of looking through multiple binders. This ability
+cannot be emulated by repeated use of \ottkw{res} because of the possibility
+of an intermediate dependency. For example, consider the reflexive coercion
+$[[g = <PI (a :Irrel Type{}), (b :Rel a). Type{}>]]$. We can see that
+$[[res^2 g]]$ is well-typed, even though $[[res^1 g]]$ is not (because of
+the appearance of $[[a]]$ in the type of $[[b]]$).
+
+We must use \ottkw{res} instead of instantiation when we don't have a
+coercion to use for the instantiation. This situation happens in the
+\rul{S\_KPush} rule, where we need a coercion relating the bodies
+of two propositionally equal $\Pi$-types, but we have no coercions to
+hand to use in instantiation. See \pref{sec:kpush} for more details.
+
+\subsubsection{Type constants are injective}
+
+In \pico/, all type constants are considered injective, as witnessed
+by the \ottkw{nth} coercions, which extract an equality between arguments
+of a type constant:
+\begin{gather*}
+\ottdruleCoXXNthRel{}\rulesep
+\ottdruleCoXXNthIrrel{}
+\end{gather*}
+Both forms above require that we extract a coercion between \emph{type}
+arguments,
+never \emph{coercion} arguments. As discussed in \pref{sec:coherence},
+we never need an explicit proof of equality between coercions. The last
+line of premises in the rules are simply to produce the kinds to put
+in the result proposition, where the kinds are elided in the typesetting.
+
+Injectivity of type constants is sometimes
+controversial~\cite{weirich-paradoxical-typecase} and is known to be
+anti-classical~\cite{hur-injective-anti-classical}. However, in a type
+system with $[[Type{}]] : [[Type{}]]$, yet another way to prove
+absurdity does not weaken any property of the language. Injectivity
+is vital in the \rul{S\_KPush} rule and thus remains part of the
+language.
+
+\subsection{Equality includes $\beta$-reduction}
+
+The last rule to consider in the $[[|-co]]$ judgment is the one that
+witnesses $\beta$-reduction:
+
+\[
+\ottdruleCoXXStep{}
+\]
+
+This rule is in place of having $\beta$-equivalence be part of definitional
+equality, as is done in some other dependently typed languages, such as Coq.
+Instead, in order to get a type to reduce, a \pico/ program must invoke the
+\ottkw{step} coercion explicitly. Generating these coercions is quite painful
+to do by hand (as seen in the example in \pref{sec:example-with-stepn}),
+but straightforward for a compiler.\footnote{If a type must reduce many
+times, it would be more efficient to support a $\ottkw{step}^n$ coercion
+form that performs $n$ steps at once. Indeed, this is what I plan to implement.
+It is easier, however, to prove properties about single-step reduction.}
+
+You will see that the rule requires both the redex and the reduct to be
+well-kinded at kind $[[k]]$. The requirement on the reduct is implied by
+the preservation theorem (\pref{thm:preservation}), but omitting it from
+the rule means that the proofs of proposition regularity (\pref{lem:prop-reg})
+and preservation would have to be mutually inductive. It seems simpler
+just to add this extra, redundant premise.
+
+\subsection{Discussion}
+
+The coercion language in \pico/ is quite extensive, boasting (or suffering
+from, depending on your viewpoint) 34 separate typing rules. \rae{Has that
+number changed since Jun 16?} I consider here, briefly, why this is so.
+
+There are several coercion forms that are absolutely essential for \pico/ to
+be proven typesafe and yet remain meaningful. These include the equivalence
+and coherence rules, assumptions, the $\Pi$-congruence form over type
+variables,\footnote{This form is needed only to support reduction under
+  irrelevant $\lambda$s.} \ottkw{argk} over $\Pi$, instantiation over $\Pi$,
+injectivity, and $\beta$-reduction. With the exception of assumptions
+(\rul{Co\_Var}) and $\beta$-reduction (\rul{Co\_Step}), these forms are all
+needed somewhere in the push rules (\pref{sec:push-rules}).\footnote{I am
+  considering here a version of \pico/ without unsaturated matches. If we wish
+  to include unsaturated matches, we would also need \ottkw{res} over $\Pi$.}
+Assumptions and $\beta$-reduction, however, make \pico/ what it is; the
+language would be near-useless as a candidate for an internal
+dependently-typed language without these.
+
+The rest of the forms merely enrich the equality relation, while remaining
+inessential. I have decided to include them to make the equality relation
+relate more types. Doing so makes \pico/---and, in turn, Dependent Haskell---more
+expressive. When adding rules, we must be careful that the new forms do
+not violate consistency (or other proved properties), so they are not entirely
+free. Perhaps there are more useful, safe rules one could add later, simply
+by updating the relevant proofs. Because \pico/ never inspects the structure
+of a coercion, adding new rules introduces only a minimal burden on any
+implementation---essentially just for bookkeeping. I thus leave open the
+possibility of more coercions as \pico/ gets used in practice.
+
+\section{The \rul{S\_KPush} rule}
 
 The \rul{S\_KPush} rule handles the case where the scrutinee of a \ottkw{case}
 expression is headed by a cast. As in all previous work on System FC, this
 push rule is the most intricate. However, in this dissertation, I have taken
 a new approach to \rul{S\_KPush} that does not require the so-called ``lifting
 lemma'' of previous work.\footnote{See for example, \citet{nokinds}, which
-contains a good, detailed explication of the lifting lemma.} Instead,
+contains a good, detailed explication of the lifting lemma.} This
+lifting lemma is a generalization of the congruence property, which
+does not hold in \pico/ (\pref{sec:congruence}). Instead,
 I rely on instantiating the type of a type constant, and on the fact that
-type constant types are always closed. As the computation content of the
+type constant types are always closed. As the computational content of the
 \rul{S\_KPush} rule must actually be implemented as part of a compiler that
 uses \pico/, this (slightly) simpler statement of \rul{S\_KPush}
 may prove to be a
@@ -2111,12 +2426,618 @@ The only challenge left is to cast the argument, |3|, with a coercion
 that proves |Int ~ b|. We will always be able to extract this coercion
 from the coercion casting the scrutinee, $[[g]]$. But how, in general?
 
+\begin{figure}
+{
+\setlength{\belowdisplayskip}{-20pt}
+\setlength{\belowdisplayshortskip}{-20pt}
+\ottfundefnbuildXXkpushXXco{}\\[1ex]
+\setlength{\abovedisplayskip}{-20pt}
+\setlength{\abovedisplayshortskip}{-20pt}
+\setlength{\belowdisplayskip}{-30pt}
+\setlength{\belowdisplayshortskip}{-30pt}
+\ottfundefncastXXkpushXXarg{}
+}
+\caption{Helper functions implementing \rul{S\_KPush}}
+\label{fig:kpush-func}
+\end{figure}
+
 The coercion needed to cast each (existential) argument to a constructor
 must surely depend on the type of the constructor. Previous versions of
 System FC did a transformation on this type to produce the coercion. 
 In this work, I instantiate the type using the $[[@]]$ operator 
+(\pref{sec:co-inst}) via
+the helper metatheory functions $[[build_kpush_co]]$ and $[[cast_kpush_arg]]$,
+presented in \pref{fig:kpush-func}.
 
-\rae{Must introduce $[[ee]]$ when appropriate.}
+In our case---pushing a coercion into |Just|---we take |Just|'s type
+($[[MPI &&ax :Irrel Type{}, &&xx :Rel &&ax. &Maybe{} &&ax]]$) and instantiate
+|a| by the coercion $[[nth 1 g]]$, which proves |Int ~ b|.
+We are thus left with a coercion that proves
+\[
+[[(MPI &&xx :Rel &Int{}. &Maybe{} &Int{}) [Type{}]~[Type{}] (MPI &&xx :Rel &&bx. &Maybe{} &&bx)]].
+\]
+Then, all we have to do is use \ottkw{argk} to extract the coercion proving
+|Int ~ b| and we can use it to cast |3|.
+
+Seeing the above action in the definition for \rul{S\_KPush} may be
+challenging. Let's take another look, focusing on the metavariables
+in the definition of the rule (presented in \pref{fig:push-rules}).
+The type $[[s]]$ is the type of the underlying (uncasted) scrutinee, and
+$[[s']]$ is the type of the casted scrutinee. In our example, we have
+$[[s = &Maybe{} &Int{}]]$ and $[[s' = &Maybe{} &&bx]]$. Note that neither
+of these are $[[MPI]]$-types, and thus the telescope $[[D2]]$ from the rule
+is empty, with $n = 0$. The $[[k]]$ metavariable in the rule is the type
+of |Just|, above. The coercion we are building is the one to cast the first
+argument, that is, $[[g1]]$. The second argument to $[[build_kpush_co]]$ is
+a list of all previous existential arguments, but in our case, there are no
+previous arguments, so this list is empty. We thus have
+$[[g1 = build_kpush_co(<k>@(nth 1 g); empty)]]$.\footnote{Technically,
+we should write $[[res^0 g]]$, because the superscript in \ottkw{res} coercions
+is part of the language, not the metatheory. However, a $\ottkw{res}^0$ coercion
+is a no-op, so I leave it out here for simplicity.} We can see from the
+definition of $[[build_kpush_co]]$ that the function just returns its first
+argument when its second argument is empty, and so we get
+$[[g1 = <k>@(nth 1 g)]]$ as desired.
+The use of $[[cast_kpush_arg]]$ is to apply the right \ottkw{argk} form
+(\pref{sec:pico-argk-coercion}),
+depending on whether we are casting a type or ``casting'' a coercion.
+
+We focus on understanding $[[cast_kpush_arg]]$ on the next example.
+
+\paragraph{Example (3)}
+
+\begin{figure}
+\[
+\begin{CD}
+[[&&bx]] @@>{[[sym (argk 1 h)]]}>> [[&Bool{}]] \\
+@@. @@VV{[[<&Bool{}>]]}V \\
+[[&Bool{}]] @@<{\phantom{[[sym (argk 1 h)]]}}<{[[argk 2 h]]}< [[&Bool{}]]
+\end{CD}
+\]
+\caption{``Casting'' a coercion in Example (3)}
+\label{fig:kpush-cast-co}
+\end{figure}
+
+The datatype |G| is a simple-as-they-come GADT. In this example, we cast
+|MkG :: G Bool| to have type |G b| (for some type variable |b|).
+The action in \rul{S\_KPush} here is actually quite similar to the previous
+case, because |MkG| is quite similar to |Just|: both take one argument,
+whose type depends on the one universal parameter. The difference here is
+that |MkG|'s argument is a coercion, whereas |Just|'s is a type. We thus
+cannot use \ottkw{argk} in exactly the same way as before, instead requiring
+$\ottkw{argk}_1$ and $\ottkw{argk}_2$, as diagrammed in \pref{fig:kpush-cast-co}.
+In this example, two of the steps in the diagram are redundant, but they will
+not be, in general. It can be convenient to think of constructions such
+as this as ``casting'' a coercion---that is, taking the coercion $[[<&Bool{}>]]$
+and changing it to connect |b| with |Bool|. Indeed, prior work~\cite{nokinds}
+even used a special notation for this: $[[g]] [[|>]] [[h1]] \sim [[h2]]$,
+but I find it clearer to avoid the sugar.
+
+\paragraph{Example (4)}
+
+Having warmed ourselves up on the simpler examples above, Example (4) demonstrates
+the full complexity of \rul{S\_KPush}, including dependent existential
+arguments and an unsaturated scrutinee. We'll take these complications one
+at a time.
+
+Having dependent existential arguments is what motivates the intricacies
+of $[[build_kpush_co]]$. Since the pushed-in cast changes universal arguments
+(unless it's reflexive), we need to cast existential arguments that may be
+dependent on the universals. However, if a later existential argument is
+dependent upon an earlier one and we change the earlier one, we must also
+change that later one. In this example, the first existential argument
+(instantiated to |True|) depends on the universal argument (instantiated to
+|Bool|), and the second existential depends on the first. The first existential
+is cast by $[[h0']]$ and thus the second must be cast by $[[h1']]$, which
+essentially replaces the occurrence of |True| in the type of the applied
+|MkP| constructor with $[[&True{} |> h0']]$, using a coherence coercion
+built with $[[~=]]$. Indeed, this is the whole point of $[[build_kpush_co]]$---using
+coherence to alter the types of later exisentials depending on earlier ones.
+Here is the critical correctness property of $[[build_kpush_co]]$:
+
+\begin{lemma*}[Correctness of $[[build_kpush_co]]$ (\pref{lem:build-kpush-co})]
+Assume $[[S;G |-cev ps : D[ts/as] ]]$, and let $[[gi = build_kpush_co(h; ps_{1..i-1})]]$
+and $[[pi' = cast_kpush_arg(pi;gi)]]$.
+If $[[S;Rel(G) |-co h : (MPI D.s)[ts/as] [Type{}]~[Type{}] (MPI D.s)[ts'/as] ]]$, then:
+\begin{enumerate}
+\item
+$[[S;Rel(G) |-co build_kpush_co(h; ps) : s[ts/as][ps/dom(D)] [Type{}]~[Type{}] s[ts'/as][ps'/dom(D)] ]]$
+\item $[[S;G |-cev ps' : D[ts'/as] ]]$
+\end{enumerate}
+\end{lemma*}
+
+This lemma is phrased in terms of $[[|-cev]]$; that relation includes the
+same elements as $[[|-vec]]$ but allows induction from right-to-left instead
+of the usual left-to-right. The $[[h]]$ in the lemma statement relates the
+type of a constructor to itself, but with the universals instantiated with
+potentially different concrete arguments. These instantiations come directly
+from the coercion being pushed into the scrutinee, by way of \ottkw{nth}.
+(Note that the $[[MPI]]$ quantifiers in the type of $[[h]]$ above are not
+a consequence of the possibility of unsaturation; instead, these are the
+existentials of the data constructor.) The lemma concludes that the resulting
+coercion relates the instantiated coercion (that is, the one built by
+$[[build_kpush_co]]$) to itself, with substitutions for both the universals
+and some existentials. Along the way, it also asserts the validity of the
+cast existentials, via the $[[|-cev]]$ result.
+
+The remaining detail of Example (4) is its unsaturation. This is handled more
+simply by a \ottkw{res} coercion (\pref{sec:co-inst}), which looks through
+binders to relate the bodies of two abstract types. Indeed, \rul{S\_KPush} is
+the reason that the \ottkw{res} coercion exists at all, though it is not
+a burden to support in the metatheory.
+
+\section{Metatheory: Consistency}
+\label{sec:consistency}
+
+Broadly speaking, the type safety proof proceeds along lines well established
+by prior work~\cite{nokinds-extended,closed-type-families-extended,coercible-jfp}.
+Indeed, the only challenge in proving the preservation theorem is in dealing
+with \rul{S\_KPush}. the tricky bit is all in proving the correctness of
+$[[build_kpush_co]]$; see \pref{sec:kpush}. Otherwise, the proof of preservation
+is as expected.
+
+On the other hand, progress is a challenge. We proceed by proving consistency
+and then using that to prove progress.
+
+\begin{lemma*}[Consistency (\pref{lem:consistency})]
+If $[[G]]$ contains only irrelevant type variable bindings and
+$[[S;G |-co g : t1 [k1]~[k2] t2]]$
+then $[[t1 ! t2]]$.
+\end{lemma*}
+
+We restrict $[[G]]$ not to have any coercion variables bound. Otherwise,
+a coercion assumption might relate, say, |Int| and |Bool| and we would
+be unable to prove consistency. As consistency is needed only during
+the progress proof, this restriction does not pose a problem.
+
+\subsection{Compatibility}
+
+\begin{figure}
+\ottdefnCons{}
+\caption{Type compatibility}
+\label{fig:compatibility}
+\end{figure}
+
+The statement of consistency depends on the $[[t1 ! t2]]$ relation
+(pronounced ``$[[t1]]$ is compatible with $[[t2]]$''), as given in
+\pref{fig:compatibility}. The goal of compatibility is to relate any
+two values (as defined in \pref{sec:value-defn})
+that have the same head; non-values are compatible with everything.
+Note, in particular, in \rul{C\_TyCon}, that we care only that the two
+$[[H]]$ are the same. The universals ($[[ts]]$/$[[ts']]$) and existentials
+($[[ps]]$/$[[ps']]$) are allowed to differ. The one exception to this general
+scheme is in the \rul{C\_PiTy} rule, where we require the bodies $[[t]]$/$[[t']]$
+also to be compatible. This is necessary because irrelevant binders are erased,
+and we thus must be sure that any exposed types are also compatible.
+
+Consistency is used in the progress proof mainly in order to establish the
+typing premises of the push rules (\pref{sec:push-rules}). A representative
+example is in the case when we are trying to show that an application $[[t1 t2]]$
+is either a value or can step (it is clearly not a coerced value; recall
+the statement of the progress theorem from \pref{sec:progress-thm-statement}).
+The induction hypothesis tells us that $[[t1]]$
+is a value, a coerced value, or can step. If it can step, we are done by
+\rul{S\_App\_Cong}. If $[[t1]]$ is a value, we can determine that it is a
+$\lambda$-abstraction and thus we can do $\beta$-reduction. The remaining
+case is when $[[t1]]$ is a coerced value $[[v |> g]]$. We need to be able
+to show that $[[g]]$ relates two $\Pi$-types in order to use \rul{S\_PushRel}.
+The right-hand type must be
+a $\Pi$-type because it is the function in an application. But the only way
+we can show that the left-hand type is a $\Pi$-type is by appealing to
+consistency.
+
+We know, at this point, that the type being casted is a value; thus its
+type is also a value (\pref{lem:val-type}, also introduced in
+\pref{sec:value-defn}). At this point, now that we know that both types
+involved in the type of the coercion $[[g]]$ are not values, compatibility
+becomes a much stronger definition, allowing us to conclude that if the
+types are compatible and if one is a $\Pi$-type, the other must surely also
+be a $\Pi$-type. Because we can rule out non-values in the places where we
+wish to invoke the consistency lemma, the flexibility around non-values
+does not get in our way.
+
+\subsection{The parallel rewrite relation}
+
+To prove consistency, I (following prior work) define a parallel rewrite
+relation, written $[[t1 ~> t2]]$, and show that this relation includes pairs
+of only compatible types. A small wrinkle with this definition is that the
+rewrite relation works over only types whose coercions have been erased, as
+per the $\lfloor \cdot \rfloor$ operation, initially introduced along with
+coherence coercions in
+\pref{sec:coercion-erasure-intro}. The operation, as you may recall, removes
+all casts from a type, and replaces coercion arguments with an uninformative
+$[[o]]$. Stripping out casts and coercions is important in the rewrite relation;
+if the rewrite relation considered these features, the language would lose
+its coherence property. Going forward, I use a convention where all types
+written as being related by $[[~>]]$ have had their coercions erased.
+
+\begin{figure}
+\begin{ottdefnblock}{$[[t ~> t']]$}{Type parallel reduction, over erased types}
+\begin{gather*}
+\begin{array}{@@{}c@@{}}
+\ottdruleRXXRefl{}\\[3ex]
+\ottdruleRXXCon{}\\[3ex]
+\ottdruleRXXAppRel{}\\[3ex]
+\ottdruleRXXAppIrrel{}\\[3ex]
+\ottdruleRXXCApp{}\\[3ex]
+\end{array}
+\quad
+\begin{array}{@@{}c@@{}}
+\ottdruleRXXPi{}\\[3ex]
+\ottdruleRXXLam{}\\[3ex]
+\ottdruleRXXFix{}\\[3ex]
+\ottdruleRXXAbsurd{}\\[3ex]
+\end{array}\\
+\ottdruleRXXCase{}\rulesep
+\ottdruleRXXBetaRel{}\rulesep
+\ottdruleRXXBetaIrrel{}\rulesep
+\ottdruleRXXCBeta{}\rulesep
+\ottdruleRXXMatch{}\rulesep
+\ottdruleRXXDefault{}\rulesep
+\ottdruleRXXUnroll{}
+\end{gather*}
+\end{ottdefnblock}
+\caption{Parallel reduction over erased types}
+\label{fig:rewrite-rel-ty}
+\end{figure}
+
+\begin{figure}
+\ottdefnRedBnd{}\\
+\ottdefnRedCo{}
+\caption{Parallel reduction auxiliary relations}
+\label{fig:rewrite-rel-aux}
+\end{figure}
+
+The rewrite relation $[[~>]]$ appears in \pref{fig:rewrite-rel-ty}
+and \pref{fig:rewrite-rel-aux}. Following
+conventions in the rewriting literature, I write $[[t1 ~> t3 <~ t2]]$ to
+mean that $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$, and I write $[[t1 ~>* t2]]$ to
+mean the transitive closure of $[[~>]]$.
+
+\subsubsection{Substitution}
+
+The relation is almost a non-deterministic, strong version of normal reduction ($[[S;G |-s t --> t']]$). In all the congruence forms (toward the top of
+\pref{fig:rewrite-rel-ty}), the relation definition recurs in every component,
+as necessary to support the following lemma:
+
+\begin{lemma*}[Parallel reduction substitution in parallel (\pref{lem:red-subst-par})]
+Assume $[[ps ~> ps']]$.
+\begin{enumerate}
+\item If $[[t1 ~> t2]]$, then $[[t1[ps/zs] ~> t2[ps'/zs] ]]$.
+\item If $[[d1 ~> d2]]$, then $[[d1[ps/zs] ~> d2[ps'/zs] ]]$.
+\end{enumerate} 
+\end{lemma*}
+
+Note that all of the reductions are single-step.
+
+Beyond the congruence rules, the rewrite relation includes parallel variants
+of the reduction rules from the normal step relation, toward the bottom
+of the figure. Note that these allow the components of a type to step as
+the reduction happens, as required for the local diamond lemma needed to
+prove confluence.
+
+\subsubsection{Confluence}
+
+This reduction relation is confluent (that is, has the Church-Rosser property).
+I prove this by proving a local diamond lemma:
+
+\begin{lemma*}[Local diamond (\pref{lem:local-diamond})] ~
+\begin{enumerate}
+\item
+If $[[t0 ~> t1]]$ and $[[t0 ~> t2]]$, then there exists $[[t3]]$ such
+that $[[t1 ~> t3 <~ t2]]$.
+\item
+If $[[d0 ~> d1]]$ and $[[d0 ~> d2]]$, then there exists $[[d3]]$
+such that $[[d1 ~> d3 <~ d2]]$.
+\end{enumerate}
+\end{lemma*}
+
+The proof of this lemma reasons by induction on the structure of
+$[[t0]]$/$[[d0]]$ and makes heavy use of the substitution lemma above. It is
+not otherwise challenging. The local diamond lemma implies confluence.
+
+\subsection{Completeness of the rewrite relation}
+
+Having written a confluent rewrite relation, we must also connect this relation
+to our equality relation. This is done via the following lemma:
+
+\begin{lemma*}[Completeness of type reduction (\pref{lem:complete-red})] ~
+If $[[S;G |-co g : t1 (k1)~(k2) t2]]$ and $[[c ~# g]]$ for every $[[c:phi \in G]]$,
+then:
+\begin{enumerate}
+\item There exists some
+erased type $[[ee]]$
+such that $[[|t1| ~>* ee *<~ |t2|]]$.
+\item There exists some erased type $[[ee]]$
+such that
+$[[|k1| ~>* ee *<~ |k2|]]$.
+\end{enumerate}
+\end{lemma*}
+
+Both the statement and proof of this lemma are rather more challenging than
+the previous ones. The proof proceeds by induction on the typing derivation.
+It is necessary in the proof to use the induction hypothesis
+on a premise where the context $[[G]]$ is extended with a coercion variable
+(say, in the case for \rul{Co\_PiCo}). Thus, even though we will only use this
+lemma in a context with no coercion variables, we must strengthen the induction
+hypothesis to allow for coercion variables. Critically, though, we restrict
+how all coercion variables in the context can appear in $[[g]]$, according to
+the definition of $[[~#]]$, introduced in \pref{sec:almost-devoid}. This
+restriction allows us to skip the impossible \rul{Co\_Var} case while still
+allowing induction in the \rul{Co\_PiCo} case.
+
+The definition of $[[c ~# g]]$ allows $[[c]]$ to appear in the types related
+by a coherence $[[~=]]$ coercion. Happily in the \rul{Co\_Coherence} case
+(when proving clause 1 of the lemma), we do not need to use the induction
+hypothesis, as a premise of \rul{Co\_Coherence} states that the erased types
+are, in fact, already equal. It is for precisely this reason that $[[c ~# g]]$
+can allow $[[c]]$ in the types in a coherence coercion.
+
+We also see that the statement of the completeness lemma requires us to prove
+both that the types are joinable under $[[~>]]$ and also the kinds. Otherwise,
+there would be no way to handle the \ottkw{kind} case.
+
+Having strengthened the induction hypothesis appropriately, the actual proof
+is not too hard. The case for transitivity uses confluence---this is the only
+place confluence is used. The decomposition forms use the fact that when a
+value type reduces under $[[~>]]$, the reduct has to have the same shape as
+the redex, with individual components in the redex reducing to those same
+components in the reduct. To deal with \ottkw{step}, we must consider the
+different possibilities given by the $[[S;G |-s t --> t']]$ relation.
+The proper reduction rules all have analogues in $[[~>]]$, the congruence
+rules all follow from the induction hypothesis, and the push rules cause
+no change to a type with its coercions erased. To prove that the kinds
+are joinable, we must rely heavily on the deterministic nature of the typing
+relation, but there are no other undue complications.
+
+\subsection{From completeness to consistency}
+
+Having established the relationship between $[[S;G |-co g : phi]]$ and
+joinability with respect to the rewrite relation, we must only show that
+the rewrite relation relates compatible types. Here are the key lemmas:
+
+\begin{lemma*}[Joinable types are consistent (\pref{lem:joinable-cons})]
+If $[[ee1 ~>* ee3 *<~ ee2]]$, then $[[ee1 ! ee2]]$.
+\end{lemma*}
+
+\begin{lemma*}[Erasure/consistency (\pref{lem:erase-cons})]
+If $[[|t1| ! |t2|]]$, then $[[t1 ! t2]]$.
+\end{lemma*}
+
+Other than some care needed around irrelevant abstractions (which cause
+recursion in the rules defining $[[!]]$), these lemmas are not hard
+to prove.
+
+With all the groundwork laid, we can now conclude our consistency lemma,
+stated near the top of this section.
+
+\subsection{Related consistency proofs}
+\label{sec:other-consistency-proofs}
+
+There are a few aspects of the consistency proof where it may be helpful to
+highlight the differences between my proof here and those in prior work.\footnote{The comments below imperil other, published proofs of consistency. The authors of these proofs have conceded to me in private communication
+that their proofs were incorrect and do not dispute my claims below.}
+
+\subsubsection{Non-linear, non-terminating rewrite systems are not confluent}
+
+As described in some detail by \citet{closed-type-families}, non-terminating
+rewrite systems
+with non-linear left-hand sides are not confluent. We can easily see that the
+rewrite relation $[[~>]]$ is not terminating. In this presentation, however,
+its ``left-hand side'' is linear. Breaking from previous work, I have phrased
+type families in \pico/ as $\lambda$-expressions that use \ottkw{case}; thus
+the parallel to rewrite systems is not as apparent as in previous work.
+In the context of my work here, a non-linear left-hand side would look like
+a primitive equality check, as further explored in \pref{sec:equals-ctf}.
+Because the formalization of \pico/ that I am presenting does not contain
+this equality operator, I avoid the non-confluence problem described by
+\citet{closed-type-families}.
+
+Nevertheless, promising new work in the term-rewriting
+community~\cite{kahrs-trss-are-un} suggests that there is a way to prove
+consistency without confluence even after adding an equality check. I leave
+it as future work to reconcile the approach here with the recent result
+cited above.
+
+\subsubsection{The proof of consistency by \citet{nokinds} is wrong}
+
+The type system presented by \citet{nokinds} is very similar to \pico/, although
+without dependency. Its treatment of \rul{Co\_PiCo} is subtly different,
+however. Although there are numerous changes in how their syntax is structured,
+Weirich et al.~effectively loosen the definition of $[[c ~# g]]$ to allow
+$[[c]]$ anywhere in a coherence coercion ($[[t1 ~={h} t2]]$). In contrast,
+\pico/ allows $[[c]]$ only in $[[t1]]$ or $[[t2]]$, but not in $[[h]]$.
+When armed with the \ottkw{kind} coercion (identical in \pico/ to the version
+by Weirich et al.), this allows us to violate a key lemma used to prove
+consistency. Here is the counterexample coercion, translated into \pico/:
+
+\[
+[[g = UPI c:(<&Int{}>,<&Bool{}>). kind (#3{} ~={c} (#3{} |> c))]]
+\]
+
+In the body of the abstraction, the coercion variable $[[c]]$ has type
+|Int ~ Bool|. We can use a coherence coercion to relate |3| and
+$[[#3{} |> c]]$; their kinds are also related by $[[c]]$. We can then
+extract the kinds of the types related by the coherence coercion. Putting
+it all together yields this fact:
+
+\[
+[[S;empty |-co g : (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{}) [Type{}]~[Type{}] (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})]]
+\]
+The problem is that we can see that no rewrite relation will join the two
+types related by $[[g]]$. Because Weirich et al.'s system permits $[[g]]$,
+its consistency proof must be wrong. (\Pico/ rules out $[[g]]$ for using
+$[[c]]$ in an illegal spot---the kind coercion in the subscript for $[[~=]]$.)
+Note that the language by Weirich et al.~might indeed be consistent (I have
+no counterexample to consistency), but this
+fact is surely not proved via the use of a rewrite relation in the way presented
+in that paper.
+
+\subsubsection{A one-variable version of \rul{Co\_PiTy} simplifies the consistency proof}
+\label{sec:one-var-no-covar}
+
+Weirich et al.'s language differs along a different dimension, using three
+binders instead of one in its version of \rul{Co\_PiTy}. (See discussion in
+\pref{sec:binding-cong-forms}.) Apart from the awkwardness of needing extra
+variable names, the three-binder approach poses another problem: it introduces
+a coercion variable into the context. Unlike for their \rul{Co\_PiCo},
+Weirich et al.~do not introduce a coercion variable restriction for this
+coercion variable, as it is always a proof of equality between two variables.
+This extra coercion variable cannot imperil consistency. To prove this in the
+consistency proof, Weirich et al.~employ a notion of ``Good'' contexts, which
+must be threaded through their proofs. My one-variable version, with no
+bound coercion variable, avoids this compliation.
+
+\subsubsection{The proof of consistency by \citet{gundry-thesis} is wrong}
+
+Gundry, in his thesis, takes a very different approach to proving consistency
+of his \emph{evidence} language, also closely related to \pico/. He sets up,
+essentially, a step-indexed logical relation and uses it to consider only
+closed coercions; when, say, a coercion variable is added to the context,
+Gundry quantifies over all possible closing substitutions.
+
+A key property of Gundry's logical relation is transitivity. Yet, in his
+proof of transitivity, the indices do not work out. Gundry was not able
+to spot a straightforward solution, and in unpublished work, Weirich also
+tackled this problem and failed. Neither Gundry nor Weirich (nor I) have
+a proof that the step-indexed logical relation approach is not able to work,
+but no one has been able to finish the proof, either.
+
+The failure of this approach is disappointing, because Gundry's \emph{evidence}
+language does not have the coercion variable restriction inherent in \pico/'s
+\rul{Co\_PiCo} rule. Gundry's language thus allows more coercions than
+does \pico/.
+
+Can a System FC-like language be proven consistent without a coercion variable
+restriction on its analogue of \rul{Co\_PiCo}? My personal belief is ``yes''---given that I believe such a language is, in fact, consistent---but researchers
+have yet to show it.
+
+\section{Metatheory: Type erasure}
+
+A critical property of any intermediate language used to compile Haskell is
+its ability to support type erasure. Haskell takes pride in erasing all of
+its complicated, helpful types before runtime, and the intermediate language
+must show that this is possible. \Pico/ acheives this goal through its
+relevance annotations, where irrelevant abstractions and applications
+are erased. In previous, non-dependent intermediate languages for Haskell,
+irrelevant abstractions and applications are also erased, but these were
+easier to spot, as they dealt with types instead of terms. In \pico/, types
+and terms are indistinguishable, so we are required to use relevance
+annotations.
+
+I prove the type erasure property via defining an untyped $\lambda$-calculus
+with an operational semantics, defining an erasure operation that translates
+from \pico/ to the untyped calculus, and proving a simulation property between
+the two languages.
+
+\subsection{The untyped $\lambda$-calculus}
+
+\begin{figure}
+\[
+\begin{array}{rcl@@{\quad}l}
+[[e]] &\bnfeq& [[a]] \bnfor [[H]] \bnfor [[e y]] \bnfor [[PI]] \bnfor [[case e of ealts]] \bnfor [[\a.e]] \bnfor [[\o.e]] \bnfor [[fix e]] & \text{expression}\\
+[[y]] &\bnfeq& [[e]] \bnfor [[o]] & \text{argument}\\
+[[ealt]] &\bnfeq& [[pat -> e]] & \text{case alternative}
+\end{array}
+\]
+\ottdefnEStep{}
+\[
+\begin{array}{cc}
+\begin{array}{r@@{\,}l}
+[[ ||a|| &= a ]] \\
+[[ ||H{ts}|| &= H ]] \\
+[[ ||t1 t2|| &= ||t1|| ||t2|| ]] \\
+[[ ||t1 {t2}|| &= ||t1|| ]] \\
+[[ ||t1 g|| &= ||t1|| o]] \\
+[[ ||PI d.t|| &= PI]] \\
+[[ ||t |> g|| &= ||t|| ]]
+\end{array}
+&
+\begin{array}{r@@{\,}l}
+[[ ||case_k t of alts|| &= case ||t|| of ||alts|| ]] \\
+[[ ||\a:Rel k. t|| &= \a.||t|| ]] \\
+[[ ||\a:Irrel k. t|| &= ||t|| ]] \\
+[[ ||\c:phi.t|| &= \o.||t|| ]] \\
+[[ ||fix t|| &= fix ||t|| ]] \\
+[[ || absurd g t || &= PI ]] \\
+[[ ||pat -> t || &= pat -> ||t|| ]]
+\end{array}
+\end{array}
+\]
+\caption{The type-erased $\lambda$-calculus}
+\label{fig:erased-calculus}
+\end{figure}
+
+The definition of our erased calculus appears in \pref{fig:erased-calculus}.
+It is an untyped $\lambda$-calculus with datatypes (allowing for default
+patterns) and \ottkw{fix}. The language also contains a fixed constant\footnote{Actually, two fixed constants, $[[MPI]]$ and $[[UPI]]$.}
+$[[PI]]$, here only to have something for $\Pi$-types to erase to.
+
+The calculus also supports ``coercion abstraction''
+via its $[[\o.e]]$ and $[[e o]]$ forms. The existence of these forms mean that
+coercion abstractions are not fully erased. We can see why this must be so
+in the following example: let $[[t = \ c:&Int{} [Type{}]~[Type{}] &Bool{}. &&notx (#3{} |> c)]]$. The type $[[t]]$ is a valid \pico/ type. We do not have to
+worry about the nonsense in the body of the abstraction because consistency
+guarantees that we will never be able to apply $[[t]]$ to a (closed) coercion.
+As an abstraction, $[[t]]$ is a value and a normal form. However, if our
+type erasure operation dropped coercion abstractions, then disaster would
+strike. The erased expression would be $[[&&notx #3{}]]$, which
+is surely stuck. We thus retain coercion abstractions and applications, while
+dropping the coercions themselves by rewriting all coercions with the uninformative $[[o]]$.
+
+What has now happened to our claim of type erasure? Coercions exist only to
+alter types, so have we kept some meddlesome vestige of types around? In a
+sense, yes, we have kept some type information around until runtime. However,
+I can claim that the remaining abstractions are not meddlesome. The way in
+which coercion abstractions could cause harm at runtime is by causing a program
+to be a value when the user is not expecting it. For example, if a compiler
+translated the Haskell program |1 + 2| into the expression
+$[[\]] {[[o]]}. |1 + 2|$, then we would never get |3|. I thus make this claim:
+no Haskell program ever evaluates to a coercion abstraction. This claim
+is properly a property of the type inference / elaboration algorithm and so
+is deferred until \pref{sec:no-coercion-abstractions}. \rae{Make sure this lines
+up.}
+
+\subsection{Simulation}
+
+Here is the simulation property we seek:
+
+\begin{theorem*}[Type erasure (\pref{thm:type-erasure})]
+If $[[S;G |-s t --> t']]$, then either $[[||t|| --> ||t'||]]$ or
+$[[||t|| = ||t'||]]$.
+\end{theorem*}
+
+Note that the untyped language might step once or not at all. For example,
+when \pico/ steps by a push rule, the untyped language does not step. The
+proof of this theorem is very straightforward.
+
+\subsection{Types do not prevent evaluation}
+
+Proving only that the erased calculus simulates \pico/ is not quite enough,
+as it still might be possible that an expression in the erased
+calculus can step even though the
+\pico/ type from which it was derived is a normal form. The property we need
+is embodied in this theorem:
+
+\begin{theorem*}[Types do not prevent evaluation (\pref{thm:expr-eval})]
+Suppose $[[S;G |-ty t : k]]$ and $[[G]]$ has only irrelevant variable bindings.
+If $[[ ||t|| --> e' ]]$, then $[[ S;G |-s t --> t']]$ and either $[[ ||t'|| = e']]$ or 
+$[[||t'|| = ||t||]]$.
+\end{theorem*}
+%
+This theorem would be false if \pico/ did not step under irrelevant binders,
+for example.
+
+The proof depends on both the progress theorem and the type erasure (simulation)
+theorem above, as well as this key lemma:
+
+\begin{lemma*}[Expression redexes (\pref{lem:expr-redex})]
+If $[[ ||t|| ]]$ is not an expression value, then $[[t]]$ is neither
+a value nor a coerced value.
+\end{lemma*}
+
+This lemma is straightforward to prove inductively on the structure of $[[t]]$,
+and then the proof of the theorem above simply stitches together the pieces.
 
 \rae{Extensions: split, |Equals|, representation polymorphism, |(->)|, compression (\ottkw{step} becoming $\ottkw{step}^n$).}
 

@@ -9,7 +9,7 @@ JCons :: '' ::=
 
 defn
 t1 ! t2 :: :: Cons :: 'C_'
-  {{ com Type consistency }}
+  {{ com Type compatibility }}
 by
 
 t1 is not a value
@@ -257,27 +257,27 @@ S;G |-co h : k1 [Type{}]~[Type{}] k2
 --------------------------------- :: Absurd
 S;G |-co absurd (g1,g2) h : absurd g1 k1 [k1]~[k2] absurd g2 k2
 
-S;G |-co g : PI a:rel k1. s1 [Type{}]~[Type{}] PI a:rel k2. s2
+S;G |-co g : (PI a:rel k1. s1) [Type{}]~[Type{}] (PI a:rel k2. s2)
 ------------------------- :: ArgK
 S;G |-co argk g : k1 [Type{}]~[Type{}] k2
 
-S;G |-co g : PI c:t1 [k1]~[k2] t1'.s1 [Type{}]~[Type{}] PI c:t2 [k3]~[k4] t2'.s2
+S;G |-co g : (PI c:(t1 [k1]~[k2] t1').s1) [Type{}]~[Type{}] (PI c:(t2 [k3]~[k4] t2').s2)
 -------------------------------- :: CArgK1
 S;G |-co argk 1 g : t1 [k1]~[k3] t2
 
-S;G |-co g : PI c:t1 [k1]~[k2] t1'.s1 [Type{}]~[Type{}] PI c:t2 [k3]~[k4] t2'.s2
+S;G |-co g : (PI c:(t1 [k1]~[k2] t1').s1) [Type{}]~[Type{}] (PI c:(t2 [k3]~[k4] t2').s2)
 ----------------------------- :: CArgK2
 S;G |-co argk 2 g : t1' [k2]~[k4] t2'
 
-S;G |-co g : \a:rel k1.s1 [k3]~[k4] \a:rel k2.s2
+S;G |-co g : (\a:rel k1.s1) [k3]~[k4] (\a:rel k2.s2)
 ------------------------- :: ArgKLam
 S;G |-co argk g : k1 [Type{}]~[Type{}] k2
 
-S;G |-co g : \c:t1 [k1]~[k2] t1'.s1 [k3]~[k4] \c:t2 [k5]~[k6] t2'.s2
+S;G |-co g : (\c:(t1 [k1]~[k2] t1').s1) [k3]~[k4] (\c:(t2 [k5]~[k6] t2').s2)
 --------------------- :: CArgKLam1
 S;G |-co argk 1 g : t1 [k1]~[k5] t2
 
-S;G |-co g : \c:t1 [k1]~[k2] t1'.s1 [k3]~[k4] \c:t2 [k5]~[k6] t2'.s2
+S;G |-co g : (\c:(t1 [k1]~[k2] t1').s1) [k3]~[k4] (\c:(t2 [k5]~[k6] t2').s2)
 --------------------- :: CArgKLam2
 S;G |-co argk 2 g : t1' [k2]~[k6] t2'
 
@@ -379,7 +379,7 @@ S;G |-vec t,ps : a:Rel k,D
 S;Rel(G) |-ty t : k
 S;G |-vec ps : D[t/a]
 -------------------------- :: TyIrrel
-S;G |-vec t,ps : a:Irrel k,D
+S;G |-vec {t},ps : a:Irrel k,D
 
 S;Rel(G) |-co g : phi
 S;G |-vec ps : D[g/c]
@@ -564,7 +564,7 @@ s = MPI (D2[ts/as][ps/dom(D1)]). H'{} ts
 s' = MPI (D2[ts'/as][ps'/dom(D1)]). H'{} ts'
 S;Rel(G) |-co h : s [Type{}]~[Type{}] s'
 S;Rel(G) |-vec ts' : as:Rel ks
-forall i: gi = build_kpush_co(<k>@(nths (res^n h));ps_{0..i-1})
+forall i: gi = build_kpush_co(<k>@(nths (res^n h));ps_{1..i-1})
 forall i: pi' = cast_kpush_arg(pi;gi)
 H -> k' \in alts
 % kind K = MPI as :Irrel ks. MPI D. T as
@@ -581,7 +581,7 @@ JRed :: '' ::=
 
 defn
 t ~> t' :: :: Red :: 'R_'
-  {{ com Type parallel reduction, over erased types }}
+  {{ com Parallel reduction over erased types }}
 by
 
 -------------- :: Refl

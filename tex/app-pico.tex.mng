@@ -940,9 +940,9 @@ $[[S;Rel(G) |-ty t1 : k1]]$.
 
 \section{Preservation}
 
-\begin{lemma}[$[[build_kpush_co]]$]
+\begin{lemma}[Correctness of $[[build_kpush_co]]$]
 \label{lem:build-kpush-co}
-Assume $[[S;G |-cev ps : D[ts/as] ]]$ and let $[[gi = build_kpush_co(h; ps_{1..i-1})]]$
+Assume $[[S;G |-cev ps : D[ts/as] ]]$, and let $[[gi = build_kpush_co(h; ps_{1..i-1})]]$
 and $[[pi' = cast_kpush_arg(pi;gi)]]$.
 If $[[S;Rel(G) |-co h : (MPI D.s)[ts/as] [Type{}]~[Type{}] (MPI D.s)[ts'/as] ]]$, then:
 \begin{enumerate}
@@ -1248,8 +1248,8 @@ The last item proves this case.
 
 \section{Consistency}
 
-\begin{definition}[Erasure]
-\label{defn:erasure}
+\begin{definition}[Coercion erasure]
+\label{defn:co-erasure}
 Define the erasure of a type $[[ee = |t|]]$ by the following function (including
 auxiliary functions):\\[1ex]
 {
@@ -2463,3 +2463,191 @@ Note in the statement of \pref{thm:expr-eval} that the context $[[G]]$ must have
 irrelevant variable bindings. This means that the expression $[[ ||t|| ]]$ is closed,
 as one would expect of a program that we wish to evaluate.
 \end{remark}
+
+
+\section{Congruence}
+
+\begin{definition}[Unrestricted coercion variables]
+\label{defn:co-star}
+Define a new judgment $[[|-co*]]$ to be identical to $[[|-co]]$, except with
+the $[[c ~# g]]$ premises removed from rules \rul{Co\_PiCo} and
+\rul{Co\_CLam} and all recursive uses of $[[|-co]]$ replaced with $[[|-co*]]$.
+\end{definition}
+
+\begin{remark}
+It is not necessary to introduce a $[[|-ty*]]$ judgment that uses $[[|-co*]]$.
+Thus, for example, the \rul{Co\_Refl} rule of $[[|-co*]]$ has a $[[|-ty]]$
+premise that may contain proofs of $[[|-co]]$.
+\end{remark}
+
+\begin{lemma}[Subsumption of coercion typing]
+\label{lem:subsumption-co}
+If $[[S;G |-co g : phi]]$, then $[[S;G |-co* g : phi]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction.
+\end{proof}
+
+\begin{lemma}[Unrestricted proposition regularity]
+\label{lem:prop-reg-star}
+If $[[S;G |-co* g : phi]]$, then $[[S;G |-prop phi]]$.
+\end{lemma}
+
+\begin{proof}
+Identical to the proof for \pref{lem:prop-reg}.
+\end{proof}
+
+\begin{theorem}[(Almost) Congruence]
+\label{thm:almost-congruence}
+If $[[S;Rel(G) |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:rel k,G' |-ty t : k0]]$
+where none of $[[t]]$, $[[k0]]$, $[[k]]$ and the types in $[[G]]$ and $[[G']]$
+bind any coercion variables,
+then there exists $[[h]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co* h : t[s1/a] (k0[s1/a])~(k0[s2/a]) t[s2/a] ]]$.
+\end{theorem}
+
+\begin{proof}
+By induction on the size of the derivation of $[[S;G,a:rel k,G' |-ty t : k0]]$,
+using \pref{lem:subsumption-co} frequently to convert between the coercion
+typing relations.
+
+\begin{description}
+\item[Case \rul{Ty\_Var}:]
+Here $[[t = b]]$. We have several cases:
+\begin{description}
+\item[Case $[[b \in dom(G)]]$:]
+By \pref{lem:scoping}, $[[a # k0]]$. We are done, choosing $[[h = <b>]]$.
+\item[Case $[[b = a]]$:]
+By \pref{lem:scoping}, $[[a # k0]]$. We are done, choosing $[[h = g]]$.
+\item[Case $[[b \in dom(G')]]$:]
+We know $[[G' = G1,b :Rel k0,G2]]$.
+\pref{lem:ctx-reg} and \pref{lem:tyvar-reg} give us
+$[[S;Rel(G,a:rel k,G1) |-ty k0 : Type{}]]$ with a derivation smaller than that
+with which we started. Use the induction hypothesis to get
+$[[S;Rel(G,G1[s1/a]) |-co* h0 : k0[s1/a] [Type{}]~[Type{}] k0[s2/a] ]]$.
+Choose $[[h = b ~={h0} b |> h0]]$ and we are done.
+\end{description}
+\item[Case \rul{Ty\_Con}:]
+By \pref{lem:vec-kind}, repeated use of the induction hypothesis,
+\pref{lem:ty-subst}, and \rul{Co\_Con}.
+\item[Case \rul{Ty\_AppRel}:]
+By the induction hypothesis, \pref{lem:ty-subst}, and \rul{Co\_AppRel}.
+\item[Case \rul{Ty\_AppIrrel}:]
+By the induction hypothesis, \pref{lem:ty-subst}, and \rul{Co\_AppIrrel}.
+\item[Case \rul{Ty\_CApp}:]
+We adopt the metavariable names from the rule (changing the name of the
+coercion used to $[[g']]$):
+\[
+\ottdruleTyXXCApp{}
+\]
+The induction hypothesis gives us $[[h1]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co* h1 : t[s1/a] [(PI c:phi.k)[s1/a] ]~[(PI c:phi.k)[s2/a] ] t[s2/a] ]]$.
+Choose $[[h = h1 (g'[s1/a], g'[s2/a])]]$.
+We are done by \pref{lem:ty-subst} and \rul{Co\_CApp}.
+\item[Case \rul{Ty\_Pi}:]
+We have several cases, depending on the shape of the binder:
+\begin{description}
+\item[Type variable binder:]
+In this case, we know that $[[t = PI b :rel' k1. t0]]$ and $[[k0 = Type{}]]$.
+The induction hypothesis gives us $[[h1]]$ such that
+$[[S;Rel(G,G'[s1/a]),b :Rel k1[s1/a] |-co* h1 : t0[s1/a] [Type{}]~[Type{}] t0[s2/a] ]]$.
+We can also use \pref{lem:ctx-reg} and \pref{lem:tyvar-reg} to
+see that $[[S;Rel(G,a:rel k,G') |-ty k1 : Type{}]]$, with a smaller derivation
+height than $[[S;G,a:rel k,G'|-ty PI b:rel' k1. t0 : Type{}]]$. We
+can thus use the induction hypothesis again to get $[[h2]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co* h2 : k1[s1/a] [Type{}]~[Type{}] k1[s2/a] ]]$.
+Choose $[[h = (PI b:rel' h2. h1) ;; h3]]$, where
+\begin{itemize}
+\item $[[h3 = s3 ~={<Type{}>} s4]]$
+\item $[[s3 = PI b:rel' k1[s2/a].(t0[s2/a][b |> sym h2/b]) ]]$
+\item $[[s4 = PI b:rel' k1[s2/a].t0[s2/a] ]]$
+\end{itemize}
+We must show $[[S;Rel(G,G'[s1/a]) |-co* h : (PI b:rel' k1. t0)[s1/a] [Type{}]~[Type{}] (PI b:rel' k1. t0)[s2/a] ]]$. We will do this by proving both of these:
+\begin{description}
+\item[$[[S;Rel(G,G'[s1/a]) |-co* PI b:rel' h2. h1 : (PI b:rel' k1[s1/a]. t0[s1/a]) [Type{}]~[Type{}] s3]]$]
+This is straightforward from \rul{Co\_PiTy}.
+\item[$[[S;Rel(G,G'[s1/a]) |-co* s3 ~={<Type{}>} s4 : s3 [Type{}]~[Type{}] s4]]$]
+We must prove that both the left-hand type and right-hand type have kind $[[Type{}]]$. The left-hand result comes from \pref{lem:prop-reg-star} on the result of the
+previous branch of this list of things to prove.
+The right-hand result comes from \pref{lem:prop-reg} on our assumption about
+$[[g]]$ and \pref{lem:ty-subst} (using \pref{lem:increasing-rel} in the
+$[[rel = Irrel]]$ case).
+Now we must prove that the erasure of the two types equal, which boils down
+to proving $[[|t0[s2/a][b |> sym h2/b]| = |t0[s2/a]|]]$. By \pref{lem:subst-erase},
+the LHS becomes $[[|t0[s2/a]|[|b |> sym h2|/b] ]]$. We can see that
+$[[|b |> sym h2| = b]]$ and thus the two sides of the equation are equal.
+\end{description}
+\item[Coercion variable binder:]
+In this case, we know that $[[t = PI c:phi. t0]]$ and $[[k0 = Type{}]]$.
+The induction hypothesis gives us $[[h1]]$ such that
+$[[S;Rel(G,G'[s1/a]),c:phi[s1/a] |-co* h1 : t0[s1/a] [Type{}]~[Type{}] t0[s2/a] ]]$.
+Let $[[phi = k1 (k1')~(k2') k2]]$.
+We can also use \pref{lem:ctx-reg}, \pref{lem:covar-reg}, and inversion on
+\rul{Prop\_Equality} to
+see that $[[S;Rel(G,a:rel k,G') |-ty k1 : k1']]$ and
+$[[S;Rel(G,a:rel k,G') |-ty k2 : k2']]$, both with a smaller derivation
+height than $[[S;G,a:rel k,G'|-ty PI c:phi. t0 : Type{}]]$. We
+can thus use the induction hypothesis again to get $[[h2]]$ and
+$[[h3]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co* h2 : k1[s1/a] [k1'[s1/a] ]~[k1'[s2/a] ] k1[s2/a] ]]$
+and
+$[[S;Rel(G,G'[s1/a]) |-co* h3 : k2[s1/a] [k2'[s1/a] ]~[k2'[s2/a] ] k2[s2/a] ]]$.
+Choose $[[h = (PI c: (h2,h3). h1) ;; h4]]$, where
+\begin{itemize}
+\item $[[h4 = s3 ~={<Type{}>} s4]]$
+\item $[[s3 = PI c:phi[s2/a].(t0[s2/a][h5/c]) ]]$
+\item $[[s4 = PI c:phi[s2/a].t0[s2/a] ]]$
+\item $[[h5 = h2 ;; c ;; sym h3]]$
+\end{itemize}
+We must show $[[S;Rel(G,G'[s1/a]) |-co* h : (PI c:phi. t0)[s1/a] [Type{}]~[Type{}] (PI c:phi. t0)[s2/a] ]]$. We will do this by proving both of these:
+\begin{description}
+\item[$[[S;Rel(G,G'[s1/a]) |-co* PI c: (h2,h3). h1 : (PI c:phi[s1/a]. t0[s1/a]) [Type{}]~[Type{}] s3]]$]
+This is straightforward from \rul{Co\_PiCo}. Note that we cannot guarantee the
+$[[c ~# h1]]$ condition here, necessitating the use of $[[|-co*]]$ instead
+of $[[|-co]]$.
+\item[$[[S;Rel(G,G'[s1/a]) |-co* s3 ~={<Type{}>} s4 : s3 [Type{}]~[Type{}] s4]]$]
+We must prove that both the left-hand type and right-hand type have kind $[[Type{}]]$. The left-hand result comes from \pref{lem:prop-reg-star} on the result of the
+previous branch of this list of things to prove.
+The right-hand result comes from \pref{lem:prop-reg} on our assumption about
+$[[g]]$ and \pref{lem:ty-subst} (using \pref{lem:increasing-rel} in the
+$[[rel = Irrel]]$ case).
+Now we must prove that the erasure of the two types equal, which boils down
+to proving $[[|t0[s2/a][h5/c]| = |t0[s2/a]|]]$. This holds by
+\pref{lem:co-subst-erase}.
+\end{description}
+\end{description}
+\item[Case \rul{Ty\_Cast}:]
+We adopt the metavariable names from the rule (but renaming the coercion used
+in the cast to $[[g']]$):
+\[
+\ottdruleTyXXCast{}
+\]
+The induction hypothesis gives us $[[h1]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co* h1 : t[s1/a] (k1[s1/a])~(k1[s2/a]) t[s2/a] ]]$.
+Let $[[h2 = ((t[s1/a] |> g'[s1/a]) ~={sym g'[s1/a]} t[s1/a]) ]]$ and
+$[[h3 = (t[s2/a] ~={g'[s2/a]} (t[s2/a] |> g'[s2/a]))]]$. It is easy to
+see (using \pref{lem:prop-reg-star} and \pref{lem:ty-subst})
+that $[[h2]]$ and $[[h3]]$ are well-typed.
+Choose $[[h = h2 ;; h1 ;; h3]]$, and we are done.
+\item[Case \rul{Ty\_Case}:]
+By repeated use of the induction hypothesis,
+\pref{lem:ty-subst}, and \rul{Co\_Case}.
+\item[Case \rul{Ty\_Lam}:]
+Like the case for \rul{Ty\_Pi}.
+\item[Case \rul{Ty\_Fix}:]
+By the induction hypothesis, \pref{lem:ty-subst}, and \rul{Co\_Fix}.
+\item[Case \rul{Ty\_Absurd}:]
+We adopt the metavariable names from the rule (but renaming the coercion used
+to $[[g']]$):
+\[
+\ottdruleTyXXAbsurd{}
+\]
+The induction hypothesis gives us $[[h1]]$ such that
+$[[S;Rel(G,G'[s1/a]) |-co* h1 : t[s1/a] [Type{}]~[Type{}] t[s2/a] ]]$.
+Choose $[[h = absurd (g'[s1/a], g'[s2/a]) h1]]$. We know
+$[[g'[si/a] ]]$ (for $i \in \{1,2\}$) is well-typed by \pref{lem:ty-subst}.
+We are thus done.
+\end{description}
+\end{proof}
+
