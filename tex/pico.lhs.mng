@@ -776,7 +776,7 @@ to get the type of |Left True| in a syntax-directed way.
 \paragraph{Universal argument saturation}
 The grammar for type constant occurrences in types requires them to appear
 fully saturated with respect to universals but perhaps unsaturated with
-resepct to existentials. There are several reasons for this seemingly-peculiar
+respect to existentials. There are several reasons for this seemingly-peculiar
 design:
 \begin{itemize}
 \item It is helpful to separate universals from existentials in a variety of
@@ -798,7 +798,7 @@ of the canonical forms lemma, as any expression classified by a $[[MPI]]$
 must be a partially applied constant and any expression classified by a
 $[[UPI]]$ must be a $[[\ ]]$.
 
-\item All univeral arguments are always irrelevant and erased during
+\item All universal arguments are always irrelevant and erased during
 type erasure (\pref{sec:type-erasure}). It is thus natural to separate
 these from existentials in the grammar.
 \end{itemize}
@@ -939,7 +939,7 @@ existentials: the coercion variable $[[c0]]$. This coercion witnesses the
 equality between the scrutinee ($[[&&vx]]$, in this case) and the applied
 data constructor that introduces the case-branch. This coercion variable
 is bound in all matches, meaning that all pattern matching in \pico/
-is dependent pattern matching.\footnote{Contrast to Gundry \citep{gundry-thesis},
+is dependent pattern matching.\footnote{Contrast to \citet{gundry-thesis},
 which has two separate constructs, \ottkw{case} and \ottkw{dcase}, only
 the latter of which does dependent matching.}
 
@@ -1187,7 +1187,7 @@ the typing rules
 require that all matches are exhaustive. However, in general, in can be
 undecidable to determine whether the type of a scrutinee indicates that
 a certain constructor can be excluded. In order to step around this
-potential trap, \pico/ supports absurdity elmination through \ottkw{absurd}.
+potential trap, \pico/ supports absurdity elimination through \ottkw{absurd}.
 The coercion passed into \ottkw{absurd} ($[[c]]$, above) must prove that
 one constant equals another. This is, of course, impossible, and so we
 allow $[[absurd g t]]$ to have any type $[[t]]$.
@@ -1532,7 +1532,7 @@ of the scrutinee should be acceptable. See the proof of progress in
 \subsubsection{Default alternatives}
 
 \Pico/ supports \emph{default alternatives} through the form
-$[[_ -> t]]$. This is a catchall case, to be used only when no
+$[[_ -> t]]$. This is a catch-all case, to be used only when no
 other case matches. In a language with a simpler treatment for
 \ottkw{case} statements, a default would be unnecessary; every 
 \ottkw{case} could simply enumerate all possible constructors.
@@ -1570,7 +1570,7 @@ as chosen by $[[t]]$. Because $[[t]]$ is needed only to choose
 the overall kind of the type, it is checked a context reset by
 $[[Rel]]$.
 
-As explained with the example, absurdity eliminiation is sometimes
+As explained with the example, absurdity elimination is sometimes
 needed in the
 body of case alternatives that can never be reached.
 
@@ -1628,7 +1628,7 @@ A subset of the types $[[t]]$ are considered values, written with the
 metavariable $[[v]]$:
 
 \begin{definition*}[Values]
-Let values $[[v]]$ be defined by the following subgrammar of $[[t]]$:
+Let values $[[v]]$ be defined by the following sub-grammar of $[[t]]$:
 \[
 [[v]] \bnfeq [[H{ts} ps]] \bnfor [[PI d. t]] \bnfor [[\a:Rel k. t]]
                           \bnfor [[\a:Irrel k. v]] \bnfor [[\c:phi.t]]
@@ -1685,7 +1685,7 @@ other surprising feature in these rules is the way that \rul{S\_Match}
 works, by applying the body of the alternative $[[t0]]$ to the actual
 existential arguments to $[[H{ts}]]$ and a reflexive coercion. This
 follows directly from my design of having \ottkw{case} alternatives
-avoid a special binding form and use the existings forms in the language.
+avoid a special binding form and use the existing forms in the language.
 
 \subsection{Congruence forms}
 \label{sec:step-congruence}
@@ -1796,7 +1796,7 @@ entire judgment---there is no other form of proposition supported in
 
 \noindent Note that the kinds $[[k1]]$ and $[[k2]]$ are allowed to differ.
 
-The particular flavor of hetergeneous equality in \pico/ is so-called
+The particular flavor of heterogeneous equality in \pico/ is so-called
 ``John Major'' equality~\cite{mcbride-thesis}, where an equality between two
 types implies the equality between the kinds:
 \[
@@ -1896,7 +1896,7 @@ that is, incompatible with homotopy type theory~\cite{hott}, which takes
 as a key premise that there is more than one way to prove the identity
 between two types. While baking UIP into the language may limit its applicability,
 \pico/'s intended role as an intermediate language, where the coercions are
-inferrred by the compiler, makes this choice necessary. We would not want
+inferred by the compiler, makes this choice necessary. We would not want
 the static semantics of our programs to depend on the whims of how the
 compiler placed its equality proofs.
 
@@ -1999,7 +1999,7 @@ mention $[[a]]$, assumed to be of type $[[k1]]$. For $[[s1]]$, that assumption
 is correct; the left-hand type in the result is $[[PI a:rel k1.s1]]$.
 However, for $[[s2]]$, this assumption is wrong: we wish $[[a]]$ to have
 kind $[[k2]]$ in the right-hand result type. In order to fix up the mess,
-the conlusion of \rul{Co\_PiTy} does an unusual substitution, mentioning the
+the conclusion of \rul{Co\_PiTy} does an unusual substitution, mentioning the
 type $[[ s2[a |> sym h/a] ]]$. This takes $[[s2]]$---well-typed in a context
 where $[[a]]$ has kind $[[k1]]$---and changes it to expect $[[a]]$ to have
 kind $[[k2]]$. It does this by casting $[[a]]$ by $[[sym h]]$, a coercion
@@ -2150,7 +2150,7 @@ What this means, in practice, is that we can often think of equality as
 congruent, and intuition about the equality relation stemming from
 congruence is often accurate. In particular, if the type $[[t]]$ in the
 statement of congruence has no coercion abstractions or $\Pi$-types, then
-congruence with repsect to $[[|-co]]$ holds.\footnote{This intuition is
+congruence with respect to $[[|-co]]$ holds.\footnote{This intuition is
 hard to state precisely, because of the possibility that the contexts have
 abstractions over coercions. We would somehow need a premise that states
 that no coercion abstractions are ``reachable'' from $[[t]]$, but defining
@@ -2306,10 +2306,10 @@ just to add this extra, redundant premise.
 
 The coercion language in \pico/ is quite extensive, boasting (or suffering
 from, depending on your viewpoint) 34 separate typing rules. \rae{Has that
-number changed since Jun 16?} I consider here, briefly, why this is so.
+number changed since June 16?} I consider here, briefly, why this is so.
 
 There are several coercion forms that are absolutely essential for \pico/ to
-be proven typesafe and yet remain meaningful. These include the equivalence
+be proven type-safe and yet remain meaningful. These include the equivalence
 and coherence rules, assumptions, the $\Pi$-congruence form over type
 variables,\footnote{This form is needed only to support reduction under
   irrelevant $\lambda$s.} \ottkw{argk} over $\Pi$, instantiation over $\Pi$,
@@ -2569,7 +2569,7 @@ is cast by $[[h0']]$ and thus the second must be cast by $[[h1']]$, which
 essentially replaces the occurrence of |True| in the type of the applied
 |MkP| constructor with $[[&True{} |> h0']]$, using a coherence coercion
 built with $[[~=]]$. Indeed, this is the whole point of $[[build_kpush_co]]$---using
-coherence to alter the types of later exisentials depending on earlier ones.
+coherence to alter the types of later existentials depending on earlier ones.
 Here is the critical correctness property of $[[build_kpush_co]]$:
 
 \begin{lemma*}[Correctness of $[[build_kpush_co]]$ {[\pref{lem:build-kpush-co}]}]
@@ -2928,7 +2928,7 @@ coercion variable, as it is always a proof of equality between two variables.
 This extra coercion variable cannot imperil consistency. To prove this in the
 consistency proof, Weirich et al.~employ a notion of ``Good'' contexts, which
 must be threaded through their proofs. My one-variable version, with no
-bound coercion variable, avoids this compliation.
+bound coercion variable, avoids this complication.
 
 \subsubsection{The proof of consistency by \citet{gundry-thesis} is wrong}
 
@@ -2961,7 +2961,7 @@ have yet to show it.
 A critical property of any intermediate language used to compile Haskell is
 its ability to support type erasure. Haskell takes pride in erasing all of
 its complicated, helpful types before runtime, and the intermediate language
-must show that this is possible. \Pico/ acheives this goal through its
+must show that this is possible. \Pico/ achieves this goal through its
 relevance annotations, where irrelevant abstractions and applications
 are erased. In previous, non-dependent intermediate languages for Haskell,
 irrelevant abstractions and applications are also erased, but these were
@@ -3519,3 +3519,10 @@ typed surface languages, and would be excited to see it be adapted to
 work in that regard.
 
 
+
+%%  LocalWords:  cd newcode rae fmt Pico Ott Syn TypeLits TL UU fmap endif FC
+%%  LocalWords:  thm Conv fixpoint forall IsLeft IntLike letrec Girard's UPI
+%%  LocalWords:  MPI dep overbar ADT ADTs MkTuple MkEx NB lhs TypeRep cf poly
+%%  LocalWords:  isEmpty ys xs safeHead MkX UnX unX formedness Trellys UIP
+%%  LocalWords:  HoTT MkG MkP unboxed VoidRep RuntimeRep PtrRepLifted IntRep
+%%  LocalWords:  PtrRepUnlifted thunked circ
