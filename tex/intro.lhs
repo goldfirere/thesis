@@ -78,7 +78,7 @@ rich specifications in types. However, it
 differs in several key ways from existing approaches to dependent types:
 \begin{enumerate}
 \item Dependent Haskell has the $\ottkw{Type} : \ottkw{Type}$ axiom, avoiding
-the need for an infinite hierarchy of sorts~\cite{???} used in other languages.
+the need for an infinite hierarchy of sorts~\cite{russell-universes,luo-ecc} used in other languages.
 
 \item A key issue when writing dependently typed programs is in figuring out
 what information is needed at runtime. Dependent Haskell's approach is to
@@ -110,7 +110,7 @@ Haskell.
   equivalence between two types. In this way, \pico/ is a direct descendent
   of System FC~\cite{systemfc,promotion,nokinds,closed-type-families,safe-coercions} and of the \emph{evidence} language of \citet{gundry-thesis}.
 
-  In \pref{app:pico}, I prove the usual preservation and progress theorems
+  In \pref{app:pico-proofs}, I prove the usual preservation and progress theorems
   for \pico/ as well as a type erasure theorem that relates the operational
   semantics of \pico/ to that of a simple $\lambda$-calculus with datatypes
   and \ottkw{fix}. In this way, I show that all the fancy types really can

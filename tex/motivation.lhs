@@ -422,7 +422,7 @@ This will be adapted from previous work~\cite{closed-type-families-extended}.
 
 \emph{Reflection} is the act of reasoning about a programming language from
 within programs written in that language.\footnote{Many passages in this
-  example come verbatim from a draft paper of mine~\cite{equalities}.} In
+  example come verbatim from a draft paper of mine~\cite{overabundance-of-equalities}.} In
 Haskell, we are naturally concerned with reflecting Haskell types. A
 reflection facility such as the one described here will be immediately
 applicable in the context of Cloud Haskell. Cloud Haskell~\cite{cloud-haskell}

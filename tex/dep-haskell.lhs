@@ -433,12 +433,21 @@ possible.
 \label{sec:roles-and-dependent-types}
 
 \begin{proposal}
+\rae{TODO: Remove.}
 Roles and dependent types have a tricky interaction, the details of which
 are beyond the scope of this proposal. One approach to combining the two
-features appears in a recent draft paper~\cite{equalities}. The user-facing
+features appears in a recent draft paper. The user-facing
 effects of the interaction between roles and dependent types will appear
 in this section.
 \end{proposal}
+
+\subsection{Impredicativity, or lack thereof}
+\label{sec:impredicativity}
+\rae{TODO: Write me.}
+
+\subsection{Running proofs}
+\label{sec:running-proofs}
+\rae{TODO: Write me.}
 
 \section{Other syntax changes}
 \subsection{Parsing for |*|}
