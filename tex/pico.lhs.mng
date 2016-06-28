@@ -6,15 +6,26 @@
 \begin{code}
 -- import Pico.Ott
 -- import Pico.Syn
-import Prelude hiding ( Either(..), replicate )
+import Prelude hiding ( Either(..), replicate, Functor(..), Applicative(..),
+                        Monad(..) )
 import Data.Kind ( Type )
 import qualified GHC.TypeLits as TL
 import Data.Singletons.TH hiding ( Proxy(..) )
-import Data.Singletons.Prelude
+import Data.Singletons.Prelude hiding ( Proxy(..) )
 
 type family UU n where
   UU 0 = !Zero
   UU n = !Succ (UU (n TL.- 1))
+
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+
+class Functor f => Applicative f where
+  pure :: a -> f a
+  (<*>) :: f (a -> b) -> f a -> f b
+
+class Applicative f => Monad f where
+  (>>=) :: f a -> (a -> f b) -> f b
 
 \end{code}
 
@@ -158,6 +169,7 @@ It is matching only on constructors, because the kind-level |->| classifies
 only type constants. \rae{Flesh this out once I know how I'm dealing with the
 two arrows in Haskell.}
 
+\rae{Also perhaps update this paragraph once I figure out the two arrows.}
 To get this partially-applied matching to work in \pico/, it is necessary
 to have two different $[[PI]]$-quantifiers: $[[MPI]]$ and $[[UPI]]$. The
 former is called a \emph{matchable} $[[PI]]$, the latter is \emph{unmatchable}.
@@ -2743,6 +2755,7 @@ the reduction happens, as required for the local diamond lemma needed to
 prove confluence.
 
 \subsubsection{Confluence}
+\label{sec:local-diamond}
 
 This reduction relation is confluent (that is, has the Church-Rosser property).
 I prove this by proving a local diamond lemma:
@@ -2764,6 +2777,7 @@ not otherwise challenging. The local diamond lemma implies confluence.
 
 \subsection{Completeness of the rewrite relation}
 \label{sec:covar-restriction}
+\label{sec:completeness-rewrite}
 
 Having written a confluent rewrite relation, we must also connect this relation
 to our equality relation. This is done via the following lemma:
@@ -2818,6 +2832,7 @@ are joinable, we must rely heavily on the deterministic nature of the typing
 relation, but there are no other undue complications.
 
 \subsection{From completeness to consistency}
+\label{sec:erase-cons}
 
 Having established the relationship between $[[S;G |-co g : phi]]$ and
 joinability with respect to the rewrite relation, we must only show that
@@ -3017,7 +3032,15 @@ dropping the coercions themselves by rewriting all coercions with the uninformat
 What has now happened to our claim of type erasure? Coercions exist only to
 alter types, so have we kept some meddlesome vestige of types around? In a
 sense, yes, we have kept some type information around until runtime. However,
-I can claim that the remaining abstractions are not meddlesome. The way in
+two critical facts mean that this retention does not cause harm:
+\begin{itemize}
+\item Coercion applications contain no information, and therefore can be
+represented by precisely 0 bits. Indeed, this is how coercions are currently
+compiled in GHC, by using an unboxed representation that is 0 bits wide.
+Thus, no memory is taken up at runtime.
+
+\item
+The coercion abstractions are not, in fact, meddlesome. The way in
 which coercion abstractions could cause harm at runtime is by causing a program
 to be a value when the user is not expecting it. For example, if a compiler
 translated the Haskell program |1 + 2| into the expression
@@ -3026,6 +3049,17 @@ no Haskell program ever evaluates to a coercion abstraction. This claim
 is properly a property of the type inference / elaboration algorithm and so
 is deferred until \pref{sec:no-coercion-abstractions}. \rae{Make sure this lines
 up.}
+\end{itemize}
+
+One may wonder why \pico/ needs coercion abstractions at all. I can provide
+two reasons: to preserve the simplified treatment of \ottkw{case} that does
+not bind variables, and in order to enable floating. An optimizer
+may decide to common up two branches of a \ottkw{case} expression (i.e., float
+the branches out), both of
+which bind the same coercion variable. Yet, if there were no coercion
+abstraction form, this would be impossible. It is a correctness property
+of the optimizer (well beyond the scope of this dissertation) to make sure
+that the floated coercion abstraction does not halt evaluation prematurely.
 
 \subsection{Simulation}
 
@@ -3068,20 +3102,420 @@ a value nor a coerced value.
 This lemma is straightforward to prove inductively on the structure of $[[t]]$,
 and then the proof of the theorem above simply stitches together the pieces.
 
-\section{Discussion}
-
-\subsection{Design decisions}
+\section{Design decisions}
 \label{sec:pico-design-decisions}
+
+In the course of writing \pico/, I have had to make quite a number of
+design decisions. Some of these are forced by external constraints
+(such as the need for two $\Pi$-forms), but others have been relatively
+free choices. In this section, I revisit some of these decisions and try
+to motivate why I have built \pico/ in the way that I have. It is my
+hope that this section will empower readers who wish to extend/alter
+\pico/ to understand its design better.
+
+\subsection{Coercions are not types}
+
+One alternative I considered was to make a coercion $[[g]]$ a possible
+production of a type $[[t]]$. This would allow, for example, the form
+$[[t1 t2]]$ to encompass both type application and coercion application.
+Going down this route, propositions $[[phi]]$ would also have to become
+kinds $[[k]]$, and we would have a rule such as
+\[
+\ottdrule{\ottpremise{[[S;G |-co g : phi]]}}{[[S]];[[G]] [[|-ty]] [[g]] : [[phi]]}{\rul{Ty\_Coercion}}
+\]
+This alternative design does not cause trouble with type safety, because
+we are injecting the safe coercions into the unsafe types;
+the other way around would be
+chaos.
+
+This injection would simplify aspects of the grammar and rules. For example,
+the $\ottkw{argk}_1$ and $\ottkw{argk}_2$ coercions could be rewritten in
+terms of $\ottkw{argk}$ and $\ottkw{nth}$.
+
+In the end, I decided against this design because it simply moves the
+complexity around. Instead of the syntactic complexity inherent in \pico/'s
+actual design, this injection would cause complexity in needing to rule
+out the presence of coercions in various places where they would not appear.
+For example, the scrutinee of a \ottkw{case} can never be a coercion,
+and there is no good way to define what $\llfloor [[g]] \rrfloor$ should be.
+The design I chose adds a little syntactic overhead to avoid these thorny
+proof obligations, and that seems to be a win.
+
+\subsection{Putting braces around irrelevant arguments}
+
+A similar design decision was to put braces around irrelevant arguments.
+The syntactic distinction between relevant arguments and irrelevant ones
+is not necessary for syntax-direction, because we can always look up the
+type of the function to see whether we should consider the type application
+to be relevant or irrelevant. Yet putting this distinction directly in
+the syntax makes certain parts of the metatheory cleaner, when relevant
+and irrelevant applications are treated separately. Marking relevance
+in the syntax also allows us to define an erasure operation that is
+not type-directed.
+
+\subsection{Including types' kinds in propositions}
+\label{sec:kinds-in-props}
+
+Given that we can always extract a type's kind from the type, why is
+it necessary to mark all propositions with the types' kinds? (Recall that
+all propositions in \pico/ are so marked, even though the kinds are frequently
+elided in the typesetting.) Once again, having details present directly
+in the syntax of propositions is more convenient than having those details
+implicit in the kinds of types. In this case, the kinds are necessary
+when defining $\ottkw{argk}_1$ and $\ottkw{argk}_2$. When proving the
+completeness of the rewrite relation (\pref{sec:completeness-rewrite}),
+we must be able to show that the kinds of the two types related by a coercion
+are joinable. Without having the kinds in the types erased of coercions
+(that is, in the output of $\lfloor \cdot \rfloor$), this is not provable.
+
+An alternative here would be to have the erased language maintain the kinds
+but to omit them from \pico/ proper, but that makes erasure type-directed
+and more challenging. It seems simpler (and rather less error-prone) once
+again to make the syntax more ornate and the proofs shorter.
 
 \section{Extensions}
 \label{sec:pico-extensions}
 
+I conclude this chapter by considering several extensions one might want
+to make to \pico/ to support a few more features of Haskell.
+
 \subsection{\ottkw{let}}
 \label{sec:let-desugaring}
+
+Haskell allows binding variables with \ottkw{let}, and it would be convenient
+to do so in \pico/ as well. We shall consider the non-recursive case first and
+then move onto the complexities of \ottkw{letrec}. Below, flouting Haskell
+convention, I use \ottkw{let} to refer exclusively to the non-recursive case
+and use \ottkw{letrec} when considering recursive bindings.
+
+Non-recursive \ottkw{let} would be very easy to incorporate. At first blush,
+we could consider \ottkw{let} as a derived form, much as described in the
+literature~\cite[Section 11.5]{tapl}, replacing $\ottkw{let}\, ([[x]] : [[k]])
+[[:=]] [[t]]\, \ottkw{in}\, [[s]]$ with $[[ (\ x:Rel k. s) t]]$. However,
+doing so would make optimizations a stroke harder: with the explicit
+\ottkw{let} form, the optimizer can know the value of $[[x]]$ in $[[s]]$; this
+connection is lost with the applied $\lambda$-expression. Nevertheless,
+adding \ottkw{let} as a new proper type form
+would be straightforward. We could additionally incorporate the ability
+to bind a coercion variable proving that, say, $[[x [k]~[k] t]]$ in $[[s]]$.
+We would also add a new rule to the operational semantics expanding out
+all \ottkw{let} definitions directly; a running implementation may wish to
+optimize this, however. The only real challenge we would run into is adding
+a congruence coercion for \ottkw{let}, which would share the complications
+of the other binding forms (see \pref{sec:binding-cong-forms}).
+The designer of this extension could choose, however,
+to omit the congruence coercion for \ottkw{let}, as the coercion is not
+strictly necessary.
+
+Recursive \ottkw{letrec} has all of the complexities above, along with
+the challenge of being recursive. In an expression such as
+$\ottkw{letrec}\, ([[x]] : [[k]]) [[:=]] [[t]] \,\ottkw{in}\, [[s]]$,
+we would not be able to bind a coercion variable witnessing the equality
+between $[[x]]$ and $[[t]]$, as that would bring us into the realm of
+very dependent types~\cite{very-dependent-types}. Even ignoring that
+complication, we may also wish to consider the operational semantics
+of \ottkw{letrec}. To my surprise, I am unable to find a published account
+of an operational semantics that deals with \ottkw{letrec}, other than
+my own unproven version~\cite{ghc-core-spec}. I can imagine rewriting
+a \ottkw{letrec} to a form where each recursive occurrence of a variable
+is replaced with a copy of the entire \ottkw{letrec}. I believe this would
+hold together, though I have not worked out the details. I do not wish to
+begin to imagine what a congruence coercion for \ottkw{letrec} would look like.
+
+Despite these challenges, I do think an implemented version of \pico/ could
+accommodate a primitive \ottkw{letrec} rather easily, as the implementation
+of the language in an optimizing compiler would not have to include the
+operational semantics rules verbatim. Indeed, despite many published versions
+of the operational semantics of System FC (e.g.,~\cite{systemfc}), GHC
+does not currently implement these rules directly. In a similar fashion,
+an implementation of \pico/ would not need to include the hideously
+inefficient version of \ottkw{letrec} sketched above but could use existing
+techniques to implement recursion.
+
+Given that \pico/ incorporates general recursion via \ottkw{fix}, adding
+such constructs should not imperil type safety.
+
+\subsection{Splitting type applications}
+
+Haskell type families permit an unusual operation I will call splitting:
+
+\begin{code}
+type family Split x where
+  Split (a b)  =  !Just !(a, b)
+  Split other  =  !Nothing
+\end{code}
+
+The |Split| function, correctly inferred to have Haskell kind
+|forall k1 k2. k2 -> Maybe (k1 -> k2, k1)|, can detect a type application.
+It will return |Just| if it sees |IO Int| but |Nothing| if it sees
+|Bool|. This function cannot be encoded into \pico/ as it stands.\footnote{Other type families, as long as their left-hand sides do not repeat variables, can be desugared into \pico/, by adapting work by \citet{augustsson-compiling-pattern-matching}.} We instead must add a new primitive, \ottkw{split}.
+
+At its most basic, a \ottkw{split} expression would look like this:
+$\ottkw{split}\,[[t]]\,\ottkw{into}\,[[s1]]\,\ottkw{or}\,[[s2]]$.
+The idea is that if $[[t]]$ is a type application $[[t1 t2]]$, then the
+ \ottkw{split} expression reduces to $[[s1]]$ (applied to some details of $[[t]]$);
+otherwise, the expression reduces to $[[s2]]$. The result kind of $[[t1]]$
+is known: it is the type of $[[t]]$. However, the argument kind of $[[t1]]$
+is not apparent and thus must be passed to $[[s1]]$.
+The type $[[s1]]$ would thus be 
+\[
+[[UPI a1 :Irrel Type{}, b1 :Rel (MPI x :Rel a1. k), b2 :Rel a1, c : t [k]~[k] b1 b2. k2]]
+\] where $[[k]]$ is the kind of the scrutinee $[[t]]$ and $[[k2]]$ is
+the result kind. Note the $[[MPI]]$ in the type of $[[b1]]$, meaning that
+we can break apart only matchable applications. This is a good thing, because
+we would not want to be able to separate arbitrary functions from their
+arguments to inspect one of the other.
+In this formulation, the kind of $[[s2]]$ would just be $[[k2]]$.
+
+
+Unfortunately, this ``most basic'' version does not quite cut it. The problem
+is that the scrutinee $[[t]]$ might also be $[[t1 {t2}]]$ or $[[t1 g2]]$,
+and thus the \ottkw{split} form would really need four branches (including
+one for the default, atomic case). Each case would need its own rule in the
+operational semantics. We would also need a push rule in case a coercion
+is in the way of examining a type application. The parallel rewrite relation
+would need to be extended as well, with analogues to all the new rules
+in the operational semantics. In the end, it seems \ottkw{split} is not
+paying its weight, and so I have kept it out of this presentation. Despite
+this omission, I do believe it would not be a technical challenge to add,
+should this feature prove necessary.
 
 \subsection{A primitive equality check}
 \label{sec:equals-ctf}
 
-\rae{Extensions: split, |Equals|, representation polymorphism, |(->)|, compression (\ottkw{step} becoming $\ottkw{step}^n$).}
+\def\apart/{\ensuremath{[[apart]]}}
+
+Haskell also supports non-linear patterns in its type families, as
+canonically embodied by this type function:
+\begin{code}
+type family Equals x y where
+  Equals a  a  =  !True
+  Equals a  b  =  !False
+\end{code}
+The |Equals| type family effectively compares its two arguments. If they
+are identical (reducing other type families as possible and necessary),
+|Equals| returns |True|. On the other hand, if the two arguments are
+\apart/, in the sense described by \citet{closed-type-families},\footnote{Briefly, two types are \apart/ if there is no possibility of a coercion between them.
+Or, rather, it is a conservative approximation of non-coercibility, as non-coercibility is undecidable.} |Equals| reduces to |False|. If the arguments are
+neither identical nor \apart/, the call cannot reduce.
+
+|Equals| cannot be represented in \pico/ as described in this chapter; no
+typing rule has a notion of \apart/ness built into it. Thus we need a new
+primitive if we are to compile |Equals|. Actually, we need three:
+\[
+\begin{array}{rcl}
+[[t]] &\bnfeq& \ldots \bnfor [[equals t1 t2]] \\
+[[g]] &\bnfeq& \ldots \bnfor [[axEquals t]] \bnfor [[axApart t1 t2]]
+\end{array}
+\]
+
+\begin{figure}[t!]
+\begin{gather*}
+\ottdrule{%
+\ottpremise{[[S;G |-ty t1 : k // S;G |-ty t2 : k]]}}{%
+[[S;G |-ty equals t1 t2 : &Bool{}]]}{\rul{Ty\_Equals}}\rulesep
+\ottdrule{%
+\ottpremise{[[S;G |-ty t : k]]}}{%
+[[S;G |-co axEquals t : equals t t [&Bool{}]~[&Bool{}] &True{}]]}{%
+\rul{Co\_AxEquals}}\rulesep
+\ottdrule{%
+\ottpremise{[[S;G |-ty t1 : k // S;G |-ty t2 : k]]}%
+\ottpremise{[[apart(t1;t2)]]}}{%
+[[S;G |-co axApart t1 t2 : equals t1 t2 [&Bool{}]~[&Bool{}] &False{}]]}%
+{\rul{Co\_AxApart}}\rulesep
+\ottdrule{%
+\ottpremise{[[S;G |-s t1 --> t1']]}}{%
+[[S;G |-s equals t1 t2 --> equals t1' t2]]}{\rul{S\_Equals\_Cong1}}\rulesep
+\ottdrule{%
+\ottpremise{[[S;G |-s t2 --> t2']]}}{%
+[[S;G |-s equals v1 t2 --> equals v1 t2']]}{\rul{S\_Equals\_Cong2}}\rulesep
+\ottdrule{}{%
+[[S;G |-s equals v v --> &True{}]]}{\rul{S\_EqTrue}}\rulesep
+\ottdrule{\ottpremise{[[v1 /= v2]]}}{%
+[[S;G |-s equals v1 v2 --> &False{}]]}{\rul{S\_EqFalse}}
+\end{gather*}
+\caption{Typing rules for primitive equality}
+\label{fig:equals-rules}
+\end{figure}
+
+The typing rules appear in \pref{fig:equals-rules}. Other than the new
+coercions $[[axEquals]]$ and $[[axApart]]$, these rules might be what one
+would expect: the $[[equals]]$ form evaluates its two arguments and then
+tests for equality. However, just having this evaluation behavior (without
+the two new coercions) is not quite enough to emulate Haskell's |Equals|:
+they cannot handle the case where |Equals a a| reduces to |True|, where
+|a| is locally bound type variable. In Haskell, the equality condition
+arising from a non-linear use of a variable in a pattern does not require
+that the arguments be reduced to any normal form; we thus have to handle
+this possibility in \pico/. The same is true for the $[[axApart]]$ coercion,
+necessary to handle the case (like $[[equals &Int{} (&Maybe{} &&ax)]]$,
+where |a| is a local type variable) where the arguments are demonstrably
+\apart/ but not normal forms.
+
+The typing rules above cause a challenge in proving the completeness of
+the rewrite relation (\pref{sec:completeness-rewrite}). To prove
+completeness for \rul{Co\_AxEquals}, we would need to show that
+$[[equals t t]]$ eventually reduces to |True|, but that requires termination.
+To prove completeness for \rul{Co\_AxApart}, we would need to show that
+$[[t1]]$ and $[[t2]]$ reduce to distinct values whenever $[[apart(t1;t2)]]$.
+This also requires termination, in addition to certain properties of apartness.
+Since \pico/ is non-terminating, this direct approach is hopeless. Instead,
+we might add new rules to the rewrite relation to deal with these cases, but
+that moves the burden to the proof of the local diamond lemma
+(\pref{sec:local-diamond}). \citet{closed-type-families} explore this
+territory in some detail, but with an unsatisfying conclusion: that work
+assumes termination in order to get the consistency proof to go through.
+
+As mentioned above, it is possible that recent work in this area by \citet{kahrs-trss-are-un} gives us a way to include $[[equals]]$ without losing consistency,
+but I have yet to formally connect my work to theirs.
+
+\subsection{Representation polymorphism}
+
+In version 8, GHC supports \emph{representation polymorphism}~\cite{overabundance-of-equalities}.\footnote{Representation polymorphism is also known as levity polymorphism; the name was changed as the concept became more general.} The idea is all wrapped up in the following mutually recursive definitions:
+
+%{
+%if style == newcode
+%format ... = "VoidRep"
+%format constant = "data"
+%else
+%format constant = "\keyword{constant}"
+%format Type0 = Type
+%endif
+\begin{code}
+data RuntimeRep = PtrRepLifted | PtrRepUnlifted | IntRep | ...
+constant TYPE :: RuntimeRep -> Type  -- primitive constant
+type Type0 = TYPE !PtrRepLifted
+\end{code}
+%}
+
+The idea here is that instead of having one sort, |Type|, the language
+would have a family of sorts, all headed by |TYPE| and indexed by an element
+of type |RuntimeRep|. At runtime, each sort corresponds to a different
+representation: values of a type of kind |TYPE !PtrRepLifted| are represented
+by pointers to potentially-thunked data, whereas values of a type of kind
+|TYPE !IntRep| are represented directly as machine integers.
+
+As described in my prior work (and too much of a diversion here to repeat in
+detail),
+abstracting over runtime representations is quite restricted~\cite{overabundance-of-equalities}, lest the
+code generator be hamstrung when trying to compile code involving an unknown
+runtime representation.
+
+Representation polymorphism is useful in Haskell because a number of constructs
+are truly flexible in which representation they work over. Two telling examples
+are |error| and |(->)|. Regardless of the representation of the result of a
+function, |error| is always well-typed, and |(->)| works to connect types
+of varying representations (like |Int# -> Bool|, where |Int#| has kind
+|TYPE !IntRep| and |Bool| has kind |Type|---that is, |TYPE !PtrRepLifted|.)
+
+Because representation polymorphism simply amounts to adding more sorts
+to a language, it would seem not to run into trouble with type safety. And
+I indeed believe this is true, that representation polymorphism does threaten
+the type safety proof. However, it is very syntactically painful to add to
+the formalism, essentially requiring annotating every $\Pi$ with the sort
+of its binder. This annotation becomes necessary for precisely the same
+reasons that we must include kinds in the types of a proposition (\pref{sec:kinds-in-props}): we cannot prove completeness of the rewrite relation (\pref{sec:completeness-rewrite}) without it.
+
+I thus leave adding representation polymorphism as an exercise to the reader;
+in my attempt to add this feature, I encountered no real challenge other than
+fiddliness and lots of syntactic noise.
+
+\subsection{The |(->)| type constructor}
+
+Haskell allows programmers to use the function arrow, |(->)|, as a type constructor of kind |Type -> Type -> Type|.\footnote{The kind of |(->)| really is restricted to be |Type -> Type -> Type|, even though a saturated use of it can relate unlifted types as well. This oddity is due to be explored, among other dark corners of lifted~vs.~unlifted types, in a paper I am hoping to write in the next year.}
+Here are two examples of how this works:\footnote{Recall that, in |((->) x)|,
+|x| is the parameter that is normally written to the \emph{left} of the
+arrow.}
+
+%{
+%if style == poly
+%format circ = "\circ"
+%format <*> = "\mathop{{<}{*}{>}}"
+%else
+%format circ = "."
+%endif
+\begin{code}
+-- a class of categories
+class Category (cat :: k -> k -> Type) where
+  id      :: forall (a :: k). cat a a
+  (circ)  :: forall (a :: k) (b :: k) (c :: k). cat b c -> cat a b -> cat a c
+
+-- the instance for |(->)|
+instance Category (->) where
+  id x = x
+  (f circ g) x = f (g x)
+
+-- a lightweight reader monad, based on |(->)|
+instance Functor ((->) a) where
+  fmap f g x = f (g x)
+
+instance Applicative ((->) x) where
+  pure x = \ _ -> x
+  (f <*> g) x = f x (g x)
+
+instance Monad ((->) x) where
+  (f >>= g) x = g (f x) x
+\end{code}
+%}
+
+Unfortunately, \pico/ cannot, as written, easily accommodate |(->)|.
+A non-dependent arrow is rightly seen as a degenerate form of $\Pi$:
+|a -> b| is the same as $[[UPI _:Rel &&ax. &&bx]]$. Without introducing
+yet a new function type (on top of the six we already have) and argument
+syntax, it seems hard to abstract over this degenerate form of $\Pi$.
+
+Instead, we could add |(->)| as a new primitive constant with coercions
+relating it to $[[UPI]]$:
+\begin{gather*}
+\begin{array}{rcl}
+[[H]] &\bnfeq& \ldots \bnfor |(->)| \\
+[[g]] &\bnfeq& \ldots \bnfor [[arrow t1 t2]]
+\end{array}\rulesep
+\ottdrule{}{[[S |-tc (->) : empty; a :Rel Type{}, b :Rel Type{}; Type]]}{\rul{Tc\_Arrow}}\rulesep
+\ottdrule{\ottpremise{[[S;G |-ty t1 : Type{} // S;G |-ty t2 : Type{}]]}}%
+{[[S;G |-co arrow t1 t2 : (->){} t1 t2 [Type{}]~[Type{}] UPI a :Rel t1. t2]]}%
+{\rul{Co\_Arrow}}
+\end{gather*}
+
+The problem we are faced with at this point is consistency. Specifically,
+we will surely be unable to prove completeness of the rewrite relation
+(\pref{sec:completeness-rewrite}) with the \rul{Co\_Arrow} rule.
+To repair the damage, we can alter the coercion erasure operation to
+also rewrite saturated arrow forms to be $\Pi$ forms, where the following
+equation is tried before other application forms:
+\[
+|(->) t1 t2| = UPI a:Rel |t1|.|t2|
+\]
+Now, completeness for \rul{Co\_Arrow} is trivial.
+
+The problem will last
+surface in the erasure/consistency lemma (\pref{sec:erase-cons}), which
+states that whenever $[[|t1| ! |t2|]]$, we have $[[t1 ! t2]]$. This is
+now plainly false. We must assert that arrow forms are consistent with
+$\Pi$-types:
+\begin{gather*}
+\ottdrule{}{[[(->){} t1 t2 ! UPI a:Rel t1.t2]]}{\rul{C\_Arrow1}}\rulesep
+\ottdrule{}{[[UPI a:Rel t1. t2 ! (->){} t1 t2]]}{\rul{C\_Arrow2}}
+\end{gather*}
+The definition of $[[!]]$ is used in the proof of progress, where now
+we must consider the possibility of encountering unexpected arrow types.
+This possibility, though, is dispatched by adding one clause to the
+canonical forms lemma:
+\begin{lemma*}[Canonical form of arrow types]
+$[[S]];[[G]] \not[[|-ty]] [[v]] : [[(->){} t1 t2]]$
+\end{lemma*}
+That is, no value has an arrow type, because all $\lambda$-forms have
+$\Pi$-types instead. With this in hand, the progress proof should
+go through unimpeded.
+
+\paragraph{Conclusion}
+
+This chapter is a full consideration of \pico/. The detail presented here
+is intended to be useful to implementors of the language and researchers
+interested in adapting \pico/ to be used as the internal language for
+a surface language other than Haskell. I believe \pico/ is a viable
+candidate as a general-purpose intermediate language for dependently
+typed surface languages, and would be excited to see it be adapted to
+work in that regard.
 
 

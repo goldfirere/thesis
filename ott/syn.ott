@@ -70,6 +70,7 @@ tycon, H :: 'TyCon_' ::=
 | T                ::   :: ADT
 | K                ::   :: DataCon
 | Type             ::   :: Type
+| ( -> )           :: M :: Arrow
 
 adt_kind {{ tex ( \overline{\ottmv{a} } {:} \overline{\kappa} ) }} :: 'AdtKi_' ::=
 | ( a1 : k1 , .... , ai : ki )   ::   :: Vars
@@ -205,7 +206,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | '{{' t '}}'                  :: M :: IParens
  {{ tex [[t]] }}
 | blank                        :: M :: Omitted
-| let c := h in t              :: M :: Let  
+| let c := h in t              :: M :: Let
+| equals t1 t2                 :: M :: Equals
 
 | t [ theta ]                  :: M :: Subst
 
@@ -307,6 +309,9 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | g [ theta ]                  :: M :: Subst
 | step ^ I t                   :: M :: ManyStep
   {{ tex \ottkw{step}^{[[I]]}\, [[t]] }}
+| axEquals t                   :: M :: AxEquals
+| axApart t1 t2                :: M :: AxApart
+| arrow t1 t2                  :: M :: Arrow
 
 coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
   :: 'cos_' ::=
@@ -545,7 +550,8 @@ fact :: 'Fact_' ::=
   | G1 \subseteq G2                    ::   :: G_subseq
   | a \notin fvset                     ::   :: var_notin_set
   | S ; G |-co* g : phi                ::   :: co_star
-
+  | apart ( t1 ; t2 )                  ::   :: apartness
+    {{ tex [[apart]]([[t1]];[[t2]]) }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -610,6 +616,11 @@ terminals :: 'terminals_' ::=
 | types                                ::   :: types   {{ tex \mathsf{types} }}
 | ~=                                   ::   :: approx  {{ tex \approx }}
 | <=                                   ::   :: sub     {{ tex \le }}
+| equals                               ::   :: equals  {{ tex \ottkw{equals} }}
+| axEquals                             ::   :: axEq    {{ tex \ottkw{axEquals} }}
+| axApart                              ::   :: axApart {{ tex \ottkw{axApart} }}
+| apart                                ::   :: apart   {{ tex \mathsf{apart} }}
+| arrow                                ::   :: arrow   {{ tex \ottkw{arrow} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}

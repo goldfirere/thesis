@@ -1,15 +1,15 @@
 TO PROVE:
- - Preservation
- - Progress (which now requires lifting)
- - Type erasure vis-a-vis relevance
+ - DONE. Preservation
+ - DONE. Progress
+ - DONE. Type erasure vis-a-vis relevance
  - 'twould be fun to relate relevance and roles.
 
 Binders store the following flags:
- - relevance
- - matchability
+ - DONE relevance
+ - DONE matchability
 
- - BUT NOT visibility
- - OR dependency
+ - DONE BUT NOT visibility
+ - DONE OR dependency
 
 
 Features missing:
@@ -17,32 +17,22 @@ Features missing:
  - Left/Right. Sorta impossible.
 
 Notation:
-%% - a -> b means (_ :(Nondep,Rel,Vis,Mat) a. b)
-%% - a ~> b means (_ :(Nondep,Rel,Vis,Unm) a. b)
- - dom(D) is a list of type/coercion variables zs.
- - prefix(.) takes the prefix of a list
-%% - Notation as:D means the lengths must match exactly
- - \tilde{\Pi} is the unmatchable Pi.
- - We write H for H[]
+ - DONE dom(D) is a list of type/coercion variables zs.
+ - DONE prefix(.) takes the prefix of a list
+ - DONE \tilde{\Pi} is the unmatchable Pi.
+ - DONE We write H for H[]
  
- - Rel(G) makes all bindings in G relevant.
-%% - Irrel(G) is a no-op.
-%% - Thus, rel(G) (with a metavariable rel) is well-defined.
-%% - \neg rel is the opposite of rel.
-%%    --> This Rel(G) operation is precisely Mishra-Linger's "context reset" operation
-
- - `let` in coercions is defined by macro-expansion
-
-%% TysWiredIn:
-%% S0 = (~) : (x1 :Irrel Type, x2 :Irrel Type, a1 :Rel x1, a2 :Rel x2)
+ - DONE Rel(G) makes all bindings in G relevant.
+ - DONE `let` in coercions is defined by macro-expansion
 
 Generativity/injectivity:
- - A generative/injective thing is called "matchable".
- - The opposite of "matchable" is "unmatchable".
+ - DONE A generative/injective thing is called "matchable".
+ - DONE The opposite of "matchable" is "unmatchable".
 
 
 Erasure:
- - We have coercion abstraction, which cannot get erased. But we will prove
+ - DONE
+   We have coercion abstraction, which cannot get erased. But we will prove
    that type inference never creates a coercion abstraction except in the
    body of a pattern match. And in this position, whenever the match fires,
    it will get applied, as per S_Match. So we'll never get stuck on a
@@ -52,44 +42,44 @@ Erasure:
    but it is up to the optimizer to make sure this doesn't happen.
 
 DESIGN DECISIONS:
- - Two instantiation operators: to make inversion work. Well, really, to
+ - INVALID Two instantiation operators: to make inversion work. Well, really, to
    make promotion work, but we've scrapped promotion. (I have undone this
    change in the rendering.)
- - Not putting coercion in the language of types: to avoid awkwardness of
+ - DONE Not putting coercion in the language of types: to avoid awkwardness of
    "lifting" a coercion in the lifting lemma. Spreads out complexity.
- - Not putting prop in type: Cleaner once the previous decision was made.
- - Different argument forms: To avoid overlap in the erased language.
+ - DONE Not putting prop in type: Cleaner once the previous decision was made.
+ - DONE Different argument forms: To avoid overlap in the erased language.
    Note that ~> is untyped, so we can't tell the difference between
    relevant application and irrelevant application anymore.
- - Kinds in phi: to make CArgK{1,2} work. Note that we need these for
+ - DONE Kinds in phi: to make CArgK{1,2} work. Note that we need these for
    CPush.
- - Not erasing the {} parameters to tycons: we need the kinds of the types
+ - DON'T CARE Not erasing the {} parameters to tycons: we need the kinds of the types
    in Nth to be joinable.
  - OLD! WRONG! Looseness in R_Pi and R_Lam: necessary for completeness of rewrite
    relation. Otherwise, the induction hypothesis would be needed with
    a coercion variable in the context.
  - OLD! WRONG! NB: Consistency depends on preservation for the Step case.
- - In my ott code, I always write the kinds as a self-check.
- - res must handle many cases at once, because we use it to look past
+ - DONE In my ott code, I always write the kinds as a self-check.
+ - DONE res must handle many cases at once, because we use it to look past
    the PIs in a partially-applied constant, and later telescope kinds
    might refer to earlier ones, even if the end result mentions only
    universals. Urgh.
- - The system is built so that preservation does not depend on consistency.
+ - DONE The system is built so that preservation does not depend on consistency.
    If it did, we could erase the typing rule premises to the push rules
    other than for KPush, which is needed to extract the ts'.
- - The typing premise on Co_Step for the result is because preservation
+ - DONE The typing premise on Co_Step for the result is because preservation
    needs regularity (for S_APush). Without Co_Step's premise, regularity
    would need preservation. Alternatively, a premise could be added to APush.
    However, because consistency depends on regularity, making this change
    requires consistency to depend on preservation. This isn't harmful,
    but it all seems cleaner without this dependency.
- - The three-binder approach to the Π-coercion runs into trouble in proving
+ - DONE The three-binder approach to the Π-coercion runs into trouble in proving
    consistency, because it introduces a coercion variable. So I'm going with
    the asymmetrical one-binder approach, as implemented.
- - Need M/UPI to allow matching on partially applied things.
- - If we didn't have the c ~# g restrictions, we wouldn't be able
+ - DONE Need M/UPI to allow matching on partially applied things.
+ - DONE If we didn't have the c ~# g restrictions, we wouldn't be able
    to match on partially-applied GADT data constructors. See example below.
- - The ArgK rules, the Res rules, and the Inst rules all require the same PI
+ - DON'T CARE The ArgK rules, the Res rules, and the Inst rules all require the same PI
    to be used in both types in the proposition of a coercion. The coincidence
    of the PIs is not strictly necessary -- all the language properties we prove
    would remain true if we loosen this. However, the generality is never
@@ -98,14 +88,12 @@ DESIGN DECISIONS:
    so that is what we do. Generalizing would allow us to also generalize the
    PushRel, PushIrrel, and CPush rules to allow different PIs on either side,
    but why bother?
- - Getting partially-applied matching to work is laborious. It requires complication
+ - DONE Getting partially-applied matching to work is laborious. It requires complication
    in Ty_Case and Alt_Match, the MPI/UPI distinction, and unification in the typing
    rules (see critical use of matching in Alt_Match as used in the KPush case in
    the Progress theorem). See "weird case" below for an illustrative example of
    how hard this is.
- - "split" is a viable extension. But it's technically painful (requires a very
-   baroque push rule and more kinds to be kept in the coercion-erased language).
- - The c ~# g trick from the nokinds paper is needed to get consistency to
+ - DONE The c ~# g trick from the nokinds paper is needed to get consistency to
    go through. But this doesn't diminish Haskell expressiveness ever -- equality
    over polytypes is never needed in Haskell due to its predicative nature.
  - Attempt to get representation polymorphism working (see tag rep-poly). The
@@ -124,7 +112,9 @@ DESIGN DECISIONS:
  - About point above: it doesn't address the weird variable-escape that can
    happen with representation polymorphism. May need to think a bit more about
    that.
- - Need DefaultCo because KPush requires the premises of Alt_Match.
+ - DONE Need DefaultCo because KPush requires the premises of Alt_Match.
+ - "split" is a viable extension. But it's technically painful (requires a very
+   baroque push rule and more kinds to be kept in the coercion-erased language).
 
 Example about partially-applied GADT data constructors:
 
