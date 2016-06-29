@@ -1,0 +1,30 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Inference  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+metavar au {{ tex \alpha }}, bu {{ tex \beta }} ::=
+
+grammar
+
+ibnd, _d {{ tex \mathrm{d} }} :: 'IBnd_' ::=
+| d                         ::   :: PicoBnd
+| au : k                    ::   :: UnifBnd
+  {{ tex [[au]]{:}[[k]] }}
+
+_D {{ tex \mathrm{D} }} :: 'ITel_' ::=
+| _d                 ::   :: One
+| _D1 , .... , _Di   ::   :: Many
+| nil                :: M :: Nil
+
+_con_type {{ tex ( \mathrm{D}; \ottmv(T) ) }} :: 'IConTy_' ::=
+| ( _D ; T )         ::   :: Pair
+  {{ tex ([[_D]]; [[T]]) }}
+
+_sig_bnd :: 'ISigBnd_' ::=
+| T : adt_kind       ::   :: TyCon
+  {{ tex [[T]]{:}[[adt_kind]] }}
+| K : _con_type      ::   :: DataCon
+  {{ tex [[K]]{:}[[_con_type]] }}
+
+O {{ tex \Omega }} :: 'ISig_' ::=
+| 

@@ -1,0 +1,53 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Haskell  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+_t {{ tex \mathrm{t} }}, _k {{ tex \mathrm{k} }}
+  :: 'HType_' ::=
+| a                         ::   :: Var
+| _t1 _t2                   ::   :: App
+| _t1 @ _t2                 ::   :: IApp
+  {{ tex [[_t1]]\, \at[[_t2]] }}
+| _t '::' _k                ::   :: Annot
+| case _t of _alts          ::   :: Case
+| \ _qvar . _t              ::   :: Lam
+  {{ tex [[\]] [[_qvar]] . \, [[_t]] }}
+| _t1 -> _t2                ::   :: Arrow
+| _t1 '-> _t2               ::   :: TickArrow
+| fix _t                    ::   :: Fix
+
+_qvar {{ tex \mathrm{qvar} }} :: 'HQVar_' ::=
+| a                         ::   :: Var
+| a '::' _t                 ::   :: Annot
+| @ a                       ::   :: InvisVar
+| @ ( a '::' _t )           ::   :: InvisAnnot
+
+_alt {{ tex \mathrm{alt} }} :: 'HAlt_' ::=
+| _pat -> _t                ::   :: Alt
+
+_pat {{ tex \mathrm{p} }} :: 'HPat_' ::=
+| H xs -> t
+| _ -> t
+
+_s {{ tex \mathrm{s} }} :: 'HPoly_' ::=
+| quant _qvar . _s          ::   :: QVar
+  {{ tex [[quant]] [[_qvar]].\,[[_s]] }}
+| _t => _s                  ::   :: Constrained
+| _t                        ::   :: Mono
+
+quant :: 'HQuant_' ::=
+| forall                    ::   :: Forall
+| ' forall                  ::   :: MForall
+| pie                       ::   :: Pi
+| ' pie                     ::   :: MPi
+
+_qvars {{ tex \overline{\mathrm{qvar} } }} :: 'HQVars_' ::=
+| _qvar                             ::   :: One
+| _qvars1 , .... , _qvarsi          ::   :: Many
+| nil                               :: M :: Nil

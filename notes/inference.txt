@@ -1,0 +1,6 @@
+- type inference can introduce only unif variables
+- unif variables have no relevance annotation
+- worker/wrapper for data constructors is built in. You can't directly
+  refer to any data constructor worker in Haskell.
+- My Haskell patterns (H xs) are simpler than they really should be.
+  But it's annoying otherwise.

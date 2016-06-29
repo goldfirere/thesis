@@ -1,0 +1,65 @@
+%% Type inference for Dependent Haskell
+
+defns
+JInf :: '' ::=
+
+defn
+O ; P |->ty _t ~> t : k -| X ; C :: :: ITy :: 'ITy_'
+by
+
+defn
+O ; P *|->ty _t ~> t : k -| X ; C :: :: ITy :: 'ITy_'
+by
+
+a : k \in P
+-------------------------------- :: Var
+O;P *|->ty a ~> a : k -| empty; empty
+
+O;P |->ty _t1 ~> t1 : PI_vis a:rel k1. k2 -| X1; C1
+O;P;rel *|->arg _t2 : k1 ~> p2;t2 -| X2; C2
+------------------------------------ :: AppRel
+O;P *|->ty _t1 _t2 ~> t1 p2 : k2[t2/a] -| X1,X2; C1 /\ C2
+
+O;P *|->ty _t1 ~> t1 : PI_invis a:rel k1.k2 -| X1; C1
+O;P;rel *|->arg _t2 : k1 ~> p2 -| X2; C2
+-------------------------------- :: AppInvis
+O;P *|->ty _t1 @_t2 ~> t1 p2 : k2[t2/a] -| X1,X2; C1 /\ C2
+
+O;P |->ty _k : Type{} ~> k -| X1; C1
+O;P *|->ty _t : k ~> t -| X2; C2
+-------------------------------- :: Annot
+O;P *|->ty (_t :: _k) ~> t : k -| X1,X2; C1 /\ C2
+
+O;P |->ty _t0 ~> t0 : k0 -| X0; C0
+fresh au : Type{}
+forall i: O;P,au:Type{};k0;t0 |->alt _alti : au ~> alti -| Xi; Ci
+------------------------------------ :: Case
+O;P *|->ty case _t0 of _alts ~> case_au t0 of alts : au -| au:Type{}, X0, Xs; C0 /\ //\\ i Ci
+
+defn
+O ; P ; rel *|->arg _t : k ~> p ; t -| X ; C :: :: IArg :: 'IArg_'
+by
+
+O;P *|->ty _t : k ~> t -| X; C
+----------------------------------- :: Rel
+O;P;Rel *|->arg _t : k ~> t;t -| X; C
+
+O;Rel(P) *|->ty _t : k ~> t -| X; C
+--------------------------------------- :: Irrel
+O;P;Irrel *|->arg _t : k ~> {t};t -| X; C
+
+defn
+O ; P ; k0 ; t0 |->alt _alt : k ~> alt -| X ; C :: :: IAlt1 :: 'IAlt1_'
+by
+
+O |-tc H : D1;D2;H'
+dom(D2) = xs // fresh aus : D1
+O;P,D2[aus/dom(D1)] |->ty _t : k ~> t -| X; C
+------------------------------------ :: Con
+O;P;k0;t0 |->alt H xs -> _t : k ~> H -> \ D2[aus/dom(D1)], (c : t0 [k0]~[k0] H{aus} xs). t -| aus:D1, X; C /\ k0 [Type{}]~[Type{}] H'{} aus
+
+O;P |->ty _t : k ~> t -| X; C
+--------------------------------------- :: Default
+O;P;k0;t0 |->alt _ -> _t : k ~> _ -> t -| X; C
+
+

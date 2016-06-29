@@ -1,7 +1,7 @@
 C = pico
 C_EXT = $(if $(wildcard tex/$(C).lhs*),$(C).lhs,$(C).tex)
 
-OTT_FILES_BASE = syn rules
+OTT_FILES_BASE = syn syn_hask syn_suffix rules
 PAPER_BASE = thesis
 OTT_PICKY = false
 BIB_FILES_FULL = bib/rae.bib
