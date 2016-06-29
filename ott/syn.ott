@@ -13,6 +13,8 @@ embed {{ tex-preamble
 }%
 }{\end{array}%
 }
+\newcommand{\varrow}{\mathrel{ {\vdash}\hspace{-1.7ex}{\shortrightarrow} }%
+}
 }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -559,7 +561,7 @@ fact :: 'Fact_' ::=
 
 terminals :: 'terminals_' ::=
 | \                                    ::   :: Lam     {{ tex \lambda }}
-| |->                                  ::   :: mapsto  {{ tex \mapsto }}
+| |->                                  ::   :: InfArr  {{ tex \varrow }}
 | ->                                   ::   :: Arrow   {{ tex \to }}
 | ~>                                   ::   :: red     {{ tex \rightsquigarrow }}
 | ~>*                                  ::   :: redstar {{ tex \rightsquigarrow^* }}
