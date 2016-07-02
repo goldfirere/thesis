@@ -21,6 +21,7 @@ terminals :: 'terminals_' ::=
 | ||>                                  ::   :: RCast   {{ tex \unrhd }}
 | <||                                  ::   :: LCast   {{ tex \unlhd }}
 | |-                                   ::   :: Entails {{ tex \vdash }}
+| -|                                   ::   :: Output  {{ tex \dashv }}
 | empty                                ::   :: Empty   {{ tex \varnothing }}
 | \in                                  ::   :: in      {{ tex \in }}
 | \notin                               ::   :: notin   {{ tex \not\in }}
@@ -55,6 +56,9 @@ terminals :: 'terminals_' ::=
 | @\                                   ::   :: instlam {{ tex \at }}
 | Rel                                  ::   :: Rel     {{ tex \mathsf{Rel} }}
 | Irrel                                ::   :: Irrel   {{ tex \mathsf{Irrel} }}
+| Req                                  ::   :: Req     {{ tex \mathsf{Req} }}
+| Spec                                  ::   :: Spec     {{ tex \mathsf{Spec} }}
+| Inf                                ::   :: Inf   {{ tex \mathsf{Inf} }}
 | build_kpush_co                       ::   :: build   {{ tex \mathsf{build\_kpush\_co} }}
 | ~#                                   ::   :: almost  {{ tex \mathrel{\tilde{\#} } }}
 | Nothing                              ::   :: Nothing {{ tex \mathsf{Nothing} }}
@@ -72,6 +76,10 @@ terminals :: 'terminals_' ::=
 | =>                                   ::   :: fatarr  {{ tex \Rightarrow }}
 | pie                                  ::   :: hpi     {{ tex \Pi }}
 | '->                                  ::   :: Tarrow  {{ tex \mathrel{\ottsym{'}{\to} } }}
+| top                                  ::   :: top     {{ tex \top }}
+| /\                                   ::   :: LAM     {{ tex \Lambda }}
+| fresh                                ::   :: freshu  {{ tex \mathsf{fresh} }}
+| +>                                   ::   :: shove   {{ tex \hookrightarrow }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -88,6 +96,11 @@ terminals :: 'terminals_' ::=
 | |-co*                                ::   :: CoS_ent {{ tex \vdashy{co}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
 | |-ty*                                ::   :: TyS_ent {{ tex \vdashy{ty}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
 
+| |->ty                                ::   :: Ty_inf  {{ tex \varrowy{ty} }}
+| *|->ty                               ::   :: TyS_inf {{ tex \varrowys{ty} }}
+| *|->arg                              ::   :: ArgS_inf {{ tex \varrowys{arg} }}
+| |->alt                                ::   :: Alt_inf  {{ tex \varrowy{alt} }}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -99,7 +112,7 @@ formula :: 'formula_' ::=
     {{ tex [[forall]] [[i]],\; [[formula]] }}
   | rewrite_rule                       ::   :: rewrite
   | I1 = I2 = I3                       ::   :: three_way_I_eq
-  | bnd \in G                          ::   :: ctx_in
+  | bnd \in P                          ::   :: ctx_in
   | sig_bnd \in S                      ::   :: sig_in
   | alt \in alts                       ::   :: alt_in
   | p \in ps                           ::   :: p_in
@@ -122,6 +135,7 @@ formula :: 'formula_' ::=
 $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
   | t is not a value                   ::   :: not_value
     {{ tex [[t]] \text{ is not a value} }}
+  | fresh aus                          ::   :: fresh
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -184,3 +198,8 @@ DataCon_Lit <= TyCon_DataCon
 
 Co_Let <= Co_Insts
 Co_LetBreak <= Co_Insts
+
+ctx_Many <= IUnifCtx_TelBind
+
+Alt_Alt <= Alt_Subst
+Type_Lams <= Type_Subst

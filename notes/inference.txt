@@ -1,6 +1,60 @@
+
 - type inference can introduce only unif variables
 - unif variables have no relevance annotation
-- worker/wrapper for data constructors is built in. You can't directly
-  refer to any data constructor worker in Haskell.
 - My Haskell patterns (H xs) are simpler than they really should be.
-  But it's annoying otherwise.
+  But it's annoying otherwise. I'm not writing a pattern-matching compiler.
+- Fix requires its argument to take a visible argument. I just can't
+  be bothered to generalize this.
+- Not sure whether to use subsumption or straight-up equality in
+  matchExpectedFunTy (|->fun). GHC uses subsumption here. But I think
+  an equality predicate is powerful enough.
+- No constraints! This is because everything has a name.
+- Class constraints are precisely inferred relevant arguments.
+- We can't always just use a coercion in |->fun because then we won't be
+  able to recognize proper dependent function types. In other words,
+  application forms default to non-dependent application.
+- Instances are just another form of given, and happily live in G/P
+- ITyC_Case is in the unstarred judgment, because of tauifyMultipleMatches
+- Similarly, |->alt can use the unstarred checking judgment, for the same reason.
+- Worker/wrapper is compulsory. There is no syntax for H in Haskell, only
+  x. Why? Because otherwise, we can't use visible type application on universals,
+  which is quite annoying in practice.
+  Example: just : UPI (a :Irrel Type{}). MPI (x :Rel a). Maybe{} a
+           just = \ @(a :Irrel Type{}). Just{a}
+  It's important to keep the MPIs where possible for unsaturated matching.
+- There are two sets of variable names. a,b,x denote names a Haskell user can
+  write. $a denotes a name that a Haskell user cannot write. All are valid
+  names in Pico, and we can freely rename between. Note use in ITyC_SkolRel.
+- Case has an synthesis version that doesn't use the dependent equality and
+  and checking version that does.
+- Very cool how the inference rules match the code. Even the difference between
+  matchExpectedFunTy and matchActualFunTy is present.
+- Unclear where ITyC_Fix should live. Starred judgment or not? I think this
+  difference is noticeable by the user. AHA! Decision: never duplicate a polytype.
+  Therefore: Fix must live in the unstarred judgment.
+- Generalizing unification variables is simpler in the implementation: we
+  just wrap in an implication constraint. Why no need for substitution?
+- We don't need "touchable" variables to be tracked. We just stop unifying
+  once we walk past an equality constraint in the unification telescope
+
+Design decisions:
+- Include let (with a desugaring to use lambda) but not letrec. The only
+  way I can see doing letrec is to mimic GHC's local monomorphic functions
+  and exported polymorphic functions (i.e. AbsBinds), and I don't want to
+  get involved with that. I will comment about this in the writeup.
+
+
+Lemma:
+If S;P |-> ... -| O; C, then S |-ictx P,O
+
+Lemma:
+If O1 +> D ~> O2 and S |-ictx P,D,O1
+then S |-ictx P,O2
+
+Lemma:
+If S;P |->ty _t ~> t : k -| O; C,
+then S;P,O |- t : k
+
+Lemma:
+If S;P |-ty k : Type{} and S;P |->ty _t : k ~> ..., then ...
+(We need k to be well-formed!)

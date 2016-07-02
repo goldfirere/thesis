@@ -14,26 +14,33 @@ _t {{ tex \mathrm{t} }}, _k {{ tex \mathrm{k} }}
 | _t1 _t2                   ::   :: App
 | _t1 @ _t2                 ::   :: IApp
   {{ tex [[_t1]]\, \at[[_t2]] }}
-| _t '::' _k                ::   :: Annot
+| _t '::' _s                ::   :: Annot
 | case _t of _alts          ::   :: Case
 | \ _qvar . _t              ::   :: Lam
   {{ tex [[\]] [[_qvar]] . \, [[_t]] }}
+| /\ _qvar . _t             ::   :: LamIrrel
+  {{ tex \Lambda [[_qvar]] . \, [[_t]] }}
 | _t1 -> _t2                ::   :: Arrow
 | _t1 '-> _t2               ::   :: TickArrow
 | fix _t                    ::   :: Fix
+| let x := _t1 in _t2       ::   :: Let
+
+| ( _t )                    :: M :: Parens
 
 _qvar {{ tex \mathrm{qvar} }} :: 'HQVar_' ::=
+| _aqvar                    ::   :: Var
+| @ _aqvar                  ::   :: Invis
+
+_aqvar {{ tex \mathrm{aqvar} }} :: 'HAQVar_' ::=
 | a                         ::   :: Var
-| a '::' _t                 ::   :: Annot
-| @ a                       ::   :: InvisVar
-| @ ( a '::' _t )           ::   :: InvisAnnot
+| ( a '::' _s )             ::   :: Annot
 
 _alt {{ tex \mathrm{alt} }} :: 'HAlt_' ::=
 | _pat -> _t                ::   :: Alt
 
 _pat {{ tex \mathrm{p} }} :: 'HPat_' ::=
-| H xs -> t
-| _ -> t
+| H xs                ::   :: Con
+| _                   ::   :: Default
 
 _s {{ tex \mathrm{s} }} :: 'HPoly_' ::=
 | quant _qvar . _s          ::   :: QVar

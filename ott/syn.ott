@@ -13,8 +13,10 @@ embed {{ tex-preamble
 }%
 }{\end{array}%
 }
-\newcommand{\varrow}{\mathrel{ {\vdash}\hspace{-1.7ex}{\shortrightarrow} }%
+\newcommand{\varrow}{\mathrel{ {\vdash}\hspace{-1.4ex}\raisemath{.23ex}{\shortrightarrow} }%
 }
+\newcommand{\varrowy}[1]{\varrow_{\hspace{-1.4ex}\mathsf{#1} } }
+\newcommand{\varrowys}[1]{\varrow_{\hspace{-1.4ex}\mathsf{#1} }^{\hspace{-1.4ex}*} }
 }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -96,6 +98,8 @@ var, a, b, x :: 'Var_' ::= {{ com Variables }}
   {{ coq (Var_Lit (trim "[[xcc]]")) }}
 | && xcd                :: M :: Lit2
   {{ tex [[xcd]] }}
+| $ a                   :: M :: Hidden
+  {{ tex \$ [[a]] }}
 
 covar, c :: 'CoVar_' ::= {{ com Coercion variables }}
 | _                     :: M :: Blank          {{ coq "_" }}
@@ -141,9 +145,14 @@ fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
 %%  Binders  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-relevance, rel {{ tex \mathsf{r} }} :: 'Rel_' ::=
+relevance, rel {{ tex \rho }} :: 'Rel_' ::=
 | Rel              ::   :: Rel
 | Irrel            ::   :: Irrel
+
+vis {{ tex \nu }} :: 'Vis_' ::=
+| Req              ::   :: Req
+| Spec             ::   :: Spec
+| Inf              ::   :: Inf
 
 colon {{ tex {:}_\mathsf{r} }} :: 'Colon_' ::=
 | : rel                       ::   :: Colon
@@ -166,6 +175,8 @@ bnd, d {{ tex \delta }} :: 'Bnd_' ::=
 PI {{ tex \Pi }} :: 'Pi_' ::=
 | MPI            ::   :: Matchable
 | UPI            ::   :: Unmatchable
+| PI _ vis       :: M :: Vis
+  {{ tex {[[PI]]}_{[[vis]]} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -211,6 +222,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | let c := h in t              :: M :: Let
 | equals t1 t2                 :: M :: Equals
 
+| au                           :: M :: UnifVar
+
 | t [ theta ]                  :: M :: Subst
 
 typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
@@ -224,6 +237,7 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 | ts [ theta ]            :: M :: Subst
 | '|' ts '|'              :: M :: Erased
   {{ tex \lfloor [[ts]] \rfloor }}
+| aus                   :: M :: UnifVars
 
 alts {{ tex \overline{\ottnt{alt} } }} :: 'alts_' ::=
 | alt                    ::   :: One
