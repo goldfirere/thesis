@@ -251,6 +251,21 @@ S;P |->aq (a :: _s) ~> a : s -| O
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defn
+O1 +> d ~> O2 ; theta :: :: IGen1 :: 'Gen_'
+by
+
+-------------------------- :: Nil
+empty +> d ~> empty; empty
+
+O +> d ~> O'; theta
+------------------- :: Ty
+O, au:k +> d ~> O', au:UPI_Inf d. (k2[theta]); theta, b dom(d)/b
+
+O +> a:rel k ~> O'; theta
+------------------ :: Co
+O, cu:phi +> a:rel k ~> O', cu:
+
+defn
 O1 +> D ~> O2 ; theta :: :: IGen :: 'Gen_'
 by
 

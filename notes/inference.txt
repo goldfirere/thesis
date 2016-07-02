@@ -36,6 +36,7 @@
   just wrap in an implication constraint. Why no need for substitution?
 - We don't need "touchable" variables to be tracked. We just stop unifying
   once we walk past an equality constraint in the unification telescope
+- IGen_Ty is a bit punny around dom(d)
 
 Design decisions:
 - Include let (with a desugaring to use lambda) but not letrec. The only
@@ -58,3 +59,7 @@ then S;P,O |- t : k
 Lemma:
 If S;P |-ty k : Type{} and S;P |->ty _t : k ~> ..., then ...
 (We need k to be well-formed!)
+
+Lemma:
+If S;P,d,O |-ty t : k and O +> d ~> O'; theta, then
+S;P,O',d |-ty t[theta] : k[theta]
