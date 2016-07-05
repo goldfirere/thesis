@@ -38,6 +38,11 @@ _aqvar {{ tex \mathrm{aqvar} }} :: 'HAQVar_' ::=
 _alt {{ tex \mathrm{alt} }} :: 'HAlt_' ::=
 | _pat -> _t                ::   :: Alt
 
+_alts {{ tex \overline{\mathrm{alt} } }} :: 'HAlts_' ::=
+| _alt                       ::   :: One
+| _alts1 ; .... ; _altsi     ::   :: Many
+| nil                        :: M :: Nil
+
 _pat {{ tex \mathrm{p} }} :: 'HPat_' ::=
 | H xs                ::   :: Con
 | _                   ::   :: Default
@@ -48,11 +53,13 @@ _s {{ tex \mathrm{s} }} :: 'HPoly_' ::=
 | _t => _s                  ::   :: Constrained
 | _t                        ::   :: Mono
 
-quant :: 'HQuant_' ::=
+quant {{ tex \mathrm{quant} }} :: 'HQuant_' ::=
 | forall                    ::   :: Forall
 | ' forall                  ::   :: MForall
+  {{ tex {'[[forall]]} }}
 | pie                       ::   :: Pi
 | ' pie                     ::   :: MPi
+  {{ tex {'[[pie]]} }}
 
 _qvars {{ tex \overline{\mathrm{qvar} } }} :: 'HQVars_' ::=
 | _qvar                             ::   :: One

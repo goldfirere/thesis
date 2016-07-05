@@ -3,6 +3,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 metavar au {{ tex \alpha }}, bu {{ tex \beta }} ::=
+metavar cu {{ tex \iota }} ::=
 
 grammar
 
@@ -18,8 +19,16 @@ aus {{ tex \overline{\alpha} }}, bus {{ tex \overline{\beta} }}
 
 % A context containing only unification variables
 unif_bnd :: 'IUnifBnd_' ::=
-| au : k             ::   :: UnifBnd
+| au : k             ::   :: Ty
   {{ tex [[au]] {:} [[k]] }}
+| cu : phi           ::   :: Co
+  {{ tex [[cu]] {:} [[phi]] }}
+| a :g k             ::   :: GivenTy
+  {{ tex [[a]] {:}_{\mathsf{g} } [[k]] }}
+| c :g phi           ::   :: GivenCo
+  {{ tex [[c]] {:}_{\mathsf{g} } [[phi]] }}
+| a :c k             ::   :: GivenClass
+  {{ tex [[a]] {:}_{\mathsf{c} } [[k]] }}
 
 O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
 | unif_bnd              ::   :: One
@@ -27,6 +36,10 @@ O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
 | nil                   :: M :: Nil
 | aus : D               :: M :: TelBind
   {{ tex [[aus]]{:}[[D]] }}
+| aus : ts             :: M :: KsBind
+  {{ tex [[aus]]{:}[[ts]] }}
+| g( D )               :: M :: GivenTel
+  {{ tex \mathsf{g}([[D]]) }}
 
 P {{ tex \Psi }} :: 'ICtx_' ::=
 | d                  ::   :: Binder

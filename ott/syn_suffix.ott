@@ -1,4 +1,49 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Utility  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+
+rewrite_rule :: 'Rewrite_' ::=
+| ps1 eq ps2                         ::   :: ts_rewrite
+% this next one is needed because of Type_Apps <= Arg_Ty
+| t1 eq t2                           ::   :: t_rewrite
+| w1 eq w2                           ::   :: w_rewrite
+| phi1 eq phi2                       ::   :: phi_rewrite
+| P1 eq P2                           ::   :: P_rewrite
+| alts1 eq alts2                     ::   :: alts_rewrite
+| fvset1 eq fvset2                   ::   :: fvset_rewrite
+| rel1 eq rel2                       ::   :: rel_rewrite
+| H1 eq H2                           ::   :: H_rewrite
+| S1 eq S2                           ::   :: S_rewrite
+| I1 eq I2                           ::   :: I_rewrite
+| unif_result1 eq unif_result2       ::   :: match_rewrite
+| theta1 eq theta2                   ::   :: theta_rewrite
+| PI1 eq PI2                         ::   :: PI_rewrite
+| ealts1 eq ealts2                   ::   :: ealts_rewrite
+| e1 eq e2                           ::   :: e_rewrite
+| calt1 eq calt2                     ::   :: calt_rewrite
+
+util :: 'Util_' ::=
+| ||.||                              ::   :: terase_op
+  {{ tex \llfloor {\cdot} \rrfloor }}
+
+fact :: 'Fact_' ::=
+  | alts1 ~> alts2                     ::   :: alts_red
+  | ps ~> ps' <~ ps''                  ::   :: diamond
+  | ps ~>* ps'                         ::   :: many_red_star
+  | d1 ~>* d2                          ::   :: many_red_star_d
+  | ps ~>* ps' *<~ ps''                ::   :: confluence
+  | d1 ~> d3 <~ d2                     ::   :: d_diamond
+  | fvset1 \subseteq fvset2            ::   :: subset
+  | G1 \subseteq G2                    ::   :: G_subseq
+  | a \notin fvset                     ::   :: var_notin_set
+  | S ; G |-co* g : phi                ::   :: co_star
+  | apart ( t1 ; t2 )                  ::   :: apartness
+    {{ tex [[apart]]([[t1]];[[t2]]) }}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,6 +112,7 @@ terminals :: 'terminals_' ::=
 | types                                ::   :: types   {{ tex \mathsf{types} }}
 | ~=                                   ::   :: approx  {{ tex \approx }}
 | <=                                   ::   :: sub     {{ tex \le }}
+| *<=                                  ::   :: substar {{ tex \le^* }}
 | equals                               ::   :: equals  {{ tex \ottkw{equals} }}
 | axEquals                             ::   :: axEq    {{ tex \ottkw{axEquals} }}
 | axApart                              ::   :: axApart {{ tex \ottkw{axApart} }}
@@ -100,6 +146,16 @@ terminals :: 'terminals_' ::=
 | *|->ty                               ::   :: TyS_inf {{ tex \varrowys{ty} }}
 | *|->arg                              ::   :: ArgS_inf {{ tex \varrowys{arg} }}
 | |->alt                                ::   :: Alt_inf  {{ tex \varrowy{alt} }}
+| |->altc                                ::   :: Altc_inf  {{ tex \varrowy{altc} }}
+| |->fun                                ::   :: Fun_inf  {{ tex \varrowy{fun} }}
+| |->inst                                ::   :: Inst_inf  {{ tex \varrowy{inst} }}
+| |->pt                                ::   :: Pt_inf  {{ tex \varrowy{pt} }}
+| |->scrut                                ::   :: Scrut_inf  {{ tex \varrowy{scrut} }}
+| |->q                                ::   :: Q_inf  {{ tex \varrowy{q} }}
+| |->aq                                ::   :: Aq_inf  {{ tex \varrowy{aq} }}
+| |->solv                                ::   :: SOLV_inf  {{ tex \varrowy{solv} }}
+| |->pi                                ::   :: Pi_inf  {{ tex \varrowy{pi} }}
+| |->pre                                ::   :: Pre_inf  {{ tex \varrowy{pre} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -136,6 +192,9 @@ $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
   | t is not a value                   ::   :: not_value
     {{ tex [[t]] \text{ is not a value} }}
   | fresh aus                          ::   :: fresh
+  | fresh cu                           ::   :: fresh_cu
+  | S |-> _alts match a scrutinee from the type H'  ::   :: match_scrut
+    {{ tex [[S]] [[|->]] [[_alts]] \text{ match a scrutinee from the type } [[H']] }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -203,3 +262,8 @@ ctx_Many <= IUnifCtx_TelBind
 
 Alt_Alt <= Alt_Subst
 Type_Lams <= Type_Subst
+
+args_One <= args_Subst
+
+UnifVars_One <= IUnifCtx_KsBind
+Type_Lams <= Type_Apps
