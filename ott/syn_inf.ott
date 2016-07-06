@@ -40,6 +40,7 @@ O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
   {{ tex [[aus]]{:}[[ts]] }}
 | g( D )               :: M :: GivenTel
   {{ tex \mathsf{g}([[D]]) }}
+| ( O )                :: M :: Parens
 
 P {{ tex \Psi }} :: 'ICtx_' ::=
 | d                  ::   :: Binder
@@ -50,4 +51,15 @@ P {{ tex \Psi }} :: 'ICtx_' ::=
 | Rel ( P )          :: M :: Reset
   {{ tex [[Rel]]([[P]]) }}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Judgments  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ijudg :: 'IJudg_' ::=
+| S ; P |=ty t : k                    ::   :: Ty
+| S ; P |=co g : phi                  ::   :: Co
+| S ; P |=vec ps : P2                 ::   :: Vec
+| S ; P ; s ; t |=alt alt : k         ::   :: Alt
+  {{ tex [[S]];[[P]];[[s]] [[|=alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
+| S |=ctx P                           ::   :: Ctx
+  {{ tex [[S]] [[|=ctx]] [[P]] \ok }}

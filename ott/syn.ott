@@ -6,6 +6,7 @@
 
 embed {{ tex-preamble
 \newcommand{\vdashy}[1]{\vdash_{\!\!\!\mathsf{#1} } }
+\newcommand{\vDashy}[1]{\vDash_{\!\!\!\mathsf{#1} } }
 \newcommand{\gobble}[1]{}
 \let\supp\gobble
 \newcommand{\nosupp}[1]{\begingroup\let\supp\relax#1\endgroup}
@@ -247,6 +248,8 @@ alts {{ tex \overline{\ottnt{alt} } }} :: 'alts_' ::=
   {{ tex \lfloor [[alts]] \rfloor }}
 | list of alt            :: M :: List
   {{ tex \overline{[[alt]]} }}
+| make_exhaustive ( alts ; k ) :: M :: makeExh
+  {{ tex [[make_exhaustive]]([[alts]];[[k]]) }}
 
 alt :: 'Alt_' ::=
 | pat -> t               ::   :: Alt

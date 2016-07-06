@@ -49,6 +49,9 @@
   lets. Solution: consider a top-level let a new declaration form, just like
   OutsideIn. Do generalization there.
 - Use g(D) to make all bindings givens.
+- Must comment about how |- judgments are extended. In particular, |-ctx.
+  With UCtx_TyVar and UCtx_CoVar
+- And we only allow Inf on coercion abstractions.
 
 Design decisions:
 - Include let (with a desugaring to use lambda) but not letrec. The only
@@ -56,22 +59,29 @@ Design decisions:
   and exported polymorphic functions (i.e. AbsBinds), and I don't want to
   get involved with that. I will comment about this in the writeup.
 
+Preprocessing:
+- Each qvar is appropriately labeled.
+- `case scrut of _ -> blah` becomes `blah`
+- case patterns are expanded out (a la Match.hs)
+- redundant matches are dropped
+   --> Thus, the first alt, if there is one, has a constructor
 
-Lemma:
+
+Lemma: (DONE, I THINK)
 If S;P |-> ... -| O; C, then S |-ictx P,O
 
-Lemma:
+Lemma: (OLD)
 If O1 +> D ~> O2 and S |-ictx P,D,O1
 then S |-ictx P,O2
 
-Lemma:
+Lemma: (WORKING ON IT)
 If S;P |->ty _t ~> t : k -| O; C,
 then S;P,O |- t : k
 
-Lemma:
+Lemma: (DONE)
 If S;P |-ty k : Type{} and S;P |->ty _t : k ~> ..., then ...
 (We need k to be well-formed!)
 
-Lemma:
+Lemma: (OLD)
 If S;P,d,O |-ty t : k and O +> d ~> O'; theta, then
 S;P,O',d |-ty t[theta] : k[theta]

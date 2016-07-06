@@ -1,0 +1,268 @@
+\chapter{Proofs about type inference}
+\label{app:inference}
+
+Throughout this appendix, I use a convention whereby
+in any case where the rule under consideration is printed, any metavariable
+names in the rule shadow any metavariable names in the lemma or
+theorem statement.
+
+\section{Supporting functions}
+
+\begin{definition}[$[[make_exhaustive]]$]
+Define $[[make_exhaustive(alts;k)]]$ as follows:
+\begin{align*}
+[[make_exhaustive(alts; k) &= alts]] & ([[(_ -> t) \in alts]]) \\
+[[make_exhaustive(alts; k) &= alts; _ -> &error k]]\, \texttt{"failed match"} & \text{(otherwise)}
+\end{align*}
+\end{definition}
+
+\section{Supporting lemmas}
+
+These lemmas are stated with respect to pure \pico/ constructs instead
+of the variants that also store unification variables. As with all of the
+lemmas in \pref{app:pico-proofs}, these carry over to the constructs that
+can store unification variables.
+
+\begin{lemma}[Type variables instantiation]
+\label{lem:tyvars-inst}
+If $[[S |-ctx as :Rel ks]]$, then $[[S |-ctx bs:Rel ks[bs/as] ]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the length of $[[ks]]$.
+
+\begin{description}
+\item[Case $[[ks = empty]]$:] Trivial.
+\item[Case $[[ks = ks',k0]]$:] Here, we know $[[as = as',a0]]$ and
+$[[bs = bs',b0]]$. Our assumption is that $[[S |-ctx as' :Rel ks', a0 :Rel k0]]$.
+Inversion (of \rul{Ctx\_TyVar}) gives us $[[S;as':Rel ks' |-ty k0 : Type{}]]$
+and $[[S |-ctx as' :Rel ks']]$. The induction hypothesis tells us
+$[[S |-ctx bs':Rel ks'[bs'/as'] ]]$. We must show
+$[[S;bs' :Rel ks'[bs'/as'] |-ty k0[bs'/as'] : Type{}]]$.
+Use \pref{lem:weakening} (Weakening) to get
+$[[S;bs' :Rel ks'[bs'/as'],as':Rel ks' |-ty k0 : Type{}]]$.
+\pref{lem:tel} gives us $[[S;bs':Rel ks'[bs'/as'] |-vec bs' : (bs' :Rel ks'[bs'/as'])]]$. We can thus use \pref{lem:vec-subst} to get
+$[[S;bs' :Rel ks'[bs'/as'] |-ty k0[bs'/as'] : Type{}]]$ as desired.
+We then use \rul{Ctx\_TyVar} and we are done.
+\end{description}
+\end{proof}
+
+\section{Soundness}
+
+\begin{lemma}[Instantiation]
+\label{lem:iinst}
+If $[[S;P |=ty t : k]]$ and $[[|->inst_vis k ~> ps; k' -| O]]$,
+then $[[S;P,O |=ty t ps : k']]$ and $[[k']]$ is not a $\Pi$-type
+with a binder (with visibility $[[vis2]]$) such that $[[vis2 <= vis]]$.
+\end{lemma}
+
+\begin{proof}
+Let's call the condition on the visibility of the binder (if any)
+of the result kind the \emph{visibility condition}. Proceed
+by induction on the derivation of the $[[|->inst]]$ judgment.
+
+\begin{description}
+\item[Case \rul{IInst\_Rel}:]
+\[
+\ottdruleIInstXXRel{}
+\]
+We must show that $[[S;P,au:k1,O |=ty t au ps : k2']]$ and that
+$[[k2']]$ satisfies the visibility condition. We can assume that
+$[[S;P |=ty t : PI_vis2 a:Rel k1. k2]]$.
+By inversion by \rul{Ty\_Pi}, \pref{lem:ctx-gen}, and \pref{lem:tyvar-reg},
+we can see that $[[S;Rel(P) |=ty k1 : Type{}]]$. Thus
+$[[S |=ctx P,au:k1]]$ and \pref{lem:weakening} gives us
+$[[S;P,au:k1 |=ty t : PI_vis2 a:Rel k1. k2]]$.
+Thus, \rul{Ty\_AppRel} gives us $[[S;P,au:k1 |=ty t au : k2[au/a] ]]$.
+The induction hypothesis then
+tells us that $[[S;P,au:k1,O |=ty t au ps : k2']]$ and gives us the
+visibility condition, as desired.
+\item[Case \rul{IInst\_Irrel}:]
+Like previous case.
+\item[Case \rul{IInst\_Co}:]
+Like previous cases, but appealing to \pref{lem:covar-reg} instead
+of \pref{lem:tyvar-reg}.
+\item[Case \rul{IInst\_Done}:]
+The typing rule is by assumption. The visibility condition is by the
+fact that no previous rule in the judgment applied.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Function position]
+\label{lem:ifun}
+If $[[S;P |=ty t : k]]$ and $[[|->fun k; rel1 ~> g; PI; a; rel2; k1; k2 -| O]]$,
+then $[[S;P,O |=ty t |> g : PI_Req a:rel2 k1.k2]]$.
+\end{lemma}
+
+\begin{proof}
+By case analysis on the derivation of $[[|->fun]]$.
+
+\begin{description}
+\item[Case \rul{IFun\_Id}:]
+\[
+\ottdruleIFunXXId{}
+\]
+Let $[[k = PI_Req a:rel k1. k2]]$.
+We know $[[S;P |=ty t : k]]$.
+Thus, by \pref{lem:kind-reg}, $[[S;Rel(P) |=ty k : Type{}]]$
+and $[[S;Rel(P) |=co <k> : k [Type{}]~[Type{}] k]]$.
+We can conclude $[[S;P |=ty t |> <k> : k]]$ as desired.
+\item[Case \rul{IFun\_Cast}:]
+\[
+\ottdruleIFunXXCast{}
+\]
+Let $[[P0 = P,bu1:Type{},bu2:Type{}]]$ and
+$[[P1 = P0,cu: k0 [Type{}]~[Type{}] UPI_Req a:rel bu1.bu2]]$.
+We first must show $[[S |=ctx P']]$. We know $[[S |=ctx P]]$ by \pref{lem:ctx-reg}.
+Adding $[[bu1]]$ and $[[bu2]]$ to $[[P]]$ maintains well-formedness; thus
+$[[S |=ctx P0]]$. In order
+to add the binding for $[[cu]]$, we must show that
+$[[S;Rel(P0) |=ty k0 : Type{}]]$ and $[[S;Rel(P0) |=ty UPI_Req a:rel bu1.bu2 : Type{}]]$.
+The former is by \pref{lem:prop-reg} and \pref{lem:weakening}.
+The latter comes from $[[S |=ctx P0]]$, two uses of \rul{Ty\_Var}, and
+a use of \rul{Ty\_Pi}. Thus $[[S |=ctx P1]]$.
+We then use \pref{lem:weakening} to get $[[S;P1 |=ty t : k0]]$
+and \rul{Ty\_Cast} to get $[[S;P1 |=ty t |> cu : UPI_Req a:rel bu1. bu2]]$
+as desired.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Scrutinee position]
+\label{lem:iscrut}
+If $[[S;P |=ty t : k]]$ and $[[S |->scrut _alts; k ~> g; D; H'; ts -| O]]$,
+then $[[S;P,O |=ty t |> g : MPI D. H'{} ts]]$ and
+$[[S;Rel(P),O |=ty H'{} ts : Type{}]]$.
+\end{lemma}
+
+\begin{proof}
+By case analysis on the derivation for the $[[|->scrut]]$ judgment.
+
+\begin{description}
+\item[Case \rul{IScrut\_Id}:]
+\[
+\ottdruleIScrutXXId{}
+\]
+Let $[[k = MPI D. H{} ts]]$.
+Working backwards from a use of \rul{Ty\_Cast}, we need to show
+that $[[S;Rel(P) |=co <k> : k [Type{}]~[Type{}] k]]$, and thus that
+$[[S;Rel(P) |=ty k : Type{}]]$. This comes directly from \pref{lem:kind-reg}.
+For the second conclusion, we use inversion on this last judgment to get
+$[[S;Rel(P),D |=ty H{} ts : Type{}]]$ and then \pref{lem:strengthening}
+to get $[[S;Rel(P) |=ty H{} ts : Type{}]]$ as desired.
+\item[Case \rul{IScrut\_Cast}:]
+\[
+\ottdruleIScrutXXCast{}
+\]
+Let $[[P0 = P,aus : ks[aus/as] ]]$ and $[[P1 = P0,cu:k [Type{}]~[Type{}] H'{} aus]]$.
+We must first show that $[[S |=ctx P0]]$.
+We know $[[|-sig S]]$ (by \pref{lem:ctx-reg}). \pref{lem:tycon-tel} tells
+us $[[S |-ctx as :Rel ks]]$. \pref{lem:tyvars-inst} then tells us
+$[[S |=ctx aus : ks[aus/as] ]]$. We have $[[S |=ctx P]]$ by \pref{lem:ctx-reg}
+and thus can use \pref{lem:weakening} $[[S |=ctx P0]]$ as desired.
+To show $[[S |=ctx P1]]$, we must now show that
+$[[S;P0 |=ty k : Type{}]]$ and $[[S;P0 |=ty H'{} aus : Type{}]]$.
+The former is by \pref{lem:kind-reg} and \pref{lem:weakening}.
+For the latter: use \pref{lem:tycon-kind} and \pref{lem:weakening}
+to see that
+$[[S;P0 |=ty MPI as:Irrel ks, D2. H'{} as : Type{}]]$.
+Repeated inversion on \rul{Ty\_Pi} tells us
+$[[S;P0,as:Irrel ks, D2 |=ty H'{} as : Type{}]]$.
+\pref{lem:strengthening} gives us $[[S;P0,as:Irrel ks |=ty H'{} as : Type{}]]$.
+\pref{lem:tel} tells us that $[[S;P0 |=vec aus : (aus : ks[aus/as])]]$.
+We thus use \pref{lem:vec-subst} to see that $[[S;P0 |=ty H'{} aus : Type{}]]$
+as desired.
+We can thus conclude $[[S |=ctx P1]]$ by \rul{Ctx\_UCoVar}.
+We are done with the first conclusion by \rul{Ty\_Cast} and \rul{Co\_Var}.
+We get the second conclusion easily by noting that $[[D = empty]]$ and
+by \pref{lem:kind-reg}.
+\end{description}
+\end{proof}
+
+\begin{lemma}[$[[make_exhaustive]]$]
+\label{lem:make-exh}
+Assume that, $\forall i$, $[[S;P;MPI D.H{} ss;t |=alt alti : k]]$ and
+$[[alts' = make_exhaustive(alts; k)]]$. Furthermore, assume no pattern
+appears twice in $[[alts]]$. Then $\forall j$,
+$[[S;P;MPI D.H{} ss;t |=alt altj' : k]]$ and $[[alts' are exhaustive for H (wrt S)]]$.
+\end{lemma}
+
+\begin{proof}
+If there is a default pattern in $[[alts]]$, then $[[make_exhaustive]]$ does
+nothing. In this case, the default pattern makes the $[[alts]]$ exhaustive.
+We have already assumed they are unique.
+
+Otherwise, $[[make_exhaustive]]$ adds a default. Assuming
+$[[&error :Rel UPI (a :Irrel Type{}), (b :Rel &String{}). a]]$,
+we have $\forall j$, $[[S;P;MPI D.H{} ss; t |=alt altj' : k]]$, and indeed
+the alternatives are now exhaustive.
+\end{proof}
+
+\begin{theorem}[Type elaboration is sound] ~
+\begin{enumerate}
+\item If any of the following:
+\begin{enumerate}
+\item $[[S |=ctx P]]$ and $[[S;P |->ty _t ~> t : k -| O]]$, OR
+\item $[[S |=ctx P]]$ and $[[S;P *|->ty _t ~> t : k -| O]]$, OR
+\item $[[S;P |=ty k : Type{}]]$ and $[[S;P |->ty _t : k ~> t -| O]]$, OR
+\item $[[S;P |=ty k : Type{}]]$ and $[[S;P *|->ty _t : k ~> t -| O]]$
+\end{enumerate}
+Then $[[S;P,O |=ty t : k]]$.
+\item
+If $[[S |=ctx P]]$ and $[[S;P |->pt _s ~> s -| O]]$,
+then $[[S;P,O |=ty s : Type{}]]$.
+\item
+If $[[S;P |=ty k : Type{}]]$,
+$[[S;P |=ty t0 : k0]]$, and
+$[[S;P;k0;t0 |->alt _alt : k ~> alt -| O]]$, then
+$[[S;P,O;k0;t0 |=alt alt : k]]$.
+\item
+If $[[S;P |=ty t1 : PI_vis a:rel k1.k2]]$
+and $[[S;P;rel *|->arg _t2 : k1 ~> p2; t2 -| O]]$,
+then $[[S;P,O |=ty t1 p2 : k2[t2/a] ]]$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Proceed by induction on the structure of the type inference derivation.
+
+\begin{description}
+\item[Case \rul{ITy\_Inst}:]
+\[
+\ottdruleITyXXInst{}
+\]
+The induction hypothesis gives us $[[S;P,O1 |=ty t : k]]$.
+\pref{lem:iinst} then gives us $[[S;P,O1,O2 |=ty t ps : k']]$ as
+desired.
+\item[Case \rul{ITy\_Var}:]
+By \rul{Ty\_Var} and \pref{lem:iinst}.
+\item[Case \rul{ITy\_App}:]
+\[
+\ottdruleITyXXApp{}
+\]
+The induction hypothesis tells us that
+$[[S;P,O1 |=ty t1 : k0]]$. \pref{lem:ifun} tells us that
+$[[S;P,O1,O2 |=ty t1 |> g : PI_Req a:rel k1.k2]]$.
+Another use of the induction hypothesis (for the $[[*|->arg]]$ premise)
+gives us our desired outcome.
+\item[Case \rul{ITy\_AppSpec}:]
+By induction.
+\item[Case \rul{ITy\_Annot}:]
+By induction.
+\item[Case \rul{ITy\_Case}:]
+\[
+\ottdruleITyXXCase{}
+\]
+The induction hypothesis tells us that
+$[[S;P,O0 |=ty t0 : k0]]$.
+\pref{lem:iscrut} tells us that $[[S;P,O0,O0' |=ty t0 |> g : MPI D. H'{} ts]]$
+and $[[S;Rel(P,O0),O0' |=ty H'{} ts : Type{}]]$.
+Rule \rul{UCtx\_TyVar} gives us $[[S |=ctx O']]$.
+The induction hypothesis (for $[[|->alt]]$) tells us that, $\forall i$,
+$[[S;P,O',Oi;MPI D. H'{} ts; t0 |> g |=alt alti : au]]$.
+\pref{lem:make-exh} then tells us that $[[alts']]$ are well-formed and
+exhaustive. \pref{lem:weakening} (and \pref{lem:ctx-reg} on the $[[|=alt]]$
+judgments) allows us to combine all the $[[Oi]]$ into
+$[[Os]]$. We are done by \rul{Ty\_Case}.
+\rae{Continue.}
+\end{description}
+\end{proof}

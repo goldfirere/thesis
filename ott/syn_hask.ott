@@ -42,6 +42,7 @@ _alts {{ tex \overline{\mathrm{alt} } }} :: 'HAlts_' ::=
 | _alt                       ::   :: One
 | _alts1 ; .... ; _altsi     ::   :: Many
 | nil                        :: M :: Nil
+| ( _alts )                  :: M :: Parens
 
 _pat {{ tex \mathrm{p} }} :: 'HPat_' ::=
 | H xs                ::   :: Con

@@ -2079,8 +2079,8 @@ related above:
 \begin{array}{r@@{\,}c@@{\,}l}
 [[&to]] &:& [[UPI (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{})). (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})]] \\
 [[&to]] &=& [[\ (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{})), (c : &Int{} [Type{}]~[Type{}] &Bool{}). (&&xx c) |> c]] \\[1ex]
-[[&from]] &:& [[UPI (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})). (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{})]] \\
-[[&from]] &=& [[\ (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})), (c : &Int{} [Type{}]~[Type{}] &Bool{}). (&&xx c) |> sym c]]
+[[&&fromx]] &:& [[UPI (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})). (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{})]] \\
+[[&&fromx]] &=& [[\ (&&xx :Rel (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})), (c : &Int{} [Type{}]~[Type{}] &Bool{}). (&&xx c) |> sym c]]
 \end{array}
 \]
 A compiler of Dependent Haskell creates functions such as these as

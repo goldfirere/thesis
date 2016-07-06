@@ -43,12 +43,12 @@ S;P,O1 *|->ty _t : s ~> t -| O2
 S;P *|->ty (_t :: _s) ~> t : s -| O1,O2
 
 S;P |->ty _t0 ~> t0 : k0 -| O0
-S |-> _alts match a scrutinee from the type H'
-S |->scrut H'; k0 ~> g; D; ts -| O0'
+S |->scrut _alts; k0 ~> g; D; H'; ts -| O0'
 fresh au // O' = O0,O0',au:Type{}
 forall i: S;P,O';MPI D. H'{} ts;t0 |> g |->alt _alti : au ~> alti -| Oi
+alts' = make_exhaustive(alts; k)
 ------------------------------------ :: Case
-S;P *|->ty case _t0 of _alts ~> case_au (t0 |> g) of alts : au -| O',Os
+S;P *|->ty case _t0 of _alts ~> case_au (t0 |> g) of alts' : au -| O',Os
 
 S;P |->q _qvar ~> a : k1; vis -| O1
 S;P,O1,a:Rel k1 *|->ty _t ~> t : k2 -| O2
@@ -94,12 +94,12 @@ S ; P |->ty _t : k ~> t -| O :: :: ITyDown :: 'TyC_'
 by
 
 S;P |->ty _t0 ~> t0 : k0 -| O0
-S |-> _alts match a scrutinee from the type H'
-S |->scrut H'; k0 ~> g; D; ts -| O0'
+S |->scrut _alts; k0 ~> g; D; H'; ts -| O0'
 O' = O0, O0'
 forall i: S;P,O';MPI D. H'{} ts; t0 |> g |->altc _alti : k ~> alti -| Oi
+alts' = make_exhaustive(alts; k)
 ---------------------------------- :: Case
-S;P |->ty case _t0 of _alts : k ~> case_k (t0 |> g) of alts -| O', Os
+S;P |->ty case _t0 of _alts : k ~> case_k (t0 |> g) of alts' -| O', Os
 
 |->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O0
 S;P |->aq _aqvar ~> b : k1' -| O
@@ -303,16 +303,17 @@ fresh cu // fresh bu1, bu2
 
 % precondition: k has noInf or Spec binders
 defn
-S |->scrut H ; k ~> g ; D ; ts -| O  :: :: IScrut :: 'Scrut_'
+S |->scrut _alts ; k ~> g ; D ; H ; ts -| O  :: :: IScrut :: 'Scrut_'
 by
 
-------------------------------------------- :: Id
-S |->scrut H; MPI D. H{} ts ~> <MPI D. H{} ts>; D; ts -| empty
+dom(D) # ts
+--------------------------------------------- :: Id
+S |->scrut _alts; MPI D. H{} ts ~> <MPI D. H{} ts>; D; H; ts -| empty
 
-S |-tc H : empty; as:Rel ks; Type
+S |-tc H : as :Irrel ks; D2; H'
 fresh aus // fresh cu
 ------------------------------ :: Cast
-S |->scrut H; k ~> cu; empty; aus -| aus : ks[aus/as], cu : k [Type{}]~[Type{}] H{} aus
+S |->scrut (H xs -> _t; _alts); k ~> cu; empty; H'; aus -| aus : ks[aus/as], cu : k [Type{}]~[Type{}] H'{} aus
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  topInstantiate  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

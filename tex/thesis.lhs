@@ -68,7 +68,7 @@
 %include typo.lhs
 \include{app-rules}
 \include{app-pico}
-\include{inference}
+\include{app-inference}
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

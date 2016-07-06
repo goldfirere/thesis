@@ -126,6 +126,7 @@ terminals :: 'terminals_' ::=
 | /\                                   ::   :: LAM     {{ tex \Lambda }}
 | fresh                                ::   :: freshu  {{ tex \mathsf{fresh} }}
 | +>                                   ::   :: shove   {{ tex \hookrightarrow }}
+| make_exhaustive                      ::   :: makeExh {{ tex \mathsf{make\_exhaustive} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -141,6 +142,19 @@ terminals :: 'terminals_' ::=
 | |-lc                                 ::   :: Lc_ent  {{ tex \vdashy{lc} }}
 | |-co*                                ::   :: CoS_ent {{ tex \vdashy{co}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
 | |-ty*                                ::   :: TyS_ent {{ tex \vdashy{ty}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
+
+| |=ty                                 ::   :: Ty_int  {{ tex \vDashy{ty} }}
+| |=co                                 ::   :: Co_int  {{ tex \vDashy{co} }}
+| |=ctx                                ::   :: Ctx_int {{ tex \vDashy{ctx} }}
+| |=tc                                 ::   :: Tc_int  {{ tex \vDashy{tc} }}
+| |=sig                                ::   :: Sig_int {{ tex \vDashy{sig} }}
+| |=alt                                ::   :: Alt_int {{ tex \vDashy{alt} }}
+| |=vec                                ::   :: Vec_int {{ tex \vDashy{vec} }}
+| |=cev                                ::   :: Cev_int {{ tex \vDashy{cev} }}
+| |=prop                               ::   :: Prop_int {{ tex \vDashy{prop} }}
+| |=s                                  ::   :: S_int   {{ tex \vDashy{s} }}
+| |=r                                  ::   :: R_int   {{ tex \vDashy{r} }}
+| |=lc                                 ::   :: Lc_int  {{ tex \vDashy{lc} }}
 
 | |->ty                                ::   :: Ty_inf  {{ tex \varrowy{ty} }}
 | *|->ty                               ::   :: TyS_inf {{ tex \varrowys{ty} }}
