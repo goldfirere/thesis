@@ -13,13 +13,13 @@ theorem statement.
 The solver ($[[|->solv]]$) must have the following properties.
 
 \begin{property}[Solver is sound]
-\label{prop:solver-sound}
+\label{prop:isolv}
 If $[[S |=ctx P,O]]$ and
 $[[S;P |->solv O ~> D; theta]]$,
 then $[[S |=ctx P,D]]$ and $[[S;P,D |=z theta : O]]$.
 \end{property}
 
-\section{Zonking}
+\section{Givens}
 
 \begin{definition}[Generalized judgments]
 I sometimes write $[[S;P |= J]]$,
@@ -40,6 +40,7 @@ $[[S;P |= J]]$, the following lemmas are applicable:
 \end{remark}
 
 \begin{lemma}[Zonking]
+\label{lem:zonking}
 If $[[S;P |=z theta : O]]$ and $[[S;P,O |= J]]$, then
 $[[S;P,ung(O) |= J[theta] ]]$.
 \end{lemma}
@@ -59,6 +60,16 @@ By induction.
 \end{description}
 \end{proof}
 
+\begin{lemma}[Zonking givens]
+Assume $[[S;P |=z theta : O]]$.
+For every $[[a]]$ such that
+$[[a :g k \in O]]$ or $[[a :c k \in O]]$, if $[[a # t]]$, then
+$[[a # t[theta] ]]$.
+\end{lemma}
+
+\begin{proof}
+
+
 \begin{lemma}[Unification contexts/givens]
 \label{lem:unif-ctx-given}
 If $[[S |=ctx P,d,O]]$, then $[[S |=ctx P,g(d),O]]$.
@@ -71,7 +82,7 @@ bindings care about ``given'' status. A unification context $[[O]]$ cannot
 include non-unification variables, so we are done.
 \end{proof}
 
-\begin{lemma}[Givens]
+\begin{lemma}[Given]
 \label{lem:given}
 If $[[S |=ctx P,d,O,D]]$ and
 $[[S;P,d,O,D |= J]]$, then $[[S;P,g(d),O,d,D |= J]]$.
@@ -85,6 +96,31 @@ Compare the contexts $[[P,d,O]]$ and $[[P,g(d),O,d]]$. Both bind
 the same variables to the same kinds, and both are themselves well-formed.
 Thus from $[[S |=ctx P,d,O,D]]$, we can conclude $[[S |=ctx P,g(d),O,d,D]]$,
 and similarly $[[S;P,g(d),O,d,D |= J]]$ as desired.
+\end{proof}
+
+\begin{lemma}[Givens]
+\label{lem:givens}
+If $[[S |=ctx P,D1,O,D2]]$ and
+$[[S;P,D1,O,D2 |= J]]$, then $[[S;P,g(D1),O,D1,D2 |= J]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of $[[D1]]$.
+
+\begin{description}
+\item[Case $[[D1 = empty]]$:]
+Trivial.
+\item[Case $[[D1 = D1',d]]$:]
+We know $[[S |=ctx P,D1',d,O,D2]]$ and
+$[[S;P,D1',d,O,D2 |= J]]$.
+\pref{lem:given} tells us
+$[[S;P,D1',g(d),O,d,D2 |= J]]$ and another use of the same lemma
+(with $[[J]]$ standing for a $[[|=ctx]]$ judgment) gives us
+$[[S |=ctx P,D1',g(d),O,d,D2]]$.
+The induction hypothesis then gives us
+$[[S;P,g(D1',d),O,D1',d,D2 |= J]]$ as desired. (Note that
+$[[g(d)]]$ can be part of something denoted with $[[O]]$.)
+\end{description}
 \end{proof}
 
 \section{Supporting functions}
@@ -404,7 +440,49 @@ for which we only need show that
 $[[S |=ctx P,cu : t1 [Type{}]~[Type{}] t2]]$, for which we only need show that
 $[[S;Rel(P) |=ty t1 : Type{}]]$ and $[[S;Rel(P) |=ty t2 : Type{}]]$, which
 we know by assumption. We are done.
-\item[Case \rul{ISub\_DeepSkol}:] \rae{TODO}
+\item[Case \rul{ISub\_DeepSkol}:]
+\[
+\ottdruleISubXXDeepSkol{}
+\]
+We must show $[[S;P,O1,g(D),O2 |=ty \x :Rel k1. t1 (\D. t2 (x ps)) : UPI x: Rel k1. k2]]$. The last step will be \rul{Ty\_Lam}, so we must show
+$[[S;P,O1,g(D),O2,x:Rel k1 |=ty t1 (\D. t2 (x ps)) : k2]]$.
+From $[[S;Rel(P) |=ty k1 : Type{}]]$, we can use \rul{Ctx\_TyVar} to see
+$[[S |=ctx P,x:Rel k1]]$. Thus
+$[[S;P,x:Rel k1 |= x : k1]]$.
+\pref{lem:iinst} then tells us that
+$[[S;P,x:Rel k1,O1 |=ty x ps : k1']]$.
+We then know (by \pref{lem:kind-reg}) that
+$[[S;Rel(P),x:Rel k1,O1 |=ty k1' : Type{}]]$.
+\pref{lem:ipre} tells us that
+$[[S;P |=ty t1 : UPI x1:Rel (UPI D. k2') k2]]$.
+\pref{lem:kind-reg} and
+inversion gives
+$[[S;Rel(P,D) |=ty k2' : Type{}]]$.
+We can then use the induction hypothesis with context
+$[[P,x:Rel k1,O1,D]]$ (known well-formed by \pref{lem:weakening}) to get
+$[[S;P,x:Rel k1,O1,D,O2 |=ty t2 : UPI x2:Rel k1'. k2']]$.
+Rule \rul{Ty\_AppRel} gives us
+$[[S;P,x:Rel k1,O1,D,O2 |=ty t2 (x ps) : k2'[x ps/x2] ]]$
+but \pref{lem:scoping} tells us that the substitution in the kind has
+no effect.
+Now, we use \pref{lem:givens} to see
+$[[S;P,x:Rel k1,O1,g(D),O2,D |=ty t2 (x ps) : k2']]$
+and then use \rul{Ty\_Lam} (repeatedly) to see
+$[[S;P,x:Rel k1,O1,g(D),O2 |=ty \ D. t2 (x ps) : UPI D. k2']]$.
+Thus \rul{Ty\_AppRel} tells us
+$[[S;P,x:Rel k1,O1,g(D),O2 |=ty t1 (\ D. t2 (x ps)) : k2[(\ D. t2 (x ps))/x1] ]]$,
+but \pref{lem:scoping} tells us that the substitution in the kind
+has no effect.
+We only need to reshuffle the context; in other words, we must
+now show
+$[[S |=ctx P,O1,g(D),O2,x:Rel k1]]$ to be done.
+For this to hold, we need to know that none of
+$[[O1,D,O2]]$ depend on $[[x]]$.
+First, note that $[[x]]$ is local to rule \rul{ISub\_DeepSkol}.
+We see that $[[O1]]$ is produced by $[[|->inst]]$ with no mention of
+$[[x]]$; it mustn't mention $[[x]]$ then. The case is similar for
+$[[D]]$ and $[[O2]]$, both produced with no mention of $[[x]]$. Therefore,
+$[[x]]$ is not mentioned in any of these, and we are done.
 \end{description}
 \end{proof}
 
@@ -578,8 +656,41 @@ $[[|=altc]]$ are proven sound via the induction hypothesis.
 $[[S;Rel(P),O0 |=co g : k [Type{}]~[Type{}] UPI_Req a:Rel k1. k2]]$.
 The induction hypothesis (on $[[|->aq]]$) tells us
 $[[S;Rel(P),O |=ty k1' : Type{}]]$.
+\pref{lem:prop-reg} and inversions tell us
+$[[S;Rel(P),O0 |=ty k1 : Type{}]]$.
+We can thus use \pref{lem:isub} to see
+$[[S;P,O0,O,O1 |=ty t1 : UPI x:Rel k1. k1']]$.
+\pref{lem:prop-reg} and inversions tell us
+$[[S;Rel(P),O0,a:Rel k1 |=ty k2 : Type{}]]$.
+\rae{TODO. Make sure to update LamIrrel too}
 
+\item[Case \rul{ITyC\_LamIrrel}:]
+Like previous case. \rae{Is it?}
+
+\item[Case \rul{ITyC\_Fix}:]
+\[
+\ottdruleITyCXXFix{}
+\]
+We know $[[S;Rel(P) |=ty k : Type{}]]$. We can thus conclude
+by \rul{Ty\_Pi} that $[[S;Rel(P) |=ty UPI a:Rel k.k : Type{}]]$.
+We thus use the induction hypothesis to get
+$[[S;P,O |=ty t : UPI a:Rel k.k]]$.
+Thus we are done by \rul{Ty\_Fix}.
+
+\item[Case \rul{ITyC\_Infer}:]
+\[
+\ottdruleITyCXXInfer{}
+\]
+The induction hypothesis tells us that
+$[[S;P,O |=ty t : k1]]$.
+We thus know $[[S |=ctx P,O]]$ by \pref{lem:ctx-reg}.
+\pref{prop:isolv}
+tells us that $[[S |=ctx P,D]]$ and $[[S;P,D |=z theta : O]]$.
+\pref{lem:zonking}
+tells us that $[[S;P,D,ung(O) |=ty t[theta] : k1[theta] ]]$.
 
 \rae{Continue.}
 \end{description}
 \end{proof}
+
+\rae{Refl is not redundant without a proof of Type ~ Type.}

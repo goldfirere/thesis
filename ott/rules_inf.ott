@@ -101,13 +101,15 @@ alts' = make_exhaustive(alts; k)
 ---------------------------------- :: Case
 S;P |->ty case _t0 of _alts : k ~> case_k (t0 |> g) of alts' -| O', Os
 
+% RAE: WRONG
 |->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O0
 S;P |->aq _aqvar ~> b : k1' -| O
 k1 <= k1' ~> t1 -| O1
-S;P,O0,O,b:Rel k1' *|->ty _t : k2 ~> t -| O2
+S;P,O0,O,a:Rel k1,b:Rel k1' *|->ty _t : k2 ~> t -| O2
 ---------------------------------- :: Lam
 S;P |->ty \ _aqvar . _t : k ~> (\ a:Rel k1. t[t1 a/b]) |> sym g -| O0,O,O1,b:g k1',O2
 
+% RAE: WRONG
 |->fun k; Irrel ~> g; UPI; a; Irrel; k1; k2 -| O0
 S;P |->aq _aqvar ~> b : k1' -| O
 k1 <= k1' ~> t1 -| O1
