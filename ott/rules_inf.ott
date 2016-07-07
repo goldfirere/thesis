@@ -74,14 +74,14 @@ S;P *|->ty _t1 '-> _t2 ~> MPI_Req a :Rel t1. t2 : Type{} -| O1,O2
 
 S;P |->ty _t ~> t : k -| O1
 |->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O2
-fresh cu // O = O1,O2,cu : k2 [Type{}]~[Type{}] k1
+a # k2 // fresh cu // O = O1,O2,cu : k2 [Type{}]~[Type{}] k1
 --------------------------------- :: Fix
 S;P *|->ty fix _t ~> fix (t |> (g ;; UPI a:Rel <k1>. cu)) : k1 -| O
 
 S;P *|->ty _t1 ~> t1 : k1 -| O
 S;P,O,x:Rel k1 *|->ty _t2 ~> t2 : k2 -| O2
 -------------------------------- :: Let
-S;P *|->ty let x := _t1 in _t2 ~> (\ x:Rel k1. t2) t1 : k2 -| O,x:g k1,O2
+S;P *|->ty let x := _t1 in _t2 ~> (\ x:Rel k1. t2) t1 : k2[t1/x] -| O,x:g k1,O2
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Checking  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -399,16 +399,17 @@ defn
 k1 *<= k2 ~> t -| O :: :: ISub2 :: 'Sub_'
 by
 
-k3 <= k1 ~> t1 -| O1  //   k2 <= k4 ~> t2 -| O2
+k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
 -------------------------------------------- :: FunRel
-UPI_Req a:Rel k1. k2 *<= UPI_Req a:Rel k3.k4 ~> \ x :Rel (UPI a:Rel k1.k2), a:Rel k3. t2 (x (t1 a)) -| O1,O2
+UPI_Req a:Rel k1. k2 *<= UPI_Req b:Rel k3.k4 ~> \ x :Rel (UPI a:Rel k1.k2), b:Rel k3. t2 (x (t1 b)) -| O1,b:g k3,O2
 
-k3 <= k1 ~> t1 -| O1  //   k2 <= k4 ~> t2 -| O2
+k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
 -------------------------------------------- :: FunIrrel
-UPI_Req a:Irrel k1. k2 *<= UPI_Req a:Irrel k3.k4 ~> \ x :Rel (UPI a:Irrel k1.k2), a:Irrel k3. t2 (x {t1 a}) -| O1,O2
+UPI_Req a:Irrel k1. k2 *<= UPI_Req b:Irrel k3.k4 ~> \ x :Rel (UPI a:Irrel k1.k2), b:Irrel k3. t2 (x {t1 b}) -| O1,b:g k3,O2
 
------------------------ :: Refl
-t *<= t ~> \ x:Rel t. x -| empty
+fresh cu
+----------------------- :: Unify
+t1 *<= t2 ~> \ x:Rel t1. (x |> cu) -| cu : t1 [Type{}]~[Type{}] t2
 
 defn
 k1 <= k2 ~> t -| O :: :: ISub :: 'Sub_'
@@ -419,3 +420,83 @@ by
 k1' *<= k2' ~> t2 -| O2
 ------------- :: DeepSkol
 k1 <= k2 ~> \ x:Rel k1. t1 (\ D. t2 (x ps)) -| O1,g(D),O2
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+JUnzonked :: 'U' ::=
+
+defn
+S |=ctx P :: :: Ctx :: 'Ctx_'
+  {{ tex [[S]] [[|=ctx]] [[P]] \ok }}
+by
+
+|-sig S
+-------------- :: Nil
+S |=ctx empty
+
+S;Rel(P) |=ty k : Type{}  //  P contains no givens // S |=ctx P,O
+-------------- :: TyVar
+S |=ctx P,O, a:rel k
+
+S;Rel(G) |=prop phi // P contains no givens // S |=ctx P,O
+---------------- :: CoVar
+S |=ctx P,O, c:phi
+
+S;Rel(P) |=ty k : Type{}  // S |=ctx P
+------------------ :: UTyVar
+S |=ctx P, au : k
+
+S;Rel(P) |=prop phi  // S |=ctx P
+-------------------- :: UCoVar
+S |=ctx P, cu : phi
+
+S;Rel(P) |=ty k : Type{} // S |=ctx P
+----------------- :: GTyVar
+S |=ctx P, a :g k
+
+S;Rel(P) |=prop phi // S |=ctx P
+------------------- :: GCoVar
+S |=ctx P, c :g phi
+
+S;Rel(P) |=ty k : Type{} // S |=ctx P
+------------------ :: CTyVar
+S |=ctx P, a :c k
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Zonking  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S ; P |=z theta : O :: :: Zonk :: 'Zonk_'
+by
+
+S |=ctx P
+---------------------- :: Nil
+S;P |=z empty : empty
+
+(t/au) \in theta // theta' = theta \ au
+S;P |=ty t : k
+S;P |=z theta' : O[t/au]
+------------------------ :: UTyVar
+S;P |=z theta : au:k, O
+
+(g/cu) \in theta // theta' = theta \ cu
+S;P |=co g : phi
+S;P |=z theta' : O[g/cu]
+-------------------------- :: UCoVar
+S;P |=z theta : cu:phi, O
+
+S;P,a:Rel k |=z theta : O
+------------------------- :: GTyVar
+S;P |=z theta : a :g k, O
+ 
+S;P,c:phi |=z theta : O
+--------------------------- :: GCoVar
+S;P |=z theta : c :g phi, O
+
+S;P,a:Rel k |=z theta : O
+-------------------------- :: CTyVar
+S;P |=z theta : a :c k, O

@@ -42,8 +42,12 @@
   about solving in the middle of constraint generation. But GHC actually
   does this, too, whenever it encounters a let.
 - Label given class constraints with :c
+- The old +> judgment (see paper from 2 years ago) required funny business
+  around quantifying over propositions... and it also required having the
+  body of a Pi-type be something other than *. All for syntactic silliness.
+  So I've introduced :g bindings.
 - Put givens in O with :g
-- Don't differentiate Constraint from Type.
+- Don't differentiate Constraint from Type. See PtC_Constrained.
 - Can't really do decideGeneralisationPlan (i.e. Let should not be generalized)
   properly because I can't easily distinguish between top-level and local
   lets. Solution: consider a top-level let a new declaration form, just like
@@ -52,6 +56,12 @@
 - Must comment about how |- judgments are extended. In particular, |-ctx.
   With UCtx_TyVar and UCtx_CoVar
 - And we only allow Inf on coercion abstractions.
+- Givens are *not* available to the right of |-.
+- All unification variables must be gone during zonking.
+- Only unification variable kinds can refer to givens.
+- :c is just like :g, except the solver uses :c bindings.
+- prop:solver-sound implies that no unif variables that depend on a given
+  can be generalized over. This is correct.
 
 Design decisions:
 - Include let (with a desugaring to use lambda) but not letrec. The only

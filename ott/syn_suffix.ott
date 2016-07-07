@@ -209,6 +209,9 @@ $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
   | fresh cu                           ::   :: fresh_cu
   | S |-> _alts match a scrutinee from the type H'  ::   :: match_scrut
     {{ tex [[S]] [[|->]] [[_alts]] \text{ match a scrutinee from the type } [[H']] }}
+  | P contains no givens               ::   :: no_givens
+    {{ tex [[P]] \text{ contains no givens} }}
+  | ijudg                              ::   :: ijudg
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
