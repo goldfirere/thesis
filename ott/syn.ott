@@ -116,6 +116,8 @@ vars, as {{ tex \overline{\ottnt{a} } }}, bs {{ tex \overline{\ottnt{b} } }},
 tycovar, z :: 'TyCoVar_' ::=
 | a                     ::   :: Ty  {{ coq [[a]] }}
 | c                     ::   :: Co  {{ coq [[c]] }}
+| au                    :: M :: UTy
+| cu                    :: M :: UCo
 
 mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'mixedVars_' ::=
 | z                                  ::   :: One
@@ -434,10 +436,17 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
 | nil                               :: M :: Nil  
 | ps / zs                           :: M :: Telescope
 | ( theta )                         :: M :: Parens
+| theta \inter zs                   :: M :: Restrict
+  {{ tex [[theta]] \pipe_{[[zs]]} }}
+| theta \ zs                        :: M :: Exclusion
+  {{ tex [[theta]] \mathop{\backslash} [[zs]] }}
 
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
 | g / c                  ::   :: CoVar
+| t / au                 :: M :: UTyVar
+| g / cu                 :: M :: UCoVar
+| ( subst )              :: M :: Parens
 
 unif_result :: 'UnifResult_' ::=
 | Nothing                     ::   :: Nothing   {{ coq Nothing }}

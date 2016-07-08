@@ -62,6 +62,10 @@
 - :c is just like :g, except the solver uses :c bindings.
 - prop:solver-sound implies that no unif variables that depend on a given
   can be generalized over. This is correct.
+- theta|_zs as domain restriction
+- theta \ zs as domain exclusion
+- syntax to explain: au : k \in P under D
+- The whole tree structure of P/O.
 
 Design decisions:
 - Include let (with a desugaring to use lambda) but not letrec. The only

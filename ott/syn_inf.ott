@@ -18,17 +18,13 @@ aus {{ tex \overline{\alpha} }}, bus {{ tex \overline{\beta} }}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % A context containing only unification variables
-unif_bnd :: 'IUnifBnd_' ::=
+unif_bnd, u :: 'IUnifBnd_' ::=
 | au : k             ::   :: Ty
   {{ tex [[au]] {:} [[k]] }}
 | cu : phi           ::   :: Co
   {{ tex [[cu]] {:} [[phi]] }}
-| a :g k             ::   :: GivenTy
-  {{ tex [[a]] {:}_{\mathsf{g} } [[k]] }}
-| c :g phi           ::   :: GivenCo
-  {{ tex [[c]] {:}_{\mathsf{g} } [[phi]] }}
-| a :c k             ::   :: GivenClass
-  {{ tex [[a]] {:}_{\mathsf{c} } [[k]] }}
+| < D | O >          ::   :: Given
+  {{ tex \langle [[D]] \pipe [[O]] \rangle }}
 
 O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
 | unif_bnd              ::   :: One
@@ -38,9 +34,8 @@ O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
   {{ tex [[aus]]{:}[[D]] }}
 | aus : ts             :: M :: KsBind
   {{ tex [[aus]]{:}[[ts]] }}
-| g( D )               :: M :: GivenTel
-  {{ tex \mathsf{g}([[D]]) }}
 | ( O )                :: M :: Parens
+| O [ theta ]          :: M :: Subst
 
 P {{ tex \Psi }} :: 'ICtx_' ::=
 | d                  ::   :: Binder
@@ -56,10 +51,8 @@ P {{ tex \Psi }} :: 'ICtx_' ::=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ijudg :: 'IJudg_' ::=
-| S ; P |=ty t : k                    ::   :: Ty
-| S ; P |=co g : phi                  ::   :: Co
+| S ; P |=prop phi                    ::   :: Prop
+  {{ tex [[S]] ; [[P]] [[|=prop]] [[phi]] \ok }}
 | S ; P |=vec ps : P2                 ::   :: Vec
 | S ; P ; s ; t |=alt alt : k         ::   :: Alt
   {{ tex [[S]];[[P]];[[s]] [[|=alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
-| S |=ctx P                           ::   :: Ctx
-  {{ tex [[S]] [[|=ctx]] [[P]] \ok }}

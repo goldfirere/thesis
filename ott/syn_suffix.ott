@@ -36,7 +36,6 @@ fact :: 'Fact_' ::=
   | ps ~>* ps' *<~ ps''                ::   :: confluence
   | d1 ~> d3 <~ d2                     ::   :: d_diamond
   | fvset1 \subseteq fvset2            ::   :: subset
-  | G1 \subseteq G2                    ::   :: G_subseq
   | a \notin fvset                     ::   :: var_notin_set
   | S ; G |-co* g : phi                ::   :: co_star
   | apart ( t1 ; t2 )                  ::   :: apartness
@@ -153,7 +152,7 @@ terminals :: 'terminals_' ::=
 | |=cev                                ::   :: Cev_int {{ tex \vDashy{cev} }}
 | |=prop                               ::   :: Prop_int {{ tex \vDashy{prop} }}
 | |=s                                  ::   :: S_int   {{ tex \vDashy{s} }}
-| |=r                                  ::   :: R_int   {{ tex \vDashy{r} }}
+| |=z                                  ::   :: Z_int   {{ tex \vDashy{z} }}
 | |=lc                                 ::   :: Lc_int  {{ tex \vDashy{lc} }}
 
 | |->ty                                ::   :: Ty_inf  {{ tex \varrowy{ty} }}
@@ -212,6 +211,8 @@ $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
   | P contains no givens               ::   :: no_givens
     {{ tex [[P]] \text{ contains no givens} }}
   | ijudg                              ::   :: ijudg
+  | subst \in substs                   ::   :: subst_in
+  | P1 \subseteq P2                    ::   :: G_subseq
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -284,3 +285,6 @@ args_One <= args_Subst
 
 UnifVars_One <= IUnifCtx_KsBind
 Type_Lams <= Type_Apps
+
+IUnifCtx_One <= IUnifCtx_Subst
+IUnifCtx_KsBind <= IUnifCtx_Subst
