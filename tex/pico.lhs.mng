@@ -2049,7 +2049,7 @@ settle for the pair of coercions $([[h1]],[[h2]])$ that appear in
 parts of the propositions. 
 The second wrinkle is in the $[[c ~# g]]$ premise of both of these rules.
 
-\begin{definition*}[``Almost devoid'' {[\pref{defn:almost-devoid}]}]
+\begin{definition*}[``Almost devoid'']
 Define $[[c ~# g]]$ (pronounced ``$[[g]]$ is almost devoid of $[[c]]$'') to mean that the coercion variable $[[c]]$
 appears nowhere in $[[g]]$ except, perhaps, in one of the types
 related by a $[[t1 ~={h} t2]]$ coercion.
@@ -2857,8 +2857,8 @@ stated near the top of this section.
 \label{sec:other-consistency-proofs}
 
 There are a few aspects of the consistency proof where it may be helpful to
-highlight the differences between my proof here and those in prior work.\footnote{The comments below imperil other, published proofs of consistency. The authors of these proofs have conceded to me in private communication
-that their proofs were incorrect and do not dispute my claims below.}
+highlight the differences between my proof here and those in prior work.\footnote{The comments below declaim other, published proofs of consistency. The authors of these proofs have conceded to me in private communication
+that their proofs were incorrect and do not dispute my assertions below.}
 
 \subsubsection{Non-linear, non-terminating rewrite systems are not confluent}
 

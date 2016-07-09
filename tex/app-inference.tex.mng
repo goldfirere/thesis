@@ -8,27 +8,19 @@ in any case where the rule under consideration is printed, any metavariable
 names in the rule shadow any metavariable names in the lemma or
 theorem statement.
 
-\section{Solver}
-
-The solver ($[[|->solv]]$) must have the following properties.
-
-\begin{property}[Solver is sound]
-\label{prop:isolv}
-If $[[S |=ctx P,O]]$ and
-$[[S;P |->solv O ~> D; theta]]$,
-then $[[S |=ctx P,D]]$ and $[[S;P,D |=z theta : O =| empty]]$.
-\end{property}
-
-\rae{I should need to prove some sort of weakening property for the
-context on the right of the $[[|=z]]$ judgment. If I don't, something's wrong.}
-
-\section{Givens}
+\begin{definition}[Judgments with unification variables]
+I write judgments with a new turnstile $\vDash$; these judgments are
+identical to the corresponding judgments written with a $\vdash$ except
+with the new rules as given in \pref{app:inference-judgments}.
+All lemmas proved over the old judgments hold over the new ones,
+noting that the new \rul{UVar} rules are unaffected by context extension.
+\end{definition}
 
 \begin{definition}[Generalized judgments]
 I sometimes write $[[S;P |= J]]$,
 where $[[J]]$ stands for a \emph{judgment}, one of the
 judgments headed by $[[|=ty]]$, $[[|=co]]$, $[[|=prop]]$,
-$[[|=alt]]$, $[[|-vec]]$, or $[[|=ctx]]$, or $[[|=s]]$.
+$[[|=alt]]$, $[[|=vec]]$, or $[[|=ctx]]$, or $[[|=s]]$.
 Similarly, I write $[[J[theta] ]]$ to denote substitution in the
 component parts of the judgment $[[J]]$.
 \end{definition}
@@ -42,67 +34,182 @@ $[[S;P |= J]]$, the following lemmas are applicable:
 (coercion substitution).
 \end{remark}
 
-%% \begin{lemma}[Zonking context regularity]
-%% \label{lem:zonk-ctx-reg}
-%% If $[[S;P |=z theta : O =| D]]$, then
-%% $[[S |=ctx P,D]]$.
-%% \end{lemma}
+\section{Solver}
 
-%% \begin{proof}
-%% Straightforward induction on the typing derivation.
-%% \end{proof}
+The solver ($[[|->solv]]$) must have the following properties.
 
-\begin{lemma}[Zonking substitution domain]
-\label{lem:zonk-subst-dom}
-If $[[S |=ctx $[[S;P |=z theta : O =| D]]$, then $[[dom(theta) = {dom(O)} ]]$.
+\begin{property}[Solver is sound]
+\label{prop:isolv}
+If $[[S |=ctx P,O]]$ and
+$[[S;P |->solv O ~> D; Z]]$,
+then $[[S |=ctx P,D]]$ and $[[S;P,D |=z Z : O]]$.
+\end{property}
+
+\section{Zonking}
+
+\rae{Move this out from the appendix. May need to reduplicate at-signs.}
+
+\begin{definition}[Zonker]
+A \emph{zonker} $[[Z]]$
+is a substitution from unification variables $[[au]]$
+and $[[cu]]$ to types and coercions, respectively:
+\[
+[[Z]] \bnfeq [[empty]] \bnfor [[Z, t/au]] \bnfor [[Z, g/cu]] \bnfor [[Z, <D|Z'>]]
+\]
+\end{definition}
+
+\begin{definition}[$[[bind]]$]
+Define the $[[bind(d;Z) = Z']]$ operation recursively on the structure
+of $[[Z]]$ as follows:
+\[
+\begin{array}{r@{\;}l}
+[[bind(d;empty) &= empty]] \\
+[[bind(d; t/au,Z) &= t/au,bind(d;Z)]] \\
+[[bind(d; g/cu,Z) &= g/cu,bind(d;Z)]] \\
+[[bind(d; <d,D|Z1>,Z2) &= <D|Z1>,bind(d;Z2)]] \\
+[[bind(d; <D|Z1>,Z2) &= <D|Z1>,bind(d;Z2)]]
+\end{array}
+\]
+
+Define $[[bind(D;Z)]]$ to call $[[bind(d;Z)]]$ for every $[[d \in D]]$, in
+left-to-right order.
+
+After a $[[bind]]$ operation, there may be empty given telescopes
+$[[< empty | Z >]]$; these are equivalent to just $[[Z]]$.
+\end{definition}
+
+\begin{definition}[Zonking]
+\emph{Zonking} is the act of applying a zonker to a type, coercion,
+proposition, alternative, or binder. It acts just like applying a
+normal substitution, ignoring any mappings hidden under a non-empty
+given telescope (that is, ignoring the $[[Z]]$ in a $[[<D|Z>]]$ when
+$[[D]]$ is non-empty), with two changes:
+\[
+\begin{array}{r@{\;}l}
+[[(PI d.t)[Z] &= PI (d[Z]). t[bind(d;Z)] ]] \\
+[[(\d.t)[Z] &= \ (d[Z]). t[bind(d;Z)] ]]
+\end{array}
+\]
+All other forms, including the binding coercion forms and all non-unification
+variables, are treated
+homomorphically, just like in applying a regular substitution.
+\end{definition}
+
+\begin{lemma}[Validating assumptions]
+\label{lem:valid-assn}
+If $[[S;P1,<d,D|O>,P2 |= J]]$, then $[[S;P1,<D|O>,P2 |= J]]$.
 \end{lemma}
 
 \begin{proof}
-By induction on the structure of $[[O]]$.
+This makes only more variables available for use in $[[J]]$. Thus the
+proof is like that for \pref{lem:weakening}. Note that the derivation
+for the result is strictly smaller than the initial derivation, as the
+context is smaller.
 \end{proof}
 
 \begin{lemma}[Zonking]
 \label{lem:zonking}
-If $[[S;P |=z theta : O =| D]]$ and $[[S;P,O,D |= J]]$, then
-$[[S;P,D[theta] |= J[theta] ]]$.
+If $[[S;P,D1 |=z Z : O]]$ and $[[S;P,<D1|O>,D2 |= J]]$, then
+$[[S;P,D2[<D1|Z>] |= J[<D1|Z>] ]]$.
 \end{lemma}
 
 \begin{proof}
-By induction on $[[S;P |=z theta : O =| D]]$.
+By induction on the derivation of $[[S;P,<D1|O>,D2 |= J]]$.
+
+\begin{description}
+\item[Case \rul{Ty\_Var}:]
+\[
+\ottdruleTyXXVar{}
+\]
+We know $[[S |=ctx P,<D1|O>,D2]]$ and $[[a :Rel k \in P,<D1|O>,D2]]$.
+We must prove $[[S;P,D2[<D1|Z>] |=ty a[<D1|Z>] : k[<D1|Z>] ]]$.
+Zonking a non-unification variable (like $[[a]]$) has no effect, so
+we must prove
+$[[S;P,D2[<D1|Z>] |=ty a : k[<D1|Z>] ]]$.
+We will use \rul{Ty\_Var}, so we must prove the following:
+\begin{description}
+\item[$[[S |=ctx P,D2[<D1|Z>] ]]$] By the induction hypothesis.
+\item[$[[a :Rel k[<D1|Z>] \in P,D2[<D1|Z>] ]]$. From
+$[[a :Rel k \in P,<D1|O>,D2]]$, we know that $[[a]]$ must appear either
+in $[[P]]$ or in $[[D2]]$. If $[[a]]$ is in $[[P]]$, we are done,
+using \pref{lem:scoping} to show that zonking $[[k]]$ has no effect.
+If $[[a]]$ is in $[[D2]]$, then $[[a :Rel k[<D1|Z>] ]]$ must be
+in $[[D2[<D1|Z>] ]]$, and so we are done with this case.
+\end{description}
+\item[Case \rul{Ty\_Pi}:]
+\[
+\ottdruleTyXXPi{}
+\]
+We know $[[S;P,<D1|O>,D2,Rel(d) |=ty k : Type{}]]$ and must
+prove
+$[[S;P,D2[<D1|Z>] |=ty PI (d[<D1|Z>]). (k[bind(d;<D1|Z>)]) : Type{}]]$.
+We will use \rul{Ty\_Pi} and so we must prove
+$[[S;P,D2[<D1|Z>],Rel(d[<D1|Z>]) |=ty k[bind(d;<D1|Z>)] : Type{}]]$.
+We have two cases:
+\begin{description}
+\item[Case $[[D1 = d,D1']]$:] In this case, $[[bind(d;<D1|Z>) = <D1'|Z>]]$.
+We thus know
+$[[S;P,<d,D1'|O>,D2,Rel(d) |=ty k : Type{}]]$.
+By \pref{lem:valid-assn}, we see that
+$[[S;P,<D1'|O>,D2,Rel(d) |=ty k : Type{}]]$.
+By assumption, we know $[[S;P,d,D1' |=z Z : O]]$.
+We can thus use the induction hypothesis to get
+$[[S;P,D2[<D1'|Z>],Rel(d)[<D1'|Z>] |=ty k[<D1'|Z>] : Type{}]]$.
+To be done, we must show that
+$[[D2[<D1|Z>] = D2[<D1'|Z>] ]]$ and $[[d[<D1|Z>] = d[<D1'|Z>] ]]$.
+
+\item[Otherwise:] In this case, $[[bind(d;<D1|Z>) = <D1|Z>]]$.
+
+\begin{proof}
+By induction on the derivation of $[[S;P |=z Z : O]]$.
+
+\begin{description}
+\item[Case \rul{Zonk\_Nil}:]
+Both $[[O]]$ and $[[Z]]$ are empty, and so we are done by assumption.
+\item[Case \rul{Zonk\_TyVar}:]
+By the induction hypothesis and \pref{lem:ty-subst}.
+\item[Case \rul{Zonk\_CoVar}:]
+By the induction hypothesis and \pref{lem:co-subst}.
+\item[Case \rul{Zonk\_Givens}:]
+\[
+\ottdruleZonkXXGivens{}
+\]
+We can assume $[[S;P,<D1|O1>,O |= J]]$. The induction hypothesis
+then tells us
+$[[S;P,<D1|O1> |= J[Z] ]]$.
+By \rae{???}, we can conclude
+$[[S;P |= J[<D1|O1>,Z] ]]$ as desired.
+\end{description}
+\end{proof}
+
+\section{Givens}
+
+\begin{lemma}[Zonking context regularity]
+\label{lem:zonk-ctx-reg}
+If $[[S;P |=z theta : O]]$, then
+$[[S |=ctx P]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on the typing derivation.
+\end{proof}
+
+\begin{lemma}[Zonking]
+\label{lem:zonking}
+If $[[S;P |=z theta : O]]$ and $[[S;P,O |= J]]$, then
+$[[S;P |= J[theta] ]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on $[[S;P |=z theta : O]]$.
 
 \begin{description}
 \item[Case \rul{Zonk\_Nil}:]
 Both $[[O]]$ and $[[theta]]$ are empty, so we are done.
 \item[Case \rul{Zonk\_UTyVar}:]
-\[
-\ottdruleZonkXXUTyVar{}
-\]
-The premises tell us
-$[[S;P |=ty t : k]]$ and
-$[[S;P |=z theta' : O[t/au] =| D[t/au] ]]$.
-By assumption, $[[S;P,au:k,O,D |= J]]$.
-\pref{lem:ty-subst} tells us
-$[[S;P,O[t/au],D[t/au] |= J[t/au] ]]$.
-The induction hypothesis then gives us
-$[[S;P,D[t/au][theta'] |= J[t/au][theta'] ]]$.
-We know by \pref{lem:zonk-subst-dom} that $[[dom(theta') = {dom(O)}]]$,
-and thus that $[[dom(theta') \inter fv(t) = \emptyset]]$. We can
-then simplify our result to
-$[[S;P,D[theta] |= J[theta] ]]$
-as desired.
+By induction and \pref{lem:ty-subst}.
 \item[Case \rul{Zonk\_UCoVar}:]
-Similar to previous case, appealing to \pref{lem:co-subst}.
-\item[Case \rul{Zonk\_BoundGivens}:]
-\[
-\ottdruleZonkXXBoundGivens{}
-\]
-By assumption, $[[S;P,<D|O0>,O |= J]]$.
-The induction hypothesis then tells us that
-$[[S;P,<D|O0> |= J[theta2] ]]$.
-
-
-
-
+By induction and \pref{lem:co-subst}.
 \item[Case \rul{Zonk\_Givens}:]
 \[
 \ottdruleZonkXXGivens{}
@@ -113,7 +220,8 @@ $[[S;P,D,O |= J]]$.
 We can thus use the induction hypothesis (twice) to get
 $[[S;P,D |= J[theta1] ]]$ and $[[S;P |= J[theta2] ]]$.
 We must show $[[S;P |= J[theta1,theta2] ]]$. Pick some
-$[[au]]$ or $[[cu]]$ in $[[dom(theta1)]]$. 
+$[[au]]$ or $[[cu]]$ in $[[dom(theta1)]]$. Let's assume
+without loss
 \end{description}
 \end{proof}
 

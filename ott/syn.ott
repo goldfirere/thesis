@@ -170,6 +170,7 @@ bnd, d {{ tex \delta }} :: 'Bnd_' ::=
 | o : phi                          :: M :: ErasedCoercion
   {{ tex [[o]] {:} [[phi]] }}
 | d [ theta ]                      :: M :: Subst
+| d [ Z ]                          :: M :: Zonk
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  PIs  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -228,6 +229,7 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | au                           :: M :: UnifVar
 
 | t [ theta ]                  :: M :: Subst
+| t [ Z ]                      :: M :: Zonk
 
 typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
   ks {{ tex \overline{\kappa} }}, ees {{ tex \overline{\epsilon} }}
@@ -238,6 +240,7 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 | prefix ( ts )           :: M :: Prefix
   {{ tex [[prefix]]([[ts]]) }}
 | ts [ theta ]            :: M :: Subst
+| ts [ Z ]                :: M :: Zonk
 | '|' ts '|'              :: M :: Erased
   {{ tex \lfloor [[ts]] \rfloor }}
 | aus                   :: M :: UnifVars
@@ -256,6 +259,7 @@ alts {{ tex \overline{\ottnt{alt} } }} :: 'alts_' ::=
 alt :: 'Alt_' ::=
 | pat -> t               ::   :: Alt
 | alt [ theta ]          :: M :: Subst
+| alt [ Z ]              :: M :: Zonk
 | ( alt )                :: M :: Parens
 
 pat {{ tex \pi }} :: 'Pat_' ::=
@@ -273,6 +277,7 @@ prop, phi {{ tex \phi }} :: 'Phi_' ::=
   {{ tex [[t1]] \mathrel{ {}^{\supp{[[k1]]} } {\sim}^{\supp{[[k2]]} } } [[t2]] }}
   {{ coq (Phi_Equality ([[t1]]) ([[k1]]) ([[k2]]) ([[t2]])) }}
 | phi [ theta ]                :: M :: Subst
+| phi [ Z ]                    :: M :: Zonk
 | ( phi )                      :: M :: Parens
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -328,6 +333,7 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | let c := h in \\ g           :: M :: LetBreak
   {{ tex \begin{vertmath} \ottkw{let}\ [[c]] [[:=]] [[h]]\ \ottkw{in} \\ [[g]] \end{vertmath} }}
 | g [ theta ]                  :: M :: Subst
+| g [ Z ]                      :: M :: Zonk
 | step ^ I t                   :: M :: ManyStep
   {{ tex \ottkw{step}^{[[I]]}\, [[t]] }}
 | axEquals t                   :: M :: AxEquals
@@ -372,6 +378,7 @@ args, ps {{ tex \overline{\psi} }} :: 'args_' ::=
 | nil                   :: M :: Nil
 | zs                    :: M :: Vars
 | ps [ theta ]          :: M :: Subst
+| ps [ Z ]              :: M :: Zonk
 | ts                    :: M :: Types
 | gs                    :: M :: Cos
 | ps _{ I1 '..' I2 }    :: M :: IndexPrefix
@@ -414,6 +421,7 @@ context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'ctx_' ::=
 | G1 , .... , Gi               ::   :: Many
 | nil                          :: M :: Nil
 | G [ theta ]                  :: M :: Subst
+| G [ Z ]                      :: M :: Zonk
 | as : rel ks                  :: M :: ZipKs
   {{ tex [[as]]{:}_{[[rel]]} [[ks]] }}
 % | as : rel D                   :: M :: Telescope
@@ -444,9 +452,6 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
 | g / c                  ::   :: CoVar
-| t / au                 :: M :: UTyVar
-| g / cu                 :: M :: UCoVar
-| ( subst )              :: M :: Parens
 
 unif_result :: 'UnifResult_' ::=
 | Nothing                     ::   :: Nothing   {{ coq Nothing }}

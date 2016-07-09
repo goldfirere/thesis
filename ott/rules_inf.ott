@@ -105,7 +105,7 @@ S;P |->ty case _t0 of _alts : k ~> case_k (t0 |> g) of alts' -| O', Os
 |->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O0
 S;P |->aq _aqvar ~> b : k1' -| O
 k1 <= k1' ~> t1 -| O1
-S;P,O0,O,a:Rel k1,b:Rel k1' *|->ty _t : k2 ~> t -| O2
+S;P,O0,O,b:Rel k1' *|->ty _t : k2 ~> t -| O2
 ---------------------------------- :: Lam
 S;P |->ty \ _aqvar . _t : k ~> (\ a:Rel k1. t[t1 a/b]) |> sym g -| O0,O,O1,<b:Rel k1'|O2>
 
@@ -123,9 +123,9 @@ S;P |->ty fix _t : k ~> fix t -| O
 
 % NB: This does generalization
 S;P *|->ty _t ~> t : k1 -| O
-S;P |->solv O ~> D; theta
-t' = \ D. t[theta]
-k1' = UPI_Inf D. k1[theta]
+S;P |->solv O ~> D; Z
+t' = \ D. t[Z]
+k1' = UPI_Inf D. k1[Z]
 k1' <= k2 ~> t2 -| O2
 ---------------------------- :: Infer
 S;P |->ty _t : k2 ~> t2 t' -| O2
@@ -151,7 +151,7 @@ S;P *|->ty /\ @_aqvar . _t : UPI_Spec a :Irrel k1.k2 ~> \ a:Irrel k1. t[t1 a/b] 
 S;P *|->ty _t1 ~> t1 : k1 -| O
 S;P,O,x:Rel k1 *|->ty _t2 : k ~> t2 -| O2
 ---------------------------------------- :: Let
-S;P *|->ty let x := _t1 in _t2 : k ~> (\x:Rel k1. t2) t1 -| O,<x:Rel k1'|O2>
+S;P *|->ty let x := _t1 in _t2 : k ~> (\x:Rel k1. t2) t1 -| O,<x:Rel k1|O2>
 
 S;P,$a:rel k1 *|->ty _t : k2 ~> t -| O
 ---------------------------------------------- :: Skol
@@ -370,7 +370,7 @@ Spec <= Req
 
 %% As in OutsideIn
 defn
-S ; P |->solv O ~> D ; theta :: :: ISolv :: 'Solv_'
+S ; P |->solv O ~> D ; Z :: :: ISolv :: 'Solv_'
 by
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -484,36 +484,26 @@ u \in P,u' under D
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 defn
-S ; P |=z theta : O =| D :: :: Zonk :: 'Zonk_'
+S ; P |=z Z : O :: :: Zonk :: 'Zonk_'
 by
 
 ---------------------- :: Nil
-S;P |=z empty : empty =| D
+S;P |=z empty : empty
 
-(t/au) \in theta // theta' = theta \ au
+t has no unification variables
 S;P |=ty t : k
-S;P |=z theta' : O[t/au] =| D[t/au]
------------------------- :: UTyVar
-S;P |=z theta : au:k, O =| D
+S;P |=z Z : O[t/au]
+-------------------------- :: TyVar
+S;P |=z t/au, Z : au:k, O
 
-(g/cu) \in theta // theta' = theta \ cu
+g has no unification variables
 S;P |=co g : phi
-S;P |=z theta' : O[g/cu] =| D[g/cu]
--------------------------- :: UCoVar
-S;P |=z theta : cu:phi, O =| D
+S;P |=z Z : O[g/cu]
+--------------------------- :: CoVar
+S;P |=z g/cu, Z : cu:phi, O
 
-theta1 = theta \inter dom(O1)
-theta2 = theta \ dom(O1)
-S;P,D1 |=z theta1 : O1 =| D
-S;P |=z theta2 : O =| D1,D
-------------------------- :: BoundGivens
-S;P |=z theta : <D1|O1>, O =| D1,D
-
-D1 \not\subseteq D
-theta1 = theta \inter dom(O1)
-theta2 = theta \ dom(O1)
-S;P |=z theta1 : O1 =| D1,D
-S;P |=z theta2 : O =| D
---------------------- :: UnboundGivens
-S;P |=z theta : <D1|O1>, O =| D
+S;P,D1 |=z Z1 : O1
+S;P |=z Z : O
+----------------------------- :: Givens
+S;P |=z <D1|Z1>,Z : <D1|O1>,O
 

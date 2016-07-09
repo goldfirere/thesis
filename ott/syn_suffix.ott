@@ -23,6 +23,7 @@ rewrite_rule :: 'Rewrite_' ::=
 | ealts1 eq ealts2                   ::   :: ealts_rewrite
 | e1 eq e2                           ::   :: e_rewrite
 | calt1 eq calt2                     ::   :: calt_rewrite
+| Z1 eq Z2                           ::   :: Z_rewrite
 
 util :: 'Util_' ::=
 | ||.||                              ::   :: terase_op
@@ -126,6 +127,7 @@ terminals :: 'terminals_' ::=
 | fresh                                ::   :: freshu  {{ tex \mathsf{fresh} }}
 | +>                                   ::   :: shove   {{ tex \hookrightarrow }}
 | make_exhaustive                      ::   :: makeExh {{ tex \mathsf{make\_exhaustive} }}
+| bind                                 ::   :: bind    {{ tex \mathsf{bind} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -142,6 +144,7 @@ terminals :: 'terminals_' ::=
 | |-co*                                ::   :: CoS_ent {{ tex \vdashy{co}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
 | |-ty*                                ::   :: TyS_ent {{ tex \vdashy{ty}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
 
+| |=                                   ::   :: vDash   {{ tex \vDash }}
 | |=ty                                 ::   :: Ty_int  {{ tex \vDashy{ty} }}
 | |=co                                 ::   :: Co_int  {{ tex \vDashy{co} }}
 | |=ctx                                ::   :: Ctx_int {{ tex \vDashy{ctx} }}
@@ -213,6 +216,8 @@ $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
   | ijudg                              ::   :: ijudg
   | subst \in substs                   ::   :: subst_in
   | P1 \subseteq P2                    ::   :: G_subseq
+  | p has no unification variables     ::   :: no_unif
+    {{ tex [[p]] \text{ has no unification variables} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -288,3 +293,14 @@ Type_Lams <= Type_Apps
 
 IUnifCtx_One <= IUnifCtx_Subst
 IUnifCtx_KsBind <= IUnifCtx_Subst
+
+ctx_Many <= ctx_Zonk
+ctx_One <= ctx_Zonk
+types_One <= types_Zonk
+Phi_IEquality <= Phi_Zonk
+Type_Pis <= Type_Zonk
+Alt_Alt <= Alt_Zonk
+Type_Lams <= Type_Zonk
+args_One <= args_Zonk
+IUnifCtx_One <= IUnifCtx_Zonk
+IUnifCtx_KsBind <= IUnifCtx_Zonk

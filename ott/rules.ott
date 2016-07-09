@@ -34,29 +34,6 @@ PI c:phi.t ! PI c:phi'.t'
 ------------- :: Lam
 \d.t ! \d'.t'
 
-
-% defn
-% ee1 !! ee2 :: :: ECons :: 'EC_'
-%   {{ com Erased type consistency }}
-% by
-
-% ------- :: TyCon
-% H** ss !! H** ss'
-
-% %% Why don't combine these next two? Because we need the relevances
-% %% to be the same.
-
-% ------------------------------ :: PiTy
-% PI a:rel k. t !! PI a:rel k'.t'
-
-% ------------------------- :: PiCo
-% PI o:phi.t !! PI o:phi'.t'
-
-% % I think this rule is just needed for reflexivity.
-% ------------- :: Lam
-% \d.t !! \d'.t'
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Type constants  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

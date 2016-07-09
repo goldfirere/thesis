@@ -14,6 +14,23 @@ aus {{ tex \overline{\alpha} }}, bus {{ tex \overline{\beta} }}
 | nil                       :: M :: Nil
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Zonkers  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+zmap :: 'ZonkMap_' ::=
+| t / au           ::   :: Ty
+| g / cu           ::   :: Co
+| < D | Z >        ::   :: Given
+  {{ tex \langle [[D]] \pipe [[Z]] \rangle }}
+
+Z {{ tex \Theta }} :: 'Zonker_' ::=
+| zmap             ::   :: One
+| Z1 , .... , Zi   ::   :: Many
+| nil              :: M :: Nil
+| bind ( D ; Z )   :: M :: bind
+  {{ tex [[bind]]([[D]];[[Z]]) }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -36,6 +53,7 @@ O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
   {{ tex [[aus]]{:}[[ts]] }}
 | ( O )                :: M :: Parens
 | O [ theta ]          :: M :: Subst
+| O [ Z ]              :: M :: Zonk
 
 P {{ tex \Psi }} :: 'ICtx_' ::=
 | d                  ::   :: Binder
@@ -50,9 +68,14 @@ P {{ tex \Psi }} :: 'ICtx_' ::=
 %%  Judgments  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+J {{ tex \mathcal{J} }} :: 'Judg_' ::=
+| J [ theta ]            :: M :: Subst
+| J [ Z ]                :: M :: Zonk
+
 ijudg :: 'IJudg_' ::=
 | S ; P |=prop phi                    ::   :: Prop
   {{ tex [[S]] ; [[P]] [[|=prop]] [[phi]] \ok }}
 | S ; P |=vec ps : P2                 ::   :: Vec
 | S ; P ; s ; t |=alt alt : k         ::   :: Alt
   {{ tex [[S]];[[P]];[[s]] [[|=alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
+| S ; P |= J                          ::   :: J

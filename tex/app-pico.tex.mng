@@ -5,16 +5,10 @@
 
 You may find the full grammar for \pico/ in \pref{fig:pico-grammar}
 and its notation conventions in \pref{fig:pico-notation}.
+The definition for values is in \pref{sec:value-defn} and of
+the $[[~#]]$ operator in \pref{sec:almost-devoid}.
 
 \section{Auxiliary definitions}
-
-\begin{definition}[Values]
-Let values $[[v]]$ be defined by the following subgrammar of $[[t]]$:
-\[
-[[v]] \bnfeq [[H{ts} ps]] \bnfor [[PI d. t]] \bnfor [[\a:Rel k. t]]
-                          \bnfor [[\a:Irrel k. v]] \bnfor [[\c:phi.t]]
-\]
-\end{definition}
 
 \begin{definition}[Free variables]
 Define $[[fv]]$ to be a function extracting free variables, overloaded to work
@@ -27,22 +21,6 @@ The definitions are entirely standard.
 \begin{definition}[Context extension]
 Define the relation $[[G \subseteq G']]$ to mean that $[[G]]$ is a (not necessarily
 contiguous) subsequence of $[[G']]$.
-\end{definition}
-
-\begin{notation}[Kinds in propositions]
-A proposition $[[phi]]$ is properly written $[[t1 (k1)~(k2) t2]]$. We
-frequently elide the kinds if they are obvious or irrelevant.
-Despite these elisions, the kinds are sometimes helpful when proving
-properties of judgments. We then include in the kinds when displaying
-a rule during a proof. This does not change the meaning of the rule;
-it is merely a typesetting convenience to elide the kinds.
-\end{notation}
-
-\begin{definition}[``Almost devoid'']
-\label{defn:almost-devoid}
-Define $[[c ~# g]]$ (pronounced ``$[[g]]$ is almost devoid of $[[c]]$'') to mean that the coercion variable $[[c]]$
-appears nowhere in $[[g]]$ except, perhaps, in one of the types
-related by a $[[t1 ~={h} t2]]$ coercion.
 \end{definition}
 
 \section{Structural properties}
@@ -177,24 +155,24 @@ and
 (in order to use the induction hypothesis in, e.g., \rul{Ty\_Pi}).
 \end{proof}
 
-\begin{lemma}[Strengthening]
-\label{lem:strengthening}
-Assume $[[G' \subseteq G]]$ and the
-variables $[[{dom(G)} \ {dom(G')}]]$ are never used.
-\begin{enumerate}
-\item If $[[S;G |-ty t : k ]]$ then $[[S;G' |-ty t : k]]$.
-\item If $[[S;G |-co g : phi ]]$, then $[[S;G' |-co g : phi]]$.
-\item If $[[S;G |-prop phi ]]$, then $[[S;G' |-prop phi]]$.
-\item If $[[S;G;s0;t0 |-alt alt : k]]$, then $[[S;G';s0;t0 |-alt alt : k]]$.
-\item If $[[S;G |-vec ps : D]]$, then $[[S;G' |-vec ps : D]]$.
-\item If $[[S |-ctx G]]$, then $[[S |-ctx G']]$.
-\item If $[[S;G |-s t --> t']]$, then $[[S;G' |-s t --> t']]$.
-\end{enumerate}
-\end{lemma}
+%% \begin{lemma}[Strengthening]
+%% \label{lem:strengthening}
+%% Assume $[[G' \subseteq G]]$ and the
+%% variables $[[{dom(G)} \ {dom(G')}]]$ are never used.
+%% \begin{enumerate}
+%% \item If $[[S;G |-ty t : k ]]$ then $[[S;G' |-ty t : k]]$.
+%% \item If $[[S;G |-co g : phi ]]$, then $[[S;G' |-co g : phi]]$.
+%% \item If $[[S;G |-prop phi ]]$, then $[[S;G' |-prop phi]]$.
+%% \item If $[[S;G;s0;t0 |-alt alt : k]]$, then $[[S;G';s0;t0 |-alt alt : k]]$.
+%% \item If $[[S;G |-vec ps : D]]$, then $[[S;G' |-vec ps : D]]$.
+%% \item If $[[S |-ctx G]]$, then $[[S |-ctx G']]$.
+%% \item If $[[S;G |-s t --> t']]$, then $[[S;G' |-s t --> t']]$.
+%% \end{enumerate}
+%% \end{lemma}
 
-\begin{proof}
-Similar to previous proof.
-\end{proof}
+%% \begin{proof}
+%% Similar to previous proof.
+%% \end{proof}
 
 \subsection{Scoping}
 
@@ -802,7 +780,7 @@ We'll adopt the metavariable names from the rule:
 \]
 The induction hypothesis tells us $[[S;Rel(G) |-ty UPI a:Rel k.k : Type{} ]]$.
 Inversion on \rul{Ty\_Pi} tells us $[[S;Rel(G),a:Rel k |-ty k : Type{} ]]$.
-\pref{lem:strengthening} gives us $[[S;Rel(G) |-ty k : Type{} ]]$ as desired.
+\pref{lem:tyvar-ctx} gives us $[[S;Rel(G) |-ty k : Type{} ]]$ as desired.
 \item[Case \rul{Ty\_Absurd}:] Immediate.
 \end{description}
 \end{proof}
