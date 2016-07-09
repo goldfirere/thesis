@@ -29,10 +29,25 @@ component parts of the judgment $[[J]]$.
 According to the above definition, when dealing with a statement like
 $[[S;P |= J]]$, the following lemmas are applicable:
 \pref{lem:increasing-rel} (increasing relevance),
-\pref{lem:weakening} (weakening), \pref{lem:strengthening} (strengthening),
+\pref{lem:weakening} (weakening),
 \pref{lem:ty-subst} (type substitution), and \pref{lem:co-subst}
 (coercion substitution).
 \end{remark}
+
+\begin{lemma}[Strengthening]
+\label{lem:istrengthening}
+Assume $[[P' \subseteq P]]$, the
+variables $[[{dom(G)} \ {dom(G')}]]$ are never used,
+and $[[J]]$ mentions no unification variables.
+If $[[S;P |= J]]$, then $[[S;P' |= J]]$.
+\end{lemma}
+
+\begin{proof}
+Like the proof of \pref{lem:weakening}. However, note that
+$[[J]]$ must not contain any unification variables, as the
+rules for typing unification variables (\rul{Ty\_UVar} and
+\rul{Co\_UVar}) violate strengthening.
+\end{proof}
 
 \section{Solver}
 
@@ -56,45 +71,12 @@ and $[[cu]]$ to types and coercions, respectively:
 \[
 [[Z]] \bnfeq [[empty]] \bnfor [[Z, t/au]] \bnfor [[Z, g/cu]] \bnfor [[Z, <D|Z'>]]
 \]
+A zonker $[[Z]]$ can be used as a substitution, ignoring the $[[D]]$ in a
+$[[<D|Z>]]$ mapping. That is, a zonker behaves as the substitution created
+by concatenating and flattening all of the $[[<D|Z>]]$ nodes.
 \end{definition}
 
-\begin{definition}[$[[bind]]$]
-Define the $[[bind(d;Z) = Z']]$ operation recursively on the structure
-of $[[Z]]$ as follows:
-\[
-\begin{array}{r@{\;}l}
-[[bind(d;empty) &= empty]] \\
-[[bind(d; t/au,Z) &= t/au,bind(d;Z)]] \\
-[[bind(d; g/cu,Z) &= g/cu,bind(d;Z)]] \\
-[[bind(d; <d,D|Z1>,Z2) &= <D|Z1>,bind(d;Z2)]] \\
-[[bind(d; <D|Z1>,Z2) &= <D|Z1>,bind(d;Z2)]]
-\end{array}
-\]
-
-Define $[[bind(D;Z)]]$ to call $[[bind(d;Z)]]$ for every $[[d \in D]]$, in
-left-to-right order.
-
-After a $[[bind]]$ operation, there may be empty given telescopes
-$[[< empty | Z >]]$; these are equivalent to just $[[Z]]$.
-\end{definition}
-
-\begin{definition}[Zonking]
-\emph{Zonking} is the act of applying a zonker to a type, coercion,
-proposition, alternative, or binder. It acts just like applying a
-normal substitution, ignoring any mappings hidden under a non-empty
-given telescope (that is, ignoring the $[[Z]]$ in a $[[<D|Z>]]$ when
-$[[D]]$ is non-empty), with two changes:
-\[
-\begin{array}{r@{\;}l}
-[[(PI d.t)[Z] &= PI (d[Z]). t[bind(d;Z)] ]] \\
-[[(\d.t)[Z] &= \ (d[Z]). t[bind(d;Z)] ]]
-\end{array}
-\]
-All other forms, including the binding coercion forms and all non-unification
-variables, are treated
-homomorphically, just like in applying a regular substitution.
-\end{definition}
-
+\rae{Do I use this?}
 \begin{lemma}[Validating assumptions]
 \label{lem:valid-assn}
 If $[[S;P1,<d,D|O>,P2 |= J]]$, then $[[S;P1,<D|O>,P2 |= J]]$.
@@ -107,185 +89,193 @@ for the result is strictly smaller than the initial derivation, as the
 context is smaller.
 \end{proof}
 
-\begin{lemma}[Zonking]
-\label{lem:zonking}
-If $[[S;P,D1 |=z Z : O]]$ and $[[S;P,<D1|O>,D2 |= J]]$, then
-$[[S;P,D2[<D1|Z>] |= J[<D1|Z>] ]]$.
+\begin{lemma}[Zonker domains]
+\label{lem:zonk-dom}
+If $[[S;P |=z Z : O]]$, then $[[dom(Z) = dom(O)]]$. Here,
+the $[[dom]]$ operator looks through $\langle [[D]] \pipe \cdot \rangle$
+constructs.
 \end{lemma}
 
 \begin{proof}
-By induction on the derivation of $[[S;P,<D1|O>,D2 |= J]]$.
-
-\begin{description}
-\item[Case \rul{Ty\_Var}:]
-\[
-\ottdruleTyXXVar{}
-\]
-We know $[[S |=ctx P,<D1|O>,D2]]$ and $[[a :Rel k \in P,<D1|O>,D2]]$.
-We must prove $[[S;P,D2[<D1|Z>] |=ty a[<D1|Z>] : k[<D1|Z>] ]]$.
-Zonking a non-unification variable (like $[[a]]$) has no effect, so
-we must prove
-$[[S;P,D2[<D1|Z>] |=ty a : k[<D1|Z>] ]]$.
-We will use \rul{Ty\_Var}, so we must prove the following:
-\begin{description}
-\item[$[[S |=ctx P,D2[<D1|Z>] ]]$] By the induction hypothesis.
-\item[$[[a :Rel k[<D1|Z>] \in P,D2[<D1|Z>] ]]$. From
-$[[a :Rel k \in P,<D1|O>,D2]]$, we know that $[[a]]$ must appear either
-in $[[P]]$ or in $[[D2]]$. If $[[a]]$ is in $[[P]]$, we are done,
-using \pref{lem:scoping} to show that zonking $[[k]]$ has no effect.
-If $[[a]]$ is in $[[D2]]$, then $[[a :Rel k[<D1|Z>] ]]$ must be
-in $[[D2[<D1|Z>] ]]$, and so we are done with this case.
-\end{description}
-\item[Case \rul{Ty\_Pi}:]
-\[
-\ottdruleTyXXPi{}
-\]
-We know $[[S;P,<D1|O>,D2,Rel(d) |=ty k : Type{}]]$ and must
-prove
-$[[S;P,D2[<D1|Z>] |=ty PI (d[<D1|Z>]). (k[bind(d;<D1|Z>)]) : Type{}]]$.
-We will use \rul{Ty\_Pi} and so we must prove
-$[[S;P,D2[<D1|Z>],Rel(d[<D1|Z>]) |=ty k[bind(d;<D1|Z>)] : Type{}]]$.
-We have two cases:
-\begin{description}
-\item[Case $[[D1 = d,D1']]$:] In this case, $[[bind(d;<D1|Z>) = <D1'|Z>]]$.
-We thus know
-$[[S;P,<d,D1'|O>,D2,Rel(d) |=ty k : Type{}]]$.
-By \pref{lem:valid-assn}, we see that
-$[[S;P,<D1'|O>,D2,Rel(d) |=ty k : Type{}]]$.
-By assumption, we know $[[S;P,d,D1' |=z Z : O]]$.
-We can thus use the induction hypothesis to get
-$[[S;P,D2[<D1'|Z>],Rel(d)[<D1'|Z>] |=ty k[<D1'|Z>] : Type{}]]$.
-To be done, we must show that
-$[[D2[<D1|Z>] = D2[<D1'|Z>] ]]$ and $[[d[<D1|Z>] = d[<D1'|Z>] ]]$.
-
-\item[Otherwise:] In this case, $[[bind(d;<D1|Z>) = <D1|Z>]]$.
-
-\begin{proof}
-By induction on the derivation of $[[S;P |=z Z : O]]$.
-
-\begin{description}
-\item[Case \rul{Zonk\_Nil}:]
-Both $[[O]]$ and $[[Z]]$ are empty, and so we are done by assumption.
-\item[Case \rul{Zonk\_TyVar}:]
-By the induction hypothesis and \pref{lem:ty-subst}.
-\item[Case \rul{Zonk\_CoVar}:]
-By the induction hypothesis and \pref{lem:co-subst}.
-\item[Case \rul{Zonk\_Givens}:]
-\[
-\ottdruleZonkXXGivens{}
-\]
-We can assume $[[S;P,<D1|O1>,O |= J]]$. The induction hypothesis
-then tells us
-$[[S;P,<D1|O1> |= J[Z] ]]$.
-By \rae{???}, we can conclude
-$[[S;P |= J[<D1|O1>,Z] ]]$ as desired.
-\end{description}
+By straightforward induction.
 \end{proof}
 
-\section{Givens}
-
-\begin{lemma}[Zonking context regularity]
+\rae{Do I use this?}
+\begin{lemma}[Zonker context regularity]
 \label{lem:zonk-ctx-reg}
-If $[[S;P |=z theta : O]]$, then
-$[[S |=ctx P]]$.
+If $[[S;P |=z Z : O]]$, then $[[S |=ctx P]]$.
 \end{lemma}
 
 \begin{proof}
 Straightforward induction on the typing derivation.
 \end{proof}
 
-\begin{lemma}[Zonking]
-\label{lem:zonking}
-If $[[S;P |=z theta : O]]$ and $[[S;P,O |= J]]$, then
-$[[S;P |= J[theta] ]]$.
+\begin{lemma}[Zonker range]
+\label{lem:zonk-range}
+If $[[S;P |=z Z : O]]$,
+the range of $[[Z]]$ contains no unification variables.
 \end{lemma}
 
 \begin{proof}
-By induction on $[[S;P |=z theta : O]]$.
+Straightforward induction on the typing derivation.
+\end{proof}
+
+\begin{lemma}[Unification variables under givens]
+\label{lem:unif-var-under-given}
+If $[[au : k \in O under D]]$,
+$[[S;P |=z Z : O]]$, and $[[au[Z] = t]]$, then
+$[[S;P,D[Z] |=ty t : k[Z] ]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on $[[S;P |=z Z : O]]$.
 
 \begin{description}
 \item[Case \rul{Zonk\_Nil}:]
-Both $[[O]]$ and $[[theta]]$ are empty, so we are done.
-\item[Case \rul{Zonk\_UTyVar}:]
-By induction and \pref{lem:ty-subst}.
-\item[Case \rul{Zonk\_UCoVar}:]
-By induction and \pref{lem:co-subst}.
+Impossible, as $[[O]]$ contains $[[au:k]]$.
+\item[Case \rul{Zonk\_TyVar}:]
+We have two cases here:
+\begin{description}
+\item[Case $[[O = au:k,O']]$:]
+In this case $[[D = empty]]$. Inversion on $[[S;P |=z Z : au:k, O']]$
+gives us $[[S;P |=ty t : k]]$. By \pref{lem:scoping}, we see that
+$[[[k]]$ cannot mention any variables bound in $[[O]]$; thus by
+\pref{lem:zonk-dom}, $[[k[Z] = k]]$. We are done.
+\item[Case $[[O = bu:k',O']]$:]
+Inversion on $[[S;P |=z Z : bu:k',O']]$ tells us
+$[[Z = t'/bu,Z']]$ and $[[S;P |=z Z' : O'[t'/bu] ]]$.
+Since $[[au : k \in O under D]]$, it must be that
+$[[au : k[t'/bu] \in O[t'/bu] under D[t'/bu] ]]$.
+Furthermore, it must be that $[[au[Z'] = t]]$.
+We can thus use the induction hypothesis to get
+$[[S;P,D[t'/bu][Z'] |=ty t : k[t'/bu][Z'] ]]$.
+However, we also know that $[[t' has no unification variables]]$,
+so we can use parallel substitution, yielding
+$[[S;P,D[Z] |=ty t : k[Z] ]]$ as desired.
+\end{description}
+\item[Case \rul{Zonk\_CoVar}:]
+Like second half of previous case.
 \item[Case \rul{Zonk\_Givens}:]
-\[
-\ottdruleZonkXXGivens{}
-\]
-\pref{lem:zonk-ctx-reg} tells us that
-$[[S |=ctx P,D]]$ and thus \pref{lem:weakening} tells us
-$[[S;P,D,O |= J]]$.
-We can thus use the induction hypothesis (twice) to get
-$[[S;P,D |= J[theta1] ]]$ and $[[S;P |= J[theta2] ]]$.
-We must show $[[S;P |= J[theta1,theta2] ]]$. Pick some
-$[[au]]$ or $[[cu]]$ in $[[dom(theta1)]]$. Let's assume
-without loss
+Here, we know $[[O = <D1|O1>,O']]$ and $[[Z = <D1|Z1>,Z']]$.
+We have two cases:
+\begin{description}
+\item[Case $[[au:k \in O1 under D']]$:]
+(Here, $[[D = D1,D']]$.)
+We know $[[S;P,D1 |=z Z1 : O1]]$ and, by \pref{lem:zonk-dom},
+$[[au[Z1] = t]]$. We can thus use the induction hypothesis to
+conclude that
+$[[S;P,D1,D'[Z1] |=ty t : k[Z1] ]]$.
+By \pref{lem:scoping} and \pref{lem:zonk-dom},
+$[[D1]]$ cannot mention any variables mapped in $[[Z]]$,
+and $[[D']]$ and $[[k]]$ cannot mention any variables mapped
+in $[[Z']]$. Thus, we can rewrite this as
+$[[S;P,D[Z] |=ty t : k[Z] ]]$ as desired.
+\item[Case $[[au:k \in O' under D]]$:]
+From $[[au:k \in O' under D]]$, we can conclude that
+$[[au:k[Z1] \in O'[Z1] under D[Z1] ]]$.
+Furthermore, we know $[[S;P |=z Z' : O'[Z1] ]]$ and $[[au[Z'] = t]]$.
+We can thus use the induction hypothesis to get
+$[[S;P,D[Z1][Z'] |=ty t : k[Z1][Z'] ]]$.
+By \pref{lem:zonk-range}, we can rewrite this as
+$[[S;P,D[Z] |=ty t : k[Z] ]]$ as desired.
+\end{description}
 \end{description}
 \end{proof}
 
-\begin{lemma}[Zonking givens]
-Assume $[[S;P |=z theta : O]]$.
-For every $[[a]]$ such that
-$[[a :g k \in O]]$ or $[[a :c k \in O]]$, if $[[a # t]]$, then
-$[[a # t[theta] ]]$.
+\begin{lemma}[Zonking]
+\label{lem:zonking}
+If $[[S;P |=z Z : O]]$ and $[[S;P,O,D2 |= J]]$, then
+$[[S;P,D2[Z] |= J[Z] ]]$.
 \end{lemma}
 
 \begin{proof}
+By induction on the derivation $[[S;P,O,D2 |= J]]$.
 
-
-\begin{lemma}[Unification contexts/givens]
-\label{lem:unif-ctx-given}
-If $[[S |=ctx P,d,O]]$, then $[[S |=ctx P,g(d),O]]$.
-\end{lemma}
-
-\begin{proof}
-The only difference between the assumption and the conclusion is that the
-binding $[[d]]$ has been made into a given. Only non-unification variable
-bindings care about ``given'' status. A unification context $[[O]]$ cannot
-include non-unification variables, so we are done.
+\begin{description}
+\item[Case \rul{Ty\_Var}:]
+\[
+\ottdruleTyXXVar{}
+\]
+We know $[[S |=ctx P,O,D2]]$ and $[[a :Rel k \in P,O,D2]]$.
+We must prove $[[S;P,D2[Z] |=ty a[Z] : k[Z] ]]$.
+Zonking a non-unification variable (like $[[a]]$) has no effect, so
+we must prove
+$[[S;P,D2[Z] |=ty a : k[Z] ]]$.
+We will use \rul{Ty\_Var}, so we must prove the following:
+\begin{description}
+\item[$[[S |=ctx P,D2[Z] ]]$] By the induction hypothesis.
+\item[$[[a :Rel k[Z] \in P,D2[Z] ]]$. From
+$[[a :Rel k \in P,O,D2]]$, we know that $[[a]]$ must appear either
+in $[[P]]$ or in $[[D2]]$. If $[[a]]$ is in $[[P]]$, we are done,
+using \pref{lem:scoping} to show that zonking $[[k]]$ has no effect.
+If $[[a]]$ is in $[[D2]]$, then $[[a :Rel k[Z] ]]$ must be
+in $[[D2[Z] ]]$, and so we are done with this case.
+\end{description}
+\item[Case \rul{Co\_Var}:]
+Similar to previous case.
+\item[Case \rul{Ty\_UVar}:]
+\[
+\ottdruleTyXXUVar{}
+\]
+We know $[[S;P,O,D2 |=ty au : k]]$ and must
+prove $[[S;P,D2[Z] |=ty au[Z] : k[Z] ]]$. There are then several possibilities:
+\begin{description}
+\item[Case $[[au : k \in P under D]]$:]
+We further know that $[[D \subseteq P,O,D2]]$.
+Because $[[O]]$ binds only unification variables, we can simplify to
+$[[D \subseteq P,D2]]$.
+ By \pref{lem:zonk-dom},
+we know that $[[dom(Z) = dom(O)]]$. From $[[S |=ctx P,O,D2]]$
+and \pref{lem:scoping}
+we know that nothing in $[[P]]$ can mention any variable bound in $[[O]]$.
+We also know that $[[au[Z] = au]]$ and $[[k[Z] = k]]$.
+The telescope $[[D]]$ is mentioned in $[[P]]$ and therefore is unaffected
+by the zonking substitution $[[Z]]$. Thus we can conclude that
+$[[D \subseteq P,D2[Z] ]]$. Using the induction hypothesis to get
+$[[S |=ctx P,D2[Z] ]]$, we are done by \rul{Ty\_UVar}.
+\item[Case $[[au : k \in O under D]]$:]
+By \pref{lem:zonk-dom}, there must be a mapping for $[[au]]$, in $[[Z]]$
+and thus $[[au[Z] = t]]$ for some $[[t]]$. We then use
+\pref{lem:unif-var-under-given} to get
+$[[S;P,D[Z] |=ty t : k[Z] ]]$.
+As in the previous case, we know that $[[D \subseteq P,D2]]$ and thus
+that $[[D[Z] \subseteq (P,D2)[Z] ]]$. However, we know (by \pref{lem:scoping})
+that $[[P[Z] = P]]$, so we conclude that $[[D[Z] \subseteq P,D2[Z] ]]$.
+We can get $[[S |=ctx P,D2[Z] ]]$ via the induction hypothesis.
+We thus use \pref{lem:weakening} to see
+$[[S;P,D2[Z] |=ty t : k[Z] ]]$ as desired.
+\item[Case \rul{Co\_UVar}:]
+Similar to previous case.
+\item[Other cases:]
+Similar to proof for \pref{lem:ty-subst}.
+\end{description}
 \end{proof}
 
-\begin{lemma}[Given]
-\label{lem:given}
-If $[[S |=ctx P,d,O,D]]$ and
-$[[S;P,d,O,D |= J]]$, then $[[S;P,g(d),O,d,D |= J]]$.
+\section{Givens}
+
+\begin{lemma}[Given contexts]
+\label{lem:given-ctx}
+If $[[S |=ctx P,D,O]]$, then $[[S |=ctx P,<D|O>,D]]$.
 \end{lemma}
 
 \begin{proof}
-By \pref{lem:unif-ctx-given}, we have $[[S |=ctx P,g(d),O]]$.
-We know from $[[S |=ctx P,d]]$ that $[[d]]$ is well-formed.
-Thus we can conclude $[[S |=ctx P,g(d),O,d]]$.
-Compare the contexts $[[P,d,O]]$ and $[[P,g(d),O,d]]$. Both bind
-the same variables to the same kinds, and both are themselves well-formed.
-Thus from $[[S |=ctx P,d,O,D]]$, we can conclude $[[S |=ctx P,g(d),O,d,D]]$,
-and similarly $[[S;P,g(d),O,d,D |= J]]$ as desired.
+We can use \rul{Ctx\_Givens} to show $[[S |=ctx P,<D|O>]]$.
+\pref{lem:ctx-reg} (on $[[S |=ctx P,D,O]]$) tells us
+$[[S |=ctx P,D]]$. We can then use \pref{lem:weakening} to
+get $[[S |=ctx P,<D|O>,D]]$ as desired.
 \end{proof}
 
 \begin{lemma}[Givens]
 \label{lem:givens}
-If $[[S |=ctx P,D1,O,D2]]$ and
-$[[S;P,D1,O,D2 |= J]]$, then $[[S;P,g(D1),O,D1,D2 |= J]]$.
+If $[[S |=ctx P,D,O]]$ and $[[S;P,D,O |= J]]$, then
+$[[S;P,<D|O>,D |= J]]$.
 \end{lemma}
 
 \begin{proof}
-By induction on the structure of $[[D1]]$.
-
-\begin{description}
-\item[Case $[[D1 = empty]]$:]
-Trivial.
-\item[Case $[[D1 = D1',d]]$:]
-We know $[[S |=ctx P,D1',d,O,D2]]$ and
-$[[S;P,D1',d,O,D2 |= J]]$.
-\pref{lem:given} tells us
-$[[S;P,D1',g(d),O,d,D2 |= J]]$ and another use of the same lemma
-(with $[[J]]$ standing for a $[[|=ctx]]$ judgment) gives us
-$[[S |=ctx P,D1',g(d),O,d,D2]]$.
-The induction hypothesis then gives us
-$[[S;P,g(D1',d),O,D1',d,D2 |= J]]$ as desired. (Note that
-$[[g(d)]]$ can be part of something denoted with $[[O]]$.)
-\end{description}
+By induction on the structure of the judgment $[[S;P,D,O |= J]]$,
+using \pref{lem:given-ctx} as necessary. Note that the
+\rul{Ty\_UVar} and \rul{Co\_UVar} cases go through without
+difficulty because $[[D]]$ remains in the context.
 \end{proof}
 
 \section{Supporting functions}
@@ -408,7 +398,7 @@ $[[S;P1 |=co cu : k0 [Type{}]~[Type{}] UPI_Req a:rel bu1.bu2]]$ as desired.
 
 \begin{lemma}[Scrutinee position]
 \label{lem:iscrut}
-If $[[S;P |=ty t : k]]$ and $[[S |->scrut _alts; k ~> g; D; H'; ts -| O]]$,
+If $[[S;P |=ty t : k]]$ and $[[S;P |->scrut _alts; k ~> g; D; H'; ts -| O]]$,
 then $[[S;P,O |=ty t |> g : MPI D. H'{} ts]]$ and
 $[[S;Rel(P),O |=ty H'{} ts : Type{}]]$.
 \end{lemma}
@@ -425,9 +415,7 @@ Let $[[k = MPI D. H{} ts]]$.
 Working backwards from a use of \rul{Ty\_Cast}, we need to show
 that $[[S;Rel(P) |=co <k> : k [Type{}]~[Type{}] k]]$, and thus that
 $[[S;Rel(P) |=ty k : Type{}]]$. This comes directly from \pref{lem:kind-reg}.
-For the second conclusion, we use inversion on this last judgment to get
-$[[S;Rel(P),D |=ty H{} ts : Type{}]]$ and then \pref{lem:strengthening}
-to get $[[S;Rel(P) |=ty H{} ts : Type{}]]$ as desired.
+The second conclusion is assumed as a premise of \rul{IScrut\_Id}.
 \item[Case \rul{IScrut\_Cast}:]
 \[
 \ottdruleIScrutXXCast{}
@@ -446,7 +434,7 @@ to see that
 $[[S;P0 |=ty MPI as:Irrel ks, D2. H'{} as : Type{}]]$.
 Repeated inversion on \rul{Ty\_Pi} tells us
 $[[S;P0,as:Irrel ks, D2 |=ty H'{} as : Type{}]]$.
-\pref{lem:strengthening} gives us $[[S;P0,as:Irrel ks |=ty H'{} as : Type{}]]$.
+\pref{lem:istrengthening} gives us $[[S;P0,as:Irrel ks |=ty H'{} as : Type{}]]$.
 \pref{lem:tel} tells us that $[[S;P0 |=vec aus : (aus : ks[aus/as])]]$.
 We thus use \pref{lem:vec-subst} to see that $[[S;P0 |=ty H'{} aus : Type{}]]$
 as desired.
@@ -581,10 +569,10 @@ $[[S;Rel(P),O1,b:Rel k3 |=ty k2[t1 b/a] : Type{}]]$.
 Now, we can use the induction hypothesis again to get
 $[[S;P,O1,b:Rel k3,O2 |=ty t2 : UPI x2:Rel k2[t1 b/a]. k4]]$.
 \pref{lem:givens} tells us now that
-$[[S;P,O1,b:g k3,O2,b:Rel k3 |=ty t2 : UPI x2:Rel k2[t1 b/a]. k4]]$.
-Let $[[P' = P,O1,b:g k3,O2,x:Rel (UPI a:Rel k1.k2),b:Rel k3]]$.
+$[[S;P,O1,<b:Rel k3|O2>,b:Rel k3 |=ty t2 : UPI x2:Rel k2[t1 b/a]. k4]]$.
+Let $[[P' = P,O1,<b:Rel k3|O2>,x:Rel (UPI a:Rel k1.k2),b:Rel k3]]$.
 To show $[[S |=ctx P']]$, we need only show that
-$[[S;Rel(P),O1,b:g k3,O2 |=ty UPI a:Rel k1.k2 : Type{}]]$, but this
+$[[S;Rel(P),O1,<b:Rel k3|O2> |=ty UPI a:Rel k1.k2 : Type{}]]$, but this
 is true by \pref{lem:weakening}.
 We must now show $[[S;P' |=ty t2 (x (t1 b)) : k4]]$.
 We've already ascertained that $[[S;P' |=ty t1 b : k1]]$.
@@ -609,8 +597,8 @@ we know by assumption. We are done.
 \[
 \ottdruleISubXXDeepSkol{}
 \]
-We must show $[[S;P,O1,g(D),O2 |=ty \x :Rel k1. t1 (\D. t2 (x ps)) : UPI x: Rel k1. k2]]$. The last step will be \rul{Ty\_Lam}, so we must show
-$[[S;P,O1,g(D),O2,x:Rel k1 |=ty t1 (\D. t2 (x ps)) : k2]]$.
+We must show $[[S;P,O1,<D|O2> |=ty \x :Rel k1. t1 (\D. t2 (x ps)) : UPI x: Rel k1. k2]]$. The last step will be \rul{Ty\_Lam}, so we must show
+$[[S;P,O1,<D|O2>,x:Rel k1 |=ty t1 (\D. t2 (x ps)) : k2]]$.
 From $[[S;Rel(P) |=ty k1 : Type{}]]$, we can use \rul{Ctx\_TyVar} to see
 $[[S |=ctx P,x:Rel k1]]$. Thus
 $[[S;P,x:Rel k1 |= x : k1]]$.
@@ -631,16 +619,16 @@ $[[S;P,x:Rel k1,O1,D,O2 |=ty t2 (x ps) : k2'[x ps/x2] ]]$
 but \pref{lem:scoping} tells us that the substitution in the kind has
 no effect.
 Now, we use \pref{lem:givens} to see
-$[[S;P,x:Rel k1,O1,g(D),O2,D |=ty t2 (x ps) : k2']]$
+$[[S;P,x:Rel k1,O1,<D|O2>,D |=ty t2 (x ps) : k2']]$
 and then use \rul{Ty\_Lam} (repeatedly) to see
-$[[S;P,x:Rel k1,O1,g(D),O2 |=ty \ D. t2 (x ps) : UPI D. k2']]$.
+$[[S;P,x:Rel k1,O1,<D|O2> |=ty \ D. t2 (x ps) : UPI D. k2']]$.
 Thus \rul{Ty\_AppRel} tells us
-$[[S;P,x:Rel k1,O1,g(D),O2 |=ty t1 (\ D. t2 (x ps)) : k2[(\ D. t2 (x ps))/x1] ]]$,
+$[[S;P,x:Rel k1,O1,<D|O2> |=ty t1 (\ D. t2 (x ps)) : k2[(\ D. t2 (x ps))/x1] ]]$,
 but \pref{lem:scoping} tells us that the substitution in the kind
 has no effect.
 We only need to reshuffle the context; in other words, we must
 now show
-$[[S |=ctx P,O1,g(D),O2,x:Rel k1]]$ to be done.
+$[[S |=ctx P,O1,<D|O2>,x:Rel k1]]$ to be done.
 For this to hold, we need to know that none of
 $[[O1,D,O2]]$ depend on $[[x]]$.
 First, note that $[[x]]$ is local to rule \rul{ISub\_DeepSkol}.
@@ -742,9 +730,9 @@ $[[S;Rel(P),O1 |=ty k1 : Type{}]]$.
 Thus $[[S |=ctx P,O1,a:Rel k1]]$ and we can use the induction
 hypothesis to get
 $[[S;P,O1,a:Rel k1,O2 |=ty t : k2]]$.
-By \pref{lem:givens}, we get $[[S;P,O1,a:g k1,O2,a:Rel k1 |=ty t : k2]]$
+By \pref{lem:givens}, we get $[[S;P,O1,<a:Rel k1|O2>,a:Rel k1 |=ty t : k2]]$
 and thus
-$[[S;P,O1,a:g k1, O2 |=ty \ a:Rel k1. t : UPI_vis a:Rel k1. k2]]$
+$[[S;P,O1,<a:Rel k1|O2> |=ty \ a:Rel k1. t : UPI_vis a:Rel k1. k2]]$
 as desired.
 
 \item[Case \rul{ITy\_LamIrrel}:]
@@ -767,14 +755,10 @@ Thus, \pref{lem:ctx-reg} tells us $[[S |=ctx P,O1,O2]]$.
 In order to prove $[[S |=ctx O]]$, we must show
 $[[S;Rel(P),O1,O2 |=ty k2 : Type{}]]$ and
 $[[S;Rel(P),O1,O2 |=ty k1 : Type{}]]$.
-To get these, we use \pref{lem:kind-reg} to get
+The first of these is a premise to \rul{ITy\_Fix}.
+To get the second, we use \pref{lem:kind-reg} to get
 $[[S;Rel(P),O1,O2 |=ty UPI_Req a :Rel k1. k2 : Type{}]]$
-and then invert that to learn that
-$[[S;Rel(P),O1,O2 |=ty k1 : Type{}]]$
-and $[[S;Rel(P),O1,O2,a:Rel k1 |= k2 : Type{}]]$. Use
-\pref{lem:strengthening} on the latter to get
-$[[S;Rel(P),O1,O2 |= k2 : Type{}]]$ as desired (using
-the $[[a # k2]]$ premise to \rul{ITy\_Fix}).
+and then invert.
 We can conclude $[[S |=ctx O]]$ by \rul{Ctx\_UCoVar}.
 
 Inversion on $[[S;P,O1,O2 |=ty t |> g : UPI_Req a:Rel k1. k2]]$
@@ -802,10 +786,10 @@ $[[S |=ctx P,O,x:Rel k1]]$.
 Another use of the induction hypothesis gives us
 $[[S;P,O,x:Rel k1,O2 |=ty t2 : k2]]$.
 \pref{lem:givens} then gives us
-$[[S;P,O,x:g k1,O2,x:Rel k1 |=ty t2 : k2]]$ and thus
-$[[S;P,O,x:g k1,O2 |=ty \ x:Rel k1. t2 : UPI x:Rel k1. k2]]$
+$[[S;P,O,<x:Rel k1|O2>,x:Rel k1 |=ty t2 : k2]]$ and thus
+$[[S;P,O,<x:Rel k1|O2> |=ty \ x:Rel k1. t2 : UPI x:Rel k1. k2]]$
 Rule \rul{Ty\_AppRel} gives us
-$[[S;P,O,x:g k1,O2 |=ty (\x :Rel k1. t2) t1 : k2[t1/x] ]]$ as desired.
+$[[S;P,O,<x:Rel k1|O2> |=ty (\x :Rel k1. t2) t1 : k2[t1/x] ]]$ as desired.
 
 \item[Case \rul{ITyC\_Case}:]
 Similar to the case for \rul{ITy\_Case}. The only differences are the
@@ -850,9 +834,27 @@ The induction hypothesis tells us that
 $[[S;P,O |=ty t : k1]]$.
 We thus know $[[S |=ctx P,O]]$ by \pref{lem:ctx-reg}.
 \pref{prop:isolv}
-tells us that $[[S |=ctx P,D]]$ and $[[S;P,D |=z theta : O]]$.
+tells us that $[[S |=ctx P,D]]$ and $[[S;P,D |=z Z : O]]$.
+\pref{lem:weakening} gives us
+$[[S;P,D,O |=ty t : k1]]$.
 \pref{lem:zonking}
-tells us that $[[S;P,D,ung(O) |=ty t[theta] : k1[theta] ]]$.
+then tells us that $[[S;P,D |=ty t[Z] : k1[Z] ]]$.
+We see from the rule that $[[t' = \D .t[Z] ]]$ and 
+$[[k1' = UPI_Inf D. k1[Z] ]]$.
+Thus we can see (by repeated use of \rul{Ty\_Lam})
+that $[[S;P |=ty t' : k1']]$.
+Accordingly, \pref{lem:kind-reg} gives us
+$[[S;Rel(P) |=ty k1' : Type{}]]$.
+We have assumed that $[[S;Rel(P) |=ty k2 : Type{}]]$.
+We thus use \pref{lem:isub} to conclude
+$[[S;P,O2 |=ty t2 : UPI x:Rel k1'. k2]]$ and then
+\rul{Ty\_AppRel} to see that
+$[[S;P,O2 |=ty t2 t' : k2[t'/x] ]]$. We are done,
+noting that the substitution in the kind has no effect by
+\pref{lem:scoping}.
+
+\item[Case \rul{ITyC\_LamInvis}:]
+
 
 \rae{Continue.}
 \end{description}

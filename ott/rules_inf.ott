@@ -43,7 +43,7 @@ S;P,O1 *|->ty _t : s ~> t -| O2
 S;P *|->ty (_t :: _s) ~> t : s -| O1,O2
 
 S;P |->ty _t0 ~> t0 : k0 -| O0
-S |->scrut _alts; k0 ~> g; D; H'; ts -| O0'
+S;P,O0 |->scrut _alts; k0 ~> g; D; H'; ts -| O0'
 fresh au // O' = O0,O0',au:Type{}
 forall i: S;P,O';MPI D. H'{} ts;t0 |> g |->alt _alti : au ~> alti -| Oi
 alts' = make_exhaustive(alts; k)
@@ -74,7 +74,8 @@ S;P *|->ty _t1 '-> _t2 ~> MPI_Req a :Rel t1. t2 : Type{} -| O1,O2
 
 S;P |->ty _t ~> t : k -| O1
 |->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O2
-a # k2 // fresh cu // O = O1,O2,cu : k2 [Type{}]~[Type{}] k1
+S;Rel(P),O1,O2 |=ty k2 : Type{}
+fresh cu // O = O1,O2,cu : k2 [Type{}]~[Type{}] k1
 --------------------------------- :: Fix
 S;P *|->ty fix _t ~> fix (t |> (g ;; UPI a:Rel <k1>. cu)) : k1 -| O
 
@@ -94,7 +95,7 @@ S ; P |->ty _t : k ~> t -| O :: :: ITyDown :: 'TyC_'
 by
 
 S;P |->ty _t0 ~> t0 : k0 -| O0
-S |->scrut _alts; k0 ~> g; D; H'; ts -| O0'
+S;P,O0 |->scrut _alts; k0 ~> g; D; H'; ts -| O0'
 O' = O0, O0'
 forall i: S;P,O';MPI D. H'{} ts; t0 |> g |->altc _alti : k ~> alti -| Oi
 alts' = make_exhaustive(alts; k)
@@ -305,17 +306,17 @@ fresh cu // fresh bu1, bu2
 
 % precondition: k has noInf or Spec binders
 defn
-S |->scrut _alts ; k ~> g ; D ; H ; ts -| O  :: :: IScrut :: 'Scrut_'
+S ; P |->scrut _alts ; k ~> g ; D ; H ; ts -| O  :: :: IScrut :: 'Scrut_'
 by
 
-dom(D) # ts
+S;Rel(P) |=ty H{} ts : Type{}
 --------------------------------------------- :: Id
-S |->scrut _alts; MPI D. H{} ts ~> <MPI D. H{} ts>; D; H; ts -| empty
+S;P |->scrut _alts; MPI D. H{} ts ~> <MPI D. H{} ts>; D; H; ts -| empty
 
 S |-tc H : as :Irrel ks; D2; H'
 fresh aus // fresh cu
 ------------------------------ :: Cast
-S |->scrut (H xs -> _t; _alts); k ~> cu; empty; H'; aus -| aus : ks[aus/as], cu : k [Type{}]~[Type{}] H'{} aus
+S;P |->scrut (H xs -> _t; _alts); k ~> cu; empty; H'; aus -| aus : ks[aus/as], cu : k [Type{}]~[Type{}] H'{} aus
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  topInstantiate  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -487,6 +488,7 @@ defn
 S ; P |=z Z : O :: :: Zonk :: 'Zonk_'
 by
 
+S |=ctx P
 ---------------------- :: Nil
 S;P |=z empty : empty
 
@@ -503,7 +505,7 @@ S;P |=z Z : O[g/cu]
 S;P |=z g/cu, Z : cu:phi, O
 
 S;P,D1 |=z Z1 : O1
-S;P |=z Z : O
+S;P |=z Z : O[Z1]
 ----------------------------- :: Givens
 S;P |=z <D1|Z1>,Z : <D1|O1>,O
 

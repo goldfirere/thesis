@@ -66,6 +66,9 @@
 - theta \ zs as domain exclusion
 - syntax to explain: au : k \in P under D
 - The whole tree structure of P/O.
+- My treatment of <..|..> seems novel. Compare to Pottier & Remy, which
+  do not handle dependency.
+- Discuss Barendregt convention and \subseteq.
 
 Design decisions:
 - Include let (with a desugaring to use lambda) but not letrec. The only

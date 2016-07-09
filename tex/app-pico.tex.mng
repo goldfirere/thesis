@@ -155,24 +155,24 @@ and
 (in order to use the induction hypothesis in, e.g., \rul{Ty\_Pi}).
 \end{proof}
 
-%% \begin{lemma}[Strengthening]
-%% \label{lem:strengthening}
-%% Assume $[[G' \subseteq G]]$ and the
-%% variables $[[{dom(G)} \ {dom(G')}]]$ are never used.
-%% \begin{enumerate}
-%% \item If $[[S;G |-ty t : k ]]$ then $[[S;G' |-ty t : k]]$.
-%% \item If $[[S;G |-co g : phi ]]$, then $[[S;G' |-co g : phi]]$.
-%% \item If $[[S;G |-prop phi ]]$, then $[[S;G' |-prop phi]]$.
-%% \item If $[[S;G;s0;t0 |-alt alt : k]]$, then $[[S;G';s0;t0 |-alt alt : k]]$.
-%% \item If $[[S;G |-vec ps : D]]$, then $[[S;G' |-vec ps : D]]$.
-%% \item If $[[S |-ctx G]]$, then $[[S |-ctx G']]$.
-%% \item If $[[S;G |-s t --> t']]$, then $[[S;G' |-s t --> t']]$.
-%% \end{enumerate}
-%% \end{lemma}
+\begin{lemma}[Strengthening]
+\label{lem:strengthening}
+Assume $[[G' \subseteq G]]$ and the
+variables $[[{dom(G)} \ {dom(G')}]]$ are never used.
+\begin{enumerate}
+\item If $[[S;G |-ty t : k ]]$ then $[[S;G' |-ty t : k]]$.
+\item If $[[S;G |-co g : phi ]]$, then $[[S;G' |-co g : phi]]$.
+\item If $[[S;G |-prop phi ]]$, then $[[S;G' |-prop phi]]$.
+\item If $[[S;G;s0;t0 |-alt alt : k]]$, then $[[S;G';s0;t0 |-alt alt : k]]$.
+\item If $[[S;G |-vec ps : D]]$, then $[[S;G' |-vec ps : D]]$.
+\item If $[[S |-ctx G]]$, then $[[S |-ctx G']]$.
+\item If $[[S;G |-s t --> t']]$, then $[[S;G' |-s t --> t']]$.
+\end{enumerate}
+\end{lemma}
 
-%% \begin{proof}
-%% Similar to previous proof.
-%% \end{proof}
+\begin{proof}
+Similar to previous proof.
+\end{proof}
 
 \subsection{Scoping}
 
@@ -216,6 +216,12 @@ $[[V]]$ passed into $[[match]]$.
 \begin{property}[$[[match]]$ is sound]
 \label{prop:match-sound}
 If $[[match_V(ts1; ts2) = Just theta]]$, then $[[ts1[theta] = ts2]]$.
+\end{property}
+
+\begin{property}[$[[match]]$/substitution]
+\label{prop:match-subst}
+If $[[match_V(ts1;ts2) = Just theta]]$ and $[[dom(theta0) \inter V = \emptyset]]$,
+$[[match_V(ts1[theta0];ts2[theta0]) = Just theta']]$ for some $[[theta']]$.
 \end{property}
 
 \section{Determinacy}
@@ -514,7 +520,8 @@ $[[S;G,G'[s/a] |-vec ps[s/a] : D[s/a] ]]$.
 \end{lemma}
 
 \begin{proof}
-By mutual induction.
+By mutual induction. Some interesting cases are below.
+
 \begin{description}
 \item[Case \rul{Ty\_Var}:] Here, we know $[[t]]$ is some variable $[[b]]$. There
 are three cases to consider:
@@ -529,6 +536,18 @@ induction hypothesis. Furthermore, we get $[[b:Rel k0[s/a] \in G'[s/a] ]]$ from
 $[[b:Rel k0 \in G']]$.
 \end{description}
 \item[Case \rul{Ty\_Con}:] By \pref{lem:scoping}, \pref{lem:ctx-reg}, and induction.
+\item[Case \rul{Alt\_Match}:]
+We adopt the metavariable names from the rule:
+\[
+\ottdruleAltXXMatch{}
+\]
+We will use \rul{Alt\_Match} to prove our desired conclusion. Several
+premises are unchanged. The remaining ones we will have to prove:
+\begin{description}
+\item[$[[D3',D4' = D2[ss[s/a]/dom(D1)] ]]$:] By our choice of $[[D3' = D3[s/a] ]]$ and $[[D4' = D4[s/a] ]]$.
+\item[$[[match_{dom(D3)}(types(D4[s/a]);types(D'[s/a])) = Just theta']]$:]
+We can freely choose $[[theta']]$, but we still need to make sure that
+the match succeeds. This is by \pref{prop:match-subst}.
 \item[Case \rul{Co\_Var}:] Similar to \rul{Ty\_Var}.
 \item[Case \rul{Co\_PiTy}:]
 We adopt the metavariable names from the rule (renaming the variable to be substituted
