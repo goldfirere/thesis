@@ -37,28 +37,28 @@ S;P,O1;rel *|->arg _t2 : k1 ~> p2;t2 -| O2
 -------------------------------- :: AppSpec
 S;P *|->ty _t1 @_t2 ~> t1 p2 : k2[t2/a] -| O1,O2
 
-S;P |->pt _s ~> s -| O1
+S;Rel(P) |->pt _s ~> s -| O1
 S;P,O1 *|->ty _t : s ~> t -| O2
 -------------------------------- :: Annot
 S;P *|->ty (_t :: _s) ~> t : s -| O1,O2
 
 S;P |->ty _t0 ~> t0 : k0 -| O0
 S;P,O0 |->scrut _alts; k0 ~> g; D; H'; ts -| O0'
-fresh au // O' = O0,O0',au:Type{}
-forall i: S;P,O';MPI D. H'{} ts;t0 |> g |->alt _alti : au ~> alti -| Oi
+fresh au // O' = O0,O0',au:forall{}.Type{}
+forall i: S;P,O';MPI D. H'{} ts;t0 |> g |->alt _alti : au_{} ~> alti -| Oi
 alts' = make_exhaustive(alts; k)
 ------------------------------------ :: Case
-S;P *|->ty case _t0 of _alts ~> case_au (t0 |> g) of alts' : au -| O',Os
+S;P *|->ty case _t0 of _alts ~> case_au_{} (t0 |> g) of alts' : au_{} -| O',Os
 
 S;P |->q _qvar ~> a : k1; vis -| O1
 S;P,O1,a:Rel k1 *|->ty _t ~> t : k2 -| O2
 ------------------------------------- :: Lam
-S;P *|->ty \ _qvar . _t ~> \ a :Rel k1. t : UPI_vis a:Rel k1. k2 -| O1,<a:Rel k1|O2>
+S;P *|->ty \ _qvar . _t ~> \ a :Rel k1. t : UPI_vis a:Rel k1. k2 -| O1,forall a:Rel k1. O2
 
 S;P |->q _qvar ~> a : k1; vis -| O1
 S;P,O1,a:Irrel k1 *|->ty _t ~> t : k2 -| O2
 ------------------------------------- :: LamIrrel
-S;P *|->ty /\ _qvar . _t ~> \ a :Irrel k1. t : UPI_vis a:Rel k1. k2 -| O1,<a:Rel k1|O2>
+S;P *|->ty /\ _qvar . _t ~> \ a :Irrel k1. t : UPI_vis a:Rel k1. k2 -| O1,forall a:Rel k1.O2
 
 S;P |->ty _t1 : Type{} ~> t1 -| O1
 S;P |->ty _t2 : Type{} ~> t2 -| O2
@@ -75,14 +75,14 @@ S;P *|->ty _t1 '-> _t2 ~> MPI_Req a :Rel t1. t2 : Type{} -| O1,O2
 S;P |->ty _t ~> t : k -| O1
 |->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O2
 S;Rel(P),O1,O2 |=ty k2 : Type{}
-fresh cu // O = O1,O2,cu : k2 [Type{}]~[Type{}] k1
+fresh cu // O = O1,O2,cu : forall{}. k2 [Type{}]~[Type{}] k1
 --------------------------------- :: Fix
-S;P *|->ty fix _t ~> fix (t |> (g ;; UPI a:Rel <k1>. cu)) : k1 -| O
+S;P *|->ty fix _t ~> fix (t |> (g ;; UPI a:Rel <k1>. cu_{})) : k1 -| O
 
 S;P *|->ty _t1 ~> t1 : k1 -| O
 S;P,O,x:Rel k1 *|->ty _t2 ~> t2 : k2 -| O2
 -------------------------------- :: Let
-S;P *|->ty let x := _t1 in _t2 ~> (\ x:Rel k1. t2) t1 : k2[t1/x] -| O,<x:Rel k1|O2>
+S;P *|->ty let x := _t1 in _t2 ~> (\ x:Rel k1. t2) t1 : k2[t1/x] -| O,forall x:Rel k1.O2
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Checking  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -102,21 +102,35 @@ alts' = make_exhaustive(alts; k)
 ---------------------------------- :: Case
 S;P |->ty case _t0 of _alts : k ~> case_k (t0 |> g) of alts' -| O', Os
 
-% RAE: WRONG
+|->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O0
+a /# k2
+S;Rel(P) |->pt _s ~> k1' -| O1
+O = O0,O1,cu:forall{}.k1 [Type{}]~[Type{}] k1'
+S;P,O,b:Rel k1' *|->ty _t : k2[b |> sym cu_{}/a] ~> t -| O2
+---------------------------------- :: LamDep
+S;P |->ty \ (a :: _s). _t : k ~> (\a:Rel k1. (t[a |> cu_{}/b])) |> sym g -| O,forall b:Rel k1'.O2
+
 |->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O0
 S;P |->aq _aqvar ~> b : k1' -| O
 k1 <= k1' ~> t1 -| O1
 S;P,O0,O,b:Rel k1' *|->ty _t : k2 ~> t -| O2
 ---------------------------------- :: Lam
-S;P |->ty \ _aqvar . _t : k ~> (\ a:Rel k1. t[t1 a/b]) |> sym g -| O0,O,O1,<b:Rel k1'|O2>
+S;P |->ty \ _aqvar . _t : k ~> (\ a:Rel k1. t[t1 a/b]) |> sym g -| O0,O,O1,forall b:Rel k1'.O2
 
-% RAE: WRONG
+|->fun k; Irrel ~> g; UPI; a; Irrel; k1; k2 -| O0
+a /# k2
+S;Rel(P) |->pt _s ~> k1' -| O1
+O = O0,O1,cu:forall{}.k1 [Type{}]~[Type{}] k1'
+S;P,O,b:Irrel k1' *|->ty _t : k2[b |> sym cu_{}/a] ~> t -| O2
+---------------------------------- :: LamIrrelDep
+S;P |->ty /\ (a :: _s). _t : k ~> (\a:Irrel k1. (t[a |> cu_{}/b])) |> sym g -| O,forall b:Irrel k1'.O2
+
 |->fun k; Irrel ~> g; UPI; a; Irrel; k1; k2 -| O0
 S;P |->aq _aqvar ~> b : k1' -| O
 k1 <= k1' ~> t1 -| O1
 S;P,O0,O,b:Irrel k1' *|->ty _t : k2 ~> t -| O2
 ---------------------------------- :: LamIrrel
-S;P |->ty /\ _aqvar . _t : k ~> (\ a:Irrel k1. t[t1 a/b]) |> sym g -| O0,O,O1,<b:Rel k1'|O2>
+S;P |->ty /\ _aqvar . _t : k ~> (\ a:Irrel k1. t[t1 a/b]) |> sym g -| O0,O,O1,forall b:Irrel k1'.O2
 
 S;P |->ty _t : UPI_Req a:Rel k.k ~> t -| O
 ------------------------------- :: Fix
@@ -141,22 +155,22 @@ S;P |->aq _aqvar ~> b : k1' -| O
 k1 <= k1' ~> t1 -| O1
 S;P,O,O1,b:Rel k1' *|->ty _t : k2 ~> t -| O2
 ------------------------------------------------- :: LamInvis
-S;P *|->ty \ @_aqvar . _t : UPI_Spec a :Rel k1.k2 ~> \ a:Rel k1. t[t1 a/b] -| O,O1,<b:Rel k1'|O2>
+S;P *|->ty \ @_aqvar . _t : UPI_Spec a :Rel k1.k2 ~> \ a:Rel k1. t[t1 a/b] -| O,O1,forall b:Rel k1'.O2
 
 S;P |->aq _aqvar ~> b : k1' -| O
 k1 <= k1' ~> t1 -| O1
 S;P,O,O1,b:Irrel k1' *|->ty _t : k2 ~> t -| O2
 ------------------------------------------------- :: LamInvisIrrel
-S;P *|->ty /\ @_aqvar . _t : UPI_Spec a :Irrel k1.k2 ~> \ a:Irrel k1. t[t1 a/b] -| O,O1,<b:Irrel k1'|O2>
+S;P *|->ty /\ @_aqvar . _t : UPI_Spec a :Irrel k1.k2 ~> \ a:Irrel k1. t[t1 a/b] -| O,O1,forall b:Irrel k1'.O2
 
 S;P *|->ty _t1 ~> t1 : k1 -| O
 S;P,O,x:Rel k1 *|->ty _t2 : k ~> t2 -| O2
 ---------------------------------------- :: Let
-S;P *|->ty let x := _t1 in _t2 : k ~> (\x:Rel k1. t2) t1 -| O,<x:Rel k1|O2>
+S;P *|->ty let x := _t1 in _t2 : k ~> (\x:Rel k1. t2) t1 -| O,forall x:Rel k1.O2
 
 S;P,$a:rel k1 *|->ty _t : k2 ~> t -| O
 ---------------------------------------------- :: Skol
-S;P *|->ty _t : UPI_Spec $a:rel k1.k2 ~> \ $a:rel k1. t[theta] -| <$a:rel k1|O>
+S;P *|->ty _t : UPI_Spec $a:rel k1.k2 ~> \ $a:rel k1. t[theta] -| forall $a:rel k1.O
 
 S;P |->ty _t : k ~> t -| O
 --------------------------- :: Otherwise
@@ -170,13 +184,13 @@ by
 S;P |->q _qvar ~> a : k; vis -| O
 S;P,a:rel k |->pt _s ~> s -| O2
 ----------------------------------- :: Pi
-S;P |->pt forall _qvar . _s ~> PI_vis a :rel k. s -| O,<a:rel k|O2>
+S;P |->pt forall _qvar . _s ~> PI_vis a :rel k. s -| O,forall a:rel k.O2
 
 % This should be Constraint
 S;P |->ty _t : Type{} ~> t -| O1
 S;P,$a:Rel t |->pt _s ~> s -| O2
 ------------------------- :: Constrained
-S;P |->pt _t => _s ~> UPI_Inf $a:Rel t. s -| O1, <$a:Rel t| O2>
+S;P |->pt _t => _s ~> UPI_Inf $a:Rel t. s -| O1, forall $a:Rel t. O2
 
 S;P |->ty _t : Type{} ~> t -| O
 ----------------- :: Mono
@@ -211,7 +225,7 @@ dom(D4) = dom(D')
 match_{dom(D3)}(types(D4);types(D')) = Just theta0
 S;P,D3 |->ty _t : k ~> t -| O
 ------------------------------------ :: Con
-S;P;MPI D'. H'{} ts;t0 |->alt H xs -> _t : k ~> H -> \ D3, (c : t0 [MPI D'. H'{} ts]~[MPI D4.H'{} ts] H{ts} xs). t -| <D3|O>
+S;P;MPI D'. H'{} ts;t0 |->alt H xs -> _t : k ~> H -> \ D3, (c : t0 [MPI D'. H'{} ts]~[MPI D4.H'{} ts] H{ts} xs). t -| forall D3.O
 
 S;P |->ty _t : k ~> t -| O
 --------------------------------------- :: Default
@@ -231,7 +245,7 @@ match_{dom(D3)}(types(D4);types(D')) = Just theta0
 D3' = D3,c:t0 [MPI D'.H'{} ts]~[MPI D4.H'{} ts] H{ts} xs
 S;P,D3' |->ty _t : k ~> t -| O
 ------------------------------------ :: Con
-S;P;MPI D'. H'{} ts;t0 |->altc H xs -> _t : k ~> H -> \ D3'. t -| <D3'| O>
+S;P;MPI D'. H'{} ts;t0 |->altc H xs -> _t : k ~> H -> \ D3'. t -| forall D3'. O
 
 S;P |->ty _t : k ~> t -| O
 --------------------------------------- :: Default
@@ -259,9 +273,9 @@ by
 
 fresh bu
 ------------------------------------ :: Var
-S;P |->aq a ~> a : bu -| bu : Type{}
+S;P |->aq a ~> a : bu_{} -| bu : forall{}. Type{}
 
-S;P |->pt _s ~> s -| O
+S;Rel(P) |->pt _s ~> s -| O
 ------------------------------------ :: Annot
 S;P |->aq (a :: _s) ~> a : s -| O
 
@@ -298,7 +312,7 @@ by
 
 fresh cu // fresh bu1, bu2
 -------------------- :: Cast
-|->fun k0; rel ~> cu; UPI; a; rel; bu1; bu2 -| bu1:Type{}, bu2:Type{}, cu : k0 [Type{}]~[Type{}] UPI_Req a:rel bu1.bu2
+|->fun k0; rel ~> cu_{}; UPI; a; rel; bu1_{}; bu2_{} -| bu1:forall{}.Type{}, bu2:forall{}.Type{}, cu : forall{}. k0 [Type{}]~[Type{}] UPI_Req a:rel bu1_{}.bu2_{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  matchExpectedTyConApp  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -316,7 +330,7 @@ S;P |->scrut _alts; MPI D. H{} ts ~> <MPI D. H{} ts>; D; H; ts -| empty
 S |-tc H : as :Irrel ks; D2; H'
 fresh aus // fresh cu
 ------------------------------ :: Cast
-S;P |->scrut (H xs -> _t; _alts); k ~> cu; empty; H'; aus -| aus : ks[aus/as], cu : k [Type{}]~[Type{}] H'{} aus
+S;P |->scrut (H xs -> _t; _alts); k ~> cu_{}; empty; H'; aus_{} -| aus : forall{}.ks[aus_{}/as], cu : forall{}. k [Type{}]~[Type{}] H'{} aus_{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  topInstantiate  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -331,19 +345,19 @@ defn
 by
 
 fresh au  //  vis2 <= vis1
-|->inst_vis1 k2[au/a] ~> ps; k2' -| O
+|->inst_vis1 k2[au_{}/a] ~> ps; k2' -| O
 ------------------------------- :: Rel
-|->inst_vis1 PI_vis2 a:Rel k1. k2 ~> au, ps; k2' -| au : k1, O
+|->inst_vis1 PI_vis2 a:Rel k1. k2 ~> au_{}, ps; k2' -| au : forall{}. k1, O
 
 fresh au  // vis2 <= vis1
-|->inst_vis1 k2[au/a] ~> ps; k2' -| O
+|->inst_vis1 k2[au_{}/a] ~> ps; k2' -| O
 ------------------------------- :: Irrel
-|->inst_vis1 PI_vis2 a:Rel k1. k2 ~> {au}, ps; k2' -| au : k1, O
+|->inst_vis1 PI_vis2 a:Rel k1. k2 ~> {au_{} }, ps; k2' -| au : forall{}. k1, O
 
 fresh cu
-|->inst_vis1 k2[cu/c] ~> ps; k2' -| O
+|->inst_vis1 k2[cu_{}/c] ~> ps; k2' -| O
 ------------------------------- :: Co
-|->inst_vis1 PI_Inf c:phi.k ~> cu, ps; k2' -| cu : phi, O
+|->inst_vis1 PI_Inf c:phi.k ~> cu_{}, ps; k2' -| cu : forall{}. phi, O
 
 -------------------------------- :: Done
 |->inst_vis1 k ~> empty; k -| empty
@@ -404,15 +418,15 @@ by
 
 k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
 -------------------------------------------- :: FunRel
-UPI_Req a:Rel k1. k2 *<= UPI_Req b:Rel k3.k4 ~> \ x :Rel (UPI a:Rel k1.k2), b:Rel k3. t2 (x (t1 b)) -| O1,<b:Rel k3|O2>
+UPI_Req a:Rel k1. k2 *<= UPI_Req b:Rel k3.k4 ~> \ x :Rel (UPI a:Rel k1.k2), b:Rel k3. t2 (x (t1 b)) -| O1, forall b:Rel k3.O2
 
 k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
 -------------------------------------------- :: FunIrrel
-UPI_Req a:Irrel k1. k2 *<= UPI_Req b:Irrel k3.k4 ~> \ x :Rel (UPI a:Irrel k1.k2), b:Irrel k3. t2 (x {t1 b}) -| O1,<b:Irrel k3|O2>
+UPI_Req a:Irrel k1. k2 *<= UPI_Req b:Irrel k3.k4 ~> \ x :Rel (UPI a:Irrel k1.k2), b:Irrel k3. t2 (x {t1 b}) -| O1,forall b:Irrel k3.O2
 
 fresh cu
 ----------------------- :: Unify
-t1 *<= t2 ~> \ x:Rel t1. (x |> cu) -| cu : t1 [Type{}]~[Type{}] t2
+t1 *<= t2 ~> \ x:Rel t1. (x |> cu_{}) -| cu : forall{}. t1 [Type{}]~[Type{}] t2
 
 defn
 k1 <= k2 ~> t -| O :: :: ISub :: 'Sub_'
@@ -422,7 +436,7 @@ by
 |->inst_Spec k1 ~> ps; k1' -| O1
 k1' *<= k2' ~> t2 -| O2
 ------------- :: DeepSkol
-k1 <= k2 ~> \ x:Rel k1. t1 (\ D. t2 (x ps)) -| O1,<D|O2>
+k1 <= k2 ~> \ x:Rel k1. t1 (\ D. t2 (x ps)) -| O1,forall D.O2
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -435,50 +449,50 @@ defn
 S ; P |=ty t : k :: :: UTy :: 'Ty_'
 by
 
-au : k \in P under D  //  D \subseteq P  // S |=ctx P
+au : forall D.k \in P  // S |=ctx P
+S;P |=u theta : D
 --------------- :: UVar
-S;P |=ty au : k
+S;P |=ty au_theta : k[theta \inter dom(D)]
 
 defn
 S ; P |=co g : phi :: :: UCo :: 'Co_'
 by
 
-cu : phi \in P under D  // D \subseteq P // S |=ctx P
+cu : forall D.phi \in P  // S |=ctx P
+S;P |=u theta : D
 ----------------- :: UVar
-S;P |=co cu : phi
+S;P |=co cu_theta : phi[theta \inter dom(D)]
 
 defn
 S |=ctx P :: :: UCtx :: 'Ctx_'
   {{ tex [[S]] [[|=ctx]] [[P]] \ok }}
 by
 
-S;Rel(P) |=ty k : Type{}  // S |=ctx P
+S;Rel(P,D) |=ty k : Type{}  // S |=ctx P
 ------------------ :: UTyVar
-S |=ctx P, au : k
+S |=ctx P, au : forall D. k
 
-S;Rel(P) |=prop phi  // S |=ctx P
+S;Rel(P,D) |=prop phi  // S |=ctx P
 -------------------- :: UCoVar
-S |=ctx P, cu : phi
-
-S |=ctx P,D,O
------------------ :: Givens
-S |=ctx P, <D|O>
+S |=ctx P, cu : forall D. phi
 
 defn
-u \in P under D :: :: InUnder :: 'UBnd_'
-  {{ tex [[u]] [[\in]] [[P]] \text{ under } [[D]] }}
+S ; P |=u theta : D  :: :: UV :: 'UV_'
 by
 
--------------------- :: Here
-u \in P,u under empty
+fv(theta) \subseteq {dom(P)}
+--------------------- :: Nil
+S;P |=u theta : empty
 
-u \in O under D2
---------------------- :: Under
-u \in P,<D1|O> under D1,D2
+S;P |=ty a[theta] : k
+S;P |=u theta : D[theta \inter a]
+-------------------------- :: Ty
+S;P |=u theta : a:rel k, D
 
-u \in P under D
------------------- :: There
-u \in P,u' under D
+S;P |=co c[theta] : phi
+S;P |=u theta : D[theta \inter c]
+------------------------ :: Co
+S;P |=u theta : c:phi, D
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Zonking  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -492,20 +506,14 @@ S |=ctx P
 ---------------------- :: Nil
 S;P |=z empty : empty
 
-t has no unification variables
-S;P |=ty t : k
+S;P,D |=ty t : k
 S;P |=z Z : O[t/au]
 -------------------------- :: TyVar
-S;P |=z t/au, Z : au:k, O
+S;P |=z t/au, Z : au:forall D.k, O
 
-g has no unification variables
-S;P |=co g : phi
+S;P,D |=co g : phi
 S;P |=z Z : O[g/cu]
 --------------------------- :: CoVar
-S;P |=z g/cu, Z : cu:phi, O
+S;P |=z g/cu, Z : cu:forall D.phi, O
 
-S;P,D1 |=z Z1 : O1
-S;P |=z Z : O[Z1]
------------------------------ :: Givens
-S;P |=z <D1|Z1>,Z : <D1|O1>,O
 

@@ -13,22 +13,30 @@ aus {{ tex \overline{\alpha} }}, bus {{ tex \overline{\beta} }}
 | aus1 , .... , ausi        ::   :: Many
 | nil                       :: M :: Nil
 
+zu {{ tex \zeta }} :: 'ZU_' ::=
+| au              ::   :: Ty
+| cu              ::   :: Co
+
+zus {{ tex \overline{\zeta} }} :: 'ZUs_' ::=
+| zu                      ::   :: One
+| zus1 , .... , zusi      ::   :: Many
+| nil                     :: M :: Nil
+| dom ( P )               :: M :: dom_ctx
+  {{ tex [[dom]] ( [[P]] ) }}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Zonkers  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 zmap :: 'ZonkMap_' ::=
-| t / au           ::   :: Ty
-| g / cu           ::   :: Co
-| < D | Z >        ::   :: Given
-  {{ tex \langle [[D]] \pipe [[Z]] \rangle }}
+| forall zs . t / au           ::   :: Ty
+| forall zs . g / cu           ::   :: Co
 
 Z {{ tex \Theta }} :: 'Zonker_' ::=
 | zmap             ::   :: One
 | Z1 , .... , Zi   ::   :: Many
 | nil              :: M :: Nil
-| bind ( D ; Z )   :: M :: bind
-  {{ tex [[bind]]([[D]];[[Z]]) }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,24 +44,25 @@ Z {{ tex \Theta }} :: 'Zonker_' ::=
 
 % A context containing only unification variables
 unif_bnd, u :: 'IUnifBnd_' ::=
-| au : k             ::   :: Ty
-  {{ tex [[au]] {:} [[k]] }}
-| cu : phi           ::   :: Co
-  {{ tex [[cu]] {:} [[phi]] }}
-| < D | O >          ::   :: Given
-  {{ tex \langle [[D]] \pipe [[O]] \rangle }}
+| au : forall D . k    ::   :: Ty
+| au : forall {} . k   :: M :: TyNoFA
+  {{ tex [[au]] : [[k]] }}
+| cu : forall D . phi  ::   :: Co
+| cu : forall {} . phi :: M :: CoNoFA
+  {{ tex [[cu]] : [[phi]] }}
 
 O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
 | unif_bnd              ::   :: One
 | O1 , .... , Oi        ::   :: Many
 | nil                   :: M :: Nil
-| aus : D               :: M :: TelBind
-  {{ tex [[aus]]{:}[[D]] }}
-| aus : ts             :: M :: KsBind
-  {{ tex [[aus]]{:}[[ts]] }}
+% | aus : D               :: M :: TelBind
+%   {{ tex [[aus]]{:}[[D]] }}
+| aus : forall {}. ts   :: M :: KsBind
+   {{ tex [[aus]]{:}[[ts]] }}
 | ( O )                :: M :: Parens
 | O [ theta ]          :: M :: Subst
 | O [ Z ]              :: M :: Zonk
+| forall D . O         :: M :: Forall
 
 P {{ tex \Psi }} :: 'ICtx_' ::=
 | d                  ::   :: Binder
@@ -63,6 +72,7 @@ P {{ tex \Psi }} :: 'ICtx_' ::=
 | G                  :: M :: PlainCtx
 | Rel ( P )          :: M :: Reset
   {{ tex [[Rel]]([[P]]) }}
+| P [ theta ]        :: M :: Subst
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Judgments  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

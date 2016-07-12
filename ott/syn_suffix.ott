@@ -36,11 +36,13 @@ fact :: 'Fact_' ::=
   | d1 ~>* d2                          ::   :: many_red_star_d
   | ps ~>* ps' *<~ ps''                ::   :: confluence
   | d1 ~> d3 <~ d2                     ::   :: d_diamond
-  | fvset1 \subseteq fvset2            ::   :: subset
-  | a \notin fvset                     ::   :: var_notin_set
   | S ; G |-co* g : phi                ::   :: co_star
   | apart ( t1 ; t2 )                  ::   :: apartness
     {{ tex [[apart]]([[t1]];[[t2]]) }}
+  | zmap \in Z                         ::   :: Z_in
+  | zu \in V                           ::   :: in_fvset_u
+  | z \in V                            ::   :: in_fvset
+  | S ; G |- J                         ::   :: pico_judg
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,6 +75,7 @@ terminals :: 'terminals_' ::=
 | !!!                                  ::   :: internal {{ tex }}
 | ~                                    ::   :: twid    {{ tex \sim }}
 | #                                    ::   :: fresh   {{ tex \mathrel{\#} }}
+| /#                                   ::   :: notfresh {{ tex \mathrel{\not\#} }}
 | ;;                                   ::   :: semi    {{ tex \fatsemi }}
 | forall                               ::   :: forall  {{ tex \forall }}
 | blank                                ::   :: blank   {{ tex \! }}
@@ -157,6 +160,7 @@ terminals :: 'terminals_' ::=
 | |=s                                  ::   :: S_int   {{ tex \vDashy{s} }}
 | |=z                                  ::   :: Z_int   {{ tex \vDashy{z} }}
 | |=lc                                 ::   :: Lc_int  {{ tex \vDashy{lc} }}
+| |=u                                  ::   :: U_int   {{ tex \vDashy{u} }}
 
 | |->ty                                ::   :: Ty_inf  {{ tex \varrowy{ty} }}
 | *|->ty                               ::   :: TyS_inf {{ tex \varrowys{ty} }}
@@ -185,6 +189,7 @@ formula :: 'formula_' ::=
   | rewrite_rule                       ::   :: rewrite
   | I1 = I2 = I3                       ::   :: three_way_I_eq
   | bnd \in P                          ::   :: ctx_in
+  | unif_bnd \in P                     ::   :: unif_ctx_in
   | sig_bnd \in S                      ::   :: sig_in
   | alt \in alts                       ::   :: alt_in
   | p \in ps                           ::   :: p_in
@@ -193,6 +198,7 @@ formula :: 'formula_' ::=
   | a # G                              ::   :: a_fresh
   | c # G                              ::   :: c_fresh
   | zs # ps                            ::   :: a_not_free
+  | zs /# ps                           ::   :: a_appears
   | alts are exhaustive for H ( wrt S ) ::   :: exhaustive
     {{ tex [[alts]] \text{ are exhaustive and distinct for } [[H]] \text{, (w.r.t.~} [[S]] \text{)} }}
   | ps ~> ps'                          ::   :: many_red
@@ -216,8 +222,8 @@ $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
   | ijudg                              ::   :: ijudg
   | subst \in substs                   ::   :: subst_in
   | P1 \subseteq P2                    ::   :: G_subseq
-  | p has no unification variables     ::   :: no_unif
-    {{ tex [[p]] \text{ has no unification variables} }}
+  | z \notin fvset                     ::   :: var_notin_set
+  | fvset1 \subseteq fvset2            ::   :: subset
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -281,7 +287,7 @@ DataCon_Lit <= TyCon_DataCon
 Co_Let <= Co_Insts
 Co_LetBreak <= Co_Insts
 
-ctx_Many <= IUnifCtx_TelBind
+% ctx_Many <= IUnifCtx_TelBind
 
 Alt_Alt <= Alt_Subst
 Type_Lams <= Type_Subst
@@ -304,3 +310,5 @@ Type_Lams <= Type_Zonk
 args_One <= args_Zonk
 IUnifCtx_One <= IUnifCtx_Zonk
 IUnifCtx_KsBind <= IUnifCtx_Zonk
+
+

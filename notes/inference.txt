@@ -56,19 +56,23 @@
 - Must comment about how |- judgments are extended. In particular, |-ctx.
   With UCtx_TyVar and UCtx_CoVar
 - And we only allow Inf on coercion abstractions.
-- Givens are *not* available to the right of |-.
+- OLD Givens are *not* available to the right of |-.
 - All unification variables must be gone during zonking.
-- Only unification variable kinds can refer to givens.
-- :c is just like :g, except the solver uses :c bindings.
+- OLD Only unification variable kinds can refer to givens.
+- OLD :c is just like :g, except the solver uses :c bindings.
 - prop:solver-sound implies that no unif variables that depend on a given
   can be generalized over. This is correct.
-- theta|_zs as domain restriction
-- theta \ zs as domain exclusion
-- syntax to explain: au : k \in P under D
-- The whole tree structure of P/O.
+- DO I USE THIS? theta|_zs as domain restriction
+- DO I USE THIS? theta \ zs as domain exclusion
+- OLD: syntax to explain: au : k \in P under D
+- OLD: The whole tree structure of P/O.
 - My treatment of <..|..> seems novel. Compare to Pottier & Remy, which
-  do not handle dependency.
-- Discuss Barendregt convention and \subseteq.
+  do not handle dependency. UPDATE: Yes, to compare to Pottier & Remy,
+  but it's really just like Gundry's treatment.
+- Syntactic pun: forall D. O means apply the forall to each binding
+  separately
+- The theta arg to a unification variable is called the "carried substitution"
+  |=u is "validity of carried substitution"
 
 Design decisions:
 - Include let (with a desugaring to use lambda) but not letrec. The only

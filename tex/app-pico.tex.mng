@@ -75,14 +75,14 @@ By straightforward mutual induction, appealing to
 \pref{lem:rel-idempotent}.
 \end{proof}
 
-\begin{lemma}[Decreasing relevance]
-\label{lem:decreasing-rel}
-If $[[S |-ctx G, a:Rel k]]$, then $[[S |-ctx G, a:Irrel k]]$.
-\end{lemma}
+%% \begin{lemma}[Decreasing relevance]
+%% \label{lem:decreasing-rel}
+%% If $[[S |-ctx G, a:Rel k]]$, then $[[S |-ctx G, a:Irrel k]]$.
+%% \end{lemma}
 
-\begin{proof}
-By inverting and then using \rul{Ctx\_TyVar}.
-\end{proof}
+%% \begin{proof}
+%% By inverting and then using \rul{Ctx\_TyVar}.
+%% \end{proof}
 
 \subsection{Regularity, Part I}
 
@@ -744,7 +744,7 @@ If $[[S;G |-ty t : k]]$, then $[[S;Rel(G) |-ty k : Type{} ]]$.
 \end{lemma}
 
 \begin{proof}
-By mutual induction on the typing derivation.
+By induction on the typing derivation.
 
 \begin{description}
 \item[Case \rul{Ty\_Var}:] By \pref{lem:tyvar-reg} (and \pref{lem:weakening}).

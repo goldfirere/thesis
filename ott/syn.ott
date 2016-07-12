@@ -116,8 +116,6 @@ vars, as {{ tex \overline{\ottnt{a} } }}, bs {{ tex \overline{\ottnt{b} } }},
 tycovar, z :: 'TyCoVar_' ::=
 | a                     ::   :: Ty  {{ coq [[a]] }}
 | c                     ::   :: Co  {{ coq [[c]] }}
-| au                    :: M :: UTy
-| cu                    :: M :: UCo
 
 mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'mixedVars_' ::=
 | z                                  ::   :: One
@@ -128,7 +126,7 @@ mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'mixedVars_' ::=
 | xs                                 :: M :: Tys
 
 fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
-| { zs }                             :: M :: Set
+| { zus }                            :: M :: Set
 | fv ( ps )                          :: M :: fv_tycos
   {{ tex [[fv]] ( [[ps]] ) }}
 | fv ( alt )                         :: M :: fv_alt
@@ -137,12 +135,15 @@ fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
   {{ tex [[fv]] ( [[D]] ) }}
 | fv ( phi )                         :: M :: fv_prop
   {{ tex [[fv]] ( [[phi]] ) }}
+| fv ( theta )                       :: M :: fv_theta
+  {{ tex [[fv]] ( [[theta]] ) }}
 | ( fvset )                          :: M :: Parens
 | fvset1 \union fvset2               :: M :: Union
 | fvset1 \ fvset2                    :: M :: Minus
   {{ tex [[fvset1]] \mathop{\backslash} [[fvset2]] }}
 | \emptyset                          :: M :: Emptyset
-
+| dom ( theta )                      :: M :: dom_subst
+  {{ tex [[dom]]([[theta]]) }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Binders  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -226,7 +227,10 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | let c := h in t              :: M :: Let
 | equals t1 t2                 :: M :: Equals
 
-| au                           :: M :: UnifVar
+| au _ theta                   :: M :: UnifVar
+  {{ tex [[au]]_{[[theta]]} }}
+| au _{}                       :: M :: UnifVarPlain
+  {{ tex [[au]] }}
 
 | t [ theta ]                  :: M :: Subst
 | t [ Z ]                      :: M :: Zonk
@@ -243,7 +247,8 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
 | ts [ Z ]                :: M :: Zonk
 | '|' ts '|'              :: M :: Erased
   {{ tex \lfloor [[ts]] \rfloor }}
-| aus                   :: M :: UnifVars
+| aus _{}                 :: M :: UnifVars
+  {{ tex [[aus]] }}
 
 alts {{ tex \overline{\ottnt{alt} } }} :: 'alts_' ::=
 | alt                    ::   :: One
@@ -340,7 +345,10 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | axApart t1 t2                :: M :: AxApart
 | arrow t1 t2                  :: M :: Arrow
 
-| cu                           :: M :: UnifVar
+| cu _ theta                   :: M :: UnifVar
+  {{ tex [[cu]]_{[[theta]]} }}
+| cu _{}                       :: M :: UnifVarPlain
+  {{ tex [[cu]] }}
 
 coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
   :: 'cos_' ::=
@@ -448,6 +456,10 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
   {{ tex [[theta]] \pipe_{[[zs]]} }}
 | theta \ zs                        :: M :: Exclusion
   {{ tex [[theta]] \mathop{\backslash} [[zs]] }}
+| theta1 o theta2                   :: M :: Compose
+  {{ tex [[theta1]] \circ [[theta2]] }}
+| { theta }                         :: M :: Braces
+  {{ tex [[theta]] }}
 
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
