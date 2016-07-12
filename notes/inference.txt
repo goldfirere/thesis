@@ -73,6 +73,7 @@
   separately
 - The theta arg to a unification variable is called the "carried substitution"
   |=u is "validity of carried substitution"
+- We often elide the forall{} and _{}.
 
 Design decisions:
 - Include let (with a desugaring to use lambda) but not letrec. The only

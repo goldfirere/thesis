@@ -311,4 +311,5 @@ args_One <= args_Zonk
 IUnifCtx_One <= IUnifCtx_Zonk
 IUnifCtx_KsBind <= IUnifCtx_Zonk
 
-
+Substs_Zonk <= Type_UnifVar
+Substs_Zonk <= Co_UnifVar

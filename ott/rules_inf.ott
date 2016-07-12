@@ -507,13 +507,13 @@ S |=ctx P
 S;P |=z empty : empty
 
 S;P,D |=ty t : k
-S;P |=z Z : O[t/au]
+S;P |=z Z : O[forall dom(D). t/au]
 -------------------------- :: TyVar
-S;P |=z t/au, Z : au:forall D.k, O
+S;P |=z forall dom(D). t/au, Z : au:forall D.k, O
 
 S;P,D |=co g : phi
-S;P |=z Z : O[g/cu]
+S;P |=z Z : O[forall dom(D). g/cu]
 --------------------------- :: CoVar
-S;P |=z g/cu, Z : cu:forall D.phi, O
+S;P |=z forall dom(D). g/cu, Z : cu:forall D.phi, O
 
 

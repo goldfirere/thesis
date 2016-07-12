@@ -460,6 +460,7 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
   {{ tex [[theta1]] \circ [[theta2]] }}
 | { theta }                         :: M :: Braces
   {{ tex [[theta]] }}
+| theta [ Z ]                       :: M :: Zonk
 
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
