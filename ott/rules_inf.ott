@@ -538,6 +538,43 @@ O +> D ~> O'; X
 cu : forall D'. phi, O +> D ~> cu : forall D,D'. phi, O'; cu |-> {dom(D)}, X
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Programs  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defn
+S ; G |->decl _decl ~> x : k := t :: :: IDecl :: 'Decl_'
+  {{ com Check a Haskell declaration. }}
+by
+
+S;G |->ty _t ~> t : k -| O
+S;G |->solv O ~> D; Z
+t' = \ D . (t[Z])  //   k' = UPI_Inf D. (k[Z])
+------------------------- :: Synthesize
+S;G |->decl x := _t ~> x : k' := t'
+
+S;G |->pt _s ~> s -| O1
+S;G |->solv O1 ~> D1;Z1
+s' = UPI_Inf D. (s[Z1])
+S;G *|->ty _t : s' ~> t -| O2
+S;G |->solv O2 ~> empty;Z2
+t' = t[Z]
+------------------------------ :: Check
+S;G |->decl x :: _s := _t ~> x : s' := t'
+
+defn
+S ; G |->prog _prog ~> G' ; theta :: :: IProg :: 'Prog_'
+  {{ com Check a Haskell program. }}
+by
+
+--------------------------------- :: Nil
+S;G |->prog empty ~> empty; empty
+
+S;G |->decl _decl ~> x : k := t
+S;G,x :Rel k, c : x [k]~[k] t |->prog _prog ~> G'; theta
+---------------------------------- :: Decl
+S;G |->prog _decl; _prog ~> x :Rel k, c : x [k]~[k] t, G'; (t/x,<t>/c) o theta
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

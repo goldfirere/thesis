@@ -181,6 +181,8 @@ terminals :: 'terminals_' ::=
 | |->solv                                ::   :: SOLV_inf  {{ tex \varrowy{solv} }}
 | |->pi                                ::   :: Pi_inf  {{ tex \varrowy{pi} }}
 | |->pre                                ::   :: Pre_inf  {{ tex \varrowy{pre} }}
+| |->decl                                ::   :: Decl_inf  {{ tex \varrowy{decl} }}
+| |->prog                                ::   :: Prog_inf  {{ tex \varrowy{prog} }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
