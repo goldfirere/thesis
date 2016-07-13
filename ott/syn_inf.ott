@@ -39,17 +39,31 @@ Z {{ tex \Theta }} :: 'Zonker_' ::=
 | nil              :: M :: Nil
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Generalizers  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+xmap :: 'XMap_' ::=
+| zu |-> V               ::   :: Map
+  {{ tex [[zu]] \mapsto [[V]] }}
+| ( xmap )               :: M :: Parens
+
+X {{ tex \xi }} :: 'X_' ::=
+| xmap                  ::   :: One
+| X1 , .... , Xi        ::   :: Many
+| nil                   :: M :: Nil
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % A context containing only unification variables
 unif_bnd, u :: 'IUnifBnd_' ::=
-| au : forall D . k    ::   :: Ty
-| au : forall {} . k   :: M :: TyNoFA
-  {{ tex [[au]] : [[k]] }}
+| au colon forall D . k    ::   :: Ty
+| au colon forall {} . k   :: M :: TyNoFA
+  {{ tex [[au]] [[colon]] [[k]] }}
 | cu : forall D . phi  ::   :: Co
 | cu : forall {} . phi :: M :: CoNoFA
-  {{ tex [[cu]] : [[phi]] }}
+  {{ tex [[cu]] {:} [[phi]] }}
 
 O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
 | unif_bnd              ::   :: One
@@ -57,11 +71,12 @@ O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
 | nil                   :: M :: Nil
 % | aus : D               :: M :: TelBind
 %   {{ tex [[aus]]{:}[[D]] }}
-| aus : forall {}. ts   :: M :: KsBind
-   {{ tex [[aus]]{:}[[ts]] }}
+| aus colon forall {}. ts   :: M :: KsBind
+   {{ tex [[aus]] [[colon]] [[ts]] }}
 | ( O )                :: M :: Parens
 | O [ theta ]          :: M :: Subst
 | O [ Z ]              :: M :: Zonk
+| O [ X ]              :: M :: Gen
 | forall D . O         :: M :: Forall
 
 P {{ tex \Psi }} :: 'ICtx_' ::=
@@ -81,6 +96,7 @@ P {{ tex \Psi }} :: 'ICtx_' ::=
 J {{ tex \mathcal{J} }} :: 'Judg_' ::=
 | J [ theta ]            :: M :: Subst
 | J [ Z ]                :: M :: Zonk
+| J [ X ]                :: M :: Gen
 
 ijudg :: 'IJudg_' ::=
 | S ; P |=prop phi                    ::   :: Prop

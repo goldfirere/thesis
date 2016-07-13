@@ -172,6 +172,7 @@ bnd, d {{ tex \delta }} :: 'Bnd_' ::=
   {{ tex [[o]] {:} [[phi]] }}
 | d [ theta ]                      :: M :: Subst
 | d [ Z ]                          :: M :: Zonk
+| d [ X ]                          :: M :: Gen
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  PIs  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -234,6 +235,7 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 
 | t [ theta ]                  :: M :: Subst
 | t [ Z ]                      :: M :: Zonk
+| t [ X ]                      :: M :: Gen
 
 typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
   ks {{ tex \overline{\kappa} }}, ees {{ tex \overline{\epsilon} }}
@@ -245,6 +247,7 @@ typs, ts {{ tex \overline{\tau} }}, ss {{ tex \overline{\sigma} }},
   {{ tex [[prefix]]([[ts]]) }}
 | ts [ theta ]            :: M :: Subst
 | ts [ Z ]                :: M :: Zonk
+| ts [ X ]                :: M :: Gen
 | '|' ts '|'              :: M :: Erased
   {{ tex \lfloor [[ts]] \rfloor }}
 | aus _{}                 :: M :: UnifVars
@@ -265,6 +268,7 @@ alt :: 'Alt_' ::=
 | pat -> t               ::   :: Alt
 | alt [ theta ]          :: M :: Subst
 | alt [ Z ]              :: M :: Zonk
+| alt [ X ]              :: M :: Gen
 | ( alt )                :: M :: Parens
 
 pat {{ tex \pi }} :: 'Pat_' ::=
@@ -283,6 +287,7 @@ prop, phi {{ tex \phi }} :: 'Phi_' ::=
   {{ coq (Phi_Equality ([[t1]]) ([[k1]]) ([[k2]]) ([[t2]])) }}
 | phi [ theta ]                :: M :: Subst
 | phi [ Z ]                    :: M :: Zonk
+| phi [ X ]                    :: M :: Gen
 | ( phi )                      :: M :: Parens
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -339,6 +344,7 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
   {{ tex \begin{vertmath} \ottkw{let}\ [[c]] [[:=]] [[h]]\ \ottkw{in} \\ [[g]] \end{vertmath} }}
 | g [ theta ]                  :: M :: Subst
 | g [ Z ]                      :: M :: Zonk
+| g [ X ]                      :: M :: Gen
 | step ^ I t                   :: M :: ManyStep
   {{ tex \ottkw{step}^{[[I]]}\, [[t]] }}
 | axEquals t                   :: M :: AxEquals
@@ -387,6 +393,7 @@ args, ps {{ tex \overline{\psi} }} :: 'args_' ::=
 | zs                    :: M :: Vars
 | ps [ theta ]          :: M :: Subst
 | ps [ Z ]              :: M :: Zonk
+| ps [ X ]              :: M :: Gen
 | ts                    :: M :: Types
 | gs                    :: M :: Cos
 | ps _{ I1 '..' I2 }    :: M :: IndexPrefix
@@ -430,6 +437,7 @@ context, G {{ tex \Gamma }}, D {{ tex \Delta }} :: 'ctx_' ::=
 | nil                          :: M :: Nil
 | G [ theta ]                  :: M :: Subst
 | G [ Z ]                      :: M :: Zonk
+| G [ X ]                      :: M :: Gen
 | as : rel ks                  :: M :: ZipKs
   {{ tex [[as]]{:}_{[[rel]]} [[ks]] }}
 % | as : rel D                   :: M :: Telescope
@@ -454,13 +462,14 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
 | ( theta )                         :: M :: Parens
 | theta \inter zs                   :: M :: Restrict
   {{ tex [[theta]] \pipe_{[[zs]]} }}
-| theta \ zs                        :: M :: Exclusion
-  {{ tex [[theta]] \mathop{\backslash} [[zs]] }}
+| theta \ V                         :: M :: Exclusion
+  {{ tex [[theta]] \mathop{\backslash} [[V]] }}
 | theta1 o theta2                   :: M :: Compose
   {{ tex [[theta1]] \circ [[theta2]] }}
 | { theta }                         :: M :: Braces
   {{ tex [[theta]] }}
 | theta [ Z ]                       :: M :: Zonk
+| theta [ X ]                       :: M :: Gen
 
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar

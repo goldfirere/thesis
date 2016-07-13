@@ -24,10 +24,12 @@ rewrite_rule :: 'Rewrite_' ::=
 | e1 eq e2                           ::   :: e_rewrite
 | calt1 eq calt2                     ::   :: calt_rewrite
 | Z1 eq Z2                           ::   :: Z_rewrite
+| X1 eq X2                           ::   :: X_rewrite
 
 util :: 'Util_' ::=
 | ||.||                              ::   :: terase_op
   {{ tex \llfloor {\cdot} \rrfloor }}
+| [ X ]                              ::   :: gen_op
 
 fact :: 'Fact_' ::=
   | alts1 ~> alts2                     ::   :: alts_red
@@ -313,3 +315,14 @@ IUnifCtx_KsBind <= IUnifCtx_Zonk
 
 Substs_Zonk <= Type_UnifVar
 Substs_Zonk <= Co_UnifVar
+
+ctx_Many <= ctx_Gen
+ctx_One <= ctx_Gen
+types_One <= types_Gen
+Phi_IEquality <= Phi_Gen
+Type_Pis <= Type_Gen
+Alt_Alt <= Alt_Gen
+Type_Lams <= Type_Gen
+args_One <= args_Gen
+IUnifCtx_One <= IUnifCtx_Gen
+IUnifCtx_KsBind <= IUnifCtx_Gen

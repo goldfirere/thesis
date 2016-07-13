@@ -52,20 +52,12 @@ as follows:
 
 \section{Properties adopted from \pref{app:pico-proofs}}
 
-\begin{lemma}[Relevance and unification variables]
-$[[Rel(O) = O]]$
-\end{lemma}
-
-\begin{proof}
-The $[[Rel]]$ operator is not extended to have any operation over
-unification variables.
-\end{proof}
-
-\begin{corollary*}
-All previous lemmas (\pref{lem:dom-rel}, \pref{lem:subsequence-rel},
+\begin{remark}
+By the straightforward extension of the $[[Rel]](\cdot)$ operation,
+all previous lemmas (\pref{lem:dom-rel}, \pref{lem:subsequence-rel},
 \pref{lem:rel-idempotent}, \pref{lem:increasing-rel}) dealing with
 contexts and relevance remain true under the $[[|=]]$ judgments.
-\end{corollary*}
+\end{remark}
 
 \begin{lemma}[Type variable kinds {[\pref{lem:tyvar-reg}]}]
 \label{lem:ityvar-reg}
@@ -78,7 +70,7 @@ As before; the new forms do not pose any problems.
 
 \begin{lemma}[Unification type variable kinds]
 \label{lem:unif-tyvar-reg}
-If $[[S |=ctx P]]$ and $[[au : forall D.k \in P]]$, then there exists
+If $[[S |=ctx P]]$ and $[[au :rel forall D.k \in P]]$, then there exists
 $[[P']]$ such that $[[P' \subseteq Rel(P)]]$ and
 $[[S;P',Rel(D) |=ty k : Type{}]]$. Furthermore, the size of the
 derivation of $[[S;P',Rel(D) |=ty k : Type{} ]]$ is smaller than
@@ -169,10 +161,11 @@ both that the output of the substitution is well-scoped in $[[P]]$,
 and that any variables in $[[k]]$ that are in $[[D]]$ but not in
 $[[P]]$ are substituted away. We are thus done with this case.
 
-The cases for \rul{UV\_Ty} and \rul{UV\_Co} are also worthy of mention;
-we'll focus on \rul{UV\_Ty}:
+The cases for \rul{UV\_TyRel}, \rul{UV\_TyIrrel}, and \rul{UV\_Co}
+are also worthy of mention;
+we'll focus on \rul{UV\_TyRel}:
 \[
-\ottdruleUVXXTy{}
+\ottdruleUVXXTyRel{}
 \]
 Either $[[a \in dom(theta)]]$ or not. If it is, then we are done by
 the induction hypothesis on $[[|=u]]$.
@@ -205,23 +198,23 @@ By induction on $[[S;P,a:rel k,P' |= J]]$. We consider only the new cases.
 \]
 We must prove $[[S;P,P'[s/a] |=ty au_{s/a o theta} : k[theta \inter dom(D)][s/a] ]]$.
 (Recall that normal subsitutions $[[theta]]$ do not map unification
-variables.) We know $[[au : forall D.k \in P,a:rel k,P']]$,
+variables.) We know $[[au :Rel forall D.k \in P,a:rel k,P']]$,
 $[[S |=ctx P,a:rel k,P']]$ and $[[S;P,a:rel k,P' |=u theta : D]]$.
 By the induction hypothesis, we can conclude $[[S |=ctx P,P'[s/a] ]]$
 and $[[S;P,P'[s/a] |=u s/a o theta : D[s/a] ]]$.
 We now have two cases, depending on the location of $[[au]]$:
 \begin{description}
-\item[Case $[[au : forall D.k \in P]]$:]
+\item[Case $[[au :Rel forall D.k \in P]]$:]
 In this case, \pref{lem:iscoping} tells us that $[[D]]$
 cannot mention
 $[[a]]$, and thus $[[D[s/a] = D]]$. We can thus
-use $[[au : forall D.k \in P]]$ to complete the premises for \rul{Ty\_UVar},
+use $[[au :Rel forall D.k \in P]]$ to complete the premises for \rul{Ty\_UVar},
 showing that $[[S;P,P'[s/a] |=ty au_{s/a o theta} : k[(s/a o theta) \inter dom(D)] ]]$.
 The kind can be rewritten as $[[k[s/a o (theta \inter dom(D))]]$ as we know
 $[[a]] \not\in [[dom(D)]]$ by the Barendregt convention. It can then
 further be rewritten to $[[k[theta \inter dom(D)][s/a] ]]$ as desired.
-\item[Case $[[au : forall D.k \in P']]$:]
-It must be the case that $[[au : forall (D[s/a]).(k[s/a]) \in P'[s/a] ]]$.
+\item[Case $[[au :Rel forall D.k \in P']]$:]
+It must be the case that $[[au :Rel forall (D[s/a]).(k[s/a]) \in P'[s/a] ]]$.
 Rule \rul{Ty\_UVar} then gives us
 $[[S;P,P'[s/a] |=ty au_{s/a o theta} : k[s/a][(s/a o theta) \inter dom(D)] ]]$ which
 can be (see above) rewritten as $[[S;P,P'[s/a] |=ty au_{s/a o theta} : k[theta \inter dom(D)][s/a] ]]$
@@ -238,12 +231,12 @@ given that $[[fv(theta) \subseteq {dom(P,a:rel k,P')} ]]$.
 We can see that $[[a \notin fv(s/a o theta)]]$, so we are left
 to show that $[[fv(s) \subseteq {dom(P,P'[s/a])}]]$. This last fact
 comes from \pref{lem:iscoping} and $[[S;P |=ty s : k]]$.
-\item[Case \rul{UV\_Ty}:]
-In this case, we know $[[S;P,a:rel k,P' |=u theta : b:rel k0, D]]$
-and must show $[[S;P,P'[s/a] |=u s/a o theta : b:rel k0[s/a], D[s/a] ]]$.
+\item[Case \rul{UV\_TyRel}:]
+In this case, we know $[[S;P,a:rel k,P' |=u theta : b:Rel k0, D]]$
+and must show $[[S;P,P'[s/a] |=u s/a o theta : b:Rel k0[s/a], D[s/a] ]]$.
 Inverting gives us $[[S;P,a:rel k,P' |=ty b[theta] : k0]]$ and
 $[[S;P,a:rel k, P' |=u theta : D[theta \inter b] ]]$.
-To use \rul{UV\_Ty}, we must show
+To use \rul{UV\_TyRel}, we must show
 $[[S;P,P'[s/a] |=ty b[s/a o theta] : k0[s/a] ]]$ and
 $[[S;P,P'[s/a] |=u s/a o theta : D[s/a][(s/a o theta) \inter b] ]]$.
 The first of these is directly from the induction hypothesis.
@@ -254,6 +247,8 @@ $[[D[theta \inter b][s/a] = D[s/a][(s/a o theta) \inter b] ]]$.
 On the right, we care only about $[[theta]]$'s action on $[[b]]$, so we
 can rewrite to $[[D[s/a][s/a o (theta \inter b)] ]]$, which can then
 be rewritten to $[[D[theta \inter b][s/a] ]]$ as desired.
+\item[Case \rul{UV\_TyIrrel}:]
+Similar to previous case.
 \item[Case \rul{UV\_Co}:]
 Similar to previous case.
 \end{description}
@@ -302,11 +297,11 @@ By induction on $[[S;P |=u theta : D]]$.
 \begin{description}
 \item[Case \rul{UV\_Nil}:]
 In this case, $[[D = empty]]$ and we are done by assumption.
-\item[Case \rul{UV\_Ty}:]
+\item[Case \rul{UV\_TyRel}:]
 \[
-\ottdruleUVXXTy{}
+\ottdruleUVXXTyRel{}
 \]
-We know $[[S;P |=u theta : a:rel k, D]]$ and $[[S;P,a:rel k,D |= J]]$.
+We know $[[S;P |=u theta : a:Rel k, D]]$ and $[[S;P,a:Rel k,D |= J]]$.
 We must prove $[[S;P |= J[theta \inter a,dom(D)] ]]$.
 We know $[[S;P |=ty a[theta] : k]]$ and thus we can use
 \pref{lem:ity-subst} to get $[[S;P,D[theta \inter a] |= J[theta \inter a] ]]$.
@@ -316,8 +311,43 @@ It remains only to show that
 $[[{theta \inter a} o {theta \inter dom(D)} = theta \inter a,dom(D)]]$.
 This amounts to showing that $[[dom(D) # a[theta] ]]$. We have
 this by \pref{lem:iscoping}, and so we are done.
+\item[Case \rul{UV\_TyIrrel}:]
+Similar to previous case.
 \item[Case \rul{UV\_Co}:]
 Similar to previous case, referring to \pref{lem:ico-subst}.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Carried substitution extension]
+\label{lem:carried-subst-ext}
+If $[[S |=ctx P]]$, $[[S;P |=u theta : D]]$, and $[[D' \subseteq P]]$,
+then $[[S;P |=u theta \ dom(D') : D',D]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on the structure of $[[D']]$.
+
+\begin{description}
+\item[Case $[[D' = empty]]$:]
+By assumption.
+\item[Case $[[D' = a:Rel k, D'']]$:]
+The induction hypothesis gives us
+$[[S;P |=u theta \ dom(D'') : D'',D]]$.
+Let $[[theta' = theta \ dom(D'') ]]$.
+To use \rul{UV\_TyRel} to get us the last step,
+we must show $[[S;P |=ty a[theta' \ a] : k]]$
+and $[[S;P |=u theta' \ a : (D'',D)[(theta' \ a) \inter a] ]]$.
+We already have that last fact, noting that the substitution applied
+to $[[D'',D]]$ must be empty.
+For the first, we note that $[[a[theta' \ a] = a]]$, and then we use
+$[[D' \subseteq P]]$ to get $[[S;P |=ty a : k]]$ as desired. We are
+done by \rul{UV\_TyRel}.
+\item[Case $[[D' = a:Irrel k, D'']]$:]
+Similar to previous case, noting that the premise to \rul{UV\_TyIrrel}
+uses the $[[Rel]]$ operator to make the binding for $[[a]]$ in the context
+relevant.
+\item[Case $[[D' = c:phi, D'']]$:]
+Similar to previous case, using \rul{UV\_Co}.
 \end{description}
 \end{proof}
 
@@ -456,9 +486,9 @@ If $[[S;P |=z Z : O]]$, then $[[dom(Z) = dom(O)]]$.
 By straightforward induction.
 \end{proof}
 
-\begin{lemma}[Zonking a type variable]
-\label{lem:zonk-tyvar}
-If $[[au : forall D. k \in O]]$, $[[S;P |=z Z : O]]$, no
+\begin{lemma}[Zonking a relevant type variable]
+\label{lem:zonk-rel-tyvar}
+If $[[au :Rel forall D. k \in O]]$, $[[S;P |=z Z : O]]$, no
 binding in $[[O]]$ refers to a later one, and the range of $[[Z]]$
 is disjoint from its domain,
 then there
@@ -472,17 +502,17 @@ By induction on $[[S;P |=z Z : O]]$.
 \begin{description}
 \item[Case \rul{Zonk\_Nil}:]
 Impossible, as $[[O]]$ is empty.
-\item[Case \rul{Zonk\_TyVar}:]
+\item[Case \rul{Zonk\_TyVarRel}:]
 We have two cases here:
 \begin{description}
-\item[Case $[[O = au : forall D.k, O']]$:]
+\item[Case $[[O = au :Rel forall D.k, O']]$:]
 We see that $[[Z = forall dom(D). t/au, Z']]$, satisfying the first
-conclusion. The premise of \rul{Zonk\_TyVar} tells us
+conclusion. The premise of \rul{Zonk\_TyVarRel} tells us
 $[[S;P,D |=ty t : k]]$. By assumption, we know that $[[D]]$
 and $[[k]]$ cannot refer to $[[au]]$ nor any variables in $[[O']]$.
 Thus $[[D = D[Z] ]]$ and $[[k = k[Z] ]]$, and thus we can
 conclude $[[S;P,D[Z] |=ty t : k[Z] ]]$ as desired.
-\item[Case $[[O = au' : forall D'.k', O']]$, with $[[au]] \neq [[au']]$:]
+\item[Case $[[O = au' :rel forall D'.k', O']]$, with $[[au]] \neq [[au']]$:]
 We see that $[[Z = forall dom(D'). t'/au', Z']]$.
 Let $[[Z0 = forall dom(D'). t'/au']]$.
 We can further see that
@@ -495,10 +525,26 @@ We can thus use the induction hypothesis to get $[[t]]$ such that
 $[[forall dom(D). t/au \in Z']]$ and $[[S;P,D[Z0][Z'] |=ty t : k[Z0][Z'] ]]$.
 Because $[[Z]]$ is idempotent, we can rewrite this as
 $[[S;P,D[Z] |=ty t : k[Z] ]]$ as desired.
-\item[Case \rul{Zonk\_CoVar}:]
+\item[Case \rul{Zonk\_TyVarIrrel}:]
 Like second half of previous case.
+\item[Case \rul{Zonk\_CoVar}:]
+Like previous case.
 \end{description}
 \end{proof}
+
+%% \begin{lemma}[Zonking an irrelevant type variable]
+%% \label{lem:zonk-irrel-tyvar}
+%% If $[[au :Irrel forall D. k \in O]]$, $[[S;P |=z Z : O]]$, no
+%% binding in $[[O]]$ refers to a later one, and the range of $[[Z]]$
+%% is disjoint from its domain,
+%% then there
+%% exists $[[t]]$ such that
+%% $[[forall dom(D). t/au \in Z]]$ and $[[S;Rel(P,D[Z]) |=ty t : k[Z] ]]$.
+%% \end{lemma}
+
+%% \begin{proof}
+%% Similar to previous proof.
+%% \end{proof}
 
 \begin{lemma}[Zonking a coercion variable]
 \label{lem:zonk-covar}
@@ -637,7 +683,7 @@ By the induction hypothesis, $[[S;P,D2[Z] |=u theta[Z] : D[Z] ]]$
 and $[[S |=ctx P,D2[Z] ]]$.
 There are then several possibilities:
 \begin{description}
-\item[Case $[[au : forall D. k \in P]]$:]
+\item[Case $[[au :Rel forall D. k \in P]]$:]
  By \pref{lem:zonk-dom},
 we know that $[[dom(Z) = dom(O)]]$. From $[[S |=ctx P,O,D2]]$
 and \pref{lem:iscoping}
@@ -645,14 +691,14 @@ we know that nothing in $[[P]]$ can mention any variable bound in $[[O]]$.
 We also know that $[[au_theta[Z] = au_{theta[Z]}]]$ and $[[k[Z] = k]]$.
 The telescope $[[D]]$ is mentioned in $[[P]]$ and therefore is unaffected
 by the zonking substitution $[[Z]]$.
-We can thus conclude that $[[au: forall D. k \in P,D2[Z] ]]$
+We can thus conclude that $[[au:Rel forall D. k \in P,D2[Z] ]]$
 and $[[S;P,D2[Z] |=ty theta[Z] : D]]$. We can thus use
 \rul{Ty\_UVar} to conclude $[[S;P,D2[Z] |=ty au_{theta[Z]} : k[theta[Z] \inter dom(D)] ]]$. We can rewrite this kind to be
 $[[k[theta \inter dom(D)][Z] ]]$ as desired because $[[k[Z] = k]]$.
 
-\item[Case $[[au : forall D. k \in O]]$:]
+\item[Case $[[au :Rel forall D. k \in O]]$:]
 We then use
-\pref{lem:zonk-tyvar} to get
+\pref{lem:zonk-rel-tyvar} to get
 $[[S;P,D[Z] |=ty t : k[Z] ]]$ and 
 $[[forall dom(D). t/au \in Z]]$.
 Thus (by \pref{defn:zonking}) $[[au_theta[Z] = t[{theta \inter dom(D)}[Z] ] ]]$.
@@ -695,7 +741,7 @@ Define $[[make_exhaustive(alts;k)]]$ as follows:
 
 \begin{lemma}[Type variables instantiation]
 \label{lem:tyvars-inst}
-If $[[S |-ctx as :Rel ks]]$, then $[[S |-ctx bs:Rel ks[bs/as] ]]$.
+If $[[S |-ctx as :Irrel ks]]$, then $[[S |-ctx bs:Irrel ks[bs/as] ]]$.
 \end{lemma}
 
 \begin{proof}
@@ -704,10 +750,10 @@ By induction on the length of $[[ks]]$.
 \begin{description}
 \item[Case $[[ks = empty]]$:] Trivial.
 \item[Case $[[ks = ks',k0]]$:] Here, we know $[[as = as',a0]]$ and
-$[[bs = bs',b0]]$. Our assumption is that $[[S |-ctx as' :Rel ks', a0 :Rel k0]]$.
+$[[bs = bs',b0]]$. Our assumption is that $[[S |-ctx as' :Irrel ks', a0 :Irrel k0]]$.
 Inversion (of \rul{Ctx\_TyVar}) gives us $[[S;as':Rel ks' |-ty k0 : Type{}]]$
-and $[[S |-ctx as' :Rel ks']]$. The induction hypothesis tells us
-$[[S |-ctx bs':Rel ks'[bs'/as'] ]]$. We must show
+and $[[S |-ctx as' :Irrel ks']]$. The induction hypothesis tells us
+$[[S |-ctx bs':Irrel ks'[bs'/as'] ]]$. We must show
 $[[S;bs' :Rel ks'[bs'/as'] |-ty k0[bs'/as'] : Type{}]]$.
 Use \pref{lem:weakening} (Weakening) to get
 $[[S;bs' :Rel ks'[bs'/as'],as':Rel ks' |-ty k0 : Type{}]]$.
@@ -715,6 +761,119 @@ $[[S;bs' :Rel ks'[bs'/as'],as':Rel ks' |-ty k0 : Type{}]]$.
 gives us $[[S;bs':Rel ks'[bs'/as'] |-vec bs' : (bs' :Rel ks'[bs'/as'])]]$. We can thus use \pref{lem:vec-subst} to get
 $[[S;bs' :Rel ks'[bs'/as'] |-ty k0[bs'/as'] : Type{}]]$ as desired.
 We then use \rul{Ctx\_TyVar} and we are done.
+\end{description}
+\end{proof}
+
+\section{Generalization}
+
+\rae{Perhaps move from appendix. Think about reduplicating at-signs.}
+
+\begin{definition}[Generalizer]
+A \emph{generalizer} $[[X]]$
+is a mapping from unification variables to sets of variables:
+\[
+[[X]] \bnfeq [[empty]] \bnfor [[X, au |-> V]] \bnfor [[X, cu |-> V]]
+\]
+A generalizer can be applied postfix as a function. It operates only
+on occurrences of unification variables, acting homomorphically on all other
+forms:
+\[
+\begin{array}{r@{\quad}c@{\quad}r@{\;}l}
+[[au |-> V \in X]] & \Rightarrow & [[au_theta[X] &= au_{theta[X] \ V}]]\\
+\text{otherwise} && [[au_theta[X] &= au_{theta[X]}]] \\
+[[cu |-> V \in X]] & \Rightarrow & [[cu_theta[X] &= cu_{theta[X] \ V}]]\\
+\text{otherwise} && [[cu_theta[X] &= cu_{theta[X]}]]
+\end{array}
+\]
+\end{definition}
+
+\begin{lemma}[Generalization by type variable]
+\label{lem:igen-tyvar}
+If $[[S;P,D,au :rel forall D'.k,P' |= J]]$,
+then
+$[[S;P,au :rel forall D,D'.k,D,P'[au |-> {dom(D)}] |= J[au |-> {dom(D)}] ]]$.
+\end{lemma}
+
+\begin{proof}
+Let $[[X = au |-> {dom(D)}]]$.
+Proceed by induction on the typing derivation.
+The only interesting case is for unification variables:
+\begin{description}
+\item[Case \rul{Ty\_UVar}:]
+Here, we know $[[S;P,D,au:rel forall D'.k,P' |=ty bu_theta : k0]]$
+and must show $[[S;P,au :rel forall D,D'.k, D, P'[X] |=ty bu_theta[X] : k0[X] ]]$.
+We have two cases:
+\item[Case $[[au = bu]]$:]
+In this case, we know $[[rel = Rel]]$ and $[[k0 = k[theta \inter dom(D')] ]]$.
+In order to use \rul{Ty\_UVar}, we must show
+$[[S |=ctx P,au:Rel forall D,D'.k, D, P'[X] ]]$ (which we get from the
+induction hypothesis) and $[[S;P,au :Rel forall D,D'.k, D, P'[X] |=u theta \ {dom(D)} : D,D']]$.
+We know $[[S;P,D,au :rel forall D'.k, P' |=u theta : D']]$.
+The induction hypothesis tells us that
+$[[S;P,au :rel forall D,D'.k, D, P'[X] |=u theta[X] : D'[X] ]]$.
+However, we can see (\pref{lem:iscoping}) that $[[D'[X] = D]]$.
+Then, \pref{lem:carried-subst-ext} tells us
+$[[S;P,au :rel forall D,D'.k, D, P'[X] |=u theta[X] \ {dom(D)} : D,D']]$
+as desired. Rule \rul{Ty\_UVar} gives us
+$[[S;P,au :rel forall D,D'.k, D, P'[X] |=u au_{theta[X] \ {dom(D)}} : k[theta \ {dom(D)} \inter dom(D,D')] ]]$. Indeed we can rewrite the kind as
+$[[k[theta \inter dom(D')] ]]$ and we are done.
+\item[Case $[[au]] \neq [[bu]]$:]
+As with other substitution properties, we must break into cases depending
+on where $[[bu]]$ is, but all cases are straightforwardly shown by
+the induction hypothesis.
+\end{description}
+\item[Case \rul{Co\_UVar}:]
+Similar to non-matching sub-case of previous case.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Generalization by coercion variable]
+\label{lem:igen-covar}
+If $[[S;P,D,cu : forall D'.phi,P' |= J]]$,
+then
+$[[S;P,cu :rel forall D,D'.phi,D,P'[cu |-> {dom(D)}] |= J[cu |-> {dom(D)}] ]]$.
+\end{lemma}
+
+\begin{proof}
+Similar to previous proof.
+\end{proof}
+
+\begin{lemma}[Generalizer scope]
+\label{lem:gen-scope}
+If $[[O +> D ~> O';X]]$, then $[[dom(X) = dom(O)]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on $[[O +> D ~> O';X]]$.
+\end{proof}
+
+\begin{lemma}[Generalization]
+\label{lem:igen}
+If $[[O +> D ~> O'; X]]$ and $[[S;P,D,O |= J]]$,
+then $[[S;P,O',D |= J[X] ]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on $[[O +> D ~> O'; X]]$.
+
+\begin{description}
+\item[Case \rul{IGen\_Nil}:]
+By assumption.
+\item[Case \rul{IGen\_TyVar}:]
+Here, we know $[[O = au :rel forall D'. k, O1]]$
+and $[[O' = au :rel forall D,D'.k, O1']]$.
+Let $[[X0 = au |-> {dom(D)}]]$.
+The first step is to show
+$[[S;P,au:rel forall D,D'.k,D,O1[X0] |= J[X0] ]]$.
+This is true by \pref{lem:igen-tyvar}.
+We know $[[O1[X0] +> D ~> O1' ; X1]]$.
+We then use the induction hypothesis to get
+$[[S;P,au:rel forall D,D'.k, O1',D |= J[X0][X1] ]]$.
+However, because the domains of $[[X0]]$ and $[[X1]]$ are distinct
+(by the well-formedness of $[[O]]$), we can rewrite as
+$[[S;P,O',D |= J[X] ]]$ as desired.
+\item[Case \rul{IGen\_CoVar}:]
+Similar to previous case, appealing to \pref{lem:igen-covar}.
 \end{description}
 \end{proof}
 
@@ -737,16 +896,16 @@ by induction on the derivation of the $[[|->inst]]$ judgment.
 \[
 \ottdruleIInstXXRel{}
 \]
-We must show that $[[S;P,au:forall{}.k1,O |=ty t au ps : k2']]$ and that
+We must show that $[[S;P,au:Rel forall{}.k1,O |=ty t au ps : k2']]$ and that
 $[[k2']]$ satisfies the visibility condition. We can assume that
 $[[S;P |=ty t : PI_vis2 a:Rel k1. k2]]$.
 By inversion by \rul{Ty\_Pi}, \pref{lem:ictx-gen}, and \pref{lem:ityvar-reg},
 we can see that $[[S;Rel(P) |=ty k1 : Type{}]]$. Thus
-$[[S |=ctx P,au:forall{}.k1]]$ and \pref{lem:iweakening} gives us
-$[[S;P,au:forall{}.k1 |=ty t : PI_vis2 a:Rel k1. k2]]$.
-Thus, \rul{Ty\_AppRel} gives us $[[S;P,au:forall{}.k1 |=ty t au_{} : k2[au_{}/a] ]]$.
+$[[S |=ctx P,au:Rel forall{}.k1]]$ and \pref{lem:iweakening} gives us
+$[[S;P,au:Rel forall{}.k1 |=ty t : PI_vis2 a:Rel k1. k2]]$.
+Thus, \rul{Ty\_AppRel} gives us $[[S;P,au:Rel forall{}.k1 |=ty t au_{} : k2[au_{}/a] ]]$.
 The induction hypothesis then
-tells us that $[[S;P,au:forall{}.k1,O |=ty t au_{} ps : k2']]$ and gives us the
+tells us that $[[S;P,au:Rel forall{}.k1,O |=ty t au_{} ps : k2']]$ and gives us the
 visibility condition, as desired.
 \item[Case \rul{IInst\_Irrel}:]
 Like previous case.
@@ -780,7 +939,7 @@ and thus $[[S;P |=co <k> : k [Type{}]~[Type{}] k]]$ as desired.
 \[
 \ottdruleIFunXXCast{}
 \]
-Let $[[P0 = P,bu1:forall{}.Type{},bu2:forall{}.Type{}]]$ and
+Let $[[P0 = P,bu1:Irrel forall{}.Type{},bu2:Irrel forall{}.Type{}]]$ and
 $[[P1 = P0,cu: forall{}. k0 [Type{}]~[Type{}] UPI_Req a:rel bu1_{}.bu2_{}]]$.
 We first must show $[[S |=ctx P']]$. We know $[[S |=ctx P]]$ by \pref{lem:ictx-reg}.
 Adding $[[bu1]]$ and $[[bu2]]$ to $[[P]]$ maintains well-formedness; thus
@@ -799,7 +958,7 @@ $[[S;P1 |=co cu_{} : k0 [Type{}]~[Type{}] UPI_Req a:rel bu1_{}.bu2_{}]]$ as desi
 \label{lem:iscrut}
 If $[[S;P |=ty t : k]]$ and $[[S;P |->scrut _alts; k ~> g; D; H'; ts -| O]]$,
 then $[[S;P,O |=ty t |> g : MPI D. H'{} ts]]$ and
-$[[S;Rel(P),O |=ty H'{} ts : Type{}]]$.
+$[[S;Rel(P,O) |=ty H'{} ts : Type{}]]$.
 \end{lemma}
 
 \begin{proof}
@@ -819,12 +978,12 @@ The second conclusion is assumed as a premise of \rul{IScrut\_Id}.
 \[
 \ottdruleIScrutXXCast{}
 \]
-Let $[[P0 = P,aus : forall{}.ks[aus/as] ]]$ and $[[P1 = P0,cu:forall{}.k [Type{}]~[Type{}] H'{} aus_{}]]$.
+Let $[[P0 = P,aus :Irrel forall{}.ks[aus_{}/as] ]]$ and $[[P1 = P0,cu:forall{}.k [Type{}]~[Type{}] H'{} aus_{}]]$.
 We must first show that $[[S |=ctx P0]]$.
 We know $[[|-sig S]]$ (by \pref{lem:ictx-reg}). \pref{lem:tycon-tel} tells
-us $[[S |-ctx as :Rel ks]]$. \pref{lem:tyvars-inst} and \pref{lem:extension}
+us $[[S |-ctx as :Irrel ks]]$. \pref{lem:tyvars-inst} and \pref{lem:extension}
 then tell us
-$[[S |=ctx aus : forall{}.ks[aus_{}/as] ]]$. We have $[[S |=ctx P]]$ by \pref{lem:ictx-reg}
+$[[S |=ctx aus :Irrel forall{}.ks[aus_{}/as] ]]$. We have $[[S |=ctx P]]$ by \pref{lem:ictx-reg}
 and thus can use \pref{lem:iweakening} $[[S |=ctx P0]]$ as desired.
 To show $[[S |=ctx P1]]$, we must now show that
 $[[S;P0 |=ty k : Type{}]]$ and $[[S;P0 |=ty H'{} aus_{} : Type{}]]$.
@@ -835,8 +994,8 @@ $[[S;P0 |=ty MPI as:Irrel ks, D2. H'{} as : Type{}]]$.
 Repeated inversion on \rul{Ty\_Pi} tells us
 $[[S;P0,as:Irrel ks, D2 |=ty H'{} as : Type{}]]$.
 \pref{lem:istrengthening} gives us $[[S;P0,as:Irrel ks |=ty H'{} as : Type{}]]$.
-\pref{lem:tel} tells us that $[[S;P0 |=vec aus : (aus : ks[aus/as])]]$.
-We thus use \pref{lem:ivec-subst} to see that $[[S;P0 |=ty H'{} aus : Type{}]]$
+\pref{lem:tel} tells us that $[[S;P0 |=vec aus_{} : (aus :Irrel forall{}.ks[aus_{}/as])]]$.
+We thus use \pref{lem:ivec-subst} to see that $[[S;P0 |=ty H'{} aus_{} : Type{}]]$
 as desired.
 We can thus conclude $[[S |=ctx P1]]$ by \rul{Ctx\_UCoVar}.
 We are done with the first conclusion by \rul{Ty\_Cast} and \rul{Co\_Var}.
@@ -883,7 +1042,7 @@ We know $[[S;Rel(P) |=ty UPI_vis d.k2 : Type{}]]$.
 Inversion gives us $[[S;Rel(P,d) |=ty k2 : Type{}]]$.
 The induction hypothesis thus tells us that
 $[[S;P,d |=ty t : UPI y:Rel (UPI D.k2'). k2]]$.
-Let $[[P' = P,x:Rel UPI d,D. k2',d]]$. We need
+Let $[[P' = P,x:Rel (UPI d,D. k2'),d]]$. We need
 $[[S |=ctx P']]$, for which we need
 $[[S;Rel(P) |= UPI d,D.k2' : Type{}]]$, which can
 be proved by inversions and \rul{Ty\_Pi}.
@@ -942,7 +1101,7 @@ Then $[[S;P,O |=ty t : UPI x:Rel k1. k2]]$.
 \end{lemma}
 
 \begin{proof}
-By mutual induction on the subsumption judgment.
+By mutual induction on the subsumption judgments.
 
 \begin{description}
 \item[Case \rul{ISub\_FunRel}:]
@@ -961,23 +1120,25 @@ Inversion of \rul{Ty\_Pi} tells us the following:
 \end{itemize}
 The induction hypothesis then tells us
 $[[S;P,O1 |=ty t1 : UPI x1:Rel k3. k1]]$.
-\pref{lem:iweakening} gives us $[[S;Rel(P),O1,b:Rel k3,a:Rel k1 |=ty k2 : Type{}]]$.
+\pref{lem:iweakening} gives us $[[S;Rel(P,O1),b:Rel k3,a:Rel k1 |=ty k2 : Type{}]]$.
 Rule \rul{Ty\_AppRel} tells us $[[S;P,O1,b:Rel k3 |=ty t1 b : k1[b/x] ]]$,
 but \pref{lem:iscoping} tells us that the substitution in the kind has
 no effect. We can thus use \pref{lem:ity-subst} to get
-$[[S;Rel(P),O1,b:Rel k3 |=ty k2[t1 b/a] : Type{}]]$.
+$[[S;Rel(P,O1),b:Rel k3 |=ty k2[t1 b/a] : Type{}]]$.
 Now, we can use the induction hypothesis again to get
 $[[S;P,O1,b:Rel k3,O2 |=ty t2 : UPI x2:Rel k2[t1 b/a]. k4]]$.
-\pref{lem:givens} tells us now that
-$[[S;P,O1,<b:Rel k3|O2>,b:Rel k3 |=ty t2 : UPI x2:Rel k2[t1 b/a]. k4]]$.
-Let $[[P' = P,O1,<b:Rel k3|O2>,x:Rel (UPI a:Rel k1.k2),b:Rel k3]]$.
+\pref{lem:igen} tells us now that
+$[[S;P,O1,O2',b:Rel k3 |=ty t2[X] : (UPI x2:Rel k2[t1 b/a]. k4)[X] ]]$,
+but \pref{lem:gen-scope} tells us the $[[ [X] ]]$ in the kind has no effect.
+Let $[[P' = P,O1,O2',x:Rel (UPI a:Rel k1.k2),b:Rel k3]]$.
 To show $[[S |=ctx P']]$, we need only show that
-$[[S;Rel(P),O1,<b:Rel k3|O2> |=ty UPI a:Rel k1.k2 : Type{}]]$, but this
+$[[S;Rel(P,O1),O2' |=ty UPI a:Rel k1.k2 : Type{}]]$ (noting that
+\pref{lem:igen} and \pref{lem:ictx-reg} imply $[[S |=ctx P,O1,O2']]$), but this
 is true by \pref{lem:iweakening}.
-We must now show $[[S;P' |=ty t2 (x (t1 b)) : k4]]$.
+We must now show $[[S;P' |=ty t2[X] (x (t1 b)) : k4]]$.
 We've already ascertained that $[[S;P' |=ty t1 b : k1]]$.
 We see that $[[S;P' |=ty x (t1 b) : k2[t1 b/a] ]]$.
-Thus $[[S;P' |=ty t2 (x (t1 b)) : k4[x (t1 b)/x2] ]]$, but
+Thus $[[S;P' |=ty t2[X] (x (t1 b)) : k4[x (t1 b)/x2] ]]$, but
 \pref{lem:iscoping} tells us that the substitution in the kind has
 no effect. We are thus done by two uses of \rul{Ty\_Lam}.
 \item[Case \rul{ISub\_FunIrrel}:]
@@ -997,15 +1158,15 @@ we know by assumption. We are done.
 \[
 \ottdruleISubXXDeepSkol{}
 \]
-We must show $[[S;P,O1,<D|O2> |=ty \x :Rel k1. t1 (\D. t2 (x ps)) : UPI x: Rel k1. k2]]$. The last step will be \rul{Ty\_Lam}, so we must show
-$[[S;P,O1,<D|O2>,x:Rel k1 |=ty t1 (\D. t2 (x ps)) : k2]]$.
+We must show $[[S;P,O1,O2' |=ty \x :Rel k1. t1 (\D. t2[X] (x ps)) : UPI x: Rel k1. k2]]$. The last step will be \rul{Ty\_Lam}, so we must show
+$[[S;P,O1,O2',x:Rel k1 |=ty t1 (\D. t2[X] (x ps)) : k2]]$.
 From $[[S;Rel(P) |=ty k1 : Type{}]]$, we can use \rul{Ctx\_TyVar} to see
 $[[S |=ctx P,x:Rel k1]]$. Thus
-$[[S;P,x:Rel k1 |= x : k1]]$.
+$[[S;P,x:Rel k1 |=ty x : k1]]$.
 \pref{lem:iinst} then tells us that
 $[[S;P,x:Rel k1,O1 |=ty x ps : k1']]$.
 We then know (by \pref{lem:ikind-reg}) that
-$[[S;Rel(P),x:Rel k1,O1 |=ty k1' : Type{}]]$.
+$[[S;Rel(P,x:Rel k1,O1) |=ty k1' : Type{}]]$.
 \pref{lem:ipre} tells us that
 $[[S;P |=ty t1 : UPI x1:Rel (UPI D. k2') k2]]$.
 \pref{lem:ikind-reg} and
@@ -1014,27 +1175,29 @@ $[[S;Rel(P,D) |=ty k2' : Type{}]]$.
 We can then use the induction hypothesis with context
 $[[P,x:Rel k1,O1,D]]$ (known well-formed by \pref{lem:iweakening}) to get
 $[[S;P,x:Rel k1,O1,D,O2 |=ty t2 : UPI x2:Rel k1'. k2']]$.
+\pref{lem:igen} shows that
+$[[S;P,x:Rel k1,O1,O2',D |=ty t2[X] : (UPI x2:Rel k1'. k2')[X] ]]$,
+but \pref{lem:gen-scope} tells us that the $[[ [X] ]]$ in the kind has
+no effect.
 Rule \rul{Ty\_AppRel} gives us
-$[[S;P,x:Rel k1,O1,D,O2 |=ty t2 (x ps) : k2'[x ps/x2] ]]$
+$[[S;P,x:Rel k1,O1,O2',D |=ty t2[X] (x ps) : k2'[x ps/x2] ]]$
 but \pref{lem:iscoping} tells us that the substitution in the kind has
 no effect.
-Now, we use \pref{lem:givens} to see
-$[[S;P,x:Rel k1,O1,<D|O2>,D |=ty t2 (x ps) : k2']]$
-and then use \rul{Ty\_Lam} (repeatedly) to see
-$[[S;P,x:Rel k1,O1,<D|O2> |=ty \ D. t2 (x ps) : UPI D. k2']]$.
+We now use \rul{Ty\_Lam} (repeatedly) to see
+$[[S;P,x:Rel k1,O1,O2' |=ty \ D. t2[X] (x ps) : UPI D. k2']]$.
 Thus \rul{Ty\_AppRel} tells us
-$[[S;P,x:Rel k1,O1,<D|O2> |=ty t1 (\ D. t2 (x ps)) : k2[(\ D. t2 (x ps))/x1] ]]$,
+$[[S;P,x:Rel k1,O1,O2' |=ty t1 (\ D. t2[X] (x ps)) : k2[(\ D. t2[X] (x ps))/x1] ]]$,
 but \pref{lem:iscoping} tells us that the substitution in the kind
 has no effect.
 We only need to reshuffle the context; in other words, we must
 now show
-$[[S |=ctx P,O1,<D|O2>,x:Rel k1]]$ to be done.
+$[[S |=ctx P,O1,O2',x:Rel k1]]$ to be done.
 For this to hold, we need to know that none of
-$[[O1,D,O2]]$ depend on $[[x]]$.
+$[[O1,O2']]$ depend on $[[x]]$.
 First, note that $[[x]]$ is local to rule \rul{ISub\_DeepSkol}.
 We see that $[[O1]]$ is produced by $[[|->inst]]$ with no mention of
 $[[x]]$; it mustn't mention $[[x]]$ then. The case is similar for
-$[[D]]$ and $[[O2]]$, both produced with no mention of $[[x]]$. Therefore,
+$[[O2']]$, both produced with no mention of $[[x]]$. Therefore,
 $[[x]]$ is not mentioned in any of these, and we are done.
 \end{description}
 \end{proof}
@@ -1064,10 +1227,10 @@ $[[S;P;k0;t0 |->altc _alt : k ~> alt -| O]]$, then
 $[[S;P,O;k0;t0 |=alt alt : k]]$.
 \item
 If $[[S |=ctx P]]$ and $[[S;P |->q _qvar ~> a : k; vis -| O]]$,
-then $[[S;Rel(P),O |=ty k : Type{}]]$.
+then $[[S;Rel(P,O) |=ty k : Type{}]]$.
 \item
 If $[[S |=ctx P]]$ and $[[S;P |->aq _aqvar ~> a : k -| O]]$,
-then $[[S;Rel(P),O |=ty k : Type{}]]$.
+then $[[S;Rel(P,O) |=ty k : Type{}]]$.
 \item
 If $[[S;P |=ty t1 : PI_vis a:rel k1.k2]]$
 and $[[S;P;rel *|->arg _t2 : k1 ~> p2; t2 -| O]]$,
@@ -1093,10 +1256,10 @@ By \rul{Ty\_Var} and \pref{lem:iinst}.
 \ottdruleITyXXApp{}
 \]
 The induction hypothesis tells us that
-$[[S;P,O1 |=ty t1 : k0]]$. Thus $[[S;Rel(P),O1 |=ty k0 : Type{}]]$
+$[[S;P,O1 |=ty t1 : k0]]$. Thus $[[S;Rel(P,O1) |=ty k0 : Type{}]]$
 by \pref{lem:ikind-reg}.
 \pref{lem:ifun} tells us that
-$[[S;Rel(P),O1,O2 |=co g : k0 [Type{}]~[Type{}] PI_Req a:rel k1.k2]]$.
+$[[S;Rel(P,O1,O2) |=co g : k0 [Type{}]~[Type{}] PI_Req a:rel k1.k2]]$.
 Rule \rul{Ty\_Cast}
 gives us $[[S;P,O1,O2 |=ty t1 |> g : PI_Req a:rel k1.k2]]$.
 Another use of the induction hypothesis (for the $[[*|->arg]]$ premise)
@@ -1112,7 +1275,7 @@ By induction.
 The induction hypothesis tells us that
 $[[S;P,O0 |=ty t0 : k0]]$.
 \pref{lem:iscrut} tells us that $[[S;P,O0,O0' |=ty t0 |> g : MPI D. H'{} ts]]$
-and $[[S;Rel(P,O0),O0' |=ty H'{} ts : Type{}]]$.
+and $[[S;Rel(P,O0,O0') |=ty H'{} ts : Type{}]]$.
 Rule \rul{Ctx\_UTyVar} gives us $[[S |=ctx O']]$.
 The induction hypothesis (for $[[|->alt]]$) tells us that, $\forall i$,
 $[[S;P,O',Oi;MPI D. H'{} ts; t0 |> g |=alt alti : au]]$.
@@ -1125,14 +1288,14 @@ $[[Os]]$. We are done by \rul{Ty\_Case}.
 \[
 \ottdruleITyXXLam{}
 \]
-The induction hypothesis tells us that
-$[[S;Rel(P),O1 |=ty k1 : Type{}]]$.
+The induction hypothesis (on $[[|->q]]$) tells us that
+$[[S;Rel(P,O1) |=ty k1 : Type{}]]$.
 Thus $[[S |=ctx P,O1,a:Rel k1]]$ and we can use the induction
 hypothesis to get
 $[[S;P,O1,a:Rel k1,O2 |=ty t : k2]]$.
-By \pref{lem:givens}, we get $[[S;P,O1,<a:Rel k1|O2>,a:Rel k1 |=ty t : k2]]$
+By \pref{lem:igen}, we get $[[S;P,O1,O2',a:Rel k1 |=ty t[X] : k2[X] ]]$
 and thus
-$[[S;P,O1,<a:Rel k1|O2> |=ty \ a:Rel k1. t : UPI_vis a:Rel k1. k2]]$
+$[[S;P,O1,O2' |=ty \ a:Rel k1. (t[X]) : UPI_vis a:Rel k1. (k2[X])]]$
 as desired.
 
 \item[Case \rul{ITy\_LamIrrel}:]
@@ -1146,30 +1309,30 @@ By induction and \pref{lem:iweakening}
 \ottdruleITyXXFix{}
 \]
 The induction hypothesis gives us $[[S;P,O1 |=ty t : k]]$
-and thus $[[S;Rel(P),O1 |=ty k : Type{}]]$ by \pref{lem:ikind-reg}.
+and thus $[[S;Rel(P,O1) |=ty k : Type{}]]$ by \pref{lem:ikind-reg}.
 \pref{lem:ifun} gives us
-$[[S;Rel(P),O1,O2 |=co g : k [Type{}]~[Type{}] UPI_Req a :Rel k1. k2]]$
+$[[S;Rel(P,O1,O2) |=co g : k [Type{}]~[Type{}] UPI_Req a :Rel k1. k2]]$
 and then \rul{Ty\_Cast} tells us
 $[[S;P,O1,O2 |=ty t |> g : UPI_Req a :Rel k1. k2]]$.
 Thus, \pref{lem:ictx-reg} tells us $[[S |=ctx P,O1,O2]]$.
 In order to prove $[[S |=ctx O]]$, we must show
-$[[S;Rel(P),O1,O2 |=ty k2 : Type{}]]$ and
-$[[S;Rel(P),O1,O2 |=ty k1 : Type{}]]$.
+$[[S;Rel(P,O1,O2) |=ty k2 : Type{}]]$ and
+$[[S;Rel(P,O1,O2) |=ty k1 : Type{}]]$.
 The first of these is a premise to \rul{ITy\_Fix}.
 To get the second, we use \pref{lem:ikind-reg} to get
-$[[S;Rel(P),O1,O2 |=ty UPI_Req a :Rel k1. k2 : Type{}]]$
+$[[S;Rel(P,O1,O2) |=ty UPI_Req a :Rel k1. k2 : Type{}]]$
 and then invert.
 We can conclude $[[S |=ctx O]]$ by \rul{Ctx\_UCoVar}.
 
 Inversion on $[[S;P,O1,O2 |=ty t |> g : UPI_Req a:Rel k1. k2]]$
 tells us that
-$[[S;Rel(P),O |=co g : k [Type{}]~[Type{}] UPI_Req a:Rel k1. k2]]$.
+$[[S;Rel(P,O) |=co g : k [Type{}]~[Type{}] UPI_Req a:Rel k1. k2]]$.
 We can further see (by \rul{Co\_PiTy}) that
-$[[S;Rel(P),O |=co UPI a:Rel <k1>.cu : (UPI a:Rel k1. k2) [Type{}]~[Type{}] (UPI a:Rel k1. (k1[a |> sym <k1>/a]))]]$
+$[[S;Rel(P,O) |=co UPI a:Rel <k1>.cu : (UPI a:Rel k1. k2) [Type{}]~[Type{}] (UPI a:Rel k1. (k1[a |> sym <k1>/a]))]]$
 However, because $[[a # k1]]$ (by \pref{lem:iscoping}),
 that last substitution has no effect, and so
 we conclude
-$[[S;Rel(P),O |=co UPI a:Rel <k1>.cu : (UPI a:Rel k1. k2) [Type{}]~[Type{}] (UPI a:Rel k1. k1]]$
+$[[S;Rel(P,O) |=co UPI a:Rel <k1>.cu : (UPI a:Rel k1. k2) [Type{}]~[Type{}] (UPI a:Rel k1. k1]]$
 and thus
 $[[S;P,O |=ty t |> (g ;; UPI a:Rel <k1>. cu) : UPI a:Rel k1. k1]]$.
 Finally, \rul{Ty\_Fix} gives us
@@ -1181,15 +1344,15 @@ $[[S;P,O |=ty fix (t |> (g ;; UPI a:Rel <k1>. cu)) : k1]]$ as desired.
 \]
 The induction hypothesis gives us
 $[[S;P,O |=ty t1 : k1]]$. \pref{lem:ikind-reg} tells us
-$[[S;Rel(P),O |=ty k1 : Type{}]]$ and thus that
+$[[S;Rel(P,O) |=ty k1 : Type{}]]$ and thus that
 $[[S |=ctx P,O,x:Rel k1]]$.
 Another use of the induction hypothesis gives us
 $[[S;P,O,x:Rel k1,O2 |=ty t2 : k2]]$.
-\pref{lem:givens} then gives us
-$[[S;P,O,<x:Rel k1|O2>,x:Rel k1 |=ty t2 : k2]]$ and thus
-$[[S;P,O,<x:Rel k1|O2> |=ty \ x:Rel k1. t2 : UPI x:Rel k1. k2]]$
+\pref{lem:igen} then gives us
+$[[S;P,O,O2',x:Rel k1 |=ty t2[X] : k2[X] ]]$ and thus
+$[[S;P,O,O2' |=ty \ x:Rel k1. (t2[X]) : UPI x:Rel k1. (k2[X]) ]]$
 Rule \rul{Ty\_AppRel} gives us
-$[[S;P,O,<x:Rel k1|O2> |=ty (\x :Rel k1. t2) t1 : k2[t1/x] ]]$ as desired.
+$[[S;P,O,O2' |=ty (\x :Rel k1. (t2[X])) t1 : k2[X][t1/x] ]]$ as desired.
 
 \item[Case \rul{ITyC\_Case}:]
 Similar to the case for \rul{ITy\_Case}. The only differences are the
@@ -1203,53 +1366,61 @@ $[[|=altc]]$ are proven sound via the induction hypothesis.
 \]
 We have assumed $[[S;Rel(P) |=ty k : Type{}]]$ and thus can use
 \pref{lem:ifun} to get
-$[[S;Rel(P),O0 |=co g : k [Type{}]~[Type{}] UPI_Req a:Rel k1. k2]]$.
+$[[S;Rel(P,O0) |=co g : k [Type{}]~[Type{}] UPI_Req a:Rel k1. k2]]$.
 (The $[[a /# k2]]$ premise is not used in this rule; it is used to filter
 out which cases are handled in the
 next one.)
 By \pref{lem:ictx-reg}, we have
 $[[S |=ctx Rel(P)]]$ and thus can use the induction hypothesis to get
-$[[S;Rel(P),O1 |= k1' : Type{}]]$.
+$[[S;Rel(P,O1) |= k1' : Type{}]]$.
 We must now prove that
-$[[S;Rel(P),O,b:Rel k1' |=ty k2[b |> sym cu/a] : Type{}]]$.
-First, we prove that $[[S |=ctx Rel(P),O,b:Rel k1']]$.
-For this, it is left to prove only that $[[S;Rel(P),O0,O1 |=ty k1 : Type{}]]$.
+$[[S;Rel(P,O),b:Rel k1' |=ty k2[b |> sym cu_{}/a] : Type{}]]$.
+First, we prove that $[[S |=ctx Rel(P,O),b:Rel k1']]$.
+For this, it is left to prove only that $[[S;Rel(P,O0,O1) |=ty k1 : Type{}]]$.
 This we can get from \pref{lem:iprop-reg}, inversion of \rul{Ty\_Pi},
 and \pref{lem:ityvar-reg}.
 The inversion of \rul{Ty\_Pi} also tells us that
-$[[S;Rel(P),O0,a:Rel k1 |=ty k2 : Type{}]]$.
+$[[S;Rel(P,O0),a:Rel k1 |=ty k2 : Type{}]]$.
 \pref{lem:iweakening} allows us to weaken this to
-$[[S;Rel(P),O,b:Rel k1',a:Rel k1 |=ty k2 : Type{}]]$.
-We can see that $[[S;Rel(P),O,b:Rel k1' |=ty b |> sym cu : k1]]$.
+$[[S;Rel(P,O),b:Rel k1',a:Rel k1 |=ty k2 : Type{}]]$.
+We can see that $[[S;Rel(P,O),b:Rel k1' |=ty b |> sym cu_{} : k1]]$.
 We thus use \pref{lem:ity-subst} to get
-$[[S;Rel(P),O,b:Rel k1' |=ty k2[b |> sym cu/a] : Type{}]]$ as desired.
+$[[S;Rel(P,O),b:Rel k1' |=ty k2[b |> sym cu_{}/a] : Type{}]]$ as desired.
 We then use the induction hypothesis to get
-$[[S;P,O,b:Rel k1',O2 |=ty t : k2[b |> sym cu/a] ]]$.
-\pref{lem:givens} allows us to rewrite this to
-$[[S;P,O,<b:Rel k1'|O2>,b:Rel k1' |=ty t : k2[b |> sym cu/a] ]]$.
+$[[S;P,O,b:Rel k1',O2 |=ty t : k2[b |> sym cu_{}/a] ]]$.
+\pref{lem:igen} allows us to rewrite this to
+$[[S;P,O,O2',b:Rel k1' |=ty t[X] : k2[b |> sym cu/a][X] ]]$,
+but \pref{lem:gen-scope} tells us the $[[ [X] ]]$ in the kind has no effect.
 \pref{lem:iweakening} allows us to weaken this to
-$[[S;P,O,<b:Rel k1'|O2>,a:Rel k1,b:Rel k1' |=ty t : k2[b |> sym cu/a] ]]$.
+$[[S;P,O,O2',a:Rel k1,b:Rel k1' |=ty t[X] : k2[b |> sym cu_{}/a] ]]$.
 We can see that
-$[[S;P,O,<b:Rel k1'|O2>,a:Rel k1 |=ty a |> cu : k1']]$ and thus
+$[[S;P,O,O2',a:Rel k1 |=ty a |> cu_{} : k1']]$ and thus
 we can use \pref{lem:ity-subst} to get
-$[[S;P,O,<b:Rel k1'|O2>...]]$
-\rae{was here}
-
+$[[S;P,O,O2',a:Rel k1 |=ty t[X][a |> cu_{}/b] : k2[b |> sym cu_{}/a][a |> cu_{}/b] ]]$.
+Inlining substitutions, we can rewrite the kind to
+$[[k2[(a |> cu_{}) |> sym cu_{}/a] ]]$.
+We can then see that
+$[[S;P,O,O2',a:Rel k1 |=ty t[X][a |> cu_{}/b] |> h : k2]]$ and by
+\rul{Ty\_Lam} that
+$[[S;P,O,O2' |=ty \ a:Rel k1. (t[X][a |> cu_{}/b] |> h) : UPI a :Rel k1. k2]]$.
+A use of \rul{Ty\_Cast} gives us
+$[[S;P,O,O2' |=ty (\ a:Rel k1. (t[X][a |> cu_{}/b] |> h)) |> sym g : k]]$
+as desired.
 
 \item[Case \rul{ITyC\_Lam}:]
 \[
 \ottdruleITyCXXLam{}
 \]
 \pref{lem:ifun} tells us
-$[[S;Rel(P),O0 |=co g : k [Type{}]~[Type{}] UPI_Req a:Rel k1. k2]]$.
+$[[S;Rel(P,O0) |=co g : k [Type{}]~[Type{}] UPI_Req a:Rel k1. k2]]$.
 The induction hypothesis (on $[[|->aq]]$) tells us
-$[[S;Rel(P),O |=ty k1' : Type{}]]$.
+$[[S;Rel(P,O) |=ty k1' : Type{}]]$.
 \pref{lem:iprop-reg} and inversions tell us
-$[[S;Rel(P),O0 |=ty k1 : Type{}]]$.
+$[[S;Rel(P,O0) |=ty k1 : Type{}]]$.
 We can thus use \pref{lem:isub} to see
 $[[S;P,O0,O,O1 |=ty t1 : UPI x:Rel k1. k1']]$.
 \pref{lem:iprop-reg} and inversions tell us
-$[[S;Rel(P),O0,a:Rel k1 |=ty k2 : Type{}]]$.
+$[[S;Rel(P,O0),a:Rel k1 |=ty k2 : Type{}]]$.
 \rae{TODO. Make sure to update LamIrrel too}
 
 \item[Case \rul{ITyC\_LamIrrel}:]
