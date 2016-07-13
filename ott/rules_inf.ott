@@ -116,12 +116,11 @@ h = k2[(a |> cu_{}) |> sym cu_{}] ~={<Type{}>} k2
 S;P |->ty \ (a :: _s). _t : k ~> (\a:Rel k1. (t[X][a |> cu_{}/b] |> h)) |> sym g -| O,O2'
 
 |->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O0
-S;P |->aq _aqvar ~> b : k1' -| O
-k1 <= k1' ~> t1 -| O1
-S;P,O0,O,b:Rel k1' *|->ty _t : k2 ~> t -| O2
+S;P |->aq _aqvar : k1 ~> b:k1'; x.t1 -| O1
+S;P,O0,O1,b:Rel k1' *|->ty _t : k2 ~> t -| O2
 O2 +> b:Rel k1' ~> O2';X
 ---------------------------------- :: Lam
-S;P |->ty \ _aqvar . _t : k ~> (\ a:Rel k1. t[X][t1 a/b]) |> sym g -| O0,O,O1,O2'
+S;P |->ty \ _aqvar . _t : k ~> (\ a:Rel k1. t[X][t1[a/x]/b]) |> sym g -| O0,O1,O2'
 
 |->fun k; Irrel ~> g; UPI; a; Irrel; k1; k2 -| O0
 a /# k2
@@ -133,12 +132,11 @@ O2 +> b:Irrel k1' ~> O2';X
 S;P |->ty /\ (a :: _s). _t : k ~> (\a:Irrel k1. (t[X][a |> cu_{}/b])) |> sym g -| O,O2'
 
 |->fun k; Irrel ~> g; UPI; a; Irrel; k1; k2 -| O0
-S;P |->aq _aqvar ~> b : k1' -| O
-k1 <= k1' ~> t1 -| O1
-S;P,O0,O,b:Irrel k1' *|->ty _t : k2 ~> t -| O2
+S;P |->aq _aqvar : k1 ~> b : k1' ; x.t1 -| O1
+S;P,O0,O1,b:Irrel k1' *|->ty _t : k2 ~> t -| O2
 O2 +> b:Irrel k1' ~> O2';X
 ---------------------------------- :: LamIrrel
-S;P |->ty /\ _aqvar . _t : k ~> (\ a:Irrel k1. t[X][t1 a/b]) |> sym g -| O0,O,O1,O2'
+S;P |->ty /\ _aqvar . _t : k ~> (\ a:Irrel k1. t[X][t1[a/x]/b]) |> sym g -| O0,O1,O2'
 
 S;P |->ty _t : UPI_Req a:Rel k.k ~> t -| O
 ------------------------------- :: Fix
@@ -159,19 +157,35 @@ defn
 S ; P *|->ty _t : k ~> t -| O :: :: ITyDownS :: 'TyC_'
 by
 
-S;P |->aq _aqvar ~> b : k1' -| O
-k1 <= k1' ~> t1 -| O1
-S;P,O,O1,b:Rel k1' *|->ty _t : k2 ~> t -| O2
+a /# k2
+S;Rel(P) |->pt _s ~> k1' -| O1
+O = O1,cu:forall{}.k1 [Type{}]~[Type{}] k1'
+S;P,O,b:Rel k1' *|->ty _t : k2[b |> sym cu_{}/a] ~> t -| O2
+O2 +> b:Rel k1' ~> O2';X
+h = k2[(a |> cu_{}) |> sym cu_{}] ~={<Type{}>} k2
+--------------------------- :: LamInvisDep
+S;P *|->ty \ @(a :: _s) . _t : UPI_Spec a :Rel k1. k2 ~> \a:Rel k1. (t[X][a |> cu_{}/b] |> h) -| O,O2'
+
+S;P |->aq _aqvar : k1 ~> b : k1'; x.t1 -| O1
+S;P,O1,b:Rel k1' *|->ty _t : k2 ~> t -| O2
 O2 +> b:Rel k1' ~> O2'; X
 ------------------------------------------------- :: LamInvis
-S;P *|->ty \ @_aqvar . _t : UPI_Spec a :Rel k1.k2 ~> \ a:Rel k1. t[X][t1 a/b] -| O,O1,O2'
+S;P *|->ty \ @_aqvar . _t : UPI_Spec a :Rel k1.k2 ~> \ a:Rel k1. t[X][t1[a/x]/b] -| O1,O2'
 
-S;P |->aq _aqvar ~> b : k1' -| O
-k1 <= k1' ~> t1 -| O1
-S;P,O,O1,b:Irrel k1' *|->ty _t : k2 ~> t -| O2
+a /# k2
+S;Rel(P) |->pt _s ~> k1' -| O1
+O = O1,cu:forall{}.k1 [Type{}]~[Type{}] k1'
+S;P,O,b:Irrel k1' *|->ty _t : k2[b |> sym cu_{}/a] ~> t -| O2
+O2 +> b:Irrel k1' ~> O2';X
+h = k2[(a |> cu_{}) |> sym cu_{}] ~={<Type{}>} k2
+--------------------------- :: LamInvisIrrelDep
+S;P *|->ty /\ @(a :: _s) . _t : UPI_Spec a :Irrel k1. k2 ~> \a:Irrel k1. (t[X][a |> cu_{}/b] |> h) -| O,O2'
+
+S;P |->aq _aqvar : k1 ~> b : k1'; x.t1 -| O1
+S;P,O1,b:Irrel k1' *|->ty _t : k2 ~> t -| O2
 O2 +> b:Irrel k1' ~> O2'; X
-------------------------------------------------- :: LamInvisIrrel
-S;P *|->ty /\ @_aqvar . _t : UPI_Spec a :Irrel k1.k2 ~> \ a:Irrel k1. t[X][t1 a/b] -| O,O1,O2'
+------------------------------------------------- :: LamInvis
+S;P *|->ty /\ @_aqvar . _t : UPI_Spec a :Irrel k1.k2 ~> \ a:Irrel k1. t[X][t1[a/x]/b] -| O1,O2'
 
 S;P *|->ty _t1 ~> t1 : k1 -| O
 S;P,O,x:Rel k1 *|->ty _t2 : k ~> t2 -| O2
@@ -182,7 +196,7 @@ S;P *|->ty let x := _t1 in _t2 : k ~> (\x:Rel k1. (t2[X])) t1 -| O,O2'
 S;P,$a:rel k1 *|->ty _t : k2 ~> t -| O
 O +> $a:rel k1 ~> O';X
 ---------------------------------------------- :: Skol
-S;P *|->ty _t : UPI_Spec $a:rel k1.k2 ~> \ $a:rel k1. t[X][theta] -| O'
+S;P *|->ty _t : UPI_Spec $a:rel k1.k2 ~> \ $a:rel k1. t[X] -| O'
 
 S;P |->ty _t : k ~> t -| O
 --------------------------- :: Otherwise
@@ -194,14 +208,14 @@ by
 
 |->pi quant ~> PI; rel
 S;P |->q _qvar ~> a : k; vis -| O
-S;P,a:rel k |->pt _s ~> s -| O2
+S;P,O,a:rel k |->pt _s ~> s -| O2
 O2 +> a:rel k ~> O2'; X
 ----------------------------------- :: Pi
 S;P |->pt forall _qvar . _s ~> PI_vis a :rel k. (s[X]) -| O,O2'
 
 % This should be Constraint
 S;P |->ty _t : Type{} ~> t -| O1
-S;P,$a:Rel t |->pt _s ~> s -| O2
+S;P,O1,$a:Rel t |->pt _s ~> s -| O2
 O2 +> $a:Rel t ~> O2'; X
 ------------------------- :: Constrained
 S;P |->pt _t => _s ~> UPI_Inf $a:Rel t. (s[X]) -| O1, O2'
@@ -236,7 +250,7 @@ by
 
 S |-tc H : D1;D2;H' // D3,D4 = D2[ts/dom(D1)] // dom(D3) = xs
 dom(D4) = dom(D')
-match_{dom(D3)}(types(D4);types(D')) = Just theta0
+match_{dom(D3)}(types(D4);types(D')) = Just theta
 S;P,D3 |->ty _t : k ~> t -| O
 O +> D3 ~> O'; X
 ------------------------------------ :: Con
@@ -294,6 +308,18 @@ S;P |->aq a ~> a : bu_{} -| bu :Irrel forall{}. Type{}
 S;Rel(P) |->pt _s ~> s -| O
 ------------------------------------ :: Annot
 S;P |->aq (a :: _s) ~> a : s -| O
+
+defn
+S ; P |->aq _aqvar : k ~> a : k' ; x . t -| O :: :: IAQVarC :: 'AQVarC_'
+by
+
+--------------------------------- :: Var
+S;P |->aq a : k ~> a:k; x.x -| empty
+
+S;Rel(P) |->pt _s ~> s -| O1
+k <= s ~> t -| O2
+------------------------------ :: Annot
+S;P |->aq (a :: _s) : k ~> a:s ; x.t x -| O1,O2
 
 defn
 |->pi quant ~> PI ; rel :: :: IQuant :: 'Qu_'

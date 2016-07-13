@@ -266,11 +266,15 @@ Similar to previous proof.
 
 \begin{lemma}[Vector substitution {[\pref{lem:vec-subst}]}]
 \label{lem:ivec-subst}
-(as stated previously, but with reference to $[[|=]]$ judgments)
+If $[[S;P |=vec ps : D]]$ and $[[S;P,D,P' |= J]]$,
+then $[[S;P,P'[ps/dom(D)] |= J[ps/dom(D)] ]]$.
 \end{lemma}
 
 \begin{proof}
 As before, referring to \pref{lem:ity-subst} and \pref{lem:ico-subst}.
+Note that this version is generalized to work over any judgment
+$[[J]]$ while the previous proof lemma works only over $[[|-ty]]$.
+This generalization poses no trouble.
 \end{proof}
 
 \section{Carried substitutions}
@@ -737,7 +741,7 @@ Define $[[make_exhaustive(alts;k)]]$ as follows:
 \end{align*}
 \end{definition}
 
-\section{Supporting lemma}
+\section{Supporting lemmas}
 
 \begin{lemma}[Type variables instantiation]
 \label{lem:tyvars-inst}
@@ -762,6 +766,15 @@ gives us $[[S;bs':Rel ks'[bs'/as'] |-vec bs' : (bs' :Rel ks'[bs'/as'])]]$. We ca
 $[[S;bs' :Rel ks'[bs'/as'] |-ty k0[bs'/as'] : Type{}]]$ as desired.
 We then use \rul{Ctx\_TyVar} and we are done.
 \end{description}
+\end{proof}
+
+\begin{lemma}[Decreasing relevance]
+\label{lem:decreasing-rel}
+If $[[S |=ctx Rel(P)]]$, then $[[S |=ctx P]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction on $[[S |=ctx Rel(P)]]$.
 \end{proof}
 
 \section{Generalization}
@@ -1202,6 +1215,19 @@ $[[x]]$ is not mentioned in any of these, and we are done.
 \end{description}
 \end{proof}
 
+\begin{lemma}[Subsumption of unification variable]
+\label{lem:sub-uvar}
+If $[[k <= au ~> t -| O]]$, then there exists $[[cu]]$ such that
+$[[(cu : k [Type{}]~[Type{}] au) \in O]]$.
+\end{lemma}
+
+\begin{proof}
+This proof is simply by following the inference algorithm through its steps.
+We start in \rul{ISub\_DeepSkol}, which calls $[[|->pre]]$ on $[[au]]$.
+The only clause of $[[|->pre]]$ that matches is the last, \rul{IPrenex\_NoPi}.
+Thus $[[|->pre au ~> empty; au; \x:Rel au. x]]$.
+
+
 \begin{theorem}[Type elaboration is sound] ~
 \begin{enumerate}
 \item If any of the following:
@@ -1214,15 +1240,22 @@ $[[x]]$ is not mentioned in any of these, and we are done.
 Then $[[S;P,O |=ty t : k]]$.
 \item
 If $[[S |=ctx P]]$ and $[[S;P |->pt _s ~> s -| O]]$,
-then $[[S;P,O |=ty s : Type{}]]$.
+then $[[S;Rel(P,O) |=ty s : Type{}]]$.
 \item
-If $[[S;P |=ty k : Type{}]]$,
-$[[S;P |=ty t0 : k0]]$, and
-$[[S;P;k0;t0 |->alt _alt : k ~> alt -| O]]$, then
-$[[S;P,O;k0;t0 |=alt alt : k]]$.
+If $[[S;P |=ty t1 : PI_vis a:rel k1.k2]]$
+and $[[S;P;rel *|->arg _t2 : k1 ~> p2; t2 -| O]]$,
+then $[[S;P,O |=ty t1 p2 : k2[t2/a] ]]$.
 \item
-If $[[S;P |=ty k : Type{}]]$,
-$[[S;P |=ty t0 : k0]]$, and
+If $[[S;Rel(P) |=ty k : Type{}]]$,
+$[[S;P |=ty t0 : MPI D. H{} ts]]$,
+$[[S;Rel(P) |=ty H{} ts : Type{}]]$, and
+$[[S;P;MPI D.H{} ts;t0 |->alt _alt : k ~> alt -| O]]$, then
+$[[S;P,O;MPI D.H{} ts;t0 |=alt alt : k]]$.
+\item
+If $[[S;Rel(P) |=ty k : Type{}]]$,
+$[[S;P |=ty t0 : MPI D. H{} ts]]$, 
+$[[S;Rel(P) |=ty H{} ts : Type{}]]$,
+and
 $[[S;P;k0;t0 |->altc _alt : k ~> alt -| O]]$, then
 $[[S;P,O;k0;t0 |=alt alt : k]]$.
 \item
@@ -1232,9 +1265,8 @@ then $[[S;Rel(P,O) |=ty k : Type{}]]$.
 If $[[S |=ctx P]]$ and $[[S;P |->aq _aqvar ~> a : k -| O]]$,
 then $[[S;Rel(P,O) |=ty k : Type{}]]$.
 \item
-If $[[S;P |=ty t1 : PI_vis a:rel k1.k2]]$
-and $[[S;P;rel *|->arg _t2 : k1 ~> p2; t2 -| O]]$,
-then $[[S;P,O |=ty t1 p2 : k2[t2/a] ]]$.
+If $[[S;P |=ty t0 : k]]$ and $[[S;P |->aq _aqvar : k ~> a : k'; x.t -| O]]$,
+then $[[S;P,O |=ty t[t0/x] : k']]$.
 \end{enumerate}
 \end{theorem}
 
@@ -1413,19 +1445,56 @@ as desired.
 \]
 \pref{lem:ifun} tells us
 $[[S;Rel(P,O0) |=co g : k [Type{}]~[Type{}] UPI_Req a:Rel k1. k2]]$.
-The induction hypothesis (on $[[|->aq]]$) tells us
-$[[S;Rel(P,O) |=ty k1' : Type{}]]$.
 \pref{lem:iprop-reg} and inversions tell us
-$[[S;Rel(P,O0) |=ty k1 : Type{}]]$.
-We can thus use \pref{lem:isub} to see
-$[[S;P,O0,O,O1 |=ty t1 : UPI x:Rel k1. k1']]$.
-\pref{lem:iprop-reg} and inversions tell us
+$[[S;Rel(P,O0) |=ty k1 : Type{}]]$ and
 $[[S;Rel(P,O0),a:Rel k1 |=ty k2 : Type{}]]$.
-\rae{TODO. Make sure to update LamIrrel too}
-
+We can conclude $[[S |=ctx Rel(P,O0),a:Rel k1]]$ and thus (using
+\pref{lem:decreasing-rel})
+$[[S;P,O0,a:Rel k1 |=ty a : k1]]$.
+The induction hypothesis on $[[|->aq]]$ then tells us
+$[[S;P,O0,a:Rel k1,O1 |=ty t1[a/x] : k1']]$.
+We can see by the construction of $[[O1]]$ and $[[k1']]$
+that $[[a # O1]]$ and $[[a # k1']]$.
+Because we are in rule \rul{ITyC\_Lam}, it means that
+\rul{ITyC\_LamDep} does not apply. This can be for one of two reasons,
+and thus we now have two cases:
+\begin{description}
+\item[Case $[[_aqvar = a]]$ (unannotated binder):]
+In this case, we see (by \rul{IAQVarC\_Var}) that $[[k1' = k1]]$.
+We can choose $[[a = b]]$ by the $\alpha$-renaming.
+Thus, $[[S;Rel(P,O0),b:Rel k1' |=ty k2 : Type{}]]$.
+\item[Case $[[a # k2]]$:]
+We now use \pref{lem:istrengthening} to get
+$[[S;Rel(P,O0) |=ty k2 : Type{}]]$.
+\end{description}
+Regardless of which case above we are in,
+we now must prove $[[S |=ctx P,O0,O1,b:Rel k1']]$. To do this, we must
+show only that $[[S;Rel(P,O0,O1) |=ty k1' : Type{}]]$, which comes
+from \pref{lem:ikind-reg} and \pref{lem:istrengthening}.
+We can then use \pref{lem:iweakening} to get
+$[[S;Rel(P,O0,O1),b:Rel k1' |=ty k2 : Type{}]]$.
+The induction hypothesis now applies to get
+$[[S;P,O0,O1,b:Rel k1',O2 |=ty t : k2]]$.
+\pref{lem:igen} tells us
+$[[S;P,O0,O1,O2',b:Rel k1' |=ty t[X] : k2[X] ]]$, but
+\pref{lem:gen-scope} tells us the $[[ [X] ]]$ in the kind has no effect.
+\pref{lem:iweakening} gives us
+$[[S;P,O0,a:Rel k1,O1,O2',b:Rel k1' |=ty t[X] : k2]]$.
+We can thus use \pref{lem:ity-subst} to get
+$[[S;P,O0,a:Rel k1,O1,O2' |=ty t[X][t1[a/x]/b] : k2[t1[a/x]/b] ]]$,
+but \pref{lem:iscoping} tells us the substitution in the kind has
+no effect.
+Noting that, by analysis stemming from our two cases previously, $[[a # O2']]$,
+we can reshuffle
+the context to be
+$[[P,O0,O1,O2',a:Rel k1]]$ and thus conclude
+$[[S;P,O0,O1,O2' |=ty \ a:Rel k1. t[X][t1[a/x]/b] : UPI a:Rel k1. k2]]$.
+Thus \rul{Ty\_Cast} gives us
+$[[S;P,O0,O1,O2' |=ty (\ a:Rel k1. t[X][t1[a/x]/b]) |> sym g : k]]$ as desired.
+\item[Case \rul{ITyC\_LamIrrelDep}:]
+Like case for \rul{ITyC\_LamDep}.
 \item[Case \rul{ITyC\_LamIrrel}:]
-Like previous case. \rae{Is it?}
-
+Like case for \rul{ITyC\_Lam}.
 \item[Case \rul{ITyC\_Fix}:]
 \[
 \ottdruleITyCXXFix{}
@@ -1463,10 +1532,171 @@ $[[S;P,O2 |=ty t2 t' : k2[t'/x] ]]$. We are done,
 noting that the substitution in the kind has no effect by
 \pref{lem:iscoping}.
 
-\item[Case \rul{ITyC\_LamInvis}:]
+\item[Invisible $\lambda$/$\Lambda$ cases:]
+Like corresponding visible $\lambda$/$\Lambda$ cases. Note that the
+difference between the $[[|->ty]]$ and $[[*|->ty]]$ checking judgments
+is relevant for user-facing issues of type inference (e.g., principal
+types), not the soundness we are proving here.
 
+\item[Case \rul{ITyC\_Let}:]
+Similar to case for \rul{ITy\_Let}. The only difference is that the
+expected type is propagated down.
 
-\rae{Continue.}
+\item[Case \rul{ITyC\_Skol}:]
+\[
+\ottdruleITyCXXSkol{}
+\]
+We have assumed
+$[[S;Rel(P) |=ty UPI_Spec dollar a:rel k1.k2 : Type{}]]$. Inversion
+gives us $[[S;Rel(P),dollar a:Rel k1 |=ty k2 : Type{}]]$, and we can
+thus use the induction hypothesis to get
+$[[S;P,dollar a :rel k1,O |=ty t : k2]]$.
+\pref{lem:igen} tells us
+$[[S;P,O',dollar a:rel k1 |=ty t[X] : k2[X] ]]$, but
+\pref{lem:gen-scope} tells us that the $[[ [X] ]]$ in the kind has
+no effect.
+We can thus conclude
+$[[S;P,O' |=ty \ dollar a:rel k1 . (t[X]) : UPI_Spec dollar a:rel k1.k2 ]]$
+as desired.
+
+\item[Case \rul{ITyC\_Otherwise}:]
+By induction.
+
+\item[Case \rul{IPtC\_Pi}:]
+\[
+\ottdruleIPtCXXPi{}
+\]
+The induction hypothesis (on $[[|->q]]$) tells us
+$[[S;Rel(P,O) |=ty k : Type{}]]$. Thus
+$[[S |=ctx Rel(P,O,a:rel k)]]$ and we can use the induction hypothesis
+(on $[[|->pt]]$) to get $[[S;Rel(P,O,a:rel k,O2) |=ty s : Type{}]]$.
+\pref{lem:igen} gives us
+$[[S;Rel(P,O,O2',a:rel k) |=ty s[X] : Type{}]]$ and
+thus
+$[[S;Rel(P,O,O2') |=ty UPI a:rel k. (s[X]) : Type{}]]$ as desired.
+
+\item[Case \rul{IPtC\_Constrained}:]
+\[
+\ottdulreIPtCXXConstrained{}
+\]
+\pref{lem:type-in-type}, \pref{lem:iweakening} and \pref{lem:extension} tell us
+$[[S;Rel(P) |=ty Type{} : Type{}]]$ and thus we can use the induction
+hypothesis on $[[|->ty]]$ to get
+$[[S;P,O1 |=ty t : Type{}]]$.
+We thus have $[[S |=ctx P,O1,dollar a:Rel t]]$ and can use the induction
+hypothesis on $[[|->pt]]$ to get
+$[[S;Rel(P,O1,dollar a:Rel t,O2) |=ty s : Type{}]]$.
+\pref{lem:igen} gives us
+$[[S;Rel(P,O1,O2',dollar a:Rel t) |=ty s[X] : Type{}]]$ and thus
+$[[S;Rel(P,O1,O2') |=ty UPI_Inf dollar a:Rel t. (s[X]) : Type{}]]$
+as desired.
+
+\item[Case \rul{IPtC\_Mono}:]
+By induction.
+
+\item[Case \rul{IArg\_Rel}:]
+By induction and straightforward use of typing rules.
+\item[Case \rul{IArg\_Irrel}:]
+By induction and straightforward use of typing rules.
+\item[Case \rul{IAlt\_Con}:]
+\[
+\ottdruleIAltXXCon{}
+\]
+We wish to prove
+$[[S;P,O';MPI D'. H'{} ts; t0 |=alt H -> \ D3, (c : t0 [MPI D'.H'{} ts]~[MPI D4.H'{} ts] H{ts} xs). (t[X]) : k]]$, given the premises above along with
+\begin{itemize}
+\item $[[S;Rel(P) |=ty k : Type{}]]$
+\item $[[S;P |=ty t0 : MPI D'.H'{} ts]]$
+\item $[[S;Rel(P) |=ty H'{} ts : Type{}]]$
+\end{itemize}
+We will use \rul{Alt\_Match}. This requires the following:
+\begin{description}
+\item[$[[S |-tc H : D1;D2;H']]$:] This is a premise above.
+\item[$[[D3,D4 = D2[ts/dom(D1)] ]]$:] This is a premise above.
+\item[$[[dom(D4) = dom(D')]]$:] This is a premise above.
+\item[$[[match_{dom(D3)}(types(D4);types(D')) = Just theta]]$:] This is a premise above.
+\item[$[[S;P,O' |=ty \ D3, (c : t0 [MPI D'.H'{} ts]~[MPI D4.H'{} ts] H{ts} xs). (t[X]) : MUPI D3, c : t0 [MPI D'.H'{} ts]~[MPI D4.H'{} ts] H{ts} dom(D3). k]]$:]
+Let $[[P' = P,O',D3,c: t0 [MPI D'.H'{} ts]~[MPI D4.H'{} ts] H{ts} xs]]$. We
+must show only that $[[S;P' |=ty t[X] : k]]$. (Note that $[[dom(D3) = xs]]$,
+which is the one discrepancy between the quantified contexts above.)
+To use the induction hypothesis on $[[|->ty]]$, we must show
+$[[S;Rel(P,D3) |=ty k : Type{}]]$, which means we must show only that
+$[[S |=ctx P,D3]]$ and then use \pref{lem:iweakening}.
+\pref{lem:tycon-tel} gives us $[[S |-ctx D1,D2]]$ and by \pref{lem:extension},
+$[[S |=ctx D1,D2]]$.
+\pref{lem:tycon-parent} gives us $[[S |-tc H' : empty;Rel(D1);Type]]$.
+ We know $[[S;Rel(P) |=ty H'{} ts : Type{}]]$.
+By \pref{lem:tycon-inversion} (easily updated to use $[[|=]]$ judgments),
+we can see that $[[S;Rel(P) |=vec ts : Rel(D1)]]$ and thus
+\pref{lem:ivec-subst} tells us $[[S |=ctx D2[ts/dom(D1)] ]]$ and
+by \pref{lem:ictx-reg} and \pref{lem:iweakening}, $[[S |=ctx P,D3]]$ as
+esire.
+We have conclueded that $[[S;Rel(P,D3) |=ty k : Type{}]]$ and so can
+use the induction hypothesis to get
+$[[S;P,D3,O |=ty t : k]]$.
+\pref{lem:igen} tells us
+$[[S;P,O',D3 |=ty t[X] : k[X] ]]$, but \pref{lem:gen-scope} tells us
+that the $[[ [X] ]]$ in the conclusion has no effect.
+The last step here is to use weakening to add the binding for $[[c]]$ to
+the context. This requires proving only that
+$[[S;Rel(P,O',D3) |=ty H{ts} xs : MPI D4.H'{} ts]]$.
+We can see that $[[S;Rel(P,O',D3) |=ty H{ts} : MPI D3,D4. H'{} ts]]$
+by \rul{Ty\_Con}. We are thus done by \pref{lem:tel-app} (easily
+updated for $[[|=]]$ judgments).
+\end{description}
+
+\item[Case \rul{IAlt\_Default}:]
+By induction and \rul{Alt\_Default}.
+
+\item[Case \rul{IAltC\_Con}:]
+This case is identical to that for \rul{IAlt\_Con}. The difference is
+the assumptions that can be made when solving for the unification variables
+in $[[O]]$, which does not affect the course of this proof.
+
+\item[Case \rul{IAltC\_Default}:]
+Similar to the case for \rul{IAlt\_Default}.
+
+\item[Case \rul{IQVar\_Req}:]
+By induction.
+
+\item[Case \rul{IQVar\_Spec}:]
+By induction.
+
+\item[Case \rul{IAQVar\_Var}:]
+\[
+\ottdruleIAQVarXXVar{}
+\]
+We must show only that $[[S;Rel(P),bu :Rel forall{}. Type{} |=ty bu_{} : Type{}]]$.
+This is true by \rul{Ty\_UVar}.
+
+\item[Case \rul{IAQVar\_Annot}:]
+By induction.
+
+\item[Case \rul{IAQVarC\_Var}:]
+\[
+\ottdruleIAQVarCXXVar{}
+\]
+Given $[[S;P |=ty t0 : k]]$, we must show
+$[[S;P |=ty x[t0/x] : k]]$. By assumption.
+
+\item[Case \rul{IAQVarC\_Annot}:]
+\[
+\ottdruleIAQVarCXXAnnot{}
+\]
+Given $[[S;P |=ty t0 : k]]$, we must show
+$[[S;P,O1,O2 |=ty (t x)[t0/x] : s]]$, which can be rewritten to
+$[[S;P,O1,O2 |=ty t t0 : s]]$.
+We know $[[S |=ctx P]]$ by \pref{lem:ictx-reg}. The induction
+hypothesis then tells us
+$[[S;Rel(P,O1) |=ty s : Type{}]]$.
+\pref{lem:ikind-reg} tells us
+$[[S;Rel(P) |=ty k : Type{}]]$.
+We can thus use \pref{lem:isub} to get
+$[[S;P,O1,O2 |=ty  t : UPI x:Rel k.s]]$.
+Rule \rul{Ty\_AppRel} gives us
+$[[S;P,O1,O2 |=ty t t0 : s[t0/x] ]]$, but \pref{lem:iscoping}
+tells us that the substitution in the kind has no effect.
+We are done.
 \end{description}
 \end{proof}
 

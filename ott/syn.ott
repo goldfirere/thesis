@@ -101,6 +101,8 @@ var, a, b, x :: 'Var_' ::= {{ com Variables }}
   {{ tex [[xcd]] }}
 | $ a                   :: M :: Hidden
   {{ tex \$ [[a]] }}
+| dollar a              :: M :: TexHidden
+  {{ tex \$ [[a]] }}
 
 covar, c :: 'CoVar_' ::= {{ com Coercion variables }}
 | _                     :: M :: Blank          {{ coq "_" }}
