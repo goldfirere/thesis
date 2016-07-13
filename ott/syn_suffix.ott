@@ -25,6 +25,8 @@ rewrite_rule :: 'Rewrite_' ::=
 | calt1 eq calt2                     ::   :: calt_rewrite
 | Z1 eq Z2                           ::   :: Z_rewrite
 | X1 eq X2                           ::   :: X_rewrite
+| zus1 eq zus2                       ::   :: zus_rewrite
+| _aqvar1 eq _aqvar2                 ::   :: aqvar_rewrite
 
 util :: 'Util_' ::=
 | ||.||                              ::   :: terase_op
@@ -45,7 +47,8 @@ fact :: 'Fact_' ::=
   | zu \in V                           ::   :: in_fvset_u
   | z \in V                            ::   :: in_fvset
   | S ; G |- J                         ::   :: pico_judg
-
+  | xmap \in X                         ::   :: in_xmap
+  | a # O                              ::   :: not_in_O
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -77,7 +80,6 @@ terminals :: 'terminals_' ::=
 | !!!                                  ::   :: internal {{ tex }}
 | ~                                    ::   :: twid    {{ tex \sim }}
 | #                                    ::   :: fresh   {{ tex \mathrel{\#} }}
-| /#                                   ::   :: notfresh {{ tex \mathrel{\not\#} }}
 | ;;                                   ::   :: semi    {{ tex \fatsemi }}
 | forall                               ::   :: forall  {{ tex \forall }}
 | blank                                ::   :: blank   {{ tex \! }}
@@ -91,6 +93,7 @@ terminals :: 'terminals_' ::=
 | :=                                   ::   :: assign  {{ tex \mathrel{ {:}{=} } }}
 | \subseteq                            ::   :: subset  {{ tex \subseteq }}
 | \union                               ::   :: union   {{ tex \cup }}
+| \inter                               ::   :: inter   {{ tex \cap }}
 | \emptyset                            ::   :: emptyset {{ tex \emptyset }}
 | !                                    ::   :: cons    {{ tex \propto }}
 | !!                                   ::   :: lcons   {{ tex \mathrel{\ltimes} }}
@@ -201,6 +204,7 @@ formula :: 'formula_' ::=
   | c # G                              ::   :: c_fresh
   | zs # ps                            ::   :: a_not_free
   | zs /# ps                           ::   :: a_appears
+    {{ tex \neg ([[zs]] \mathrel{\#} [[ps]]) }}
   | alts are exhaustive for H ( wrt S ) ::   :: exhaustive
     {{ tex [[alts]] \text{ are exhaustive and distinct for } [[H]] \text{, (w.r.t.~} [[S]] \text{)} }}
   | ps ~> ps'                          ::   :: many_red

@@ -10,6 +10,7 @@ JInf :: 'I' ::=
 % postcondition: k has no inferred OR specified binders
 defn
 S ; P |->ty _t ~> t : k -| O :: :: ITy :: 'Ty_'
+  {{ com Synthesize a type with no invisible binders. }}
 by
 
 S;P *|->ty _t ~> t : k -| O1
@@ -20,6 +21,7 @@ S;P |->ty _t ~> t ps : k' -| O1,O2
 % postcondition: k has no inferred binders
 defn
 S ; P *|->ty _t ~> t : k -| O :: :: ITyS :: 'Ty_'
+  {{ com Synthesize a type, perhaps with specified binders. }}
 by
 
 a :Rel k \in P  //  |->inst_Inf k ~> ps; k' -| O
@@ -95,6 +97,7 @@ S;P *|->ty let x := _t1 in _t2 ~> (\ x:Rel k1. (t2[X])) t1 : k2[X][t1/x] -| O,O2
 % to the right of arrows
 defn
 S ; P |->ty _t : k ~> t -| O :: :: ITyDown :: 'TyC_'
+  {{ com Check against a type with no invisible binders. }}
 by
 
 S;P |->ty _t0 ~> t0 : k0 -| O0
@@ -111,9 +114,10 @@ S;Rel(P) |->pt _s ~> k1' -| O1
 O = O0,O1,cu:forall{}.k1 [Type{}]~[Type{}] k1'
 S;P,O,b:Rel k1' *|->ty _t : k2[b |> sym cu_{}/a] ~> t -| O2
 O2 +> b:Rel k1' ~> O2';X
-h = k2[(a |> cu_{}) |> sym cu_{}] ~={<Type{}>} k2
+h = k2[(a |> cu_{}) |> sym cu_{}/a] ~={<Type{}>} k2
+t0 = (\a:Rel k1. (t[X][a |> cu_{}/b] |> h)) |> sym g
 ---------------------------------- :: LamDep
-S;P |->ty \ (a :: _s). _t : k ~> (\a:Rel k1. (t[X][a |> cu_{}/b] |> h)) |> sym g -| O,O2'
+S;P |->ty \ (a :: _s). _t : k ~> t0 -| O,O2'
 
 |->fun k;Rel ~> g; UPI; a; Rel; k1; k2 -| O0
 S;P |->aq _aqvar : k1 ~> b:k1'; x.t1 -| O1
@@ -128,15 +132,18 @@ S;Rel(P) |->pt _s ~> k1' -| O1
 O = O0,O1,cu:forall{}.k1 [Type{}]~[Type{}] k1'
 S;P,O,b:Irrel k1' *|->ty _t : k2[b |> sym cu_{}/a] ~> t -| O2
 O2 +> b:Irrel k1' ~> O2';X
+h = k2[(a |> cu_{}) |> sym cu_{}/a] ~={<Type{}>} k2
+t0 = (\a:Irrel k1. (t[X][a |> cu_{}/b] |> h)) |> sym g
 ---------------------------------- :: LamIrrelDep
-S;P |->ty /\ (a :: _s). _t : k ~> (\a:Irrel k1. (t[X][a |> cu_{}/b])) |> sym g -| O,O2'
+S;P |->ty /\ (a :: _s). _t : k ~> t0 -| O,O2'
 
 |->fun k; Irrel ~> g; UPI; a; Irrel; k1; k2 -| O0
 S;P |->aq _aqvar : k1 ~> b : k1' ; x.t1 -| O1
 S;P,O0,O1,b:Irrel k1' *|->ty _t : k2 ~> t -| O2
 O2 +> b:Irrel k1' ~> O2';X
+t0 = (\ a:Irrel k1. t[X][t1[a/x]/b]) |> sym g
 ---------------------------------- :: LamIrrel
-S;P |->ty /\ _aqvar . _t : k ~> (\ a:Irrel k1. t[X][t1[a/x]/b]) |> sym g -| O0,O1,O2'
+S;P |->ty /\ _aqvar . _t : k ~> t0 -| O0,O1,O2'
 
 S;P |->ty _t : UPI_Req a:Rel k.k ~> t -| O
 ------------------------------- :: Fix
@@ -155,6 +162,7 @@ S;P |->ty _t : k2 ~> t2 t' -| O2
 % arrow
 defn
 S ; P *|->ty _t : k ~> t -| O :: :: ITyDownS :: 'TyC_'
+  {{ com Check against a type that may have specified binders. }}
 by
 
 a /# k2
@@ -162,30 +170,34 @@ S;Rel(P) |->pt _s ~> k1' -| O1
 O = O1,cu:forall{}.k1 [Type{}]~[Type{}] k1'
 S;P,O,b:Rel k1' *|->ty _t : k2[b |> sym cu_{}/a] ~> t -| O2
 O2 +> b:Rel k1' ~> O2';X
-h = k2[(a |> cu_{}) |> sym cu_{}] ~={<Type{}>} k2
+h = k2[(a |> cu_{}) |> sym cu_{}/a] ~={<Type{}>} k2
+t0 = \a:Rel k1. (t[X][a |> cu_{}/b] |> h)
 --------------------------- :: LamInvisDep
-S;P *|->ty \ @(a :: _s) . _t : UPI_Spec a :Rel k1. k2 ~> \a:Rel k1. (t[X][a |> cu_{}/b] |> h) -| O,O2'
+S;P *|->ty \ @(a :: _s) . _t : UPI_Spec a :Rel k1. k2 ~> t0 -| O,O2'
 
 S;P |->aq _aqvar : k1 ~> b : k1'; x.t1 -| O1
 S;P,O1,b:Rel k1' *|->ty _t : k2 ~> t -| O2
 O2 +> b:Rel k1' ~> O2'; X
+t0 = \ a:Rel k1. t[X][t1[a/x]/b]
 ------------------------------------------------- :: LamInvis
-S;P *|->ty \ @_aqvar . _t : UPI_Spec a :Rel k1.k2 ~> \ a:Rel k1. t[X][t1[a/x]/b] -| O1,O2'
+S;P *|->ty \ @_aqvar . _t : UPI_Spec a :Rel k1.k2 ~> t0 -| O1,O2'
 
 a /# k2
 S;Rel(P) |->pt _s ~> k1' -| O1
 O = O1,cu:forall{}.k1 [Type{}]~[Type{}] k1'
 S;P,O,b:Irrel k1' *|->ty _t : k2[b |> sym cu_{}/a] ~> t -| O2
 O2 +> b:Irrel k1' ~> O2';X
-h = k2[(a |> cu_{}) |> sym cu_{}] ~={<Type{}>} k2
+h = k2[(a |> cu_{}) |> sym cu_{}/a] ~={<Type{}>} k2
+t0 = \a:Irrel k1. (t[X][a |> cu_{}/b] |> h)
 --------------------------- :: LamInvisIrrelDep
-S;P *|->ty /\ @(a :: _s) . _t : UPI_Spec a :Irrel k1. k2 ~> \a:Irrel k1. (t[X][a |> cu_{}/b] |> h) -| O,O2'
+S;P *|->ty /\ @(a :: _s) . _t : UPI_Spec a :Irrel k1. k2 ~> t0 -| O,O2'
 
 S;P |->aq _aqvar : k1 ~> b : k1'; x.t1 -| O1
 S;P,O1,b:Irrel k1' *|->ty _t : k2 ~> t -| O2
 O2 +> b:Irrel k1' ~> O2'; X
-------------------------------------------------- :: LamInvis
-S;P *|->ty /\ @_aqvar . _t : UPI_Spec a :Irrel k1.k2 ~> \ a:Irrel k1. t[X][t1[a/x]/b] -| O1,O2'
+t0 = \ a:Irrel k1. t[X][t1[a/x]/b]
+------------------------------------------------- :: LamInvisIrrel
+S;P *|->ty /\ @_aqvar . _t : UPI_Spec a :Irrel k1.k2 ~> t0 -| O1,O2'
 
 S;P *|->ty _t1 ~> t1 : k1 -| O
 S;P,O,x:Rel k1 *|->ty _t2 : k ~> t2 -| O2
@@ -204,6 +216,7 @@ S;P *|->ty _t : k ~> t -| O
 
 defn
 S ; P |->pt _s ~> t -| O :: :: ITyDownPoly :: 'PtC_'
+  {{ com Check a poly-type (which always has type \keyword{Type}). }}
 by
 
 |->pi quant ~> PI; rel
@@ -230,6 +243,7 @@ S;P |->pt _t ~> t -| O
 
 defn
 S ; P ; rel *|->arg _t : k ~> p ; t -| O :: :: IArg :: 'Arg_'
+  {{ com Check a function argument against its known type. }}
 by
 
 S;P *|->ty _t : k ~> t -| O
@@ -246,15 +260,17 @@ S;P;Irrel *|->arg _t : k ~> {t};t -| O
 
 defn
 S ; P ; k0 ; t0 |->alt _alt : k ~> alt -| O :: :: IAlt :: 'Alt_'
+  {{ com Synth.~a case alt.~against a unification variable. }}
 by
 
-S |-tc H : D1;D2;H' // D3,D4 = D2[ts/dom(D1)] // dom(D3) = xs
-dom(D4) = dom(D')
+S |-tc H : D1;D2;H' // D3,D4 = D2[ts/dom(D1)]
+dom(D3) = xs // dom(D4) = dom(D')
 match_{dom(D3)}(types(D4);types(D')) = Just theta
 S;P,D3 |->ty _t : k ~> t -| O
 O +> D3 ~> O'; X
+D3' = D3, c : t0 [MPI D'. H'{} ts]~[MPI D4.H'{} ts] H{ts} xs
 ------------------------------------ :: Con
-S;P;MPI D'. H'{} ts;t0 |->alt H xs -> _t : k ~> H -> \ D3, (c : t0 [MPI D'. H'{} ts]~[MPI D4.H'{} ts] H{ts} xs). (t[X]) -| O'
+S;P;MPI D'. H'{} ts;t0 |->alt H xs -> _t : k ~> H -> \ D3' . (t[X]) -| O'
 
 S;P |->ty _t : k ~> t -| O
 --------------------------------------- :: Default
@@ -266,10 +282,11 @@ S;P;k0;t0 |->alt _ -> _t : k ~> _ -> t -| O
 
 defn
 S ; P ; k0 ; t0 |->altc _alt : k ~> alt -| O :: :: IAltC :: 'AltC_'
+  {{ com Check a case alt.~against a known result type. }}
 by
 
-S |-tc H : D1;D2;H' // D3,D4 = D2[ts/dom(D1)] // dom(D3) = xs
-dom(D4) = dom(D')
+S |-tc H : D1;D2;H' // D3,D4 = D2[ts/dom(D1)]
+dom(D3) = xs // dom(D4) = dom(D')
 match_{dom(D3)}(types(D4);types(D')) = Just theta0
 D3' = D3,c:t0 [MPI D'.H'{} ts]~[MPI D4.H'{} ts] H{ts} xs
 S;P,D3' |->ty _t : k ~> t -| O
@@ -287,6 +304,7 @@ S;P;k0;t0 |->altc _ -> _t : k ~> _ -> t -| O
 
 defn
 S ; P |->q _qvar ~> a : k ; vis -| O :: :: IQVar :: 'QVar_'
+  {{ com Synthesize a bound variable. }}
 by
 
 S;P |->aq _aqvar ~> a : k -| O
@@ -299,6 +317,7 @@ S;P |->q @_aqvar ~> a : k; Spec -| O
 
 defn
 S ; P |->aq _aqvar ~> a : k -| O :: :: IAQVar :: 'AQVar_'
+  {{ com Synthesize a bound variable (w/o vis.~marker). }}
 by
 
 fresh bu
@@ -311,6 +330,7 @@ S;P |->aq (a :: _s) ~> a : s -| O
 
 defn
 S ; P |->aq _aqvar : k ~> a : k' ; x . t -| O :: :: IAQVarC :: 'AQVarC_'
+  {{ com Check a bound variable (w/o vis.~marker). }}
 by
 
 --------------------------------- :: Var
@@ -323,6 +343,7 @@ S;P |->aq (a :: _s) : k ~> a:s ; x.t x -| O1,O2
 
 defn
 |->pi quant ~> PI ; rel :: :: IQuant :: 'Qu_'
+  {{ com Interpret a quantifier. }}
 by
 
 ------------------------- :: ForAll
@@ -347,14 +368,16 @@ by
 % may be different
 defn
 |->fun k ; rel1 ~> g ; PI ; a ; rel2 ; k1 ; k2 -| O :: :: IFun :: 'Fun_'
+  {{ com Extract out the parts of a function kind. }}
 by
 
 -------------------- :: Id
 |->fun PI_Req a:rel k1. k2; rel0 ~> <PI_Req a:rel k1.k2>; PI; a; rel; k1; k2 -| empty
 
 fresh cu // fresh bu1, bu2
+O = bu1:Irrel forall{}.Type{}, bu2:Irrel forall{}.Type{}, cu : forall{}. k0 [Type{}]~[Type{}] UPI_Req a:rel bu1_{}.bu2_{}
 -------------------- :: Cast
-|->fun k0; rel ~> cu_{}; UPI; a; rel; bu1_{}; bu2_{} -| bu1:Irrel forall{}.Type{}, bu2:Irrel forall{}.Type{}, cu : forall{}. k0 [Type{}]~[Type{}] UPI_Req a:rel bu1_{}.bu2_{}
+|->fun k0; rel ~> cu_{}; UPI; a; rel; bu1_{}; bu2_{} -| O
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  matchExpectedTyConApp  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -363,6 +386,7 @@ fresh cu // fresh bu1, bu2
 % precondition: k has noInf or Spec binders
 defn
 S ; P |->scrut _alts ; k ~> g ; D ; H ; ts -| O  :: :: IScrut :: 'Scrut_'
+  {{ com Extract out the parts of a scrutinee's kind. }}
 by
 
 S;Rel(P) |=ty H{} ts : Type{}
@@ -384,6 +408,7 @@ S;P |->scrut (H xs -> _t; _alts); k ~> cu_{}; empty; H'; aus_{} -| aus :Irrel fo
 defn
 |->inst _ vis k ~> ps ; k' -| O :: :: IInst :: 'Inst_'
   {{ tex [[|->inst]]^{\hspace{-1.4ex}\raisemath{.1ex}{[[vis]]} } [[k]] [[~>]] [[ps]]; [[k']] [[-|]] [[O]] }}
+  {{ com Instantiate so that a type's first binder is more visible than [[vis]]. }}
 by
 
 fresh au  //  vis2 <= vis1
@@ -406,6 +431,7 @@ fresh cu
 
 defn
 vis1 <= vis2 :: :: VisLT :: 'Vis_'
+  {{ com ``Less-visible-than`` relation }}
 by
 
 ---------- :: Refl
@@ -428,6 +454,7 @@ Spec <= Req
 %% As in OutsideIn
 defn
 S ; P |->solv O ~> D ; Z :: :: ISolv :: 'Solv_'
+  {{ com Constraint solver interface }}
 by
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -437,6 +464,7 @@ by
 %% t :: (UPI D. k') -> k
 defn
 |->pre k ~> D ; k' ; t :: :: IPrenex :: 'Prenex_'
+  {{ com Convert a kind into prenex form. }}
 by
 
 vis <= Spec
@@ -446,8 +474,9 @@ vis <= Spec
 % where t' :: (UPI d,D. k2') -> UPI d.k2
 
 |->pre k2 ~> D; k2'; t
+t0 = \ (x :Rel UPI D,d.k2'), d. t (\ D. x dom(D) dom(d))
 ---------------------------- :: Vis
-|->pre UPI_Req d.k2 ~> D; UPI_Req d.k2'; \ (x :Rel UPI D,d.k2'), d. t (\ D. x dom(D) dom(d))
+|->pre UPI_Req d.k2 ~> D; UPI_Req d.k2'; t0
 % where t' :: (UPI D, d.k2') -> UPI d.k2
 
 --------------------------- :: NoPi
@@ -456,17 +485,20 @@ vis <= Spec
 % precondition: no invisible binders on either k1 or k2
 defn
 k1 *<= k2 ~> t -| O :: :: ISub2 :: 'Sub_'
+  {{ com ``[[k1]] is a sub-type of [[k2]].'' ([[k2]] is in prenex form) }}
 by
 
 k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
 O2 +> b:Rel k3 ~> O2'; X
+t0 = \ x :Rel (UPI a:Rel k1.k2), b:Rel k3. t2[X] (x (t1 b))
 -------------------------------------------- :: FunRel
-UPI_Req a:Rel k1. k2 *<= UPI_Req b:Rel k3.k4 ~> \ x :Rel (UPI a:Rel k1.k2), b:Rel k3. t2[X] (x (t1 b)) -| O1, O2'
+UPI_Req a:Rel k1. k2 *<= UPI_Req b:Rel k3.k4 ~> t0 -| O1, O2'
 
 k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
 O2 +> b:Irrel k3 ~> O2'; X
+t0 = \ x :Rel (UPI a:Irrel k1.k2), b:Irrel k3. t2[X] (x {t1 b})
 -------------------------------------------- :: FunIrrel
-UPI_Req a:Irrel k1. k2 *<= UPI_Req b:Irrel k3.k4 ~> \ x :Rel (UPI a:Irrel k1.k2), b:Irrel k3. t2[X] (x {t1 b}) -| O1,O2'
+UPI_Req a:Irrel k1. k2 *<= UPI_Req b:Irrel k3.k4 ~> t0 -| O1,O2'
 
 fresh cu
 ----------------------- :: Unify
@@ -474,6 +506,7 @@ t1 *<= t2 ~> \ x:Rel t1. (x |> cu_{}) -| cu : forall{}. t1 [Type{}]~[Type{}] t2
 
 defn
 k1 <= k2 ~> t -| O :: :: ISub :: 'Sub_'
+  {{ com ``[[k1]] is a sub-type of [[k2]].'' }}
 by
 
 |->pre k2 ~> D; k2'; t1
@@ -489,6 +522,7 @@ k1 <= k2 ~> \ x:Rel k1. t1 (\ D. t2[X] (x ps)) -| O1,O2'
 
 defn
 O +> D ~> O' ; X :: :: IGen :: 'Gen_'
+  {{ com Generalize [[O]] over [[D]]. }}
 by
 
 --------------------------- :: Nil
@@ -512,6 +546,7 @@ JUnzonked :: '' ::=
 
 defn
 S ; P |=ty t : k :: :: UTy :: 'Ty_'
+  {{ com Extra rule to support unification variables in types }}
 by
 
 au :Rel forall D.k \in P  // S |=ctx P
@@ -521,6 +556,7 @@ S;P |=ty au_theta : k[theta \inter dom(D)]
 
 defn
 S ; P |=co g : phi :: :: UCo :: 'Co_'
+  {{ com Extra rule to support unification variables in coercions }}
 by
 
 cu : forall D.phi \in P  // S |=ctx P
@@ -531,6 +567,7 @@ S;P |=co cu_theta : phi[theta \inter dom(D)]
 defn
 S |=ctx P :: :: UCtx :: 'Ctx_'
   {{ tex [[S]] [[|=ctx]] [[P]] \ok }}
+  {{ com Extra rules to support binding unification variables }}
 by
 
 S;Rel(P,D) |=ty k : Type{}  // S |=ctx P
@@ -543,6 +580,7 @@ S |=ctx P, cu : forall D. phi
 
 defn
 S ; P |=u theta : D  :: :: UV :: 'UV_'
+  {{ com ``[[theta]] is an appropriated carried substitution under telescope [[D]].'' }}
 by
 
 fv(theta) \subseteq {dom(P)}

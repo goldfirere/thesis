@@ -548,6 +548,7 @@ premises are unchanged. The remaining ones we will have to prove:
 \item[$[[match_{dom(D3)}(types(D4[s/a]);types(D'[s/a])) = Just theta']]$:]
 We can freely choose $[[theta']]$, but we still need to make sure that
 the match succeeds. This is by \pref{prop:match-subst}.
+\end{description}
 \item[Case \rul{Co\_Var}:] Similar to \rul{Ty\_Var}.
 \item[Case \rul{Co\_PiTy}:]
 We adopt the metavariable names from the rule (renaming the variable to be substituted
@@ -799,7 +800,7 @@ We'll adopt the metavariable names from the rule:
 \]
 The induction hypothesis tells us $[[S;Rel(G) |-ty UPI a:Rel k.k : Type{} ]]$.
 Inversion on \rul{Ty\_Pi} tells us $[[S;Rel(G),a:Rel k |-ty k : Type{} ]]$.
-\pref{lem:tyvar-ctx} gives us $[[S;Rel(G) |-ty k : Type{} ]]$ as desired.
+\pref{lem:tyvar-reg} gives us $[[S;Rel(G) |-ty k : Type{} ]]$ as desired.
 \item[Case \rul{Ty\_Absurd}:] Immediate.
 \end{description}
 \end{proof}

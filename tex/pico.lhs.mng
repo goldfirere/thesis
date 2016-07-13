@@ -1438,18 +1438,18 @@ an unsaturated use of |MkX|. This Haskell code translates to the following \pico
 \begin{array}{@@{}l@@{}}
 \begin{array}{r@@{\,}l}
 [[S]] =
-& [[&X : (empty)]], \\
-& [[&MkX : (&&ax :Irrel Type{}, &&yx :Rel &&ax, &&zx :Rel &&ax; &X)]]
+& [[&&Xx : (empty)]], \\
+& [[&MkX : (&&ax :Irrel Type{}, &&yx :Rel &&ax, &&zx :Rel &&ax; &&Xx)]]
 \end{array}
 \\[4ex]
 \begin{array}{r@@{\,}c@@{\,}l}
-[[&unX]] &:& [[UPI (&&xx :Rel MPI (&&zx :Rel &Bool{}). &X{}). &Bool{}]] \\
-[[&unX]] &=& [[\ ]] [[(&&xx :Rel MPI (&&zx :Rel &Bool{}). &X{})]] . \\
+[[&unX]] &:& [[UPI (&&xx :Rel MPI (&&zx :Rel &Bool{}). &&Xx{}). &Bool{}]] \\
+[[&unX]] &=& [[\ ]] [[(&&xx :Rel MPI (&&zx :Rel &Bool{}). &&Xx{})]] . \\
 && [[case_&Bool{} &&xx of blank]] \\
 && \quad
 [[&MkX]] [[->]]
 \begin{array}[t]{@@{}l}
-[[ \ ]] [[(&&ax :Irrel Type{}), (&&yz :Rel &&ax), (c0 : &&xx (MPI (&&zx :Rel &Bool{}). &X{})~(MPI (&&zx :Rel &&ax). &X{}) &MkX{} &&ax &&yz)]]. \\
+[[ \ ]] [[(&&ax :Irrel Type{}), (&&yz :Rel &&ax), (c0 : &&xx (MPI (&&zx :Rel &Bool{}). &&Xx{})~(MPI (&&zx :Rel &&ax). &&Xx{}) &MkX{} &&ax &&yz)]]. \\
 [[&&yx |> sym (argk (kind c0))]]
 \end{array}
 \end{array}
@@ -1481,7 +1481,7 @@ the rule:
 [[H &= &MkX]] \\
 [[D1 &= empty]] \\
 [[D2 &= &&ax :Irrel Type{}, &&yx :Rel &&ax, &&zx :Rel &&ax]] \\
-[[H' &= &X]] \\
+[[H' &= &&Xx]] \\
 [[t0 &= &&xx]] \\
 [[D' &= &&zx :Rel &Bool{} ]]
 \end{array}
@@ -1505,7 +1505,7 @@ equations above via an empty $[[D1]]$ and an empty $[[ss]]$.)
 We thus have $[[D3,D4 = D2]]$, where the length of $[[D4]]$ must match
 the length of $[[D']]$, the telescope of variable bound in the type
 of the scrutinee. We see that the scrutinee $[[&&xx]]$ has type
-$[[MPI (&&zx :Rel &Bool{}). &X{}]]$ and so $[[D' = &&zx :Rel &Bool{}]]$.
+$[[MPI (&&zx :Rel &Bool{}). &&Xx{}]]$ and so $[[D' = &&zx :Rel &Bool{}]]$.
 Thus $[[D3]]$---the existentials bound by the pattern match---has two
 elements (|a| and |y|) and $[[D4]]$ has one (|z|).
 

@@ -127,8 +127,14 @@ mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'mixedVars_' ::=
   {{ tex [[dom]]([[G]]) }}
 | xs                                 :: M :: Tys
 
+all_vars :: 'AllVars_' ::=
+| zs                                 :: M :: Pico
+| zus                                :: M :: Inference
+| dom ( P )                          :: M :: dom_P
+  {{ tex [[dom]]([[P]]) }}
+
 fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
-| { zus }                            :: M :: Set
+| { all_vars }                       :: M :: Set
 | fv ( ps )                          :: M :: fv_tycos
   {{ tex [[fv]] ( [[ps]] ) }}
 | fv ( alt )                         :: M :: fv_alt
@@ -141,6 +147,7 @@ fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
   {{ tex [[fv]] ( [[theta]] ) }}
 | ( fvset )                          :: M :: Parens
 | fvset1 \union fvset2               :: M :: Union
+| fvset1 \inter fvset2               :: M :: Inter
 | fvset1 \ fvset2                    :: M :: Minus
   {{ tex [[fvset1]] \mathop{\backslash} [[fvset2]] }}
 | \emptyset                          :: M :: Emptyset
