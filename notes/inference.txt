@@ -71,8 +71,8 @@
   but it's really just like Gundry's treatment.
 - Syntactic pun: forall D. O means apply the forall to each binding
   separately
-- The theta arg to a unification variable is called the "carried substitution"
-  |=u is "validity of carried substitution"
+- The theta arg to a unification variable is called the "closing substitution"
+  |=u is "validity of closing substitution"
 - We often elide the forall{} and _{}.
 - Substitution operations (\inter and \ )
 

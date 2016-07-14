@@ -49,6 +49,7 @@ fact :: 'Fact_' ::=
   | S ; G |- J                         ::   :: pico_judg
   | xmap \in X                         ::   :: in_xmap
   | a # O                              ::   :: not_in_O
+  | zs1 \subseteq zs2                  ::   :: zs_subset
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -146,6 +147,7 @@ terminals :: 'terminals_' ::=
 | |-vec                                ::   :: Vec_ent {{ tex \vdashy{vec} }}
 | |-cev                                ::   :: Cev_ent {{ tex \vdashy{cev} }}
 | |-prop                               ::   :: Prop_ent {{ tex \vdashy{prop} }}
+| |-subst                               ::   :: Subst_ent {{ tex \vdashy{subst} }}
 | |-s                                  ::   :: S_ent   {{ tex \vdashy{s} }}
 | |-r                                  ::   :: R_ent   {{ tex \vdashy{r} }}
 | |-lc                                 ::   :: Lc_ent  {{ tex \vdashy{lc} }}
@@ -165,7 +167,7 @@ terminals :: 'terminals_' ::=
 | |=s                                  ::   :: S_int   {{ tex \vDashy{s} }}
 | |=z                                  ::   :: Z_int   {{ tex \vDashy{z} }}
 | |=lc                                 ::   :: Lc_int  {{ tex \vDashy{lc} }}
-| |=u                                  ::   :: U_int   {{ tex \vDashy{u} }}
+| |=subst                                  ::   :: SUBST_int   {{ tex \vDashy{subst} }}
 
 | |->ty                                ::   :: Ty_inf  {{ tex \varrowy{ty} }}
 | *|->ty                               ::   :: TyS_inf {{ tex \varrowys{ty} }}

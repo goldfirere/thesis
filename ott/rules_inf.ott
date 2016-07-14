@@ -553,11 +553,11 @@ t' = \ D . (t[Z])  //   k' = UPI_Inf D. (k[Z])
 S;G |->decl x := _t ~> x : k' := t'
 
 S;G |->pt _s ~> s -| O1
-S;G |->solv O1 ~> D1;Z1
+S;Rel(G) |->solv Rel(O1) ~> D1;Z1
 s' = UPI_Inf D. (s[Z1])
 S;G *|->ty _t : s' ~> t -| O2
 S;G |->solv O2 ~> empty;Z2
-t' = t[Z]
+t' = t[Z2]
 ------------------------------ :: Check
 S;G |->decl x :: _s := _t ~> x : s' := t'
 
@@ -587,7 +587,7 @@ S ; P |=ty t : k :: :: UTy :: 'Ty_'
 by
 
 au :Rel forall D.k \in P  // S |=ctx P
-S;P |=u theta : D
+S;P |=subst theta : D
 --------------- :: UVar
 S;P |=ty au_theta : k[theta \inter dom(D)]
 
@@ -597,7 +597,7 @@ S ; P |=co g : phi :: :: UCo :: 'Co_'
 by
 
 cu : forall D.phi \in P  // S |=ctx P
-S;P |=u theta : D
+S;P |=subst theta : D
 ----------------- :: UVar
 S;P |=co cu_theta : phi[theta \inter dom(D)]
 
@@ -616,28 +616,28 @@ S;Rel(P,D) |=prop phi  // S |=ctx P
 S |=ctx P, cu : forall D. phi
 
 defn
-S ; P |=u theta : D  :: :: UV :: 'UV_'
-  {{ com ``[[theta]] is an appropriated carried substitution under telescope [[D]].'' }}
+S ; G |-subst theta : D  :: :: Subst :: 'Subst_'
+  {{ com ``[[theta]] substitutes the variables in [[D]] away.'' }}
 by
 
-fv(theta) \subseteq {dom(P)}
+fv(theta) \subseteq {dom(G)}
 --------------------- :: Nil
-S;P |=u theta : empty
+S;G |-subst theta : empty
 
-S;P |=ty a[theta] : k
-S;P |=u theta : D[theta \inter a]
+S;G |-ty a[theta] : k
+S;G |-subst theta : D[theta \inter a]
 -------------------------- :: TyRel
-S;P |=u theta : a:Rel k, D
+S;G |-subst theta : a:Rel k, D
 
-S;Rel(P) |=ty a[theta] : k
-S;P |=u theta : D[theta \inter a]
+S;Rel(G) |-ty a[theta] : k
+S;G |-subst theta : D[theta \inter a]
 -------------------------- :: TyIrrel
-S;P |=u theta : a:Irrel k, D
+S;G |-subst theta : a:Irrel k, D
 
-S;Rel(P) |=co c[theta] : phi
-S;P |=u theta : D[theta \inter c]
+S;Rel(G) |-co c[theta] : phi
+S;G |-subst theta : D[theta \inter c]
 ------------------------ :: Co
-S;P |=u theta : c:phi, D
+S;G |-subst theta : c:phi, D
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Zonking  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

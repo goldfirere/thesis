@@ -23,20 +23,28 @@ I sometimes write $[[S;P |= J]]$,
 where $[[J]]$ stands for a \emph{judgment}, one of the
 judgments headed by $[[|=ty]]$, $[[|=co]]$, $[[|=prop]]$,
 $[[|=alt]]$, $[[|=vec]]$, $[[|=ctx]]$, $[[|=s]]$, or
-the new $[[|=u]]$.
+ $[[|=subst]]$.
 Similarly, I write $[[J[theta] ]]$ to denote substitution in the
 component parts of the judgment $[[J]]$.
 \end{definition}
 
-\begin{lemma}[Extension]
+\begin{lemma}[Extension] ~
 \label{lem:extension}
+\begin{enumerate}
+\item
 If $[[S;G |- J]]$, then $[[S;G |= J]]$.
+\item
+If $[[S;G |= J]]$ and $[[J]]$ mentions no unification variables, then
+$[[S;G |- J]]$.
+\end{enumerate}
 \end{lemma}
 
 \begin{proof}
 The difference between the $[[|-]]$ judgments and the $[[|=]]$ judgments
 is only the addition of new rules for new forms. No previously valid
-derivations are affected.
+derivations are affected. Note that, although we can't prove it now, the
+``mentions no unification variables'' is redundant, as shown by \pref{lem:iscoping},
+below.
 \end{proof}
 
 \begin{definition}[Substitution in unification variables]
@@ -124,26 +132,26 @@ As before; the new forms do not pose any problems.
 \begin{lemma}[Strengthening {[\pref{lem:strengthening}]}]
 \label{lem:istrengthening}
 (as stated previously, but with reference to $[[|=]]$ judgments
-and including $[[|=u]]$))
+and including $[[|=subst]]$))
 \end{lemma}
 
 \begin{proof}
 As before; the new forms do not pose any problems.
 \end{proof}
 
-\begin{lemma}[Scoping for $[[|=u]]$]
+\begin{lemma}[Scoping for $[[|=subst]]$]
 \label{lem:scoping-u}
 \end{lemma}
 
 \begin{proof}
-Straightforward induction on $[[|=u]]$.
+Straightforward induction on $[[|=subst]]$.
 \end{proof}
 
 \begin{lemma}[Scoping {[\pref{lem:scoping}]}]
 \label{lem:iscoping}
 As stated previously, but with reference to $[[|=]]$ judgments, and
 with this extra clause:
-If $[[S;P |=u theta : D]]$, then $[[fv(theta) \subseteq {dom(P)}]]$
+If $[[S;P |=subst theta : D]]$, then $[[fv(theta) \subseteq {dom(P)}]]$
 and $[[({dom(D)} \ {dom(P)}) \subseteq dom(theta)]]$.
 \end{lemma}
 
@@ -157,19 +165,19 @@ We see that $[[au \in {dom(P)}]]$ and, by \pref{lem:scoping-u},
 $[[fv(theta) \subseteq {dom(P)}]]$. By
 \pref{lem:unif-tyvar-reg}, we know that there exists $[[P']]$ such that
 $[[{dom(P')} \subseteq {dom(P)}]]$ and $[[S;P',Rel(D) |=ty k : Type{}]]$.
-By the induction hypothesis on $[[S;P |=u theta : D]]$, we know that
+By the induction hypothesis on $[[S;P |=subst theta : D]]$, we know that
 both that the output of the substitution is well-scoped in $[[P]]$,
 and that any variables in $[[k]]$ that are in $[[D]]$ but not in
 $[[P]]$ are substituted away. We are thus done with this case.
 
-The cases for \rul{UV\_TyRel}, \rul{UV\_TyIrrel}, and \rul{UV\_Co}
+The cases for \rul{Subst\_TyRel}, \rul{Subst\_TyIrrel}, and \rul{Subst\_Co}
 are also worthy of mention;
-we'll focus on \rul{UV\_TyRel}:
+we'll focus on \rul{Subst\_TyRel}:
 \[
-\ottdruleUVXXTyRel{}
+\ottdruleSubstXXTyRel{}
 \]
 Either $[[a \in dom(theta)]]$ or not. If it is, then we are done by
-the induction hypothesis on $[[|=u]]$.
+the induction hypothesis on $[[|=subst]]$.
 If it is not, then we see that $[[ a[theta] = a]]$
 and thus we are done by the induction hypothesis on $[[|=ty]]$.
 \end{proof}
@@ -200,9 +208,9 @@ By induction on $[[S;P,a:rel k,P' |= J]]$. We consider only the new cases.
 We must prove $[[S;P,P'[s/a] |=ty au_{s/a o theta} : k[theta \inter dom(D)][s/a] ]]$.
 (Recall that normal subsitutions $[[theta]]$ do not map unification
 variables.) We know $[[au :Rel forall D.k \in P,a:rel k,P']]$,
-$[[S |=ctx P,a:rel k,P']]$ and $[[S;P,a:rel k,P' |=u theta : D]]$.
+$[[S |=ctx P,a:rel k,P']]$ and $[[S;P,a:rel k,P' |=subst theta : D]]$.
 By the induction hypothesis, we can conclude $[[S |=ctx P,P'[s/a] ]]$
-and $[[S;P,P'[s/a] |=u s/a o theta : D[s/a] ]]$.
+and $[[S;P,P'[s/a] |=subst s/a o theta : D[s/a] ]]$.
 We now have two cases, depending on the location of $[[au]]$:
 \begin{description}
 \item[Case $[[au :Rel forall D.k \in P]]$:]
@@ -223,34 +231,34 @@ as desired.
 \end{description}
 \item[Case \rul{Co\_UVar}:]
 Similar to previous case.
-\item[Case \rul{UV\_Nil}:]
+\item[Case \rul{Subst\_Nil}:]
 \[
-\ottdruleUVXXNil{}
+\ottdruleSubstXXNil{}
 \]
 We must prove here that $[[fv(s/a o theta) \subseteq {dom(P,P'[s/a])} ]]$,
 given that $[[fv(theta) \subseteq {dom(P,a:rel k,P')} ]]$.
 We can see that $[[a \notin fv(s/a o theta)]]$, so we are left
 to show that $[[fv(s) \subseteq {dom(P,P'[s/a])}]]$. This last fact
 comes from \pref{lem:iscoping} and $[[S;P |=ty s : k]]$.
-\item[Case \rul{UV\_TyRel}:]
-In this case, we know $[[S;P,a:rel k,P' |=u theta : b:Rel k0, D]]$
-and must show $[[S;P,P'[s/a] |=u s/a o theta : b:Rel k0[s/a], D[s/a] ]]$.
+\item[Case \rul{Subst\_TyRel}:]
+In this case, we know $[[S;P,a:rel k,P' |=subst theta : b:Rel k0, D]]$
+and must show $[[S;P,P'[s/a] |=subst s/a o theta : b:Rel k0[s/a], D[s/a] ]]$.
 Inverting gives us $[[S;P,a:rel k,P' |=ty b[theta] : k0]]$ and
-$[[S;P,a:rel k, P' |=u theta : D[theta \inter b] ]]$.
-To use \rul{UV\_TyRel}, we must show
+$[[S;P,a:rel k, P' |=subst theta : D[theta \inter b] ]]$.
+To use \rul{Subst\_TyRel}, we must show
 $[[S;P,P'[s/a] |=ty b[s/a o theta] : k0[s/a] ]]$ and
-$[[S;P,P'[s/a] |=u s/a o theta : D[s/a][(s/a o theta) \inter b] ]]$.
+$[[S;P,P'[s/a] |=subst s/a o theta : D[s/a][(s/a o theta) \inter b] ]]$.
 The first of these is directly from the induction hypothesis.
 The induction hypothesis also gives us
-$[[S;P,P'[s/a] |=u s/a o theta : D[theta \inter b][s/a] ]]$.
+$[[S;P,P'[s/a] |=subst s/a o theta : D[theta \inter b][s/a] ]]$.
 We are left only to show that
 $[[D[theta \inter b][s/a] = D[s/a][(s/a o theta) \inter b] ]]$.
 On the right, we care only about $[[theta]]$'s action on $[[b]]$, so we
 can rewrite to $[[D[s/a][s/a o (theta \inter b)] ]]$, which can then
 be rewritten to $[[D[theta \inter b][s/a] ]]$ as desired.
-\item[Case \rul{UV\_TyIrrel}:]
+\item[Case \rul{Subst\_TyIrrel}:]
 Similar to previous case.
-\item[Case \rul{UV\_Co}:]
+\item[Case \rul{Subst\_Co}:]
 Similar to previous case.
 \end{description}
 \end{proof}
@@ -278,35 +286,35 @@ $[[J]]$ while the previous proof lemma works only over $[[|-ty]]$.
 This generalization poses no trouble.
 \end{proof}
 
-\section{Carried substitutions}
+\section{Closing Substitutions}
 
-\begin{lemma}[Increasing relevance in carried-substitution validity]
-\label{lem:increasing-rel-carried-subst}
-If $[[S;P |=u theta : D]]$, then $[[S;P |=u theta : Rel(D)]]$.
+\begin{lemma}[Increasing relevance in substitution validity]
+\label{lem:increasing-rel-closing-subst}
+If $[[S;P |=subst theta : D]]$, then $[[S;P |=subst theta : Rel(D)]]$.
 \end{lemma}
 
 \begin{proof}
-Straightforward induction on $[[S;P |=u theta : D]]$. Note that no
-rules for $[[|=u]]$ use the relevance on type variable binders.
+Straightforward induction on $[[S;P |=subst theta : D]]$. Note that no
+rules for $[[|=subst]]$ use the relevance on type variable binders.
 \end{proof}
 
-\begin{lemma}[Carried substitution]
-\label{lem:carried-subst}
-If $[[S;P |=u theta : D]]$ and $[[S;P,D |= J]]$, then
+\begin{lemma}[Closing substitution]
+\label{lem:closing-subst}
+If $[[S;P |=subst theta : D]]$ and $[[S;P,D |= J]]$, then
 $[[S;P |= J[theta \inter dom(D)] ]]$.
 \end{lemma}
 
 \begin{proof}
-By induction on $[[S;P |=u theta : D]]$.
+By induction on $[[S;P |=subst theta : D]]$.
 
 \begin{description}
-\item[Case \rul{UV\_Nil}:]
+\item[Case \rul{Subst\_Nil}:]
 In this case, $[[D = empty]]$ and we are done by assumption.
-\item[Case \rul{UV\_TyRel}:]
+\item[Case \rul{Subst\_TyRel}:]
 \[
-\ottdruleUVXXTyRel{}
+\ottdruleSubstXXTyRel{}
 \]
-We know $[[S;P |=u theta : a:Rel k, D]]$ and $[[S;P,a:Rel k,D |= J]]$.
+We know $[[S;P |=subst theta : a:Rel k, D]]$ and $[[S;P,a:Rel k,D |= J]]$.
 We must prove $[[S;P |= J[theta \inter a,dom(D)] ]]$.
 We know $[[S;P |=ty a[theta] : k]]$ and thus we can use
 \pref{lem:ity-subst} to get $[[S;P,D[theta \inter a] |= J[theta \inter a] ]]$.
@@ -316,17 +324,17 @@ It remains only to show that
 $[[{theta \inter a} o {theta \inter dom(D)} = theta \inter a,dom(D)]]$.
 This amounts to showing that $[[dom(D) # a[theta] ]]$. We have
 this by \pref{lem:iscoping}, and so we are done.
-\item[Case \rul{UV\_TyIrrel}:]
+\item[Case \rul{Subst\_TyIrrel}:]
 Similar to previous case.
-\item[Case \rul{UV\_Co}:]
+\item[Case \rul{Subst\_Co}:]
 Similar to previous case, referring to \pref{lem:ico-subst}.
 \end{description}
 \end{proof}
 
-\begin{lemma}[Carried substitution extension]
-\label{lem:carried-subst-ext}
-If $[[S |=ctx P]]$, $[[S;P |=u theta : D]]$, and $[[D' \subseteq P]]$,
-then $[[S;P |=u theta \ {dom(D')} : D',D]]$.
+\begin{lemma}[Closing substitution extension]
+\label{lem:closing-subst-ext}
+If $[[S |=ctx P]]$, $[[S;P |=subst theta : D]]$, and $[[D' \subseteq P]]$,
+then $[[S;P |=subst theta \ {dom(D')} : D',D]]$.
 \end{lemma}
 
 \begin{proof}
@@ -337,23 +345,41 @@ By induction on the structure of $[[D']]$.
 By assumption.
 \item[Case $[[D' = a:Rel k, D'']]$:]
 The induction hypothesis gives us
-$[[S;P |=u theta \ {dom(D'')} : D'',D]]$.
+$[[S;P |=subst theta \ {dom(D'')} : D'',D]]$.
 Let $[[theta' = theta \ {dom(D'')} ]]$.
-To use \rul{UV\_TyRel} to get us the last step,
+To use \rul{Subst\_TyRel} to get us the last step,
 we must show $[[S;P |=ty a[theta' \ {a}] : k]]$
-and $[[S;P |=u theta' \ {a} : (D'',D)[(theta' \ {a}) \inter a] ]]$.
+and $[[S;P |=subst theta' \ {a} : (D'',D)[(theta' \ {a}) \inter a] ]]$.
 We already have that last fact, noting that the substitution applied
 to $[[D'',D]]$ must be empty.
 For the first, we note that $[[a[theta' \ {a}] = a]]$, and then we use
 $[[D' \subseteq P]]$ to get $[[S;P |=ty a : k]]$ as desired. We are
-done by \rul{UV\_TyRel}.
+done by \rul{Subst\_TyRel}.
 \item[Case $[[D' = a:Irrel k, D'']]$:]
-Similar to previous case, noting that the premise to \rul{UV\_TyIrrel}
+Similar to previous case, noting that the premise to \rul{Subst\_TyIrrel}
 uses the $[[Rel]]$ operator to make the binding for $[[a]]$ in the context
 relevant.
 \item[Case $[[D' = c:phi, D'']]$:]
-Similar to previous case, using \rul{UV\_Co}.
+Similar to previous case, using \rul{Subst\_Co}.
 \end{description}
+\end{proof}
+
+\begin{lemma}[Closing substitution substitution] ~
+\label{lem:closing-subst-subst}
+\begin{enumerate}
+\item If $[[S;G, a:Rel k |-subst theta : D]]$ and $[[S;G |-ty t : k]]$,
+then $[[S;G |-subst t/a o theta : D[t/a] ]]$.
+\item If $[[S;G, a:Irrel k |-subst theta : D]]$ and $[[S;Rel(G) |-ty t : k]]$,
+then $[[S;G |-subst t/a o theta : D[t/a] ]]$.
+\item If $[[S;G, c:phi |-subst theta : D]]$ and $[[S;G |-co g : phi]]$,
+then $[[S;G |-subst g/c o theta : D[g/c] ]]$
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By induction on the $[[|-subst]]$ derivation, appealing
+to \pref{lem:ty-subst} and \pref{lem:co-subst}. See also the proof
+for \pref{lem:ity-subst} for the details.
 \end{proof}
 
 \section{Regularity}
@@ -376,10 +402,10 @@ By \pref{lem:ictx-reg} and \pref{lem:unif-tyvar-reg}, there exists
 $[[P']]$ such that $[[P' \subseteq Rel(P)]]$ and
 $[[S;P',Rel(D) |=ty k : Type{}]]$. \pref{lem:iweakening} then gives
 us $[[S;Rel(P,D) |=ty k : Type{}]]$.
-\pref{lem:increasing-rel-carried-subst} and \pref{lem:increasing-rel}
+\pref{lem:increasing-rel-closing-subst} and \pref{lem:increasing-rel}
 tell us that
-$[[S;Rel(P) |=u theta : Rel(D)]]$. We can thus use
-\pref{lem:carried-subst} to get
+$[[S;Rel(P) |=subst theta : Rel(D)]]$. We can thus use
+\pref{lem:closing-subst} to get
 $[[S;Rel(P) |=ty k[theta \inter dom(D)] : Type{}]]$
 as desired.
 \end{description}
@@ -411,7 +437,7 @@ quantified over a set of type/coercion variables, $[[zs]]$.
 \begin{definition}[Zonking]
 \label{defn:zonking}
 A zonker $[[Z]]$ can be used as a substitution. When zonking
-a unification variable, we apply the carried substitution it stores,
+a unification variable, we apply the closing substitution it stores,
 restricted to the variables $[[zs]]$ from the zonker. To wit:
 \[
 \begin{array}{r@{\quad}c@{\quad}r@{\;}l}
@@ -554,8 +580,8 @@ Similar to previous case.
 \]
 We know $[[S;P,O,D2 |=ty au_theta : k[theta \inter dom(D)] ]]$ and must
 prove $[[S;P,D2[Z] |=ty au_theta[Z] : k[theta \inter dom(D)][Z] ]]$.
-We further know that $[[S;P,O,D2 |=u theta : D]]$
-By the induction hypothesis, $[[S;P,D2[Z] |=u theta[Z] : D[Z] ]]$
+We further know that $[[S;P,O,D2 |=subst theta : D]]$
+By the induction hypothesis, $[[S;P,D2[Z] |=subst theta[Z] : D[Z] ]]$
 and $[[S |=ctx P,D2[Z] ]]$.
 There are then several possibilities:
 \begin{description}
@@ -568,7 +594,7 @@ We also know that $[[au_theta[Z] = au_{theta[Z]}]]$ and $[[k[Z] = k]]$.
 The telescope $[[D]]$ is mentioned in $[[P]]$ and therefore is unaffected
 by the zonking substitution $[[Z]]$.
 We can thus conclude that $[[au:Rel forall D. k \in P,D2[Z] ]]$
-and $[[S;P,D2[Z] |=u theta[Z] : D]]$. We can thus use
+and $[[S;P,D2[Z] |=subst theta[Z] : D]]$. We can thus use
 \rul{Ty\_UVar} to conclude $[[S;P,D2[Z] |=ty au_{theta[Z]} : k[theta[Z] \inter dom(D)] ]]$. We can rewrite this kind to be
 $[[k[theta \inter dom(D)][Z] ]]$ as desired because $[[k[Z] = k]]$.
 
@@ -580,7 +606,7 @@ $[[forall dom(D). t/au \in Z]]$.
 Thus (by \pref{defn:zonking}) $[[au_theta[Z] = t[{theta \inter dom(D)}[Z] ] ]]$.
 \pref{lem:iweakening} gives us
 $[[S;P,D2[Z],D[Z] |=ty t : k[Z] ]]$.
-Now, we apply \pref{lem:carried-subst} to get
+Now, we apply \pref{lem:closing-subst} to get
 $[[S;P,D2[Z] |=ty t[theta[Z] \inter dom(D)] : k[Z][theta[Z] \inter dom(D)] ]]$,
 which can easily be rewritten to
 $[[S;P,D2[Z] |=ty t[{theta \inter dom(D)}[Z] ] : k[theta \inter dom(D)][Z] ]]$
@@ -694,13 +720,13 @@ We have two cases:
 In this case, we know $[[rel = Rel]]$ and $[[k0 = k[theta \inter dom(D')] ]]$.
 In order to use \rul{Ty\_UVar}, we must show
 $[[S |=ctx P,au:Rel forall D,D'.k, D, P'[X] ]]$ (which we get from the
-induction hypothesis) and $[[S;P,au :Rel forall D,D'.k, D, P'[X] |=u theta \ {dom(D)} : D,D']]$.
-We know $[[S;P,D,au :rel forall D'.k, P' |=u theta : D']]$.
+induction hypothesis) and $[[S;P,au :Rel forall D,D'.k, D, P'[X] |=subst theta \ {dom(D)} : D,D']]$.
+We know $[[S;P,D,au :rel forall D'.k, P' |=subst theta : D']]$.
 The induction hypothesis tells us that
-$[[S;P,au :rel forall D,D'.k, D, P'[X] |=u theta[X] : D'[X] ]]$.
+$[[S;P,au :rel forall D,D'.k, D, P'[X] |=subst theta[X] : D'[X] ]]$.
 However, we can see (\pref{lem:iscoping}) that $[[D'[X] = D]]$.
-Then, \pref{lem:carried-subst-ext} tells us
-$[[S;P,au :rel forall D,D'.k, D, P'[X] |=u theta[X] \ {dom(D)} : D,D']]$
+Then, \pref{lem:closing-subst-ext} tells us
+$[[S;P,au :rel forall D,D'.k, D, P'[X] |=subst theta[X] \ {dom(D)} : D,D']]$
 as desired. Rule \rul{Ty\_UVar} gives us
 $[[S;P,au :rel forall D,D'.k, D, P'[X] |=ty au_{theta[X] \ {dom(D)}} : k[theta \ {dom(D)} \inter dom(D,D')] ]]$. Indeed we can rewrite the kind as
 $[[k[theta \inter dom(D')] ]]$ and we are done.
@@ -1089,7 +1115,8 @@ $[[x]]$ is not mentioned in any of these, and we are done.
 \end{description}
 \end{proof}
 
-\begin{theorem}[Type elaboration is sound] ~
+\begin{lemma}[Type elaboration is sound] ~
+\label{lem:isound}
 \begin{enumerate}
 \item If any of the following:
 \begin{enumerate}
@@ -1129,7 +1156,7 @@ then $[[S;Rel(P,O) |=ty k : Type{}]]$.
 If $[[S;P |=ty t0 : k]]$ and $[[S;P |->aq _aqvar : k ~> a : k'; x.t -| O]]$,
 then $[[S;P,O |=ty t[t0/x] : k']]$.
 \end{enumerate}
-\end{theorem}
+\end{lemma}
 
 \begin{proof}
 Proceed by induction on the structure of the type inference derivation.
@@ -1561,3 +1588,110 @@ We are done.
 \end{description}
 \end{proof}
 
+\begin{lemma}[Declarations]
+\label{lem:idecl}
+If $[[S |-ctx G]]$ and $[[S;G |->decl _decl ~> x : k := t]]$,
+then $[[dom(_decl) = x]]$ and $[[S;G |-ty t : k]]$.
+\end{lemma}
+
+\begin{proof}
+By case analysis on the type inference judgment.
+
+\begin{description}
+\item[Case \rul{IDecl\_Synthesize}:]
+\[
+\ottdruleIDeclXXSynthesize{}
+\]
+By \pref{lem:extension}, we have $[[S |=ctx G]]$. We then use
+\pref{lem:isound} to get $[[S;G,O |=ty t : k]]$. \pref{lem:ictx-reg}
+gives us $[[S |=ctx G,O]]$.
+\pref{prop:isolv} tells us that $[[Z]]$ is idempotent, that
+$[[S |=ctx G,D]]$, and that $[[S;G,D |=z Z : O]]$.
+\pref{lem:iweakening} gives us $[[S;G,D,O |=ty t : k]]$.
+We can then use \pref{lem:zonking} to get
+$[[S;G,D |=ty t[Z] : k[Z] ]]$.
+Rule \rul{Ty\_Lam} (used repeatedly) gives us
+$[[S;G |=ty t' : k']]$.
+\pref{lem:extension} gives $[[S;G |-ty t' : k']]$ as desired.
+
+\item[Case \rul{IDecl\_Check}:]
+\[
+\ottdruleIDeclXXCheck{}
+\]
+\pref{lem:extension} provides $[[S |=ctx G]]$. We then use
+\pref{lem:isound} to get $[[S;Rel(G,O1) |=ty s : Type{}]]$.
+\pref{lem:ictx-reg} gives us $[[S |=ctx Rel(G,O1)]]$.
+\pref{prop:isolv} tells us $[[Z1]]$ is idempotent,
+$[[S |=ctx Rel(G),D1]]$, and $[[S;Rel(G),D1 |=z Z1 : Rel(O1)]]$.
+\pref{lem:iweakening} gives us
+$[[S;Rel(G),D1,Rel(O1) |=ty s : Type{}]]$.
+\pref{lem:zonking} then says that
+$[[S;Rel(G),D1 |=ty s[Z1] : Type{}]]$.
+\pref{lem:increasing-rel} gives us
+$[[S;Rel(G),Rel(D1) |=ty s[Z1] : Type{}]]$
+and thus we can use \rul{Ty\_Pi} repeatedly to get
+$[[S;Rel(G) |=ty s' : Type{}]]$.
+A second use of \pref{lem:isound} gives us
+$[[S;G,O2 |=ty t : s']]$.
+A second use of \pref{prop:isolv} tells us
+$[[Z2]]$ is idempotent and $[[S;G |=z Z2 : O2]]$.
+We can thus use \pref{lem:zonking} once again to tell us
+$[[S;G |=ty t[Z2] : s'[Z2] ]]$, except that
+\pref{lem:iscoping} tells us that zonking the kind has no effect.
+Thus $[[S;G |=ty t' : s']]$,
+and \pref{lem:extension} gives us $[[S;G |-ty t' : s']]$ as desired.
+\end{description}
+\end{proof}
+
+\begin{theorem}[Full program elaboration is sound]
+\label{thm:iprog}
+If $[[S |-ctx G]]$ and $[[S;G |->prog _prog ~> G'; theta]]$,
+then:
+\begin{enumerate}
+\item $[[S |-ctx G,G']]$
+\item $[[S;G |-subst theta : G']]$
+\item $[[dom(_prog) \subseteq dom(G')]]$
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+By induction on the type inference judgment.
+
+\begin{description}
+\item[Case \rul{IProg\_Nil}:]
+Trivial.
+\item[Case \rul{IProg\_Decl}:]
+\[
+\ottdruleIProgXXDecl{}
+\]
+\pref{lem:idecl} tells us that
+$[[x = dom(_decl)]]$ and $[[S;G |-ty t : k]]$.
+We must show
+$[[S |-ctx G, x:Rel k, c : x [k]~[k] t]]$. To do this, we need only
+$[[S;Rel(G) |-ty k : Type{}]]$, which we get from \pref{lem:kind-reg}.
+We can then use the induction hypothesis to get
+$[[S |-ctx G, x:Rel k, c : x [k]~[k] t, G']]$,
+$[[S;G, x:Rel k, c : x [k]~[k] t |-subst theta : G']]$,
+and $[[dom(_prog) \subseteq dom(G')]]$.
+We already have that the outgoing context is well-formed and the
+domain condition. We need only show that
+$[[S;G |-subst (t/x,<t>/c) o theta : x :Rel k, c : x [k]~[k] t, G']]$.
+Let $[[theta' = (t/x,<t>/c) o theta]]$.
+We will work backwards. The last step will be \rul{Subst\_TyRel}.
+We must show $[[S;G |-ty x[theta'] : k]]$ and
+$[[S;G |-subst theta' : (c:x [k]~[k] t, G')[t/x] ]]$.
+We have already established the former (noting that $[[x[theta'] = t]]$).
+We rewrite the latter as
+$[[S;G |-subst theta' : c:t [k]~[k] t, G'[t/x] ]]$.
+This will be shown by \rul{Subst\_Co}. We must then show
+$[[S;Rel(G) |-co c[theta'] : t [k]~[k] t]]$ and
+$[[S;G |-subst theta' : G'[t/x][<t>/c] ]]$.
+The former is straightforwardly by \rul{Co\_Refl} and
+\pref{lem:increasing-rel}.
+For the latter, recall that we know
+$[[S;G, x:Rel k, c : x [k]~[k] t |-subst theta : G']]$.
+Thus, two uses of \pref{lem:closing-subst-subst} gives us
+$[[S;G |-subst theta' : G'[t/x][<t>/c] ]]$ as desired.
+We are done.
+\end{description}
+\end{proof}

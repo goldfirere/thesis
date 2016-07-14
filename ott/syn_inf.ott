@@ -82,6 +82,8 @@ O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
 | O [ Z ]              :: M :: Zonk
 | O [ X ]              :: M :: Gen
 | forall D . O         :: M :: Forall
+| Rel ( O )            :: M :: Rel
+  {{ tex [[Rel]]([[O]]) }}
 
 P {{ tex \Psi }} :: 'ICtx_' ::=
 | d                  ::   :: Binder
@@ -109,4 +111,5 @@ ijudg :: 'IJudg_' ::=
 | S ; P |=vec ps : P2                 ::   :: Vec
 | S ; P ; s ; t |=alt alt : k         ::   :: Alt
   {{ tex [[S]];[[P]];[[s]] [[|=alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
+| S ; P |=subst theta : D             ::   :: Subst
 | S ; P |= J                          ::   :: J

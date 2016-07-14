@@ -103,6 +103,8 @@ var, a, b, x :: 'Var_' ::= {{ com Variables }}
   {{ tex \$ [[a]] }}
 | dollar a              :: M :: TexHidden
   {{ tex \$ [[a]] }}
+| dom ( _decl )         :: M :: dom_decl
+  {{ tex [[dom]]([[_decl]]) }}
 
 covar, c :: 'CoVar_' ::= {{ com Coercion variables }}
 | _                     :: M :: Blank          {{ coq "_" }}
@@ -126,6 +128,8 @@ mixed_vars, zs {{ tex \overline{\ottnt{z} } }} :: 'mixedVars_' ::=
 | dom ( G )                          :: M :: DomCtx
   {{ tex [[dom]]([[G]]) }}
 | xs                                 :: M :: Tys
+| dom ( _prog )                      :: M :: DomProg
+  {{ tex [[dom]]([[_prog]]) }}
 
 all_vars :: 'AllVars_' ::=
 | zs                                 :: M :: Pico
