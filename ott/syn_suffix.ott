@@ -136,7 +136,9 @@ terminals :: 'terminals_' ::=
 | fresh                                ::   :: freshu  {{ tex \mathsf{fresh} }}
 | +>                                   ::   :: shove   {{ tex \hookrightarrow }}
 | make_exhaustive                      ::   :: makeExh {{ tex \mathsf{make\_exhaustive} }}
-| bind                                 ::   :: bind    {{ tex \mathsf{bind} }}
+| encode                               ::   :: encode  {{ tex \mathsf{encode} }}
+| fuv                                  ::   :: fuv     {{ tex \mathsf{fuv} }}
+| empt                                 ::   :: empt    {{ tex \epsilon }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -185,6 +187,9 @@ terminals :: 'terminals_' ::=
 | |->pre                                ::   :: Pre_inf  {{ tex \varrowy{pre} }}
 | |->decl                                ::   :: Decl_inf  {{ tex \varrowy{decl} }}
 | |->prog                                ::   :: Prog_inf  {{ tex \varrowy{prog} }}
+
+| oi|->                                  ::   :: oi_inf    {{ tex \varrowyy{}{\textsc{oi} } }}
+| oi|->solv                              ::   :: oi_solv_inf  {{ tex \varrowyy{solv}{\textsc{oi} } }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

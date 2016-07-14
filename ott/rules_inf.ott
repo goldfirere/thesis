@@ -205,10 +205,11 @@ O2 +> x:Rel k1 ~> O2';X
 ---------------------------------------- :: Let
 S;P *|->ty let x := _t1 in _t2 : k ~> (\x:Rel k1. (t2[X])) t1 -| O,O2'
 
+vis <= Spec
 S;P,$a:rel k1 *|->ty _t : k2 ~> t -| O
 O +> $a:rel k1 ~> O';X
 ---------------------------------------------- :: Skol
-S;P *|->ty _t : UPI_Spec $a:rel k1.k2 ~> \ $a:rel k1. t[X] -| O'
+S;P *|->ty _t : UPI_vis $a:rel k1.k2 ~> \ $a:rel k1. t[X] -| O'
 
 S;P |->ty _t : k ~> t -| O
 --------------------------- :: Otherwise
@@ -554,7 +555,7 @@ S;G |->decl x := _t ~> x : k' := t'
 
 S;G |->pt _s ~> s -| O1
 S;Rel(G) |->solv Rel(O1) ~> D1;Z1
-s' = UPI_Inf D. (s[Z1])
+s' = UPI_Inf D1. (s[Z1])
 S;G *|->ty _t : s' ~> t -| O2
 S;G |->solv O2 ~> empty;Z2
 t' = t[Z2]

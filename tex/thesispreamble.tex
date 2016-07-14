@@ -67,6 +67,7 @@
 \newtheorem{notation}[theorem]{Notation}
 \newtheorem{axiom}[theorem]{Axiom}
 \newtheorem{property}[theorem]{Property}
+\newtheorem{assumption}[theorem]{Assumption}
 \newtheorem*{lemma*}{Lemma}
 \newtheorem*{definition*}{Definition}
 \newtheorem*{theorem*}{Theorem}
@@ -80,6 +81,7 @@
 \newrefformat{fig}{Figure~\vref{#1}}
 \newrefformat{tab}{Table~\vref{#1}}
 \newrefformat{prop}{Property~\ref{#1}}
+\newrefformat{assn}{Assumption~\ref{#1}}
 
 % write proposal-only stuff in blue
 \ifproposal
@@ -97,6 +99,8 @@
 \def\outsidein/{\textmd{\textsc{OutsideIn}}}
 \def\pico/{\textmd{\textsc{Pico}}}
 \def\Pico/{\pico/}
+\def\bake/{\textmd{\textsc{Bake}}}
+\def\Bake/{\bake/}
 
 % more formatting
 \newcommand{\bnfeq}{\ensuremath{\mathop{{:}{:}{=}}}}

@@ -17,7 +17,8 @@ embed {{ tex-preamble
 \newcommand{\varrow}{\mathrel{ {\vdash}\hspace{-1.4ex}\raisemath{.23ex}{\shortrightarrow} }%
 }
 \newcommand{\varrowy}[1]{\varrow_{\hspace{-1.4ex}\mathsf{#1} } }
-\newcommand{\varrowys}[1]{\varrow_{\hspace{-1.4ex}\mathsf{#1} }^{\hspace{-1.4ex}*} }
+\newcommand{\varrowyy}[2]{\varrow_{\hspace{-1.4ex}\mathsf{#1} }^{\hspace{-1.4ex}\raisemath{.1ex}{#2} } }
+\newcommand{\varrowys}[1]{\varrowyy{#1}{*} }
 }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -245,6 +246,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
   {{ tex [[au]]_{[[theta]]} }}
 | au _{}                       :: M :: UnifVarPlain
   {{ tex [[au]] }}
+| \cdot                        :: M :: Blank
+  {{ tex \cdot }}
 
 | t [ theta ]                  :: M :: Subst
 | t [ Z ]                      :: M :: Zonk

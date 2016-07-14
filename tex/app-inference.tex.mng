@@ -1,4 +1,4 @@
-\chapter{Proofs about type inference}
+\chapter{Proofs about the \bake/ algorithm}
 \label{app:inference}
 
 \rae{Reorganize sections.}
@@ -1435,7 +1435,7 @@ expected type is propagated down.
 \ottdruleITyCXXSkol{}
 \]
 We have assumed
-$[[S;Rel(P) |=ty UPI_Spec dollar a:rel k1.k2 : Type{}]]$. Inversion
+$[[S;Rel(P) |=ty UPI_vis dollar a:rel k1.k2 : Type{}]]$. Inversion
 gives us $[[S;Rel(P),dollar a:Rel k1 |=ty k2 : Type{}]]$, and we can
 thus use the induction hypothesis to get
 $[[S;P,dollar a :rel k1,O |=ty t : k2]]$.
@@ -1444,7 +1444,7 @@ $[[S;P,O',dollar a:rel k1 |=ty t[X] : k2[X] ]]$, but
 \pref{lem:gen-scope} tells us that the $[[ [X] ]]$ in the kind has
 no effect.
 We can thus conclude
-$[[S;P,O' |=ty \ dollar a:rel k1 . (t[X]) : UPI_Spec dollar a:rel k1.k2 ]]$
+$[[S;P,O' |=ty \ dollar a:rel k1 . (t[X]) : UPI_vis dollar a:rel k1.k2 ]]$
 as desired.
 
 \item[Case \rul{ITyC\_Otherwise}:]
@@ -1693,5 +1693,288 @@ $[[S;G, x:Rel k, c : x [k]~[k] t |-subst theta : G']]$.
 Thus, two uses of \pref{lem:closing-subst-subst} gives us
 $[[S;G |-subst theta' : G'[t/x][<t>/c] ]]$ as desired.
 We are done.
+\end{description}
+\end{proof}
+
+\section{Conservativity compared to \outsidein/}
+
+All references to figures in this section point to figures in
+\citet{outsidein}.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{@{}lccl@{}}
+\multicolumn{2}{c}{\outsidein/ construct} & \pico/ form & Notes \\ \hline
+Axiom scheme & $[[QQ]]$ & $[[G]]$ & 
+\begin{minipage}[t]{.45\textwidth}
+\setlength{\baselineskip}{.8\baselineskip}
+instances, etc.; implications are functions;
+type family instances are via unfoldings \\[-1ex]
+\end{minipage} \\
+Given constraint & $[[Qg]]$, $[[Qr]]$ & $[[D]]$ & constraints are named in \pico/ \\
+Wanted constraint & $[[Qw]]$ & $[[O]]$ & we must separate wanteds \& givens
+\end{tabular}
+\end{center}
+\caption{Translation from \outsidein/ to \pico/}
+\label{tab:oi-encode}
+\end{table}
+
+There are several mismatches between concepts in \outsidein/ and in
+\pico/. To bridge the gap, I define $[[encode]]$ which does the translation,
+according to \pref{tab:oi-encode}. $[[encode]]$ing a construct from the left
+column results in a member of the syntactic class
+depicted in the middle column. Furthermore, \outsidein/ differentiates
+between algorithm-generated constraints $C$ and user-written ones
+$Q$; the former contain implication constraints. I do not discern between
+these classes, considering implication constraints simply as functions.
+I will use $Q$ metavariables in place of \outsidein/'s $C$.\footnote{This
+conflation of $Q$ and $C$ does not mean that Dependent Haskell is now
+required to implement implication constraints; it would be easy to add
+a post-typechecking pass (a ``validity'' check, in the vocabulary of the
+GHC implementation) that ensures that no constraints have implications.}
+
+A further difference between \outsidein/ and \bake/ is that the latter
+is bidirectional. To make an accurate comparison between these systems,
+it is best to consider \bake/ only to work in synthesis mode. This
+can be done effectively by making the following changes to the ``check''
+judgments:
+\begin{itemize}
+\item Remove all rules from the ``checking'' $[[|->ty]]$ judgment, replacing
+them with the following:
+\[
+\ottdrule{\ottpremise{[[S;P |->ty _t ~> \cdot : k1 -| O // fresh cu]]}}%
+{[[S;P |->ty _t : k2 ~> \cdot -| O, cu : forall{}.k1 [Type{}]~[Type{}] k2]]}%
+{ITyC\_Unidir}
+\]
+\item Remove all rules from the ``checking'' $[[*|->ty]]$ judgment except for
+\rul{ITyC\_Skol} and \rul{ITyC\_Otherwise}.
+\end{itemize}
+I will be working with these reduced judgments throughout this section.
+The fact that I must change my judgments does not imperil the practical
+impact of the conservativity result---namely, programs that GHC accepts
+today will still be accepted tomorrow. GHC already uses bidirectional
+typechecking and so has already obviated the unidirectional aspect of
+\outsidein/. However, in order to make a formal comparisons between that
+published algorithm, it is helpful to restrict ourselves to a
+unidirectional viewpoint.
+
+A final difference is that \bake/ does elaboration, while \outsidein/
+does not. I shall use the symbol $[[\cdot]]$ to denote an elaborated type
+that is inconsequential in this comparison.
+
+\rae{Do I use this?}
+\begin{assumption}[$[[Type]]$]
+\label{assn:type}
+$[[S;G |->pt Type ~> Type{} -| empty]]$.
+\end{assumption}
+
+\begin{remark}
+This assumption is plainly false, given that Haskell has no direct way
+of mentioning constants $[[H]]$. Instead, any Haskell context $[[G]]$ would
+have some variable \id{Type} and a coercion assumption that $\id{Type} \sim [[Type]]$. During inference, when any term is checked against $[[Type]]$, the
+check will eventually boil down to \rul{ISub\_Unify}, which creates a new
+coercion unification variable to prove that $\id{Type} \sim [[Type]]$. This
+unification variable will be filled in by the assumption, and all will go
+through.
+
+However, such indirection is annoying in practice and so I make the
+simplifying assumption above.
+\end{remark}
+
+\begin{lemma}[Instantiation]
+\label{lem:oi-inst}
+$[[|->inst_Inf UPI_Inf as :Irrel Type{}, encode(Qg). k ~> \cdot; k[aus_{}/as] -| aus :Irrel forall{}.Type{}, encode(Qw)]]$,
+where $[[Qw]]$ is the wanted version of $[[Qg]]$.
+\end{lemma}
+
+\begin{proof}
+Straightforward induction.
+\end{proof}
+
+\begin{lemma}[Expressions]
+\label{lem:oi-expr}
+If $[[G oi|-> _t : k ~> Qw]]$ under axiom set $[[QQ]]$ and signature
+$[[S]]$, then
+$[[S;G,encode(QQ) |->ty _t ~> t : k -| aus :Irrel forall{}.Type{}, encode(Qw)]]$
+where $[[aus = fuv(k) \union fuv(Qw)]]$.
+\end{lemma}
+
+\begin{proof}
+By induction on $[[G oi|-> _t : k ~> Qw]]$. See Figs.~6 and~13.
+Throughout this proof, I use the metavariable $[[s]]$ to denote types
+that we do not care about.
+
+\begin{description}
+\item[Case \rul{VarCon}:]
+We know here that $[[_t = x]]$.
+In the language of \outsidein/, we can assume
+$(x{:}\forall \overline{a}.\, Q_1 \Rightarrow \tau_1) \in \Gamma$.
+Translating to \pico/, this assumption is stated
+$[[x :Rel UPI_Inf as:Irrel Type{}, encode(Qg1). t1 \in G]]$.
+Note that the $Q_1$ is really a given constraint; I have renamed it to
+$[[Qg1]]$.
+We use \rul{ITy\_Var} and \pref{lem:oi-inst} to get
+$[[S;G,encode(QQ) |->ty x ~> s; k[aus_{}/as] -| aus :Irrel forall{}.Type{}, encode(Qw1)]]$, where $[[Qw1]]$ is the wanted version of $[[Qg1]]$. We are
+done with this case.
+\item[Case \rul{App}:]
+
+\end{description}
+\end{proof}
+
+\begin{property}[Solver]
+\label{prop:oi-solv}
+If $[[QQ; Qg; aus1 oi|->solv Qw ~> Qr; Z]]$ where $[[S]]$ and $[[G]]$ capture
+the signature and typing context for the elements of that judgment,
+then $[[S;G, encode(QQ), encode(Qg) |->solv aus1 :Irrel forall{}.Type{}, encode(Qw) ~> as2:Irrel Type{}, encode(Qr)[as2/aus2]; as2/aus2, Z]]$,
+where the $[[as2]]$ are fresh replacements for the $[[aus2]]$ which are free
+in $[[Qr]]$ or unconstrained variables in $[[aus1]]$.
+\end{property}
+
+\begin{remark}
+This property is a bit more involved than we would hope. This stems from
+the fact that \outsidein/ does not track unification variables in any
+details. All unification variables (and type variables, in general) in
+\outsidein/ have kind $[[Type]]$, and thus there is no need for dependency
+tracking. In effect, many judgments in \outsidein/ are parameterized by
+an unwritten set of in-scope unification variables. We have no such luxury
+of concision available this algorithm, and so there must be consideration
+given to tracking the unification variables.
+\end{remark}
+
+\rae{Do I use this?}
+\begin{property}[Solving empty wanteds]
+\label{prop:solv-empty}
+$[[S;G |->solv empty ~> empty; empty]]$.
+\end{property}
+
+\begin{remark}
+This property ensures that the solver does not do gratutitous generalization.
+\end{remark}
+
+\begin{lemma}[\rul{Bind}]
+\label{lem:oi-bind}
+If $[[G oi|-> _t : k ~> Qw]]$ and
+$[[QQ; empt; fuv(k) \union fuv(Qw) oi|->solv Qw ~> Qr; Z]]$,
+then
+$[[S;G, encode(QQ) |->decl x := _t ~> x : UPI_Inf as :Irrel Type{}. (UPI_Inf encode(Qr). k[Z])[as/aus] := t]]$ for some $[[t]]$, where $[[aus = fuv(k[Z]) \union fuv(Qr)]]$ and $[[as]]$ are fresh replacements for the $[[aus]]$.
+\end{lemma}
+
+\begin{proof}
+We will use \rul{IDecl\_Synthesize}.
+\pref{lem:oi-expr} tells us
+$[[S;G, encode(QQ) |->ty _t ~> t : k -| aus1:Irrel Type{}, encode(Qw)]]$
+where $[[aus1 = fuv(k) \union fuv(Qw)]]$.
+Then \pref{prop:oi-solv} tells us
+$[[S;G, encode(QQ) |->solv aus1 :Irrel forall{}.Type{}, encode(Qw) ~> as2:Irrel Type{}, encode(Qr)[as2/aus2]; as2/aus2, Z]]$, where the $[[as2]]$ are fresh replacements for the $[[aus2]]$ which are the free
+in $[[Qr]]$ or unconstrained variables in $[[aus1]]$. The latter set is
+precisely $[[fuv(k[Z])]]$.
+\rul{IDecl\_Synthesize} then tells us
+$[[S;G, encode(QQ) |->decl x := _t ~> x : UPI_Inf as2:Irrel Type{}, encode(Qr)[as2/aus2]. (k[Z]) := t']]$
+for some $[[t']]$ (whose details are irrelevant).
+We are done.
+\end{proof}
+
+%% \begin{lemma}[\rul{BindA}]
+%% \label{lem:oi-binda}
+%% Suppose $[[S]]$ is the ambient signature, and $[[encode(QQ) \subseteq G]]$.
+%% If all of the following:
+%% \begin{itemize}
+%% \item $[[G oi|-> _t : k1 ~> Qw]]$
+%% \item $[[QQ; Qg; fuv(k) \union fuv(Qw) oi|->solv Qw /\ k1 [Type{}]~[Type{}] k2 ~> empt; Z]]$
+%% \item $[[S;G,as:Irrel Type{} |->ty _s : Type{} ~> s -| empty]]$
+%% \item $[[dollar a :Rel s = encode(Qg)]]$
+%% \item $[[S;G,as:Irrel Type{},encode(Qg) |->pt _k2 ~> k2 -| empty]]$
+%% \end{itemize}
+%% Then
+%% $[[S;G |->decl x :: forall @(as :: Type). _s => _k2 := _t ~> x : UPI_Spec as:Irrel Type{}. UPI_Inf encode(Qg). k2 := t]]$
+%% for some $[[t]]$.
+%% \end{lemma}
+
+%% \begin{proof}
+%% We will use \rul{IDecl\_Check}, breaking up our proof by the different
+%% premises of the rule.
+%% \begin{itemize}
+%% \item
+%% The first premise reads
+%% $[[S;G |->pt forall @(as :: Type). _s => _k2 ~> UPI_Spec as:Irrel Type{}. UPI_Inf encode(Qg). k2 -| empty]]$.
+%% Working backwards to prove this, we will first need to handle the $[[as]]$.
+
+%% Proceeding by induction, we can consider them one at a time.
+%% We need $[[S;G |->pt forall @(a :: Type). _k0 ~> UPI_Spec a:Irrel Type{}. k0 -| empty]]$ where $[[S;G,a:Irrel Type{} |->pt _k0 ~> k0 -| empty]]$. We will use
+%% \rul{IPtC\_Pi}.
+%% We see that $[[|->pi forall ~> UPI; Irrel]]$ and $[[S;G |->q (a :: Type) ~> a : Type{}; Spec -| empty]]$ (using \rul{IQVar\_Spec}, \rul{IAQVar\_Annot}, and
+%% \pref{assn:type}) as desired. We further see that
+%% $[[empty +> a:Irrel Type ~> empty; empty]]$ by \rul{IGen\_Nil}.
+
+%% Let's now handle the constraint $[[_s]]$. This will use \rul{IPtC\_Constrained}.
+%% By assumption, we know $[[S;G,as:Irrel Type{} |->ty _s : Type{} ~> s -| empty]]$
+%% and $[[S;G,as:Irrel Type{}, encode(Qg) |->pt _k2 ~> k2 -| empty]]$.
+%% We see once again that $[[empty +> encode(Qg) ~> empty; empty]]$ and so
+%% we have satisfied these premises of \rul{IPtC\_Constrained}.
+
+%% Putting all this together, we have satisfied the first premise of
+%% \rul{IDecl\_Check}.
+
+%% \item
+%% The second premise now reads
+%% $[[S;Rel(G) |->solv empty ~> D1; Z1]]$.
+%% We use \pref{prop:solv-empty} to satisfy this premise, with
+%% $[[D1 = empty]]$ and $[[Z1 = empty]]$.
+
+%% \item
+%% The third premise is now trivial.
+
+%% \item
+%% The fourth premise now reads
+%% $[[S;G *|->ty _t : UPI_Spec as:Irrel Type{}. UPI_Inf encode(Qg). k2 ~> t -| O2]]$ for some $[[t]]$ and $[[O2]]$.
+%% Again, working backwards, let's first apply \rul{ITyC\_Skol} repeatedly.
+%% (Note that the use of $[[dollar a]]$ in that rule is meant only to indicate
+%% that the type variable is not brought into lexical scope when checking the
+%% term.) We must show $[[S;G, as :Irrel Type{}, encode(Qg) *|->ty _t : k2 ~> t -| O2']]$. 
+
+%% By assumption, $[[G oi|-> _t : k1 ~> Qw]]$.
+%% \pref{lem:oi-expr} gives us $[[S;G |->ty _t ~> t : k1 -| aus :Irrel forall{}.Type{}, encode(Qw)]]$ where $[[aus = fuv(k) \union fuv(Qw)]]$.
+
+
+%% The first premise is satisfied by assumption.
+%% The second premise can be satisfied by \pref{prop:solv-empty}.
+%% The third premise is trivial.
+
+%% The fourth premise now reads
+%% $[[S;G *|->ty _t : UPI as :Irrel Type{}, encode(Qg). k2 ~> t -| O2]]$.
+
+
+%% \pref{lem:oi-expr} tells us
+%% $[[S;G, encode(QQ) |->ty _t ~> t : k1 -| aus :Irrel forall{}.Type{}, encode(Qw)]]$, where $[[aus = fuv(k1) \union fuv(Qw)]]$.
+
+\begin{theorem}[Conservativity over \outsidein/]
+\label{thm:conservative-outsidein}
+If $[[QQ; G oi|-> _prog]]$, $[[_prog]]$ contains no annotated bindings,
+and $[[S]]$ captures the signature of the
+environment $[[_prog]]$ is checked in,
+then $[[S; G, encode(QQ) |->prog _prog ~> G'; theta]]$.
+\end{theorem}
+
+\begin{remark}
+In the statement of this theorem, I have eliminated the possibility
+of annotated bindings. This restriction is necessary because \outsidein/
+uses a fundamentally different approach to type annotation as does
+\bake/. When processing an annotated binding \outsidein/ synthesizes
+a type for an expression and then calls the solver requesting a proof
+of equality between the synthesized type and the annotated type.
+(This can be seen in the $\upsilon \sim \tau$ constraint that appears
+in the \rul{BindA} rule in Fig.~12.) Such a strategy is at odds
+with \bake/'s approach of bidirectional typechecking. I thus restrict
+the conservativity result to unannotated programs only.
+\end{remark}
+
+\begin{proof}
+By induction on $[[QQ; G oi|-> _prog]]$. See Fig.~12.
+
+\begin{description}
+\item[Case \rul{empty}:]
+By \rul{IProg\_Nil}.
+\item[Case \rul{bind}:]
+\rae{TODO}
 \end{description}
 \end{proof}

@@ -1,0 +1,75 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  OutsideIn  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+
+QQ {{ tex \mathcal{Q} }} :: 'Axioms_' ::=
+Qw {{ tex Q_{\mathrm{w} } }} :: 'WConstraints_' ::=
+Qg {{ tex Q_{\mathrm{g} } }}, Qr {{ tex Q_{\mathrm{r} } }} :: 'GConstraints_' ::=
+  | empt                   ::   :: Empt
+
+oijudg :: 'OIJudg_' ::=
+| QQ ; G oi|-> _prog                         ::   :: Prog
+| G oi|-> _t : k ~> Qw                       ::   :: CtGen
+| QQ ; Qg ; zus oi|->solv Qw ~> Qr ; Z       ::   :: Solv
+
+funs
+OI ::=
+
+fun
+encode ( QQ ) :: G :: encode_QQ
+  {{ tex [[encode]]([[QQ]]) }}
+by
+
+fun
+encode ( Qg ) :: D :: encode_Qg
+  {{ tex [[encode]]([[Qg]]) }}
+by
+
+fun
+encode ( Qw ) :: O :: encode_Qw
+  {{ tex [[encode]]([[Qw]]) }}
+by
+
+fun
+fuv ( t ) :: zus :: fuv_t
+  {{ tex [[fuv]]([[t]]) }}
+by
+
+fun
+fuv ( Qr ) :: zus :: fuv_Qr
+  {{ tex [[fuv]]([[Qr]]) }}
+by
+
+fun
+fuv ( Qw ) :: zus :: fuv_Qw
+  {{ tex [[fuv]]([[Qw]]) }}
+by
+
+% Fig 1 (p. 12): Basic syntax (incl. QQ)
+% Fig 2 (p. 13): Vanilla constraint-based type system
+%   Q;G |- e : t; QQ ||- Q
+% Fig 3 (p. 14): Entailment requirements (||-)
+% Fig 4 (p. 15): Well-typed programs (QQ; G |- prog)
+% Fig 5 (p. 17): Syntax extensions for inference (incl. simple)
+% Fig 6 (p. 18): Constraint generation (G |-> e : t ~> C)
+% Fig 7 (p. 19): Top-level algorithmic rules (QQ; G |-> prog)
+%   Schema for (QQ; Q_g |->simp Q_w ~> Q_r; theta)
+% Defn 3.2 (Sound and guess-free solutions) (p. 20)
+% Thm 3.1 (Algorithm Soundness) (p. 20)
+% Fig 8 (p. 21): Simplifier conditions on QQ; Q_g |->simp Q_w ~> Q_r; theta
+% Thm 3.2 (Algorithm infers principal types) (p. 23)
+% Fig 9 (p. 24): Adding let, existentials
+% Fig 10 (p. 25): Natural but over-permissive rules
+%   Q;G |- e : t; QQ;G |- prog; QQ ||- Q
+% Fig 11 (p. 37): Syntax additions for GADTs (incl. C, simple, implic)
+% Fig 12 (p. 38): Top-level algorithmic rules
+%   QQ;G |-> prog; schema for QQ;Q_g;aus_untch |->solv C_w ~> Q_r; theta
+% Fig 13 (p. 39): Constraint generation (G |-> e : t ~> C) (extends Fig 6)
+% Fig 14 (p. 40): Solver
+%   Defn for QQ; Q_g; aus_untch |->solv C_w ~> Q_r; theta
+%   Schema for QQ; Q_g; aus_untch |->simp Q_w ~> Q_r; theta
+% Fig 15 (p. 42): Touchable-aware simplifier conditions (on |->simp)
+% Thm 5.2 (Algorithm infers principal types) (p. 46)
+% Sec 6.4 (Guess-free completeness) (p. 49)
