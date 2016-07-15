@@ -491,15 +491,15 @@ by
 
 k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
 O2 +> b:Rel k3 ~> O2'; X
-t0 = \ x :Rel (UPI a:Rel k1.k2), b:Rel k3. t2[X] (x (t1 b))
+t0 = \ x :Rel (PI a:Rel k1.k2), b:Rel k3. t2[X] (x (t1 b))
 -------------------------------------------- :: FunRel
-UPI_Req a:Rel k1. k2 *<= UPI_Req b:Rel k3.k4 ~> t0 -| O1, O2'
+PI_Req a:Rel k1. k2 *<= UPI_Req b:Rel k3.k4 ~> t0 -| O1, O2'
 
 k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
 O2 +> b:Irrel k3 ~> O2'; X
-t0 = \ x :Rel (UPI a:Irrel k1.k2), b:Irrel k3. t2[X] (x {t1 b})
+t0 = \ x :Rel (PI a:Irrel k1.k2), b:Irrel k3. t2[X] (x {t1 b})
 -------------------------------------------- :: FunIrrel
-UPI_Req a:Irrel k1. k2 *<= UPI_Req b:Irrel k3.k4 ~> t0 -| O1,O2'
+PI_Req a:Irrel k1. k2 *<= UPI_Req b:Irrel k3.k4 ~> t0 -| O1,O2'
 
 fresh cu
 ----------------------- :: Unify

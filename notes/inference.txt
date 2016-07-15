@@ -1,6 +1,5 @@
 
 - type inference can introduce only unif variables
-- unif variables have no relevance annotation
 - My Haskell patterns (H xs) are simpler than they really should be.
   But it's annoying otherwise. I'm not writing a pattern-matching compiler.
 - Fix requires its argument to take a visible argument. I just can't
@@ -41,31 +40,19 @@
   We thus must generalize in the Infer rule. At first, I was quite concerned
   about solving in the middle of constraint generation. But GHC actually
   does this, too, whenever it encounters a let.
-- Label given class constraints with :c
-- The old +> judgment (see paper from 2 years ago) required funny business
-  around quantifying over propositions... and it also required having the
-  body of a Pi-type be something other than *. All for syntactic silliness.
-  So I've introduced :g bindings.
-- Put givens in O with :g
 - Don't differentiate Constraint from Type. See PtC_Constrained.
 - Can't really do decideGeneralisationPlan (i.e. Let should not be generalized)
   properly because I can't easily distinguish between top-level and local
   lets. Solution: consider a top-level let a new declaration form, just like
   OutsideIn. Do generalization there.
-- Use g(D) to make all bindings givens.
 - Must comment about how |- judgments are extended. In particular, |-ctx.
   With UCtx_TyVar and UCtx_CoVar
-- And we only allow Inf on coercion abstractions.
-- OLD Givens are *not* available to the right of |-.
+- And we allow only Inf on coercion abstractions.
 - All unification variables must be gone during zonking.
-- OLD Only unification variable kinds can refer to givens.
-- OLD :c is just like :g, except the solver uses :c bindings.
 - prop:solver-sound implies that no unif variables that depend on a given
   can be generalized over. This is correct.
-- DO I USE THIS? theta|_zs as domain restriction
-- DO I USE THIS? theta \ zs as domain exclusion
-- OLD: syntax to explain: au : k \in P under D
-- OLD: The whole tree structure of P/O.
+- theta|_zs as domain restriction
+- theta \ zs as domain exclusion
 - My treatment of <..|..> seems novel. Compare to Pottier & Remy, which
   do not handle dependency. UPDATE: Yes, to compare to Pottier & Remy,
   but it's really just like Gundry's treatment.
@@ -88,23 +75,21 @@ Preprocessing:
 - case patterns are expanded out (a la Match.hs)
 - redundant matches are dropped
    --> Thus, the first alt, if there is one, has a constructor
+- implicit variables are added to pattern matches
+
+OLD:
+- OLD Label given class constraints with :c
+- OLD The old +> judgment (see paper from 2 years ago) required funny business
+  around quantifying over propositions... and it also required having the
+  body of a Pi-type be something other than *. All for syntactic silliness.
+  So I've introduced :g bindings.
+- OLD Put givens in O with :g
+- OLD Use g(D) to make all bindings givens.
+- OLD Givens are *not* available to the right of |-.
+- OLD Only unification variable kinds can refer to givens.
+- OLD :c is just like :g, except the solver uses :c bindings.
+- OLD: syntax to explain: au : k \in P under D
+- OLD: The whole tree structure of P/O.
 
 
-Lemma: (DONE, I THINK)
-If S;P |-> ... -| O; C, then S |-ictx P,O
 
-Lemma: (OLD)
-If O1 +> D ~> O2 and S |-ictx P,D,O1
-then S |-ictx P,O2
-
-Lemma: (WORKING ON IT)
-If S;P |->ty _t ~> t : k -| O; C,
-then S;P,O |- t : k
-
-Lemma: (DONE)
-If S;P |-ty k : Type{} and S;P |->ty _t : k ~> ..., then ...
-(We need k to be well-formed!)
-
-Lemma: (OLD)
-If S;P,d,O |-ty t : k and O +> d ~> O'; theta, then
-S;P,O',d |-ty t[theta] : k[theta]

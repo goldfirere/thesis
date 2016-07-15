@@ -50,9 +50,10 @@ _pat {{ tex \mathrm{p} }} :: 'HPat_' ::=
 
 _s {{ tex \mathrm{s} }} :: 'HPoly_' ::=
 | quant _qvar . _s          ::   :: QVar
-  {{ tex [[quant]] [[_qvar]].\,[[_s]] }}
+  {{ tex [[quant]]\, [[_qvar]].\,[[_s]] }}
 | _t => _s                  ::   :: Constrained
 | _t                        ::   :: Mono
+| '...'                     :: M :: Elided
 
 quant {{ tex \mathrm{quant} }} :: 'HQuant_' ::=
 | forall                    ::   :: Forall

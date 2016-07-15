@@ -8,13 +8,28 @@ Differences from Gundry's thesis.
   Not for type families.
 - Gundry's "Good" is not straightforward to establish. It is *not* syntactic.
 - No roles, closed type families
+- I have unsaturated functions in types.
 
 - I think I'm going to skip non-deterministic elaboration, but instead have
   a type system. Or maybe they're the same thing.
-- My source-level type system will be bidirectional
 - Only one `case` in the source language
+- Gundry parameterizes by a vector while I parameterize by a subst.
 
 - My type erasure property is stronger: his doesn't erase type-lambdas.
 - He has a more intricate consistency relation. And his proof is wrong.
   (See email to Adam on May 13.) Of course, his theorem may well be correct,
   but his proof certainly seems wrong.
+
+- I have two checking judgments, a la VTA (his is Fig 7.9, p. 171)
+- But he does have two synth judgments (Fig 7.10, p. 172)
+- He does not allow annotated lambda-bound variables, avoiding the weirdness.
+- He uses an application judgment like Dunfield/Krishnaswami (Fig 7.12, p. 174)
+- His subsumption does not do deep skolemisation. But it does have an equivalent
+  of the FunRel / FunIrrel distinction via his phase annotations.
+
+- Gundry uses a new solver (Sec 7.5.1 on p. 175) instead of OutsideIn's.
+- Gundry also considers only simple patterns, just like me. (Sec 7.6, p. 177)
+- Gundry does not differentiate between synth and check for case expressions.
+- Gundry adds implicit variables to case patterns with -->> (See Sec 7.6.1, p. 179)
+
+- Gundry's chapter 8 (p. 185) has many nice examples.

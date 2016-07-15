@@ -51,7 +51,7 @@
 %include dep-haskell.lhs
 %include pico.lhs
 %include haskell-spec.lhs
-\include{type-inference}
+%include type-inference.lhs
 \include{implementation}
 \include{related}
 %

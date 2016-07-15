@@ -27,6 +27,7 @@ rewrite_rule :: 'Rewrite_' ::=
 | X1 eq X2                           ::   :: X_rewrite
 | zus1 eq zus2                       ::   :: zus_rewrite
 | _aqvar1 eq _aqvar2                 ::   :: aqvar_rewrite
+| _t1 eq _t2                         ::   :: _t_rewrite
 
 util :: 'Util_' ::=
 | ||.||                              ::   :: terase_op

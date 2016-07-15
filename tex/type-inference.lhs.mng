@@ -1,0 +1,636 @@
+%% -*- mode: LaTeX compile-command: "cd ..; make compile" -*-
+
+%if style == newcode
+%include rae.fmt
+
+\begin{code}
+
+\end{code}
+
+%endif
+
+\chapter[Type inference and elaboration]{Type inference and elaboration, or How to \bake/ a \pico/}
+\label{cha:type-inference}
+
+\pref{cha:dep-haskell} presents the additions to modern Haskell to make
+it Dependent Haskell, and \pref{cha:pico} presents \pico/, the internal
+language to which we compile Dependent Haskell programs. This chapter
+formally
+relates the two languages by defining a type inference/elaboration algorithm,\footnote{I refer to \bake/ variously as an elaboration algorithm, a type inference
+algorithm, and a type checking algorithm. This is appropriate, as it is all three.
+In general, I do not differentiate between these descriptors.}
+\bake/,
+checking Dependent Haskell code and producing a well-typed \pico/ program.
+
+At a high level, \bake/ is unsurprising. It simply combines the ideas
+of several pieces of prior
+work~\cite{outsidein,visible-type-application,gundry-thesis} and targets
+\pico/ as its intermediate language. Despite its strong basis in prior work,
+\bake/ exhibits a few novelties:
+\begin{itemize}
+\item Perrhaps its biggest innovation is how
+it decides between dependent and non-dependent pattern matching depending
+on whether the algorithm is in checking or synthesis mode. (See also
+\pref{sec:bidir-dependent-pattern-match}.)
+%format mathrms = "[[_s]]"
+\item It turns out that checking the annotated expression
+|(\ (x :: mathrms) -> ...) :: forall x -> ...| depends on whether
+or not the type annotation describes a dependent function. This came
+as a surprise. See \pref{sec:annotated-lambdas}.
+\item The subsumption relation allows an unmatchable function to be
+subsumed by a matchable one. That is, a function expecting an unmatchable
+function |a -> b| can also accept a matchable one |a !-> b|.
+\end{itemize}
+
+After presenting the elaboration algorithm, I discuss the metatheory
+in \pref{sec:bake-metatheory}. This section include a soundness result
+that the \pico/ program produced by \bake/ is well-typed. It also relates
+\bake/ both to \outsidein/ and the bidirectional type system (``System SB'')
+from \citet{visible-type-application}, arguing that \bake/ is a conservative
+extension of both.
+
+\section{Overview}
+
+\Bake/ is a constraint-generation algorithm~\cite{remy-attapl}. It walks over
+the input syntax tree and generates constraints, which are later solved. Like
+prior work~\cite{outsidein,gundry-thesis}, I leave the details of the solver
+unspecified; any solver that obeys the properties described in
+\pref{sec:solver-properties} will do. In practice, the solver will be the one
+currently implemented in GHC. Despite the fact that the dependency tracking
+described here is omitted from \citet{outsidein}, the most detailed description of
+GHC's solver,\footnote{In the text of the paper describing
+  \outsidein/~\cite{outsidein}, the authors separate out the constraint
+  generation from the solver. They call the constraint-generation algorithm
+  \outsidein/ and the solver remains unnamed. I use the moniker \outsidein/ to
+  refer both to the constraint-generation algorithm and the solver.}
+the solver as implemented does indeed do dependency tracking and should
+support all of the innovations described in this chapter.
+
+Constraints in \bake/ are represented by \emph{unification telescopes}, which
+are a list of possibly-dependent unification variables,\footnote{Depending on
+  the source, various works in the literature refer to unification variables
+  as existential variables (e.g., \cite{simple-bidirectional}) or
+  metavariables (e.g., \cite{gundry-thesis} and the GHC source code). I prefer
+  unification variables here, as I do not wish to introduce confusion with
+  existentials of data constructors nor the metavariables of my developed
+  metatheory.} with their types. Naturally, there are two sorts of unification
+variables: types $[[au]]$ and coercions $[[cu]]$. The solver finds concrete
+types to substitute in for unification variables $[[au]]$ and concrete
+coercions to substitute in for unification variables $[[cu]]$. Implication
+constraints, a key innovation of \citet{outsidein}, are handled by classifying
+unification variables by quantified kinds and propositions. See
+\pref{sec:quantified-kinds-and-props}.
+
+The algorithm is stated as several judgments of the following general form:
+\[
+[[S]];[[P]] [[|->]] \mathit{inputs} [[~>]] \mathit{outputs} [[-|]] [[O]]
+\]
+Most judgments are parameterized by a fixed signature $[[S]]$ that defines
+the datatypes that are in scope.\footnote{I do not consider in this
+dissertation how these
+signatures are formed. To my knowledge, there is no formal presentation
+of the type-checking of datatype declarations, and I consider formalizing
+this process and presenting an algorithm to be important future work.}
+The context $[[P]]$ is a generalization of contexts $[[G]]$; a context
+$[[P]]$ contains both \pico/ variables and unification variables.
+Because this is an algorithmic treatment of type inference, the notation
+is careful to separate inputs from outputs. Everything to the left of
+$[[~>]]$ is an input; everything to the right is an output. Most judgments
+also produce an output $[[O]]$, which is a unification telescope, containing
+bindings for only unification variables. This takes the place of the emitted
+constraints seen in other constraint-generation algorithms. It also serves
+as a context in which to type-check future parts of the syntax.
+
+The solver's interface looks like this:
+\[
+[[S;P |->solv O ~> D ; Z]]
+\]
+That is, it takes as inputs the current environment and a unification telescope.
+It produces outputs of $[[D]]$, a telescope of variables to quantify over,
+and $[[Z]]$, the \emph{zonking substitution} (\pref{sec:zonkers}),
+which is an idempotent
+substitution from unification variables to other types/coercions.
+To understand the output $[[D]]$, consider checking the declaration
+|y = \x -> x|. The variable |x| gets assigned a unification variable type
+$[[au]]$. No constraints then get put on that type. When trying to solve
+the unification telescope $[[au :Irrel forall{}.Type{}]]$, we have nothing to do.
+The answer is, of course, to generalize. So we get $[[D = a :Irrel Type{}]]$
+and $[[Z = a/au]]$. In the constraint-generation rules for declarations,
+the body of a declaration and its type are generalized over $[[D]]$.
+(See \rul{IDecl\_Synthesize} in \pref{sec:idecl}.)
+
+Now that we've seen the overview, let's get down to details.
+
+\section{Haskell grammar}
+
+\begin{figure}
+\[
+\begin{array}{rcl@@{\quad}l}
+[[_t]],[[_k]] &\bnfeq& [[a]] \bnfor [[\ _qvar . _t]] \bnfor [[/\ _qvar. _t]] \bnfor [[_t1 _t2]] \bnfor [[_t1 @_t2]] \bnfor [[_t :: _s]] & \text{type/kind} \\
+&\bnfor& [[case _t of _alts]] \bnfor [[_t1 -> _t2]] \bnfor [[_t1 '-> _t2]] \bnfor [[fix _t]]  \\
+&\bnfor& [[let x := _t1 in _t2]] \\
+[[_qvar]] &\bnfeq& [[_aqvar]] \bnfor [[@_aqvar]] & \text{quantified variable} \\
+[[_aqvar]] &\bnfeq& [[a]] \bnfor [[a :: _s]] & \text{quantified variable (w/o vis.)} \\
+[[_alt]] &\bnfeq& [[_pat -> _t]] & \text{case alternative} \\
+[[_pat]] &\bnfeq& [[H xs]] \bnfor [[_]] & \text{pattern} \\
+[[_s]] &\bnfeq& [[quant _qvar. _s]] \bnfor [[_t => _s]] \bnfor [[_t]] & \text{type scheme/polytype} \\
+[[quant]] &\bnfeq& [[forall]] \bnfor [['forall]] \bnfor [[pie]] \bnfor [['pie]] & \text{quantifier} \\[1ex]
+[[_decl]] &\bnfeq& [[x :: _s := _t]] \bnfor [[x := _t]] & \text{declaration} \\
+[[_prog]] &\bnfeq& [[empty]] \bnfor [[_decl; _prog]] & \text{program}
+\end{array}
+\]
+\caption{Formalized subset of Dependent Haskell}
+\label{fig:formal-haskell-grammar}
+\end{figure}
+
+I must formalize a slice of Dependent Haskell in order to describe an
+elaboration procedure over it. The subset of Haskell I will consider is
+presented in \pref{fig:formal-haskell-grammar}. Note that all Haskell
+constructs are typeset in upright Latin letters; this is to distinguish
+these from \pico/ constructs, typeset in italics and often using Greek
+letters.
+
+The version of Dependent Haskell presented here differs in a few details
+from the language presented in \pref{cha:dep-haskell}. These differences
+are to enable an easier specification of the elaboration algorithm. Translating
+between the ``real'' Dependent Haskell of \pref{cha:dep-haskell} and this
+version can be done by a straightforward preprocessing step. Critically,
+(but with one exception)
+no part of
+this preprocessor needs type information. For example,
+|forall a b. ...| is translated to $[[forall @&&ax. forall @&&bx. ...]]$
+so that it is easier to consider individual bound variables.
+
+The exception to the irrelevance of type information is in dealing with
+pattern matches. Haskell pattern matches can be nested, support guards,
+perhaps view patterns~\cite{view-patterns},
+perhaps pattern synonyms~\cite{pattern-synonyms}, etc. However, translating
+such a rich pattern syntax into a simple one
+is a well-studied problem with widely-used
+solutions~\cite{augustsson-compiling-pattern-matching,wadler-pattern-matching}
+and I thus consider the algorithm as part of the preprocessor and do 
+not consider this further.
+
+Let's now review some of the more unusual annotations in Dependent Haskell,
+originally presented in \pref{cha:dep-haskell}. Each labeled paragraph
+ below describes
+an orthogonal feature (visibility, matchability, relevance).
+
+\begin{description}
+\item[The $\at$ prefix]
+Dependent Haskell uses an $\at$ prefix to denote an argument that would
+normally be invisible. It is used in two places in the grammar:
+\begin{itemize}
+\item An $\at$-sign before an argument indicates that the argument may
+be omitted and left to inference. This follows the treatment in my prior
+work on invisible arguments~\cite{visible-type-application}.
+\item An $\at$-sign before a quantified variable (in the definition for
+$[[_qvar]]$) indicates that the actual argument may be omitted when
+calling a function. In a $\lambda$-expression, this would indicate
+a pattern that matches against an invisible argument
+(\pref{sec:visible-type-pat}). In a $\Pi$- or $\forall$-expression, the
+$\at$-sign is produced by the preprocessor when it encounters a
+|forall ... .| or |pi ... .| quantification.
+\end{itemize}
+
+\item[Ticked quantifiers]
+Three of the quantifiers that can be written in Dependent Haskell
+come in two varieties: ticked and unticked. An ticked quantifier
+serves in the type of matchable (that is, generative and injective)
+functions, whereas the unticked quantifier describes an unrestricted
+function space. Recall that type constructors and data constructors
+are typed by matchable functions, whereas ordinary $\lambda$-expressions
+are not.
+
+\item[Relevance]
+The difference between |forall| and |pi| in Dependent Haskell is that
+the former defines an irrelevant abstraction (fully erased during compilation)
+while the latter describes a relevant abstraction (retained at runtime).
+In terms, an expression introduced by $\lambda$ is a relevant abstraction;
+one introdcued by $\Lambda$ is an irrelevant one.
+\end{description}
+
+We have now reviewed the source language of \bake/, and the previous
+chapter described its target language, \pico/. I'll now fill in the gap
+by introducing the additions to the grammar needed to describe the inference
+algorithm.
+
+\section{Unification variables}
+
+\begin{figure}
+Metavariables:
+\[
+\begin{array}{rl@@{\qquad}rl}
+[[au,bu]] & \text{unification type variable} & [[cu]] & \text{unification coercion variable}
+\end{array}
+\]
+Grammar extensions:
+\[
+\begin{array}{rcl@@{\quad}l}
+[[t]] &\bnfeq& \ldots \bnfor [[au_theta]] & \text{type/kind} \\
+[[g]] &\bnfeq& \ldots \bnfor [[cu_theta]] & \text{coercion} \\[1ex]
+[[zu]] &\bnfeq& [[au]] \bnfor [[cu]] & \text{unification variable} \\
+[[Z]] &\bnfeq& [[empty]] \bnfor [[Z, forall zs. t / au]] \bnfor [[Z, forall zs. g/cu]] & \text{zonker (\pref{sec:zonker})} \\
+[[X]] &\bnfeq& [[empty]] \bnfor [[X, zu |-> V]] & \text{generalizer (\pref{sec:generalizer})} \\
+[[V]] &\bnfeq& \multicolumn{2}{l}{\text{set containing type variables $[[a]]$ and coercion variables $[[c]]$}} \\[1ex]
+%
+[[u]] &\bnfeq& [[au :rel forall D. k]] \bnfor [[cu : forall D. phi]] & \text{unif.~var.~binding} \\
+[[O]] &\bnfeq& [[empty]] \bnfor [[O, u]] & \text{unification telescope} \\
+[[P]] &\bnfeq& [[empty]] \bnfor [[P, d]] \bnfor [[P, u]] & \text{typing context} \\[1ex]
+[[J]] &\bnfeq& \multicolumn{2}{l}{\text{stand-in for an arbitrary judgment (\pref{sec:J})}}
+\end{array}
+\]
+\caption{Additions to the grammar to support \bake/.}
+\label{fig:bake-grammar}
+\end{figure}
+
+The extensions to the grammar to support inference are in \pref{fig:bake-grammar}.
+These extensions all revolve around supporting unification variables, which
+are rather involved. One might think that unification variables need not be
+so different from ordinary variables; constraint generation could produce a
+telescope of these unification variables and solving simply produces a
+substitution $[[theta]]$.\footnote{Recall that the rarely used $[[theta]]$
+stands for regular substitutions from type/coercion variables to types/coercions.
+See \pref{fig:pico-grammar}.} However, this naive view does not work out,
+because of unification variable generalization.
+
+Consider a $\lambda$-abstraction over the variable $[[x]]$. When doing
+constraint generation inside of the $\lambda$, the kinds of fresh unification
+variables might mention $[[x]]$. Here is a case in point, which will serve
+as a running example:
+%
+\begin{spec}
+poly :: forall k (a :: k) -> ...
+
+example = \ k a -> poly k a
+\end{spec}
+%
+Type inference can easily discover that the kind of |a| is |k|. But in order
+for the inference algorithm to do this, it must be aware that |k| is in
+scope before |a| is. Note that when we call the solver after type-checking
+the entire body of |example|, |k| is \emph{not} in scope. Thus, as we produce
+the unification telescope during constraint-generation over the body of
+|example|, we must somehow note that the unification variable $[[au]]$
+(the type of |a|) can mention |k|.
+
+This means that unification variable bindings are quantified over a
+telescope $[[D]]$. (You can see this in the definition for $[[u]]$
+in \pref{fig:bake-grammar}.) In the vocabulary of \outsidein/, the
+bindings in $[[D]]$ are the \emph{givens} under which a unification
+variable should be solved for.
+
+\subsection{Zonking}
+
+Solving produces a substitution from unification variables to types/coercions.
+Following the nomenclature within GHC, I call applying this substitution
+\emph{zonking}. The substitution itself, written $[[Z]]$, is called a
+\emph{zonker}.
+
+Zonkers pose a naming problem. Consider solving
+to produce the zonker for |example|, above. Suppose the type of |a| is
+assigned to be $[[au]]$. We would like to zonk $[[au]]$ to |k|.
+However, as before, |k| is out of scope when solving for $[[au]]$. We thus
+cannot just write $|k|/[[au]]$, as that would violate the Barendregt
+convention, where we can never name a variable that is out of scope
+(as it might arbitrarily change due to $\alpha$-renaming).
+
+The solution to this problem is to have all occurrences of unification
+variables applied to substitutions $[[theta]]$.
+
+\subsection{Subsumption}
+\label{sec:subsumption}
+
+\section{Type inference algorithm}
+
+\section{Soundness properties}
+
+\section{Completeness properties}
+
+\subsection{On incompleteness in type inference}
+\label{sec:incomplete}
+\rae{TODO: Remove.}
+
+\subsection{No coercion abstractions}
+\label{sec:no-coercion-abstractions}
+\rae{TODO: Write me.}
+
+\section{Metatheory}
+\label{sec:bake-metatheory}
+
+This chapter has explained the \bake/ algorithm in detail, but what
+theoretical properties does it have? A type inference algorithm is often
+checked for soundness and completeness against a specification. However, as
+argued by \citet[Section 6.3]{outsidein}, lining up an algorithm such as
+\bake/ against a declarative specification is a challenge. Instead of writing
+a separate, non-algorithmic form of \bake/, I present three results in this
+section:
+\begin{itemize}
+\item I prove that the elaborated \pico/ program produced by \bake/ is
+indeed a well-typed \pico/ program. This result---which I call soundness---marks
+an upper limit on the set of programs that \bake/ accepts. If it cannot
+be typed in \pico/, \bake/ must reject.\footnote{I do not prove a correspondence
+between the Haskell program and the \pico/ program produced by elaboration.
+It would thus theoretically be possible to design \bake/ to accept
+all input texts and produce a trivial elaborated program. But that wouldn't
+be nearly as much fun, and I have not done so.}
+\item In two separate subsections,
+I argue that \bake/ is a conservative extension both
+of the \outsidein/
+algorithm and the SB algorithm of \citet{visible-type-application}.
+That is, if \outsidein/ or SB accepts a program, so does \bake/.
+This results suggests that a version of GHC
+based on \bake/ will accept all Haskell programs currently accepted.
+These arguments---I darenot quite call them proofs---are stated in less
+formal terms than other proofs in this dissertation. While it is likely
+possible
+to work out the details fully, the presentation of the other systems and
+of {\bake/}/{\pico/} differ enough that the translation between the systems
+would be fiddly, and artifacts of the translation would obscure the main
+point. The individual differences are discussed below.
+
+These conservativity results provide a lower bound on the power of \bake/,
+delcaring that some set of Haskell programs must be accepted by the algorithm.
+\end{itemize}
+
+The results listed above bound the power of the algorithm both from below
+and from above, serving roughly as soundness and completeness results.
+It is left as future work to define a precise specification of \bake/ and
+prove that it meets the specification.
+
+\subsection{Soundness}
+\rae{Write me.}
+
+\subsection{Conservativity with respect to \outsidein/}
+
+I do not endeavor to give a full accounting of the \outsidein/ algorithm
+here, instead referring readers to the original~\cite{outsidein}. I will
+briefly explain judgments, etc., as they appear and refer readers to Figure
+numbers from the original text.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{@@{}lccl@@{}}
+\multicolumn{2}{c}{\outsidein/ construct} & \pico/ form & Notes \\ \hline
+Axiom scheme & $[[QQ]]$ & $[[G]]$ & 
+\begin{minipage}[t]{.45\textwidth}
+\setlength{\baselineskip}{.8\baselineskip}
+instances, etc.; implications are functions;
+type family instances are via unfoldings \\[-1ex]
+\end{minipage} \\
+Given constraint & $[[Qg]]$, $[[Qr]]$ & $[[D]]$ & constraints are named in \pico/ \\
+Wanted constraint & $[[Qw]]$ & $[[O]]$ & we must separate wanteds \& givens
+\end{tabular}
+\end{center}
+\caption{Translation from \outsidein/ to \pico/}
+\label{tab:oi-encode}
+\end{table}
+
+There are several mismatches between concepts in \outsidein/ and in
+\pico/. Chief among these is that
+\outsidein/ does not track unification variables in any
+detail. All unification variables (and type variables, in general) in
+\outsidein/ have kind $[[Type]]$, and thus there is no need for dependency
+tracking. In effect, many judgments in \outsidein/ are parameterized by
+an unwritten set of in-scope unification variables. We have no such luxury
+of concision available in \bake/, and so there must be consideration
+given to tracking the unification variables.
+
+To partly bridge the gap between \outsidein/ and \bake/,
+I define $[[encode]]$ which does the translation,
+according to \pref{tab:oi-encode}. $[[encode]]$ing a construct from the left
+column results in a member of the syntactic class
+depicted in the middle column.
+
+\outsidein/ differentiates
+between algorithm-generated constraints $C$ and user-written ones
+$Q$; the former contain implication constraints. I do not discern between
+these classes, considering implication constraints simply as functions.
+I will use $Q$ metavariables in place of \outsidein/'s $C$.\footnote{This
+conflation of $Q$ and $C$ does not mean that Dependent Haskell is now
+required to implement implication constraints; it would be easy to add
+a post-typechecking pass (a ``validity'' check, in the vocabulary of the
+GHC implementation) that ensures that no constraints have implications.}
+
+A further difference between \outsidein/ and \bake/ is that the latter
+is bidirectional. When \outsidein/ knows the type which it wishes to
+assign to a term, it synthesizes the term's type and then emits an
+equality constraint. In the comparison between the systems, we will
+pretend that \bake/'s checking judgments do the same.
+
+The fact that I must change my judgments does not imperil the practical
+impact of the conservativity result---namely, programs that GHC accepts
+today will still be accepted tomorrow. GHC already uses bidirectional
+typechecking and so has already obviated the unidirectional aspect of
+\outsidein/. However, in order to make a formal comparisons between that
+published algorithm, it is helpful to restrict ourselves to a
+unidirectional viewpoint.
+
+A final difference is that \bake/ does elaboration, while \outsidein/
+does not. I shall use the symbol $[[\cdot]]$ to denote an elaborated type
+that is inconsequential in this comparison.
+
+\subsubsection{Expressions}
+
+\begin{claim*}[Expressions]
+If $[[G oi|-> _t : k ~> Qw]]$ under axiom set $[[QQ]]$ and signature
+$[[S]]$, then
+$[[S;G,encode(QQ) |->ty _t ~> \cdot : k -| aus :Irrel forall{}.Type{}, encode(Qw)]]$
+where $[[aus = fuv(k) \union fuv(Qw)]]$.
+\end{claim*}
+
+This claim relates \outsidein/'s $[[G oi|-> _t : k ~> Qw]]$ judgment
+(Figures 6 and 13 from \citet{outsidein}) to \bake/'s synthesis $[[|->ty]]$
+judgment. Note that the output $[[O]]$ from \bake/'s judgment must include
+both the wanteds ($[[encode(Qw)]]$) and also any unification variables
+required during synthesis ($[[aus]]$).
+
+To argue this claim, we examine the different rules that make up
+\outsidein/'s judgment, using structural induction.
+
+\begin{description}
+\item[Case \rul{VarCon}:]
+\outsidein/ fully instantiates all variables, producing unification
+variables for any quantified type variables and emitting wanted constraints
+for any constraint in the variable's type. \bake/ does the same, via
+its $[[|->inst]]$ judgment.
+
+\item[Case \rul{App}:]
+In this case, $[[_t = _t1 _t2]]$.
+\outsidein/'s
+is a fairly typicaly application form rule, but using constraints to assert
+that the type of $[[_t1]]$ is indeed a function. \Bake/ works similarly,
+using its $[[|->fun]]$ judgment to assert that a type is a $\Pi$-type.
+Of course, \outsidein/'s treatment of $[[_t2]]$ uses synthesis while
+\bake/'s uses its checking judgment.
+
+\item[Case \rul{Abs}:]
+This rule coresponds quite closely to \bake/'s \rul{ITy\_Lam} rule.
+Note that \outsidein/ does not permit annotations on $\lambda$-bound
+variables, simplifying the treatment of abstractions. Furthermore,
+\bake/ must use its generalization judgment (written with $[[+>]]$)
+to handle its unification variables, while \outsidein/ does not need
+to have this complication.
+
+\item[Case \rul{Case}:]
+Contrast \outsidein/'s rule with \bake/'s:
+\[
+\ottdrule{%
+\ottpremise{\Gamma \varrow e : \tau \rightsquigarrow C \quad \beta, \overline{\gamma} \text{ fresh}}%
+\ottpremise{K_i{:}\forall \overline{a} \overline{b}_i . Q_i \Rightarrow \overline{\upsilon}_i \to \texttt{T}\, \overline{a} \quad \overline{b}_i \text{ fresh}}%
+\ottpremise{\Gamma,(\overline{x_i{:}[\overline{a \mapsto \gamma}]\upsilon_i}) \varrow e_i : \tau_i \rightsquigarrow C_i \quad \overline{\delta}_i = \mathit{fuv}(\tau_i,C_i) - \mathit{fuv}(\Gamma,\overline{\gamma})}%
+\ottpremise{C'_i = \left\{ \begin{array}{ll}
+C_i \wedge \tau_i \sim \beta & \text{if $\overline{b}_i = \epsilon$ and $Q_i = \epsilon$} \\
+\exists \overline{\delta}_i.([\overline{a \mapsto \gamma}]Q_i \supset C_i \wedge \tau_i \sim \beta) & \text{otherwise} \end{array} \right.}}%
+{\Gamma \varrow \texttt{case}\,e\,\texttt{of}\,\{\overline{K_i\,\overline{x}_i \to e_i}\} : \beta \rightsquigarrow C \wedge (\texttt{T}\,\overline{\gamma} \sim \tau) \wedge (\bigwedge C'_i)}%
+{\rul{Case}}
+\]
+%% \ottdrule{%
+%% \ottpremise{
+%% \Gamma \varrow e : \tau \rightsquigarrow C \quad \beta, \overline{\gamma} \text{ fresh} \quad C' = (\texttt{T}\,\overline{\gamma} \sim \tau) \wedge C}%
+%% \ottpremise{\text{for each } K_i\,\overline{x}_i \to e_i \text{ do}}%
+%% \ottpremise{\quad K_i{:}\forall \overline{a}.\overline{\upsilon}_i \to \texttt{T}\, \overline{a} \in \Gamma \quad \Gamma, (\overline{x_i{:}[\overline{a \mapsto \gamma}]\upsilon_i}) \varrow e_i : \tau_i \rightsquigarrow C_i}%
+%% \ottpremise{\quad C'_i = C_i \wedge \tau_i \sim \beta}}%
+%% {\Gamma \varrow \texttt{case}\,e\,\texttt{of}\,\{\overline{K_i \overline{x}_i \to e_i}\} : \beta \rightsquigarrow C' \wedge (\bigwedge C'_i)}%
+%% {\rul{Case}}
+\[
+\ottdruleITyXXCase{}
+\]
+\[
+\ottdruleIAltXXCon{}
+\]
+The first premises line up well, with both checking the scrutinee. Both
+rules then must ensure that the scrutinee's type is headed by a type
+constant (\texttt{T} in \outsidein/, $[[H]]$ in \bake/). This is done
+via the emission of a constraint in \outsidein/ (the $\texttt{T}\,\overline{\gamma} \sim \tau$ constraint in the conclusion)
+and the use of $[[|->scrut]]$ in \bake/. One reason for a difference in
+treatment here is that \bake/ wishes to use any information available because
+of the existence of its checking judgment, whereas \outsidein/ is free to
+invent new, uninformative unification variables ($\overline{\gamma}$).
+This difference makes \bake/ produce the unification variables only when
+the scrutinee's type ($[[k0]]$) is not already manifestly the right shape.
+
+Both rules then check the individual alternatives, which have to look
+up the constructor ($K_i$ and $[[H]]$, respectively) in the environment.
+\Pico/ gathers the three sorts of existentials together in $[[D2]]$;
+\outsidein/ expands this out to the $\overline{b}_i$, $Q_i$, and $\overline{\upsilon}_i$. \outsidein/ does not permit unsaturated matching, so we can
+treat $[[D4]]$ as empty. \outsidein/ does not consider scoped type variables;
+it thus only brings in $\overline{x}_i$ of types $\overline{\upsilon}_i$
+while checking each alternative; \bake/ brings all of $[[D3]]$ into scope.
+\outsidein/ checks the synthesized type of each alternative, $\tau_i$ against
+the overall result type $\beta$; \bake/ ensures the types of the alternatives
+line up by using a checking judgment against the result kind $[[k]]$. (Note
+that, like \outsidein/, this result kind is a unification variable. We can
+see that the $[[k]]$ in \rul{IAlt\_Con} is the $[[au]]$ from \rul{ITy\_Case}.)
+
+The constraint $C'_i$ emitted by \outsidein/ is delicately constructed.
+If there are no existential type variables and no local constraints,
+\outsidein/ emits a simple constraint. Otherwise, it has to emit
+an implication constraint. \outsidein/'s implication constraints
+allow unification variables to be local to a certain constraint; the
+treatment of implication constraints is somewhat different than that of
+simple constraints. In particular, when solving an implication constraint,
+any unification variables that arose outside of that implication are
+considered untouchable---they cannot then be unified.
+(See \pref{sec:untouchability}.) In order
+to avoid imposing the untouchability restriction, \outsidein/ makes a
+simple constraint when possible. Due to \bake/'s more uniform treatment
+of implications, this distinction is not necessary; untouchability is
+informed by the order of unification variables in the context passed
+to the solver.
+
+\Bake/ makes its version of implication constraints via the generalization
+judgment (written with $[[+>]]$). All of the constraints generated while
+checking the alternative are quantified over variables in $[[D3]]$; this
+precisely corresponds to the apapearance of the $Q_i$ to the left of the
+$\supset$ in \outsidein/'s constraint $C'_i$. (Recall that $Q_i$ is a
+component of \bake/'s $[[D3]]$.) \Bake/ also adds another equality
+assumption into its $[[D3']]$; this equality has to do with dependent
+pattern matching (\pref{sec:dependent-pat-match}) and has no place in
+the non-dependent language of \outsidein/.
+
+\item[Case \rul{Let}:]
+Other than \bake/'s generalization step, these rules line up perfectly.
+
+\item[Cases \rul{LetA} and \rul{GLetA}:]
+These cases cover annotated \ottkw{let}s, where the bound variable is
+also given a type. I do not consider this form separately, instead
+preferring to use the checking judgments to handle this case.
+\end{description}
+
+\subsubsection{The solver}
+
+\begin{property*}[Solver]
+If $[[QQ; Qg; aus1 oi|->solv Qw ~> Qr; Z]]$ where $[[S]]$ and $[[G]]$ capture
+the signature and typing context for the elements of that judgment,
+then $[[S;G, encode(QQ), encode(Qg) |->solv aus1 :Irrel forall{}.Type{}, encode(Qw) ~> as2:Irrel Type{}, encode(Qr)[as2/aus2]; as2/aus2, Z]]$,
+where the $[[as2]]$ are fresh replacements for the $[[aus2]]$ which are free
+in $[[Qr]]$ or unconstrained variables in $[[aus1]]$.
+\end{property*}
+
+This property is a bit more involved than we would hope, but all of the complication
+deals with \bake/'s requirement of tracking unification variables more carefully
+than does \outsidein/.
+Underneath all of the faffing about with unification variables, the key
+point here is that \bake/'s solver will produce the same residual constraint
+$[[Qr]]$ as \outsidein/'s and the same zonking substitution $[[Z]]$.
+
+I do not try to argue this property directly, as I do not present the
+implementation for the solver. However, this property shows a natural
+generalization of the solver in an environment that includes dependencies
+among variables. Indeed, GHC's implementation of the solver already handles
+such dependency.
+
+\subsubsection{Programs}
+
+\begin{claim*}[\rul{Bind}]
+\label{lem:oi-bind}
+If $[[G oi|-> _t : k ~> Qw]]$ and
+$[[QQ; empt; fuv(k) \union fuv(Qw) oi|->solv Qw ~> Qr; Z]]$,
+then
+$[[S;G, encode(QQ) |->decl x := _t ~> x : UPI_Inf as :Irrel Type{}. (UPI_Inf encode(Qr). k[Z])[as/aus] := t]]$ for some $[[t]]$, where $[[aus = fuv(k[Z]) \union fuv(Qr)]]$ and $[[as]]$ are fresh replacements for the $[[aus]]$.
+\end{claim*}
+
+This claim relates \outsidein/'s \rul{Bind} rule (Figure 12) to \bake/'s
+\rul{IDecl\_Synthesize} rule. It is a consequence of the claim on expressions
+and the property above of the solver.
+
+%% \begin{proof}
+%% We will use \rul{IDecl\_Synthesize}.
+%% \pref{lem:oi-expr} tells us
+%% $[[S;G, encode(QQ) |->ty _t ~> t : k -| aus1:Irrel forall{}.Type{}, encode(Qw)]]$
+%% where $[[aus1 = fuv(k) \union fuv(Qw)]]$.
+%% Then \pref{prop:oi-solv} tells us
+%% $[[S;G, encode(QQ) |->solv aus1 :Irrel forall{}.Type{}, encode(Qw) ~> as2:Irrel Type{}, encode(Qr)[as2/aus2]; as2/aus2, Z]]$, where the $[[as2]]$ are fresh replacements for the $[[aus2]]$ which are the free
+%% in $[[Qr]]$ or unconstrained variables in $[[aus1]]$. The latter set is
+%% precisely $[[fuv(k[Z])]]$.
+%% \rul{IDecl\_Synthesize} then tells us
+%% $[[S;G, encode(QQ) |->decl x := _t ~> x : UPI_Inf as2:Irrel Type{}, encode(Qr)[as2/aus2]. (k[Z]) := t']]$
+%% for some $[[t']]$ (whose details are irrelevant).
+%% We are done.
+%% \end{proof}
+
+\begin{claim*}[Conservativity over \outsidein/]
+If $[[QQ; G oi|-> _prog]]$, $[[_prog]]$ contains no annotated bindings,
+and $[[S]]$ captures the signature of the
+environment $[[_prog]]$ is checked in,
+then $[[S; G, encode(QQ) |->prog _prog ~> G'; theta]]$.
+\end{claim*}
+
+This claim relates the overall action of the \outsidein/ algorithm
+(Figure 12) to \bake/'s algorithm for checking programs. It follows
+directly from the previous claim.
+
+Because of this, I believe that any program without top-level annotations
+accepted by \outsidein/ is also accepted by \bake/.
+
+\subsection{Conservativity with respect to SB}
+
+Here, I compare \bake/ with the bidirectional algorithm (called SB)
+in Figure 8 of
+\citet{visible-type-application}. That algorithm is proven to be
+a conservative extension both of Hindley-Milner inference and also
+of the bidirectional algorithm presented by \citet{practical-type-inference}.
+This SB algorithm, along with \outsidein/,
+ is part of the basis for the algorithm currently
+implemented in GHC 8. 
+

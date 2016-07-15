@@ -1,2 +1,3 @@
 see relevance handling in ICC* by Bruno XXX
 also check out ICC by Miguel
+See Goguen et al (2006), as cited by Gundry, about "absurd"
