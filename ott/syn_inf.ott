@@ -50,8 +50,8 @@ Z {{ tex \Theta }} :: 'Zonker_' ::=
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 xmap :: 'XMap_' ::=
-| zu |-> V               ::   :: Map
-  {{ tex [[zu]] \mapsto [[V]] }}
+| zu |-> ps              ::   :: Map
+  {{ tex [[zu]] \mapsto [[ps]] }}
 | ( xmap )               :: M :: Parens
 
 X {{ tex \xi }} :: 'X_' ::=

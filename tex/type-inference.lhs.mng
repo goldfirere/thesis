@@ -49,6 +49,9 @@ that the \pico/ program produced by \bake/ is well-typed. It also relates
 from \citet{visible-type-application}, arguing that \bake/ is a conservative
 extension of both.
 
+Full statements of all theorems and definitions, with proofs, appear
+in \pref{app:inference}.
+
 \section{Overview}
 
 \Bake/ is a constraint-generation algorithm~\cite{remy-attapl}. It walks over
@@ -227,12 +230,11 @@ Metavariables:
 Grammar extensions:
 \[
 \begin{array}{rcl@@{\quad}l}
-[[t]] &\bnfeq& \ldots \bnfor [[au_theta]] & \text{type/kind} \\
-[[g]] &\bnfeq& \ldots \bnfor [[cu_theta]] & \text{coercion} \\[1ex]
+[[t]] &\bnfeq& \ldots \bnfor [[au _ ps]] & \text{type/kind} \\
+[[g]] &\bnfeq& \ldots \bnfor [[cu _ ps]] & \text{coercion} \\[1ex]
 [[zu]] &\bnfeq& [[au]] \bnfor [[cu]] & \text{unification variable} \\
 [[Z]] &\bnfeq& [[empty]] \bnfor [[Z, forall zs. t / au]] \bnfor [[Z, forall zs. g/cu]] & \text{zonker (\pref{sec:zonker})} \\
-[[X]] &\bnfeq& [[empty]] \bnfor [[X, zu |-> V]] & \text{generalizer (\pref{sec:generalizer})} \\
-[[V]] &\bnfeq& \multicolumn{2}{l}{\text{set containing type variables $[[a]]$ and coercion variables $[[c]]$}} \\[1ex]
+[[X]] &\bnfeq& [[empty]] \bnfor [[X, zu |-> ps]] & \text{generalizer (\pref{sec:generalizer})} \\[1ex]
 %
 [[u]] &\bnfeq& [[au :rel forall D. k]] \bnfor [[cu : forall D. phi]] & \text{unif.~var.~binding} \\
 [[O]] &\bnfeq& [[empty]] \bnfor [[O, u]] & \text{unification telescope} \\
@@ -249,10 +251,10 @@ These extensions all revolve around supporting unification variables, which
 are rather involved. One might think that unification variables need not be
 so different from ordinary variables; constraint generation could produce a
 telescope of these unification variables and solving simply produces a
-substitution $[[theta]]$.\footnote{Recall that the rarely used $[[theta]]$
-stands for regular substitutions from type/coercion variables to types/coercions.
-See \pref{fig:pico-grammar}.} However, this naive view does not work out,
-because of unification variable generalization.
+substitution. However, this naive view does not work out
+because of unification variable generalization.\footnote{The treatment
+of unification variables throughout \bake/ is essentially identical to
+the treatement by \citet{gundry-thesis}.}
 
 Consider a $\lambda$-abstraction over the variable $[[x]]$. When doing
 constraint generation inside of the $\lambda$, the kinds of fresh unification
@@ -280,7 +282,7 @@ bindings in $[[D]]$ are the \emph{givens} under which a unification
 variable should be solved for.
 
 \subsection{Zonking}
-
+\label{sec:zonking}
 Solving produces a substitution from unification variables to types/coercions.
 Following the nomenclature within GHC, I call applying this substitution
 \emph{zonking}. The substitution itself, written $[[Z]]$, is called a
@@ -295,20 +297,84 @@ convention, where we can never name a variable that is out of scope
 (as it might arbitrarily change due to $\alpha$-renaming).
 
 The solution to this problem is to have all occurrences of unification
-variables applied to substitutions $[[theta]]$.
+variables applied to vectors $[[ps]]$.\footnote{Recall that $[[p]]$ is
+a metavariable that can stand for either a type or a coercion. Thus
+$[[ps]]$ is a mixed list of types and coercions, suitable for substituting
+in for a list of type/coercion variables $[[zs]]$.} When we zonk a
+unification variable occurrence $[[au _ ps]]$, the vector $[[ps]]$ is
+substituted for the variables in the telescope $[[D]]$ that $[[au]]$'s kind
+is quantified over.
+
+Here is the formal definition of zonking:
+
+\begin{definition*}[Zonking {[\pref{defn:zonking}]}]
+A zonker can be used as a postfix function. It operates homomorphically
+on all recursive forms and as the identity operation on leaves other
+than unification variables. Zonking unification variables
+is defined by these equations:
+\[
+\begin{array}{r@@{\quad}c@@{\quad}r@@{\;}l}
+[[forall zs. t/au \in Z]] & \implies & [[au_ps[Z] &= t[ps[Z]/zs ] ]] \\
+\text{otherwise} && [[au_ps[Z] &= au_{{ps[Z]}} ]] \\[1ex]
+[[forall zs. g/cu \in Z]] & \implies & [[cu_ps[Z] &= g[ps[Z]/zs ] ]] \\
+\text{otherwise} && [[cu_ps[Z] &= cu_{{ps[Z]}} ]]
+\end{array}
+\]
+\end{definition*}
+
+In our example, we would say that |a| has the type $[[au_&&kx]]$, where
+$[[au :Irrel forall &&kx :Irrel Type{}. Type{}]]$. The solver will create
+a zonker with the mapping $[[forall &&jx. &&jx/au]]$ (where I have
+changed the variable name for demonstration). This will zonk
+$[[au_&&kx]]$ to become $[[&&jx[&&kx/&&jx] ]]$ which is, of course
+$[[&&kx]]$ as desired.
+
+Note that the quantification we see here is very different from normal
+$\Pi$-quantification in \pico/. These quantifications are fully second-class
+and may be viewed almost as suspended substitutions.
+
+\subsection{Additions to \pico/ judgments}
+
+\begin{figure}
+\ottdefnUTy{}
+\ottdefnUCo{}
+\ottdefnUCtx{}
+\caption{Extra rules in \pico/ judgments to support unification variables}
+\label{fig:bake-pico-judgments}
+\end{figure}
+
+The validity and typing judgments in \pico/ all work over signatures
+$[[S]]$ and contexts $[[G]]$. In \bake/, however, we need to be able
+to express these judgments in an environment where unification variables
+are in scope. I thus introduce mixed contexts $[[P]]$, containing both
+\pico/ variables and unification variables.
+
+Accordingly, I must redefine all of the \pico/ judgments to support
+unification variables in the context. These judgments are written with
+a $[[|=]]$ turnstile in place of \pico/'s $[[|-]]$ turnstile. There are
+also several new rules that must be added to support unification variables.
+These rules appear in \pref{fig:bake-pico-judgments}.
+
+Note the rules \rul{Ty\_UVar} and \rul{Co\_UVar} that support unification
+variable occurrences. The unification variables are applied to vectors
+$[[ps]]$ which must match the telescope $[[D]]$ in the classifier for
+the unification variable. In addition, this vector is substituted directly
+into the unification variable's kind.
+
+These definitions support all of the properties proved about the original
+\pico/ judgments, such as substitution and regularity. The statements
+and proofs are in \pref{app:inference}.
+
+\section{Bidirectional type checking}
+
+\subsection{Starred vs.~unstarred judgments}
 
 \subsection{Subsumption}
 \label{sec:subsumption}
 
+\section{Generalization}
+
 \section{Type inference algorithm}
-
-\section{Soundness properties}
-
-\section{Completeness properties}
-
-\subsection{On incompleteness in type inference}
-\label{sec:incomplete}
-\rae{TODO: Remove.}
 
 \subsection{No coercion abstractions}
 \label{sec:no-coercion-abstractions}
@@ -634,3 +700,4 @@ This SB algorithm, along with \outsidein/,
  is part of the basis for the algorithm currently
 implemented in GHC 8. 
 
+\section{Discussion}

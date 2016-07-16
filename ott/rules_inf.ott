@@ -530,13 +530,13 @@ by
 empty +> D ~> empty ; empty
 
 
-X0 = au |-> {dom(D)} // O[X0] +> D ~> O'; X
+X0 = au |-> dom(D) // O[X0] +> D ~> O'; X
 ----------------------------- :: TyVar
 au :rel forall D'. k, O +> D ~> au :rel forall D,D'. k, O'; X0, X
 
-O +> D ~> O'; X
+X0 = cu |-> dom(D) // O[X0] +> D ~> O'; X
 ----------------------------- :: CoVar
-cu : forall D'. phi, O +> D ~> cu : forall D,D'. phi, O'; cu |-> {dom(D)}, X
+cu : forall D'. phi, O +> D ~> cu : forall D,D'. phi, O'; X0, X
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Programs  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -588,9 +588,9 @@ S ; P |=ty t : k :: :: UTy :: 'Ty_'
 by
 
 au :Rel forall D.k \in P  // S |=ctx P
-S;P |=subst theta : D
+S;P |=vec ps : D
 --------------- :: UVar
-S;P |=ty au_theta : k[theta \inter dom(D)]
+S;P |=ty au_ps : k[ps/dom(D)]
 
 defn
 S ; P |=co g : phi :: :: UCo :: 'Co_'
@@ -598,9 +598,9 @@ S ; P |=co g : phi :: :: UCo :: 'Co_'
 by
 
 cu : forall D.phi \in P  // S |=ctx P
-S;P |=subst theta : D
+S;P |=vec ps : D
 ----------------- :: UVar
-S;P |=co cu_theta : phi[theta \inter dom(D)]
+S;P |=co cu_ps : phi[ps/dom(D)]
 
 defn
 S |=ctx P :: :: UCtx :: 'Ctx_'
@@ -648,7 +648,6 @@ defn
 S ; P |=z Z : O :: :: Zonk :: 'Zonk_'
 by
 
-S |=ctx P
 ---------------------- :: Nil
 S;P |=z empty : empty
 

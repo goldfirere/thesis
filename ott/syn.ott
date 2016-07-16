@@ -242,8 +242,8 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | let c := h in t              :: M :: Let
 | equals t1 t2                 :: M :: Equals
 
-| au _ theta                   :: M :: UnifVar
-  {{ tex [[au]]_{[[theta]]} }}
+| au _ ps                      :: M :: UnifVar
+  {{ tex [[au]]_{[[ps]]} }}
 | au _{}                       :: M :: UnifVarPlain
   {{ tex [[au]] }}
 | \cdot                        :: M :: Blank
@@ -367,8 +367,8 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | axApart t1 t2                :: M :: AxApart
 | arrow t1 t2                  :: M :: Arrow
 
-| cu _ theta                   :: M :: UnifVar
-  {{ tex [[cu]]_{[[theta]]} }}
+| cu _ ps                      :: M :: UnifVar
+  {{ tex [[cu]]_{[[ps]]} }}
 | cu _{}                       :: M :: UnifVarPlain
   {{ tex [[cu]] }}
 
@@ -416,6 +416,8 @@ args, ps {{ tex \overline{\psi} }} :: 'args_' ::=
   {{ tex {[[ps]]}_{[[I1]] \ldots [[I2]]} }}
 | '|' ps '|'            :: M :: Erased
   {{ tex \lfloor [[ps]] \rfloor }}
+| '{{' ps '}}'          :: M :: Braces
+  {{ tex [[ps]] }}
 
 coarg, w {{ tex \omega }} :: 'CoArg_' ::=
 | g                    ::   :: Ty
