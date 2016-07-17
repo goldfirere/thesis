@@ -243,7 +243,7 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | equals t1 t2                 :: M :: Equals
 
 | au _ ps                      :: M :: UnifVar
-  {{ tex [[au]]_{[[ps]]} }}
+  {{ tex {[[au]]}_{[[ps]]} }}
 | au _{}                       :: M :: UnifVarPlain
   {{ tex [[au]] }}
 | \cdot                        :: M :: Blank
@@ -368,7 +368,7 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | arrow t1 t2                  :: M :: Arrow
 
 | cu _ ps                      :: M :: UnifVar
-  {{ tex [[cu]]_{[[ps]]} }}
+  {{ tex {[[cu]]}_{[[ps]]} }}
 | cu _{}                       :: M :: UnifVarPlain
   {{ tex [[cu]] }}
 

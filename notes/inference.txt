@@ -1,13 +1,13 @@
 
 - type inference can introduce only unif variables
-- My Haskell patterns (H xs) are simpler than they really should be.
+- DONE My Haskell patterns (H xs) are simpler than they really should be.
   But it's annoying otherwise. I'm not writing a pattern-matching compiler.
 - Fix requires its argument to take a visible argument. I just can't
   be bothered to generalize this.
 - Not sure whether to use subsumption or straight-up equality in
   matchExpectedFunTy (|->fun). GHC uses subsumption here. But I think
   an equality predicate is powerful enough.
-- No constraints! This is because everything has a name.
+- DONE No constraints! This is because everything has a name.
 - Class constraints are precisely inferred relevant arguments.
 - We can't always just use a coercion in |->fun because then we won't be
   able to recognize proper dependent function types. In other words,

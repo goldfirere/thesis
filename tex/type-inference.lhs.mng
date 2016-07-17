@@ -5,6 +5,8 @@
 
 \begin{code}
 
+import Data.Maybe ( isNothing )
+
 \end{code}
 
 %endif
@@ -53,6 +55,7 @@ Full statements of all theorems and definitions, with proofs, appear
 in \pref{app:inference}.
 
 \section{Overview}
+\label{sec:solv-spec}
 
 \Bake/ is a constraint-generation algorithm~\cite{remy-attapl}. It walks over
 the input syntax tree and generates constraints, which are later solved. Like
@@ -238,8 +241,8 @@ Grammar extensions:
 %
 [[u]] &\bnfeq& [[au :rel forall D. k]] \bnfor [[cu : forall D. phi]] & \text{unif.~var.~binding} \\
 [[O]] &\bnfeq& [[empty]] \bnfor [[O, u]] & \text{unification telescope} \\
-[[P]] &\bnfeq& [[empty]] \bnfor [[P, d]] \bnfor [[P, u]] & \text{typing context} \\[1ex]
-[[J]] &\bnfeq& \multicolumn{2}{l}{\text{stand-in for an arbitrary judgment (\pref{sec:J})}}
+[[P]] &\bnfeq& [[empty]] \bnfor [[P, d]] \bnfor [[P, u]] & \text{typing context} \\%[1ex]
+%[[J]] &\bnfeq& \multicolumn{2}{l}{\text{stand-in for an arbitrary judgment (\pref{sec:J})}}
 \end{array}
 \]
 \caption{Additions to the grammar to support \bake/.}
@@ -365,7 +368,123 @@ These definitions support all of the properties proved about the original
 \pico/ judgments, such as substitution and regularity. The statements
 and proofs are in \pref{app:inference}.
 
+\subsection{Untouchable unification variables}
+\label{sec:untouchability}
+
+\citet[Section 5.2]{outsidein} introduces the notion of \emph{touchable}
+unification variables, as distinct from \emph{untouchable} variables. Their
+observation is that it is harmful to assign a value to a ``global'' unification
+variable when an equality constraint is in scope. ``Global'' here means that
+the unification variable has a larger scope than the equality constraint.
+We call the ``local'' unification 
+variables touchable, and the ``global'' ones untouchable. \outsidein/ must
+manually keep track of touchability; the set of touchable unification variables
+is an extra input to its solving judgment.
+
+In \bake/, on the other hand, tracking touchability is very easy with its
+use of unification telescopes: all unification variables to the right of
+the rightmost equality constraint are touchable; the rest are untouchable.
+
+To make this all concrete, let's look at a concrete example (taken from
+\citet{outsidein}) where the notion of touchable variables is beneficial.
+
+Suppose we have this definition:
+%
+\begin{code}
+data T a where
+  K :: (Bool ~ a) => Maybe Int -> T a
+\end{code}
+%
+I have written this GADT with an explicit equality constraint in order to
+make the use of this constraint clearer. The definition for |K| is entirely
+equivalent to saying |K :: Maybe Int -> T Bool|.
+
+%{
+%format bu = "\beta"
+%format bu1
+We now wish to infer the type of
+\[
+|\x -> case x of { K n -> isNothing n }|
+\]
+where |isNothing :: forall a. Maybe a -> Bool| checks for an empty |Maybe|.
+Consider any
+mention of a new unification variable to be fresh. We assign |x| to have type
+$[[au0]]$ and the result of the function to have type $[[bu0]]$. By the
+existence of the constructor |K| in the case-match, we learn that $[[au0]]$
+should really be $[[&&Tx{} au1_{}]]$. Inside the case alternative, we
+now have a given constraint $[[&Bool{} [Type{}]~[Type{}] au1_{}]]$. We then
+instantiate the polymorphic |isNothing| with a unification variable $[[bu1]]$,
+so that the type of |isNothing| is |Maybe bu1 -> Bool|. We can now emit two equality
+constraints:
+\begin{itemize}
+\item The argument type to |isNothing| (|Maybe bu1|) must match the type of |n| (|[Int]|).
+\item The return
+type of the |case| expression ($[[bu0]]$) is the return type of |isNothing| (|Bool|).
+\end{itemize}
+Pulling this all together, we get the following unification telescope:
+\[
+[[O]] =[
+\begin{array}[t]{l}
+[[au0 :Irrel forall{}. Type{}]],\\
+[[bu0 :Irrel forall{}. Type{}]],\\
+[[au1 :Irrel forall{}. Type{}]],\\
+[[cu0 : forall{}. au0_{} [Type{}]~[Type{}] &&Tx{} au1_{}]],\\
+[[bu1 :Irrel forall c : &Bool{} [Type{}]~[Type{}] au1_{}. Type{}]], \\
+[[cu1 : forall c : &Bool{} [Type{}]~[Type{}] au1_{}. (&Maybe{} bu1_c [Type{}]~[Type{}] &Maybe{} &Int{})]], \\
+[[cu2 : forall c : &Bool{} [Type{}]~[Type{}] au1_{}. (bu0_{} [Type{}]~[Type{}] &Bool{})]]
+\end{array}
+\]
+
+Before we walk through what the solver does with such a telescope, what
+\emph{should} it do? That is, what's the type of our original expression?
+It turns out that this is not an easy question to answer! That expression
+has no principal type. Both of the following are true:
+\[
+\begin{array}{l}
+| (\x -> case x of { K n -> isNothing n }) :: forall a. T a -> a | \\
+| (\x -> case x of { K n -> isNothing n }) :: forall a. T a -> Bool |
+\end{array}
+\]
+%
+%if style == newcode
+\begin{code}
+test1 = (\x -> case x of { K n -> isNothing n }) :: forall a. T a -> a
+test2 = (\x -> case x of { K n -> isNothing n }) :: forall a. T a -> Bool
+\end{code}
+%endif
+%
+We would thus like the solver to fail when presented with this unification
+telescope. This is true, even though there is a solution to the inference
+problem (that is, a valid zonker $[[Z]]$ with a telescope of quantified
+variables $[[D]]$; see the specification of $[[|->solv]]$, \pref{sec:solv-spec}):
+\[
+\begin{array}{l}
+[[D = a :Irrel Type{}]] \\
+[[Z]] =
+\begin{array}[t]{l}
+[[forall{}. &&Tx{} a/au0]], \\
+[[forall{}. &Bool{}/bu0]], \\
+[[forall{}. a/au1]], \\
+[[forall{}. <&&Tx{} a>/cu0]], \\
+[[forall c. &Int{}/bu1]], \\
+[[forall c. <&Maybe{} &Int{}>/cu1]], \\
+[[forall c. <&Bool{}>/cu2]]
+\end{array}
+\end{array}
+\]
+
+%}
+
 \section{Bidirectional type checking}
+
+Like previous algorithms for
+GHC/Haskell~\cite{practical-type-inference,visible-type-application,gundry-thesis}, \bake/
+takes a bidirectional approach~\cite{local-type-inference}. The fundamantal
+idea to bidirectional typechecking is that, sometimes, the type inference
+algorithm knows what type to look for. When this happens, the algorithm
+should take advantage of this knowledge.
+
+Historically, 
 
 \subsection{Starred vs.~unstarred judgments}
 

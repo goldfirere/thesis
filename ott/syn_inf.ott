@@ -37,7 +37,11 @@ zus {{ tex \overline{\zeta} }} :: 'ZUs_' ::=
 
 zmap :: 'ZonkMap_' ::=
 | forall zs . t / au           ::   :: Ty
+| forall {}. t / au            :: M :: TyBlank
+  {{ tex [[t]]/[[au]] }}
 | forall zs . g / cu           ::   :: Co
+| forall {}. g / cu            :: M :: CoBlank
+  {{ tex [[g]]/[[cu]] }}
 
 Z {{ tex \Theta }} :: 'Zonker_' ::=
 | zmap             ::   :: One
