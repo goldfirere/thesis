@@ -6,6 +6,8 @@
 \begin{code}
 
 import Data.Maybe ( isNothing )
+import Data.Kind
+import Data.Singletons
 
 \end{code}
 
@@ -57,8 +59,11 @@ in \pref{app:inference}.
 \section{Overview}
 \label{sec:solv-spec}
 
-\Bake/ is a constraint-generation algorithm~\cite{remy-attapl}. It walks over
-the input syntax tree and generates constraints, which are later solved. Like
+\Bake/ is a bidirectional~\cite{local-type-inference}
+constraint-generation algorithm~\cite{remy-attapl}. It walks over
+the input syntax tree and generates constraints, which are later solved.
+It can operate in either a synthesis mode (when the type is unknown)
+or in checking mode (when the expected type of an expression is known). Like
 prior work~\cite{outsidein,gundry-thesis}, I leave the details of the solver
 unspecified; any solver that obeys the properties described in
 \pref{sec:solver-properties} will do. In practice, the solver will be the one
@@ -113,7 +118,7 @@ The solver's interface looks like this:
 \]
 That is, it takes as inputs the current environment and a unification telescope.
 It produces outputs of $[[D]]$, a telescope of variables to quantify over,
-and $[[Z]]$, the \emph{zonking substitution} (\pref{sec:zonkers}),
+and $[[Z]]$, the \emph{zonker} (\pref{sec:zonking}),
 which is an idempotent
 substitution from unification variables to other types/coercions.
 To understand the output $[[D]]$, consider checking the declaration
@@ -124,6 +129,100 @@ The answer is, of course, to generalize. So we get $[[D = a :Irrel Type{}]]$
 and $[[Z = a/au]]$. In the constraint-generation rules for declarations,
 the body of a declaration and its type are generalized over $[[D]]$.
 (See \rul{IDecl\_Synthesize} in \pref{sec:idecl}.)
+
+Writing a type inference algorithm for a dependently typed language presents
+a challenge in that the type of an expression can be very intricate. Yet
+we still wish to infer (simple) types for unannotated expressions. To resolve
+this tension, \bake/ adheres to the following:
+\theoremstyle{plain}
+\newtheorem*{guidingprinciple}{Guiding Principle}
+\begin{guidingprinciple}
+In absence of other information, infer a simple type.
+\end{guidingprinciple}
+\begin{guidingprinciple}
+Never make a guess.
+\end{guidingprinciple}
+For example, consider inferring a type for
+\begin{code}
+compose f g = \x -> f (g x)
+\end{code}
+The function |compose| could naively be given either of the following types:
+\begin{spec}
+compose  ::  (b -> c) -> (a -> b) -> (a -> c)
+compose  ::  forall  (a :: Type)
+                     (b :: a -> Type) 
+                     (c :: forall (x :: a) -> b x -> Type)
+         .   pi      (f :: forall (x :: a). pi (y :: b x) -> c x y)
+                     (g :: pi (x :: a) -> b x)
+                     (x :: a)
+         ->  c x (g x)
+\end{spec}
+%if style == newcode
+\begin{code}
+test4 = compose :: (b -> c) -> (a -> b) -> (a -> c)
+{-
+dcomp :: forall (a :: Type)
+                (b :: a ~> Type)
+                (c :: forall (x :: a). Proxy x ~> b @@ x ~> Type)
+                (f :: forall (x :: a) (y :: b @@ x). Proxy x ~> Proxy y ~> c @@ (!Proxy :: Proxy x) @@ y)
+                (g :: forall (x :: a). Proxy x ~> b @@ x)
+                (x :: a).
+         Sing f
+      -> Sing g
+      -> Sing x
+      -> c @@ ('Proxy :: Proxy x) @@ (g @@ ('Proxy :: Proxy x))
+dcomp f g x = f `applySing` _
+-}
+\end{code}
+%endif
+However, we surely want inference to produce the first one. If inference
+did not tend toward simple types, there would be no hope of retaining
+principal types in the system. I do not prove that \bake/ infers principal
+types, as doing so is meaningless without some non-deterministic specification
+of the type system, which is beyond the scope of this work. However, I still
+wish to design Dependent Haskell with an eye toward establishing a
+principal types result in the future. Just like how inferring only rank-1 types
+still allows for higher-rank types in a bidirectional type system~\cite{practical-type-inference}, it is my hope that inferring only simple types will
+allow for Dependent Haskell to retain principal types.
+
+The second guiding principle is that \bake/ should never make guesses.
+Guesses, after all, are sometimes wrong. By ``guess'' here, I mean that
+the algorithm and solver should never set the value of a unification variable
+unless doing so is the only possible way an expression can be well typed.
+Up until this point, GHC's type
+inference algorithm has resolutely refused to guess. This decision manifests
+itself, among other places, in GHC's inability to work with a function |f :: F a -> F a|, where |F| is a type function.\footnote{Unless |F| is
+known to be injective~\cite{injective-type-families}.} The problem is that,
+from |f 3|, there is no way to figure out what |a| should be, and GHC will
+not guess the answer.
+
+A key consequence of not making any guesses is that \bake/ (more accurately,
+the solver it calls) does no higher-order unification. Consider this example:
+\begin{spec}
+fun :: a -> (f $ a)   -- NB: |f| is not a matchable function
+
+bad :: Bool -> Bool
+bad x = fun x
+\end{spec}
+%if style == newcode
+\begin{code}
+fun = undefined
+type a $ b = a b
+\end{code}
+%endif
+In the body of |bad|, it is fairly clear that we should unify |f| with the
+identity function. Yet the solver flatly refuses, because doing so amounts to a
+guess, given that there are
+many ways to write the identity function.\footnote{Note that my development
+does not natively support functional extensionality, so that these different
+ways of writing an identity function are not equal to one another.}
+
+In my choice to avoid higher-order unification, my design diverges from the
+designs of other dependently typed languages, where higher-order unification
+is common. Time will tell whether the predictability gotten from avoiding
+guesses is worth the potential annoyance of lacking higher-order unification.
+Avoiding guesses is also critical for principal types. See
+\citet[Section 3.6.2]{outsidein} for some discussion.
 
 Now that we've seen the overview, let's get down to details.
 
@@ -382,8 +481,9 @@ manually keep track of touchability; the set of touchable unification variables
 is an extra input to its solving judgment.
 
 In \bake/, on the other hand, tracking touchability is very easy with its
-use of unification telescopes: all unification variables to the right of
-the rightmost equality constraint are touchable; the rest are untouchable.
+use of unification telescopes: all unification variables quantified by the
+same equality constraints as the constraint under consideration are touchable;
+the rest are untouchable.
 
 To make this all concrete, let's look at a concrete example (taken from
 \citet{outsidein}) where the notion of touchable variables is beneficial.
@@ -410,8 +510,8 @@ where |isNothing :: forall a. Maybe a -> Bool| checks for an empty |Maybe|.
 Consider any
 mention of a new unification variable to be fresh. We assign |x| to have type
 $[[au0]]$ and the result of the function to have type $[[bu0]]$. By the
-existence of the constructor |K| in the case-match, we learn that $[[au0]]$
-should really be $[[&&Tx{} au1_{}]]$. Inside the case alternative, we
+existence of the constructor |K| in the |case|-match, we learn that $[[au0]]$
+should really be $[[&&Tx{} au1_{}]]$. Inside the |case| alternative, we
 now have a given constraint $[[&Bool{} [Type{}]~[Type{}] au1_{}]]$. We then
 instantiate the polymorphic |isNothing| with a unification variable $[[bu1]]$,
 so that the type of |isNothing| is |Maybe bu1 -> Bool|. We can now emit two equality
@@ -450,32 +550,77 @@ has no principal type. Both of the following are true:
 \begin{code}
 test1 = (\x -> case x of { K n -> isNothing n }) :: forall a. T a -> a
 test2 = (\x -> case x of { K n -> isNothing n }) :: forall a. T a -> Bool
+-- test3 = (\x -> case x of { K n -> isNothing n })
 \end{code}
 %endif
 %
+Note that neither |T a -> a| nor |T a -> Bool| is more general than the
+other.
+
 We would thus like the solver to fail when presented with this unification
 telescope. This is true, even though there is a solution to the inference
 problem (that is, a valid zonker $[[Z]]$ with a telescope of quantified
 variables $[[D]]$; see the specification of $[[|->solv]]$, \pref{sec:solv-spec}):
-\[
-\begin{array}{l}
-[[D = a :Irrel Type{}]] \\
-[[Z]] =
-\begin{array}[t]{l}
-[[forall{}. &&Tx{} a/au0]], \\
+\begin{align*}
+%\begin{array}{rcl}
+[[D]] &= [[&&ax :Irrel Type{}]] \\
+[[Z]] &=
+\begin{array}[t]{@@{}l}
+[[forall{}. &&Tx{} &&ax/au0]], \\
 [[forall{}. &Bool{}/bu0]], \\
-[[forall{}. a/au1]], \\
-[[forall{}. <&&Tx{} a>/cu0]], \\
+[[forall{}. &&ax/au1]], \\
+[[forall{}. <&&Tx{} &&ax>/cu0]], \\
 [[forall c. &Int{}/bu1]], \\
 [[forall c. <&Maybe{} &Int{}>/cu1]], \\
 [[forall c. <&Bool{}>/cu2]]
 \end{array}
+%\end{array}
+\end{align*}
+
+The problem is that here is another valid substitution for $[[bu0]]$ and $[[cu2]]$:
+\[
+[[Z]] =
+\begin{array}[t]{@@{}l}
+ \ldots, \\
+[[forall {}. &&ax/bu0]], \\
+\ldots, \\
+[[forall c. sym c/cu2]]
 \end{array}
 \]
+%
+These zonkers correspond to the overall type |T a -> Bool| and |T a -> a|, respectively.
 
+We must thus ensure that the solver rejects $[[O]]$ outright. This is achieved
+by making $[[bu0]]$ untouchable when considering solving the $[[cu2]]$ constraint.\footnote{Why this particular mechanism works is discussed in some depth
+by \citet[Section 5.2]{outsidein}.}
+As described by \citet[Section 5.5]{outsidein}, the solver considers the
+constraints individually. When simplifying (\outsidein/'s terminology
+for solving a simple, non-implication constraint) the $[[cu1]]$ and
+$[[cu2]]$ constraints, any unification variable not quantified by $[[c]]$ is considered
+untouchable.\footnote{To make this a bit more formal, I would need to label
+the quantification by $[[c]]$ by some label drawn from an enumerable set
+of labels. The touchable unification variables would be those quantified
+by the same label as the constraint being simplified. We cannot just use
+the name $[[c]]$, as names are fickle due to potential $\alpha$-variation.}
+Thus, $[[bu0]]$ is untouchable when simplifying $[[cu2]]$, so the solver
+will never set $[[bu0]]$ to anything at all. It will remain an ambiguous
+variable and a type error will be issued. 
+
+Contrast this with $[[au1]]$, which is also not set by the solver.
+This variable, however, is fully unconstrained and can be quantified over
+and turned into the non-unification variable $[[&&ax]]$.
+There is no way to quantify over $[[bu0]]$, however.
+
+Despite not setting $[[bu0]]$, the solver is free to set $[[bu1]]$ which
+is considered touchable, as it is also quantified by $[[c]]$. The unification
+variable $[[bu1]]$ is fully local to the |case| alternative body, and setting
+it can have no effect outside of the |case| expression. In the terminology
+of \outsidein/, that unification would be introduced by $\exists [[bu1]]$
+in an implication constraint. In our example, the ability to set $[[bu1]]$
+means that we get only one type error reported, not two.
 %}
 
-\section{Bidirectional type checking}
+\section{Bidirectional typechecking}
 
 Like previous algorithms for
 GHC/Haskell~\cite{practical-type-inference,visible-type-application,gundry-thesis}, \bake/
@@ -484,12 +629,300 @@ idea to bidirectional typechecking is that, sometimes, the type inference
 algorithm knows what type to look for. When this happens, the algorithm
 should take advantage of this knowledge.
 
-Historically, 
+Bidirectional typechecking works by defining two separate algorithms: a type
+synthesis algorithm and a type checking algorithm. The former is used when
+we have no information about the type of an expression, and the latter is
+used when we do indeed know an expression's expected type. The algorithms
+are mutually recursive because of function applications: knowing the result
+type of a function call does not tell you about the type of the function
+(meaning the checking algorithm must use synthesis on the function),
+but once we know the function's type, we know the type of its arguments
+(allowing the synthesis algorithm to use the more informative checking
+algorithm).
 
-\subsection{Starred vs.~unstarred judgments}
+Historically, bidirectional typechecking in Haskell has been most useful when
+considering higher-rank polymorphism---for example, in a type
+like |(forall a. a -> a) -> Int|. Motivating higher-rank types would bring
+us too far afield, but the literature has helpful examples~\cite{practical-type-inference,visible-type-application} and there is a brief introduction in
+\pref{sec:higher-rank-types}. Naturally, Dependent Haskell continues to
+use bidirectional typechecking to allow for higher-rank types, but there
+is now even more motivation for bidirectionality.
+
+As discussed above (\pref{sec:untouchability}), bringing equality constraints
+into scope makes some unification variables untouchable. In practice, this
+means that the result type of a GADT pattern match must be known; programmers
+must put type annotations on functions that perform a GADT pattern match.
+
+In a dependently-typed language, however, \emph{any} pattern match might
+bring equality constraints into scope, where the equality relates the scrutinee
+with the pattern. For example, if I say something as simple as
+|case b of { True -> x ; False -> y }|, I may want to use the fact that
+|b ~ True| when typechecking |x| or |b ~ False| when typechecking |y|. This
+is, of course, dependent pattern matching (\pref{sec:dependent-pattern-matching}).
+Our problem now is that it seems that \emph{every} pattern match introduces
+an equality constraint, meaning that the basic type inference of Haskell might
+no longer work.
+
+The solution is to take advantage of the equality available by dependent
+pattern matching only when the result type of the |case| expression is
+being propagated downwards---that is, when the inference algorithm is
+in checking mode. If we do not know a |case| expression's overall type,
+then the pattern match is treated as a traditional, non-dependent pattern
+match. Without bidirectional typechecking, the user might have to annotate
+which kind of match is intended.\footnote{The Dependent Haskell described
+by \citet{gundry-thesis} indeed has the user annotate this choice for
+|case| expressions. Due to Gundry's restrictions on the availability of
+terms in types (see his Section 6.2.3), however, the bidirectional approach would
+have been inappropriate in his design.}
+
+\subsection{Invisibility}
+
+As discussed in \pref{sec:dep-haskell-vis}, Dependent Haskell programmers can
+choose the visibility of their arguments: A visible argument must be provided
+at every function call, while an invisible one may be elided. If the programmer
+wants to write an explicit value to use for an invisible argument, prefixing
+the argument with $\at$ allows it to stand for the invisible parameter.
+
+In the context of type inference, though, we must be careful. As explored
+in my prior work~\cite{visible-type-application}, invisible arguments are
+sometimes introduced at the whim of the compiler. For example, consider
+%
+\begin{code}
+-- |isShorterThan :: [a] -> [b] -> Bool|
+isShorterThan xs ys = length xs < length ys
+\end{code}
+%
+Note that the type signature is commented out. The function |isShorterThan|
+takes two invisible arguments, |a|, and |b|. Which order should they appear
+in? Without the type signature for guidance, it is, in general, impossible
+to predict what order these will be generalized. See \citet[Section 3.1]{visible-type-application} for more discussion on this point.
+
+Despite the existence of functions like |isShorterThan| with fully-inferred
+type signatures, we wish to retain principal types in our type system---at
+least in the subset of the language that does not work with equality
+constraints.
+We thus must have \emph{three} different levels of visibility:
+\begin{description}
+\item[Required] parameters (also called visible) must be provided at
+function call sites.
+\item[Specified] parameters are invisible, but their order is user-controlled.
+These parameters are to functions with type signatures or with an explicit
+|forall ...|.
+\item[Inferred] parameters (called ``generalized'' in \citet{visible-type-application}) are ones invented by the type inference algorithm (like the parameter
+|a| in the example used to explaim untouchabile variables;
+see \pref{sec:untouchability}). They cannot ever be instantiated
+explicitly.
+\end{description}
+Note that these three levels of visibility are not a consequence of dependent
+types, but of having an invisibility override mechanism; these three levels
+of visibility are fully present in GHC 8. In the judgments that form \bake/,
+I often write a subscript $[[Req]]$, $[[Spec]]$, or $[[Inf]]$to $\Pi$ symbols indicating the visibility of the
+binders quantified over. These subscripts have no effect on well-formedness
+of types and are completely absent from pure \pico/.
+
+Following my prior work, both the synthesis
+and checking algorithms are split into two judgments apiece: one written
+$[[|->ty]]$ and one written $[[*|->ty]]$. The distinction is that the
+latter works with types that may have invisible binders, while the former
+does not. For example, a type produced by the $[[|->ty]]$ judgment in synthesis
+mode is guaranteed not to have any invisible (that is, specified or
+inferred) binders at the outermost level. Thus when synthesizing the type
+of $[[_t1]]$ in the expression $[[_t1 _t2]]$, we use the $[[|->ty]]$ judgment,
+as we want any invisible arguments to be inferred in preparation of applying
+$[[_t1]]$ to $[[_t2]]$. Considering the algorithm in checking mode,
+when processing a traditional $\lambda$-expression, we want the rule to be part of the $[[|->ty]]$ judgment,
+to be sure that the algorithm has already skolemized (\pref{sec:skolemization})
+the known type down to
+one that accepts a visible argument. Conversely, the rule for an expression
+like |\ ^^ (at a) -> ...| must belong in the $[[*|->ty]]$ judgment, as we want
+to see the invisible binders in the type to match against the invisible argument
+the programmer wishes to bind.
+
+The interplay between the starred judgments and the unstarred nudges this
+system toward principal types. Having these two different judgments is indeed
+one of the main innovations in my prior work~\cite{visible-type-application},
+where the separation is necessary to have principal types.
 
 \subsection{Subsumption}
 \label{sec:subsumption}
+
+Certain expression forms do not allow inward propagation of a type. As mentioned
+above, if we are checking an expression |f x| against a type |tau|, we have
+no way of usefully propagating information about |tau| into |f| or |x|.
+Instead, we use the synthesis judgment for |f| and then check |x|'s type
+against the argument type found for |f|. After all of this, we will get
+a type |tau'| for |f x|. We then must check |tau'| against |tau|---but
+they do not have to match exactly. For example, if |tau'| is |foall a. a -> a|
+and |tau| is |Int -> Int|, then we're fine, as any expression of the former
+type can be used at the latter.
+
+What we need here is a notion of \emph{subsumption}, whereby we say that
+|forall a. a -> a| \emph{subsumes} |Int -> Int|, written
+\[
+|forall a. a -> a| [[<=]] |Int -> Int|
+\]
+For reasons well articulated in prior work~\cite[Section 4.6]{practical-type-inference}, my choice for the subsumption relation does \emph{deep skolemization}.
+This means that the types |forall a. Int -> a -> a| and |Int -> forall a. a -> a|
+are fully equivalent and is backward compatible with the current treatment
+of non-prenex types in GHC.
+
+\begin{figure}
+\ottdefnIPrenexSimp{}\\
+\ottdefnISubTwoSimp{}\\
+\ottdefnISubSimp{}
+\caption{Subsumption in \bake/ (simplified)}
+\label{fig:subsumption}
+\end{figure}
+
+\bake/'s subsumption relation is in \pref{fig:subsumption}. The rules
+in this figure are simplified from the full rules (which appear in
+\pref{app:subsumption}), omitting constraint generation and elaboration.
+The rules in each judgment are meant to be understood as an algorithm,
+trying earlier rules before later ones. Thus, for example, rule \rul{Sub\_Unify}
+is not as universal as it appears.
+
+The entry point is the bottom, unstarred subsumption judgment. It
+computes the prenex form of $[[k2]]$ using the auxiliary judgment
+$[[|->pre]]$ and instantiates $[[k1]]$. (The $[[Spec]]$ superscript to
+$[[|->inst]]$ says to instantiate any argument that is no more visible
+than $[[Spec]]$---that is, either $[[Inf]]$ or $[[Spec]]$ arguments.)
+The instantiated $[[k1']]$ and prenexed $[[k2']]$ are then compared using
+the starred subsumption judgment.\footnote{The stars on these judgments
+have a different meaning than the star on $[[|->ty]]$; they are borrowed
+from the notation by \citet{practical-type-inference},
+not \citet{visible-type-application}.}
+
+The starred judgment has the
+usual contravariance rule for functions. This rule, however, has three
+interesting characteristics.
+\paragraph{Dependency}
+We cannot simply compare $[[k2]] [[<=]] [[k4]]$. The problem is that
+$[[k2]]$ has a variable $[[a]]$ of type $[[k1]]$ in scope, whereas
+$[[k4]]$ has a variable $[[b]]$ of type $[[k3]]$ in scope. Contrast this
+rule to a rule for non-dependent functions where no such bother arises.
+In the fully detailed versions of these judgments, learning that
+$[[k1 <= k2]]$ gives us a term $[[t]]$ such that
+$[[t]] : [[UPI _:Rel k1. k2]]$---that is, a way of converting a $[[k1]]$ into
+a $[[k2]]$. I include such a $[[t]]$ when checking whether $[[k3 <= k1]]$.
+This $[[t]]$ is then used to convert $[[b]] : [[k3]]$ into a value of type
+$[[k1]]$, suitable for substitution in for $[[a]]$. With this substitution
+completed, we can perform the subsumption comparison against $[[k4]]$ as
+desired.
+
+\paragraph{Matchable functions subsume unmatchable ones}
+Rule \rul{Sub\_Fun} includes a subsumptive relationship among
+the two flavors of $\Pi$. Whenever an unmatchable $[[UPI]]$-type is expected,
+surely a matchable $[[MPI]]$-type will do. Thus we allow either $\Pi$
+on the left of the $[[<=]]$. Note that the other way would be wrong: not only
+might an unmatchable $[[UPI]]$-type not work where a matchable $[[MPI]]$-type
+is expcted, but we also have no way of creating the $[[MPI]]$-type during
+elaboration. Our need to elaborate correctly keeps us from getting this
+wrong.
+
+\paragraph{$[[Irrel]]$ subsumes $[[Rel]]$}
+Finally, the rule also includes a subsumptive relationship among
+relevances. If the relevances $[[rel1]]$ and $[[rel2]]$ match up, then
+all is well. But also if $[[rel1]]$ is $[[Irrel]]$ and $[[rel2]]$ is $[[Rel]]$,
+we are OK. If $[[rel2]]$ is $[[Rel]]$, that says that the expression we
+are checking is allowed to use its argument relevantly, but nothing goes
+wrong if the expression, in fact, does not (that is, if $[[rel1]]$ is
+$[[Irrel]]$). Once again, elaboration keeps us honest here; if the rule
+is written
+the wrong way around, there is no sound way to elaborate.
+
+\subsection{Skolemization}
+\label{sec:skolemization}
+
+In checking mode, the $[[*|->ty]]$ judgment \emph{skolemizes} any invisible
+quantifiers in the known type.\footnote{I am following \citet{practical-type-inference} in my use of the word ``skolem''. I understand that this word may
+have slightly different connotation in a logical context, but my use here
+has become standard in the study of GHC/Haskell.}
+As an example, consider
+\[
+|(\ x -> x) :: forall a. a -> a|
+\]
+When checking the $\lambda$-expression against that type, we first must
+dispose of the |forall a|. This is done by essentially making |a| a 
+fresh type constant, equal to no other. This act is called skolemization;
+|a| becomes a skolem. The variable |x| is then given
+this type |a|, and the body of the $\lambda$ indeed has type |a| as desired.
+
+As we look at more complicated examples, a question arises about how deeply
+to skolemize. Here is an illustrative example, taken from prior work~\cite{visible-type-application-extended}:
+\begin{code}
+x = \ 5 z -> z
+ -- |x| is inferred to have type |forall a. Int -> a -> a|
+
+y :: Int -> forall b. b -> b
+y = x
+\end{code}
+In this example, we are checking |x| of type |forall a. Int -> a -> a|
+against the type |Int -> forall b. b -> b|. We must be a bit careful here,
+though: |x|'s type is fully inferred, and thus its quantification over |a|
+is $[[Inf]]$, not $[[Spec]]$. With the right flags,\footnote{\texttt{-fprint-explicit-foralls}, specifically} GHC prints |x|'s type
+as |forall {a}. Int -> a -> a| to denote that it is not available for a
+visibility override.
+
+The type we are checking against
+does not have any invisible binders at the top (its first binder is the
+visible one for |Int|), so we do not skolemize. Instead, we look up |x|'s
+type and instantiate |a| with a unification variable $[[au]]$. We then
+check whether |Int -> alpha -> alpha| subsumes
+|Int -> forall b. b -> b|. The subsumption check does deep skolemization
+and then compares |Int -> alpha -> alpha| with |Int -> b -> b|. Of course,
+the solution is $[[&&bx/au]]$. Yet, there is a lurking problem: $[[au]]$
+is added to the unification telescope \emph{before} |b| is skolemized. This
+means that it would be ill-scoped for $[[au]]$ to refer to |b|.\footnote{Saying
+that this example fails because of scoping is a vast improvement over
+the state of affairs in \citet{visible-type-app-extended}, where a delicate
+line of reasoning based on the subtleties of the Barendregt convention is
+necessary to show how this example goes awry. By tracking our unification
+variables in a telescope, problems like this become much clearer.} However,
+it is quite unfortunate that this example is rejected, because the subsumption
+judgment, with its deep skolemization, would have this work out if only we
+didn't instantiate that $[[Inf]]$ binder so eagerly.
+
+The solution to this problem proposed in prior work is to do deep skolemization
+in the checking $[[*|->ty]]$ judgment. This works in the System SB
+of \citet{visible-type-application}. However, it fails us here. The problem
+is that Dependent Haskell allows for constructs like
+|\ n (at a) -> ...|. If we check that expression against
+|Int -> forall a. a -> a|, we want the |a|s to match up. Yet deeply skolemizing
+the type we are checking against will eliminate the |a| and our algorithm
+will reject the code. We thus instead do shallow skolemization in
+$[[*|->ty]]$ and instead generalize the synthesized type right before
+the subsumption check. This alternative solution to the problem was
+also proposed in my prior work but rejected because of mild implementation
+challenges. Now with a clear motivation for shallow skolemization over
+deep, that is what we will have to do. I do not expect this implementation
+burden to be the leading factor in the challenge of
+implementing the ideas in this
+dissertation.
+
+Returning to the |x|/|y| example, here is how it plays out:
+\begin{enumerate}
+\item The variable |x| is inferred to have type |forall {a}. Int -> a -> a|.
+\item When synthesizing the type of the expression |x| (in the body of |y|),
+the inferred variable |a| is instantiated with |alpha|. The type of the
+expression |x| is thus |Int -> alpha -> alpha|.
+\item Right before the subsumption check, |x|'s type is generalized, thus
+becoming |forall {a}. Int -> a -> a| again.
+\item The subsumption relation checks whether |forall {a}. Int -> a -> a|
+subsumes |Int -> forall b. b -> b|. This is indeed true, and the definition
+for |y| is accepted.\footnote{Although not visible in \rul{Sub\_DeepSkol}
+in \pref{fig:subsumption},
+it is critical that $[[k2]]$ is skolemized \emph{before} $[[k1]]$ is
+instantiated, lest we end up with the same scoping problem. This can be
+seen in the full rule (\pref{app:subsumption}) with the fact that
+we include $[[O1]]$ in the final generalization step. In contrast to
+other potential pitfalls mentioned earlier, leaving $[[O1]]$ out of this
+line does not imperil the soundness of elaboration; it is only a matter
+of expressiveness of the source Haskell.}
+\end{enumerate}
+
+We have thus accepted our problem example and remain in line with the
+declarative system proposed in my prior
+work~\cite[Section 6.2]{visible-type-application}.
 
 \section{Generalization}
 

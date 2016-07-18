@@ -411,6 +411,7 @@ executed at runtime is somewhat unfortunate. See \pref{sec:no-termination-check}
 for some discussion.
 
 \section{Higher-rank types}
+\label{sec:higher-rank-types}
 Standard ML and Haskell98 both use, essentially, the Hindley-Milner (HM) type
 system~\cite{hindley,milner,damas-thesis}. The HM type system allows only \emph{prenex
   quantification}, where a type can quantify over type variables only at the

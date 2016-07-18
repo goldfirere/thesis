@@ -120,3 +120,4 @@ ijudg :: 'IJudg_' ::=
   {{ tex [[S]];[[P]];[[s]] [[|=alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
 | S ; P |=subst theta : D             ::   :: Subst
 | S ; P |= J                          ::   :: J
+| k1 <= k2 ~> t                       ::   :: Sub

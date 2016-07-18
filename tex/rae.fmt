@@ -43,6 +43,8 @@
 %format pi = "\Pi"
 %format tau = "\tau"
 %format sigma = "\sigma"
+%format alpha = "\alpha"
+%format beta = "\beta"
 %format Type = "\ottkw{Type}"
 %format (at x) = "@" x
 
@@ -72,7 +74,8 @@
              TypeFamilies, CPP, ConstraintKinds, RankNTypes,
 	     StandaloneDeriving, ScopedTypeVariables,
 	     MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances,
-	     UndecidableInstances, TemplateHaskell, TypeInType #-}
+	     UndecidableInstances, TemplateHaskell, TypeInType,
+	     AllowAmbiguousTypes, TypeApplications #-}
 {-# OPTIONS_GHC -Wall -Wno-unused-imports
                       -Wno-name-shadowing
 		      -Wno-redundant-constraints

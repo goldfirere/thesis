@@ -7,7 +7,7 @@ OTT_PICKY = false
 BIB_FILES_FULL = bib/rae.bib
 FMT_FILES_BASE = rae
 HS_FILES_BASE = ThesisPreamble # Pico/Ott Pico/Syn Pico/Util Pico/Rules
-GHC_OPTS = -Werror -Wall
+GHC_OPTS = -Werror -Wall -fprint-explicit-kinds
 GHC = ghc-8
 
 OTT_FILES_FULL = $(OTT_FILES_BASE:%=ott/%.ott)

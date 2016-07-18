@@ -1,13 +1,11 @@
 
 - type inference can introduce only unif variables
-- DONE My Haskell patterns (H xs) are simpler than they really should be.
   But it's annoying otherwise. I'm not writing a pattern-matching compiler.
 - Fix requires its argument to take a visible argument. I just can't
   be bothered to generalize this.
 - Not sure whether to use subsumption or straight-up equality in
   matchExpectedFunTy (|->fun). GHC uses subsumption here. But I think
   an equality predicate is powerful enough.
-- DONE No constraints! This is because everything has a name.
 - Class constraints are precisely inferred relevant arguments.
 - We can't always just use a coercion in |->fun because then we won't be
   able to recognize proper dependent function types. In other words,
@@ -24,8 +22,6 @@
 - There are two sets of variable names. a,b,x denote names a Haskell user can
   write. $a denotes a name that a Haskell user cannot write. All are valid
   names in Pico, and we can freely rename between. Note use in ITyC_SkolRel.
-- Case has an synthesis version that doesn't use the dependent equality and
-  and checking version that does.
 - Very cool how the inference rules match the code. Even the difference between
   matchExpectedFunTy and matchActualFunTy is present.
 - Unclear where ITyC_Fix should live. Starred judgment or not? I think this
@@ -33,8 +29,6 @@
   Therefore: Fix must live in the unstarred judgment.
 - Generalizing unification variables is simpler in the implementation: we
   just wrap in an implication constraint. Why no need for substitution?
-- We don't need "touchable" variables to be tracked. We just stop unifying
-  once we walk past an equality constraint in the unification telescope
 - IGen_Ty is a bit punny around dom(d)
 - SB_DeepSkol from VTA paper has become ITyC_Skol. Note that it's not deep.
   We thus must generalize in the Infer rule. At first, I was quite concerned
@@ -76,6 +70,15 @@ Preprocessing:
 - redundant matches are dropped
    --> Thus, the first alt, if there is one, has a constructor
 - implicit variables are added to pattern matches
+
+DONE:
+- DONE My Haskell patterns (H xs) are simpler than they really should be.
+- DONE No constraints! This is because everything has a name.
+- DONE Case has an synthesis version that doesn't use the dependent equality and
+  and checking version that does.
+- DONE We don't need "touchable" variables to be tracked. We just stop unifying
+  once we walk past an equality constraint in the unification telescope
+
 
 OLD:
 - OLD Label given class constraints with :c

@@ -951,6 +951,9 @@ We see that $[[S;P' |=ty x (t1 b) : k2[t1 b/a] ]]$.
 Thus $[[S;P' |=ty t2[X] (x (t1 b)) : k4[x (t1 b)/x2] ]]$, but
 \pref{lem:iscoping} tells us that the substitution in the kind has
 no effect. We are thus done by two uses of \rul{Ty\_Lam}.
+\item[Case \rul{ISub\_FunIrrelRel}:]
+Similar to previous case. Note that $[[b]]$ can be used irrelevantly
+even though it is bound relevantly. The opposite way would not work.
 \item[Case \rul{ISub\_FunIrrel}:]
 Similar to previous case.
 \item[Case \rul{ISub\_Unify}:]
@@ -968,8 +971,8 @@ we know by assumption. We are done.
 \[
 \ottdruleISubXXDeepSkol{}
 \]
-We must show $[[S;P,O1,O2' |=ty \x :Rel k1. t1 (\D. t2[X] (x ps)) : UPI x: Rel k1. k2]]$. The last step will be \rul{Ty\_Lam}, so we must show
-$[[S;P,O1,O2',x:Rel k1 |=ty t1 (\D. t2[X] (x ps)) : k2]]$.
+We must show $[[S;P,O' |=ty \x :Rel k1. t1 (\D. t2[X] (x ps[X])) : UPI x: Rel k1. k2]]$. The last step will be \rul{Ty\_Lam}, so we must show
+$[[S;P,O',x:Rel k1 |=ty t1 (\D. t2[X] (x ps[X])) : k2]]$.
 From $[[S;Rel(P) |=ty k1 : Type{}]]$, we can use \rul{Ctx\_TyVar} to see
 $[[S |=ctx P,x:Rel k1]]$. Thus
 $[[S;P,x:Rel k1 |=ty x : k1]]$.
@@ -983,31 +986,39 @@ $[[S;P |=ty t1 : UPI x1:Rel (UPI D. k2'). k2]]$.
 inversion gives
 $[[S;Rel(P,D) |=ty k2' : Type{}]]$.
 We can then use the induction hypothesis with context
-$[[P,x:Rel k1,O1,D]]$ (known well-formed by \pref{lem:iweakening}) to get
-$[[S;P,x:Rel k1,O1,D,O2 |=ty t2 : UPI x2:Rel k1'. k2']]$.
+$[[P,x:Rel k1,D,O1]]$ (known well-formed by \pref{lem:iweakening}) to get
+$[[S;P,x:Rel k1,D,O1,O2 |=ty t2 : UPI x2:Rel k1'. k2']]$.
 \pref{lem:igen} shows that
-$[[S;P,x:Rel k1,O1,O2',D |=ty t2[X] : (UPI x2:Rel k1'. k2')[X] ]]$,
-but \pref{lem:gen-scope} tells us that the $[[ [X] ]]$ in the kind has
-no effect.
-Rule \rul{Ty\_AppRel} gives us
-$[[S;P,x:Rel k1,O1,O2',D |=ty t2[X] (x ps) : k2'[x ps/x2] ]]$
+$[[S;P,x:Rel k1,O',D |=ty t2[X] : (UPI x2:Rel k1'. k2')[X] ]]$.
+The kind can be rewritten to $[[UPI x2:Rel (k1'[X]). k2'[X] ]]$
+but \pref{lem:gen-scope} tells us that $[[ k2'[X] = k2' ]]$.
+We established earlier that $[[S;P,x:Rel k1,O1 |=ty x ps : k1']]$.
+We can weaken this to $[[S;P,x:Rel k1,D,O1,O2 |=ty x ps : k1']]$
+and then use \pref{lem:igen} to get
+$[[S;P,x:Rel k1,O',D |=ty (x ps)[X] : k1'[X] ]]$.
+We know that $[[x[X] = x]]$ because $[[x]]$ is just a non-unification
+variable.
+Rule \rul{Ty\_AppRel} thus gives us
+$[[S;P,x:Rel k1,O',D |=ty t2[X] (x ps[X]) : k2'[x ps[X]/x2] ]]$
 but \pref{lem:iscoping} tells us that the substitution in the kind has
 no effect.
 We now use \rul{Ty\_Lam} (repeatedly) to see
-$[[S;P,x:Rel k1,O1,O2' |=ty \ D. t2[X] (x ps) : UPI D. k2']]$.
+$[[S;P,x:Rel k1,O' |=ty \ D. t2[X] (x ps[X]) : UPI D. k2']]$.
 Thus \rul{Ty\_AppRel} tells us
-$[[S;P,x:Rel k1,O1,O2' |=ty t1 (\ D. t2[X] (x ps)) : k2[(\ D. t2[X] (x ps))/x1] ]]$,
+$[[S;P,x:Rel k1,O' |=ty t1 (\ D. t2[X] (x ps[X])) : k2[(\ D. t2[X] (x ps[X]))/x1] ]]$,
 but \pref{lem:iscoping} tells us that the substitution in the kind
 has no effect.
 We only need to reshuffle the context; in other words, we must
 now show
-$[[S |=ctx P,O1,O2',x:Rel k1]]$ to be done.
+$[[S |=ctx P,O',x:Rel k1]]$ to be done.
 For this to hold, we need to know that none of
-$[[O1,O2']]$ depend on $[[x]]$.
+$[[O']]$ depend on $[[x]]$.
 First, note that $[[x]]$ is local to rule \rul{ISub\_DeepSkol}.
-We see that $[[O1]]$ is produced by $[[|->inst]]$ with no mention of
-$[[x]]$; it mustn't mention $[[x]]$ then. The case is similar for
-$[[O2']]$, both produced with no mention of $[[x]]$. Therefore,
+We see that $[[D]]$ is produced by $[[|->pre]]$ with no
+mention of $[[x]]$, $[[O1]]$ is produced by $[[|->inst]]$ with no mention of
+$[[x]]$, and $[[O2]]$ is produced by $[[*<=]]$ with no mention of
+$[[x]]$.
+Therefore,
 $[[x]]$ is not mentioned in any of these, and we are done.
 \end{description}
 \end{proof}

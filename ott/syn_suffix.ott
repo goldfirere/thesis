@@ -240,6 +240,13 @@ $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
   | P1 \subseteq P2                    ::   :: G_subseq
   | z \notin fvset                     ::   :: var_notin_set
   | fvset1 \subseteq fvset2            ::   :: subset
+  | fresh O                            ::   :: simplified_constraints
+  | |->inst _ vis k1 ~> k2             ::   :: simplified_inst
+    {{ tex \varrowyy{inst}{[[vis]]} [[k1]] [[~>]] [[k2]] }}
+  | not ( formula )                    ::   :: negation
+    {{ tex \neg ( [[formula]] ) }}
+  | formula1 /\ formula2               ::   :: conjunction
+    {{ tex [[formula1]] \wedge [[formula2]] }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

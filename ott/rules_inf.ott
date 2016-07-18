@@ -486,7 +486,7 @@ t0 = \ (x :Rel UPI D,d.k2'), d. t (\ D. x dom(D) dom(d))
 % precondition: no invisible binders on either k1 or k2
 defn
 k1 *<= k2 ~> t -| O :: :: ISub2 :: 'Sub_'
-  {{ com ``[[k1]] is a sub-type of [[k2]].'' ([[k2]] is in prenex form) }}
+  {{ com ``[[k1]] subsumes [[k2]].'' ([[k2]] is in prenex form) }}
 by
 
 k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
@@ -494,6 +494,12 @@ O2 +> b:Rel k3 ~> O2'; X
 t0 = \ x :Rel (PI a:Rel k1.k2), b:Rel k3. t2[X] (x (t1 b))
 -------------------------------------------- :: FunRel
 PI_Req a:Rel k1. k2 *<= UPI_Req b:Rel k3.k4 ~> t0 -| O1, O2'
+
+k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
+O2 +> b:Rel k3 ~> O2'; X
+t0 = \ x :Rel (PI a:Irrel k1.k2), b:Rel k3. t2[X] (x {t1 b})
+-------------------------------------------- :: FunIrrelRel
+PI_Req a:Irrel k1. k2 *<= UPI_Req b:Rel k3.k4 ~> t0 -| O1, O2'
 
 k3 <= k1 ~> t1 -| O1  //   k2[t1 b/a] <= k4 ~> t2 -| O2
 O2 +> b:Irrel k3 ~> O2'; X
@@ -507,15 +513,15 @@ t1 *<= t2 ~> \ x:Rel t1. (x |> cu_{}) -| cu : forall{}. t1 [Type{}]~[Type{}] t2
 
 defn
 k1 <= k2 ~> t -| O :: :: ISub :: 'Sub_'
-  {{ com ``[[k1]] is a sub-type of [[k2]].'' }}
+  {{ com ``[[k1]] subsumes [[k2]].'' }}
 by
 
 |->pre k2 ~> D; k2'; t1
 |->inst_Spec k1 ~> ps; k1' -| O1
 k1' *<= k2' ~> t2 -| O2
-O2 +> D ~> O2'; X
+O1,O2 +> D ~> O'; X
 ------------- :: DeepSkol
-k1 <= k2 ~> \ x:Rel k1. t1 (\ D. t2[X] (x ps)) -| O1,O2'
+k1 <= k2 ~> \ x:Rel (k1). t1 (\ D. t2[X] (x ps[X])) -| O'
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Generalization  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -667,3 +673,52 @@ S;P |=z Z : O[forall dom(D). g/cu]
 S;P |=z forall dom(D). g/cu, Z : cu:forall D.phi, O
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  tcSubType (simplified)  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+Simplified :: '' ::=
+
+%% t :: (UPI D. k') -> k
+defn
+|->pre k ~> k' :: :: IPrenexSimp :: 'Prenex_'
+  {{ com Convert a kind into prenex form. }}
+by
+
+vis <= Spec
+|->pre k2 ~> UPI D. k2'
+----------------------------- :: Invis
+|->pre UPI_vis d.k2 ~> UPI d,D. k2'
+
+|->pre k2 ~> UPI D. k2'
+---------------------------- :: Vis
+|->pre UPI_Req d.k2 ~> UPI D. UPI_Req d.k2'
+
+--------------------------- :: NoPi
+|->pre k ~> k
+
+% precondition: no invisible binders on either k1 or k2
+defn
+k1 *<= k2 :: :: ISub2Simp :: 'Sub_'
+  {{ com ``[[k1]] subsumes [[k2]].'' ([[k2]] is in prenex form) }}
+by
+
+not (rel1 = Rel /\ rel2 = Irrel)
+k3 <= k1 ~> t  //   k2[t1 b/a] <= k4
+-------------------------------------------- :: Fun
+PI_Req a:rel1 k1. k2 *<= UPI_Req b:rel2 k3.k4
+
+fresh cu : forall{}. t1 [Type{}]~[Type{}] t2
+----------------------- :: Unify
+t1 *<= t2
+
+defn
+k1 <= k2 :: :: ISubSimp :: 'Sub_'
+  {{ com ``[[k1]] subsumes [[k2]].'' }}
+by
+
+|->inst_Spec k1 ~> k1'  // |->pre k2 ~> UPI D. k2'
+k1' *<= k2'
+------------- :: DeepSkol
+k1 <= k2
