@@ -226,6 +226,7 @@ It is this ability, to assume an equality, that allows \pico/ to have
 GADTs. See the example in \pref{sec:pico-gadt-example} for the details.
 
 \subsection{Design requirements for \pico/}
+\label{sec:no-letrec}
 
 In the course of any language design, there needs to be a guiding principle
 to aid in making free design decisions. The chief motivator for the design

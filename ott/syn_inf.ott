@@ -88,7 +88,6 @@ O {{ tex \Omega }}, Os {{ tex \overline{\Omega} }} :: 'IUnifCtx_' ::=
 | O [ theta ]          :: M :: Subst
 | O [ Z ]              :: M :: Zonk
 | O [ X ]              :: M :: Gen
-| forall D . O         :: M :: Forall
 | Rel ( O )            :: M :: Rel
   {{ tex [[Rel]]([[O]]) }}
 

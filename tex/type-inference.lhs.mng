@@ -259,7 +259,7 @@ The version of Dependent Haskell presented here differs in a few details
 from the language presented in \pref{cha:dep-haskell}. These differences
 are to enable an easier specification of the elaboration algorithm. Translating
 between the ``real'' Dependent Haskell of \pref{cha:dep-haskell} and this
-version can be done by a straightforward preprocessing step. Critically,
+version can be done by a preprocessing step. Critically,
 (but with one exception)
 no part of
 this preprocessor needs type information. For example,
@@ -276,13 +276,14 @@ solutions~\cite{augustsson-compiling-pattern-matching,wadler-pattern-matching}
 and I thus consider the algorithm as part of the preprocessor and do 
 not consider this further.
 
+\subsection{Dependent Haskell modalities}
+
 Let's now review some of the more unusual annotations in Dependent Haskell,
 originally presented in \pref{cha:dep-haskell}. Each labeled paragraph
  below describes
 an orthogonal feature (visibility, matchability, relevance).
 
-\begin{description}
-\item[The $\at$ prefix]
+\paragraph{The $\at$ prefix}
 Dependent Haskell uses an $\at$ prefix to denote an argument that would
 normally be invisible. It is used in two places in the grammar:
 \begin{itemize}
@@ -298,7 +299,7 @@ $\at$-sign is produced by the preprocessor when it encounters a
 |forall ... .| or |pi ... .| quantification.
 \end{itemize}
 
-\item[Ticked quantifiers]
+\paragraph{Ticked quantifiers}
 Three of the quantifiers that can be written in Dependent Haskell
 come in two varieties: ticked and unticked. An ticked quantifier
 serves in the type of matchable (that is, generative and injective)
@@ -307,14 +308,43 @@ function space. Recall that type constructors and data constructors
 are typed by matchable functions, whereas ordinary $\lambda$-expressions
 are not.
 
-\item[Relevance]
+\paragraph{Relevance}
 The difference between |forall| and |pi| in Dependent Haskell is that
 the former defines an irrelevant abstraction (fully erased during compilation)
 while the latter describes a relevant abstraction (retained at runtime).
 In terms, an expression introduced by $\lambda$ is a relevant abstraction;
 one introdcued by $\Lambda$ is an irrelevant one.
-\end{description}
 
+\subsection{Omissions from the Haskell grammar}
+
+There are two notable omissions from the grammar in \pref{fig:formal-haskell-grammar}.
+
+\paragraph{Type constants} 
+The Haskell grammar contains no
+production for $[[H]]$, a type constant. This is chiefly because
+type constants must be saturated with respect to universals in \pico/,
+whereas we do not need this restriction in Haskell. Accordingly, type
+constants are considered variables that expand to type constants
+that have been $\eta$-expanded to take their universal arguments in
+a curried fashion.
+
+\paragraph{Recursive |let|}
+Following the decision not to include a \keyword{letrec} construct in
+\pico/ (\pref{sec:no-letrec}),
+the construct is omitted from the formalized subset of Haskell as well.
+Having a formal treatment of \keyword{letrec} would require a formalization
+of Haskell's consideration of polymorphic recursion~\cite{meertens-polymorphic-recursion,mycroft-polymorphic-recursion,henglein-polymorphic-recursion}, whereby
+definitions with type signatures can participate in polymorphic recursion while
+other definitions cannot. In turn, this would require a construct where
+a polymorphic function is treated monomorphically in a certain scope and
+polymorphically beyond that scope.\footnote{Readers familiar with the
+internals of GHC may recognize its |AbsBinds| data constructor in this
+description. Formalizing all of its intricacies would indeed be required
+to infer the type of a \keyword{letrec}.} The problems faced here are not
+unique to (nor made particularly worse by) dependent types. I thus have
+chosen to exclude this construct for simplicity.
+
+\paragraph{}
 We have now reviewed the source language of \bake/, and the previous
 chapter described its target language, \pico/. I'll now fill in the gap
 by introducing the additions to the grammar needed to describe the inference
@@ -344,6 +374,8 @@ Grammar extensions:
 %[[J]] &\bnfeq& \multicolumn{2}{l}{\text{stand-in for an arbitrary judgment (\pref{sec:J})}}
 \end{array}
 \]
+I elide the $[[forall]]$ when the list of variables or telescope quantified
+over would be empty.
 \caption{Additions to the grammar to support \bake/.}
 \label{fig:bake-grammar}
 \end{figure}
@@ -711,7 +743,7 @@ These parameters are to functions with type signatures or with an explicit
 \item[Inferred] parameters (called ``generalized'' in \citet{visible-type-application}) are ones invented by the type inference algorithm (like the parameter
 |a| in the example used to explaim untouchabile variables;
 see \pref{sec:untouchability}). They cannot ever be instantiated
-explicitly.
+explicitly. All coercion abstractions are inferred.
 \end{description}
 Note that these three levels of visibility are not a consequence of dependent
 types, but of having an invisibility override mechanism; these three levels
@@ -926,7 +958,105 @@ work~\cite[Section 6.2]{visible-type-application}.
 
 \section{Generalization}
 
+There is one final aspect of the inference algorithm that requires study
+before we look at the individual pieces: the generalization operation.\footnote{What I call generalization here is precisely what \citet[Section 7.5]{gundry-thesis} calls
+``parameterisation'' and writes with $\nearrow$.} That said, in terms of understanding the \bake/ algorithm, having a strong grasp
+on generalization is not terribly important; this is merely a technical
+step needed to make the mathematics hold together.
+
+Suppose we are synthesizing the type of a $\lambda$-expression |\x -> tau|.
+We choose a unification variable $[[au]]$ for the type of |x|. We then must
+put $[[&&xx :Rel au_{}]]$ into the context when synthesizing the type for |tau|.
+Synthesizing this type will produce a unification telescope $[[O]]$. Now
+we have a problem: what unification telescope will we return from synthesizing
+the type of the entire $\lambda$-expression? It looks something like
+$[[au :Irrel forall{}.Type{}, &&xx :Rel au_{}, O]]$ but, critically, that is not
+a unification telescope, as that context contains a binding for an ordinary
+\pico/ variable, |x|.
+
+It might be tempting at this point simply to return a mixed telescope of
+unification variables and \pico/ variables, and just to carry on. The problem
+here is that we will lose track of the local scope of |x|. Perhaps something
+later, outside of the $\lambda$-expression, will end up unifying with |x|---which
+would be a disaster. No, we must get rid of it.
+
+\begin{figure}
+\ottdefnIIGen{}
+\caption{\bake/'s generalization operation}
+\label{fig:generalization}
+\end{figure}
+
+The solution is to generalize $[[O]]$ over |x|. This operation is written
+$[[O +> &&xx :Rel Type{} ~> O';X]]$. (The mnemonic behind the choice of
+$[[+>]]$ is that we are essentially moving the $[[&&xx :Rel Type{}]]$
+binding to the right, past $[[O]]$.) The output unification telescope
+$[[O']]$ binds the same unification variables as $[[O]]$, but each one
+will be generalized with respect to |x|. The definition of this judgment
+appears in \pref{fig:generalization}. The rules are a bit complicated
+by the fact that we may generalize a unification variable binding multiple
+times; both recursive rules thus assume a telescope $[[D']]$ that has
+already been generalized.
+
+The new construct $[[X]]$ is a \emph{generalizer}. It is a substitution-like
+construct that maps unification variables to vectors, which you may recall
+are lists of arguments $[[ps]]$. In this case, we simply use the domain
+of $[[D]]$ as the vector, where my use of $[[dom(D)]]$ as a list of arguments
+means to insert the irrelevance braces around irrelevantly-bound variables.
+Generalizers are necessary because generalizing changes the type of
+unification variables; we must then change the occurrences of them as well.
+
+Generalizers operate like this:
+\begin{definition*}[Generalizing {[\pref{defn:generalizer}]}]
+A generalizer is applied postfix as a function. It operates homomorphically
+on all recursive forms and as the identity operation on leaves other
+than unification variables. Generalizing unification variables
+is defined by these equations:
+\[
+\begin{array}{r@@{\quad}c@@{\quad}r@@{\;}l}
+[[au |-> ps1 \in X]] & \Rightarrow & [[au_ps2[X] &= au_{{ps1,ps2}}]]\\
+\text{otherwise} && [[au_ps[X] &= au_{{ps[X]}}]] \\
+[[cu |-> ps1 \in X]] & \Rightarrow & [[cu_ps2[X] &= cu_{{ps1,ps2}}]]\\
+\text{otherwise} && [[cu_ps[X] &= cu_{{ps[X]}}]]
+\end{array}
+\]
+\end{definition*}
+Just like the generalization judgment (\pref{fig:generalization}), the
+generalization operation $[[ [X] ]]$ prepends the newly-generalized variables
+to those already there.
+
 \section{Type inference algorithm}
+
+\begin{figure}[t!]
+\[%\def\arraystretch{1.3}
+\begin{array}{cl}
+[[S;P |->ty _t ~> t : k -| O]] & \text{synthesize a type (no invis.~binders)} \\
+[[S;P *|->ty _t ~> t : k -| O]] & \text{synthesize a type} \\
+[[S;P |->ty _t : k ~> t -| O]] & \text{check a type (no invis.~binders)} \\
+[[S;P *|->ty _t : k ~> t -| O]] & \text{check a type} \\
+[[S;P |->pt _s ~> t -| O]] & \text{check a polytype (always with kind |Type|)} \\
+[[S;P;rel *|->arg _t : k ~> p ; t -| O]] & \text{check an argument at relevance $[[rel]]$} \\
+[[S;P;k0;t0 |->alt _alt : k ~> alt -| O]] & \text{check a case alt.~against an unknown type} \\
+[[S;P;k0;t0 |->altc _alt : k ~> alt -| O]] & \text{check a case alt.~against a known type} \\
+[[S;P |->q _qvar ~> a : k; vis -| O]] & \text{synth.~type of a bound var.} \\
+[[S;P |->aq _aqvar ~> a : k -| O]] & \text{synth.~type of a bound var.~(w/o vis.~marker)} \\
+[[S;P |->aq _aqvar : k ~> a : k'; x.t -| O]] & \text{check type of a bound var.~(w/o vis.~marker)} \\
+[[|->pi quant ~> PI; rel]] & \text{interpret a quantifier} \\
+[[|->fun k; rel1 ~> g; PI; a; rel2; k1; k2 -| O]] & \text{extract components of a function type} \\
+[[S;P |->scrut _alts; k ~> g; D; H; ts -| O]] & \text{extract components of a scrutinee type} \\
+[[|->inst_vis k ~> ps; k' -| O]] & \text{instantiate a type} \\
+[[S;G |->decl _decl ~> x : k := t]] & \text{check a declaration} \\
+[[S;G |->prog _prog ~> G'; theta]] & \text{check a program}
+\end{array}
+\]
+\caption{\bake/ judgments}
+\label{fig:bake-judgments}
+\end{figure}
+
+The schema of the judgments that define \bake/ appear in \pref{fig:bake-judgments}. I will not walk through each rule of each judgment to explain its inner
+workings. As discussed in the introduction to this chapter, the individual
+rules are largely predictable. They can be reviewed in their entirety in
+\pref{app:inference-rules}. Instead, this section will call out individual
+rules with interesting characteristics.
 
 \subsection{No coercion abstractions}
 \label{sec:no-coercion-abstractions}

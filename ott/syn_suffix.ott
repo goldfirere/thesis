@@ -336,6 +336,8 @@ IUnifCtx_KsBind <= IUnifCtx_Zonk
 
 Substs_Zonk <= Type_UnifVar
 Substs_Zonk <= Co_UnifVar
+args_Gen <= Type_UnifVar
+args_Gen <= Co_UnifVar
 
 ctx_Many <= ctx_Gen
 ctx_One <= ctx_Gen

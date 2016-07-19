@@ -1,61 +1,40 @@
 
-- type inference can introduce only unif variables
-  But it's annoying otherwise. I'm not writing a pattern-matching compiler.
-- Fix requires its argument to take a visible argument. I just can't
-  be bothered to generalize this.
-- Not sure whether to use subsumption or straight-up equality in
-  matchExpectedFunTy (|->fun). GHC uses subsumption here. But I think
-  an equality predicate is powerful enough.
-- Class constraints are precisely inferred relevant arguments.
+INFERENCE SECTION
 - We can't always just use a coercion in |->fun because then we won't be
   able to recognize proper dependent function types. In other words,
   application forms default to non-dependent application.
-- Instances are just another form of given, and happily live in G/P
 - ITyC_Case is in the unstarred judgment, because of tauifyMultipleMatches
 - Similarly, |->alt can use the unstarred checking judgment, for the same reason.
-- Worker/wrapper is compulsory. There is no syntax for H in Haskell, only
-  x. Why? Because otherwise, we can't use visible type application on universals,
-  which is quite annoying in practice.
-  Example: just : UPI (a :Irrel Type{}). MPI (x :Rel a). Maybe{} a
-           just = \ @(a :Irrel Type{}). Just{a}
-  It's important to keep the MPIs where possible for unsaturated matching.
+- Unclear where ITyC_Fix should live. Starred judgment or not? I think this
+  difference is noticeable by the user. AHA! Decision: never duplicate a polytype.
+  Therefore: Fix must live in the unstarred judgment.
+
+PRACTICALITIES
+- Class constraints are precisely inferred relevant arguments.
+- Instances are just another form of given, and happily live in G/P
 - There are two sets of variable names. a,b,x denote names a Haskell user can
   write. $a denotes a name that a Haskell user cannot write. All are valid
   names in Pico, and we can freely rename between. Note use in ITyC_SkolRel.
 - Very cool how the inference rules match the code. Even the difference between
   matchExpectedFunTy and matchActualFunTy is present.
-- Unclear where ITyC_Fix should live. Starred judgment or not? I think this
-  difference is noticeable by the user. AHA! Decision: never duplicate a polytype.
-  Therefore: Fix must live in the unstarred judgment.
 - Generalizing unification variables is simpler in the implementation: we
   just wrap in an implication constraint. Why no need for substitution?
-- IGen_Ty is a bit punny around dom(d)
-- SB_DeepSkol from VTA paper has become ITyC_Skol. Note that it's not deep.
-  We thus must generalize in the Infer rule. At first, I was quite concerned
-  about solving in the middle of constraint generation. But GHC actually
-  does this, too, whenever it encounters a let.
 - Don't differentiate Constraint from Type. See PtC_Constrained.
 - Can't really do decideGeneralisationPlan (i.e. Let should not be generalized)
   properly because I can't easily distinguish between top-level and local
   lets. Solution: consider a top-level let a new declaration form, just like
   OutsideIn. Do generalization there.
-- Must comment about how |- judgments are extended. In particular, |-ctx.
-  With UCtx_TyVar and UCtx_CoVar
-- And we allow only Inf on coercion abstractions.
-- All unification variables must be gone during zonking.
-- prop:solver-sound implies that no unif variables that depend on a given
-  can be generalized over. This is correct.
+
+SOUNDNESS
 - theta|_zs as domain restriction
-- theta \ zs as domain exclusion
-- My treatment of <..|..> seems novel. Compare to Pottier & Remy, which
-  do not handle dependency. UPDATE: Yes, to compare to Pottier & Remy,
-  but it's really just like Gundry's treatment.
-- Syntactic pun: forall D. O means apply the forall to each binding
-  separately
-- The theta arg to a unification variable is called the "closing substitution"
-  |=u is "validity of closing substitution"
-- We often elide the forall{} and _{}.
-- Substitution operations (\inter and \ )
+
+OMIT?
+- Fix requires its argument to take a visible argument. I just can't
+  be bothered to generalize this.
+- Not sure whether to use subsumption or straight-up equality in
+  matchExpectedFunTy (|->fun). GHC uses subsumption here. But I think
+  an equality predicate is powerful enough.
+- All unification variables must be gone during zonking.
 
 Design decisions:
 - Include let (with a desugaring to use lambda) but not letrec. The only
@@ -78,7 +57,22 @@ DONE:
   and checking version that does.
 - DONE We don't need "touchable" variables to be tracked. We just stop unifying
   once we walk past an equality constraint in the unification telescope
-
+- DONE IGen_Ty is a bit punny around dom(d)
+- DONE SB_DeepSkol from VTA paper has become ITyC_Skol. Note that it's not deep.
+  We thus must generalize in the Infer rule. At first, I was quite concerned
+  about solving in the middle of constraint generation. But GHC actually
+  does this, too, whenever it encounters a let.
+- DONE type inference can introduce only unif variables
+- DONE Worker/wrapper is compulsory. There is no syntax for H in Haskell, only
+  x. Why? Because otherwise, we can't use visible type application on universals,
+  which is quite annoying in practice.
+  Example: just : UPI (a :Irrel Type{}). MPI (x :Rel a). Maybe{} a
+           just = \ @(a :Irrel Type{}). Just{a}
+  It's important to keep the MPIs where possible for unsaturated matching.
+- DONE Must comment about how |- judgments are extended. In particular, |-ctx.
+  With UCtx_TyVar and UCtx_CoVar
+- DONE And we allow only Inf on coercion abstractions.
+- DONE We often elide the forall{} and _{}.
 
 OLD:
 - OLD Label given class constraints with :c
@@ -93,6 +87,16 @@ OLD:
 - OLD :c is just like :g, except the solver uses :c bindings.
 - OLD: syntax to explain: au : k \in P under D
 - OLD: The whole tree structure of P/O.
+- OLD theta \ zs as domain exclusion
+- OLD My treatment of <..|..> seems novel. Compare to Pottier & Remy, which
+  do not handle dependency. UPDATE: Yes, to compare to Pottier & Remy,
+  but it's really just like Gundry's treatment.
+- OLD Syntactic pun: forall D. O means apply the forall to each binding
+  separately
+- OLD The theta arg to a unification variable is called the "closing substitution"
+  |=u is "validity of closing substitution"
 
+- WRONG? prop:solver-sound implies that no unif variables that depend on a given
+  can be generalized over. This is correct.
 
 

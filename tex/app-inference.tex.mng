@@ -577,6 +577,7 @@ Similar to previous case.
 \rae{Perhaps move from appendix. Think about reduplicating at-signs.}
 
 \begin{definition}[Generalizer]
+\label{defn:generalizer}
 A \emph{generalizer} $[[X]]$
 is a mapping from unification variables to vectors:
 \[
