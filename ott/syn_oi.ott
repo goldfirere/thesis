@@ -47,6 +47,11 @@ fuv ( Qw ) :: zus :: fuv_Qw
   {{ tex [[fuv]]([[Qw]]) }}
 by
 
+fun
+E_ Z :: D :: eq_ct
+  {{ tex \mathcal{E}_{[[Z]]} }}
+by
+
 % Fig 1 (p. 12): Basic syntax (incl. QQ)
 % Fig 2 (p. 13): Vanilla constraint-based type system
 %   Q;G |- e : t; QQ ||- Q

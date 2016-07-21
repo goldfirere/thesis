@@ -10,26 +10,27 @@ Differences from Gundry's thesis.
 - No roles, closed type families
 - I have unsaturated functions in types.
 
-- I think I'm going to skip non-deterministic elaboration, but instead have
-  a type system. Or maybe they're the same thing.
-- Only one `case` in the source language
-- Gundry parameterizes by a vector while I parameterize by a subst.
-
 - My type erasure property is stronger: his doesn't erase type-lambdas.
 - He has a more intricate consistency relation. And his proof is wrong.
   (See email to Adam on May 13.) Of course, his theorem may well be correct,
   but his proof certainly seems wrong.
 
-- I have two checking judgments, a la VTA (his is Fig 7.9, p. 171)
-- But he does have two synth judgments (Fig 7.10, p. 172)
-- He does not allow annotated lambda-bound variables, avoiding the weirdness.
-- He uses an application judgment like Dunfield/Krishnaswami (Fig 7.12, p. 174)
-- His subsumption does not do deep skolemisation. But it does have an equivalent
+- Gundry's chapter 8 (p. 185) has many nice examples.
+
+DONE/OMIT:
+- DONE I think I'm going to skip non-deterministic elaboration, but instead have
+  a type system. Or maybe they're the same thing.
+- DNE Only one `case` in the source language
+- OLD Gundry parameterizes by a vector while I parameterize by a subst.
+
+- DONE I have two checking judgments, a la VTA (his is Fig 7.9, p. 171)
+- DONE But he does have two synth judgments (Fig 7.10, p. 172)
+- DONE He does not allow annotated lambda-bound variables, avoiding the weirdness.
+- DONE He uses an application judgment like Dunfield/Krishnaswami (Fig 7.12, p. 174)
+- DONE His subsumption does not do deep skolemisation. But it does have an equivalent
   of the FunRel / FunIrrel distinction via his phase annotations.
 
-- Gundry uses a new solver (Sec 7.5.1 on p. 175) instead of OutsideIn's.
-- Gundry also considers only simple patterns, just like me. (Sec 7.6, p. 177)
-- Gundry does not differentiate between synth and check for case expressions.
-- Gundry adds implicit variables to case patterns with -->> (See Sec 7.6.1, p. 179)
-
-- Gundry's chapter 8 (p. 185) has many nice examples.
+- DONE Gundry uses a new solver (Sec 7.5.1 on p. 175) instead of OutsideIn's.
+- OMIT Gundry also considers only simple patterns, just like me. (Sec 7.6, p. 177)
+- DONE Gundry does not differentiate between synth and check for case expressions.
+- OMIT Gundry adds implicit variables to case patterns with -->> (See Sec 7.6.1, p. 179)

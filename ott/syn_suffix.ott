@@ -51,6 +51,7 @@ fact :: 'Fact_' ::=
   | xmap \in X                         ::   :: in_xmap
   | a # O                              ::   :: not_in_O
   | zs1 \subseteq zs2                  ::   :: zs_subset
+  | S ; P ||= D                        ::   :: entailment
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Terminals  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,6 +62,7 @@ grammar
 terminals :: 'terminals_' ::=
 | \                                    ::   :: Lam     {{ tex \lambda }}
 | |->                                  ::   :: InfArr  {{ tex \varrow }}
+| ||=                                  ::   :: Vdash   {{ tex \VDash }}
 | ->                                   ::   :: Arrow   {{ tex \to }}
 | ~>                                   ::   :: red     {{ tex \rightsquigarrow }}
 | ~>*                                  ::   :: redstar {{ tex \rightsquigarrow^* }}

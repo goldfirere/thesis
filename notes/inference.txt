@@ -1,3 +1,5 @@
+ALL DONE!
+
 
 INFERENCE SECTION (ACTUALLY, OMIT)
 - ITyC_Case is in the unstarred judgment, because of tauifyMultipleMatches
@@ -7,17 +9,17 @@ INFERENCE SECTION (ACTUALLY, OMIT)
   Therefore: Fix must live in the unstarred judgment.
 
 PRACTICALITIES
-- Class constraints are precisely inferred relevant arguments.
-- Instances are just another form of given, and happily live in G/P
-- There are two sets of variable names. a,b,x denote names a Haskell user can
+- DONE Class constraints are precisely inferred relevant arguments.
+- DONE Instances are just another form of given, and happily live in G/P
+- DONE There are two sets of variable names. a,b,x denote names a Haskell user can
   write. $a denotes a name that a Haskell user cannot write. All are valid
   names in Pico, and we can freely rename between. Note use in ITyC_SkolRel.
-- Very cool how the inference rules match the code. Even the difference between
+- DONE Very cool how the inference rules match the code. Even the difference between
   matchExpectedFunTy and matchActualFunTy is present.
-- Generalizing unification variables is simpler in the implementation: we
+- DONE Generalizing unification variables is simpler in the implementation: we
   just wrap in an implication constraint. Why no need for substitution?
 - Don't differentiate Constraint from Type. See PtC_Constrained.
-- Can't really do decideGeneralisationPlan (i.e. Let should not be generalized)
+- OMIT Can't really do decideGeneralisationPlan (i.e. Let should not be generalized)
   properly because I can't easily distinguish between top-level and local
   lets. Solution: consider a top-level let a new declaration form, just like
   OutsideIn. Do generalization there.

@@ -1767,7 +1767,7 @@ monotype, and the $[[|->fun]]$ judgment is used to expand this out to a
 proper function type. Note that we do \emph{not} make a similar change
 in \rul{SB\_TApp}; doing so would be tantamount to saying that a unification
 variable might unify with a type with an invisible binder, something we
-have forbidden. (See \pref{sec:solver-properties}.) We similarly must
+have forbidden. (See \pref{sec:solver-properties-impredicativity}.) We similarly must
 modify \rul{SB\_DAbs} to allow for the possibility of a unification variable
 being checked against.
 \item There is no convenient equivalent of integers in \bake/; I omit
@@ -1813,19 +1813,373 @@ $[[S;P *|->ty _t : k ~> \cdot -| O]]$.
 \end{claim*}
 A detailed argument for this claim appears in \pref{sec:app-sb}.
 
+\section{Practicalities}
+
+I have designed \bake/ with an eye toward implementing this algorithm directly
+in GHC. This section discusses some of the practical opportunities and challenges
+in integrating \bake/ with the rest of GHC/Haskell.
+
+\subsection{Class constraints}
+
+In both \pico/ and \bake/, I conspicuously ignore the possibility of Haskell's
+type classes and instances. However, this is because classes and instances
+are already subsumed by these formalizations' handling of regular variables.
+
+Classes in Haskell are already compiled into record types that store the
+implementations of methods, and instances
+are record values (often called \emph{dictionaries})~\cite{type-classes-impl}.
+As \pico/ supports datatypes, it also supports classes. Nothing about
+the type class system should matter at all in \pico/. Indeed, System FC
+as currently implemented in GHC 8 cares not about type classes, to no ill
+effect.
+
+During type inference, on the other hand, we need to care a bit about classes
+and instances, because these are values that the type inference mechanism
+fills in for us. However, with \bake/'s ability to distinguish visible
+arguments from invisible ones and its orthogonal ability to work with
+variables of different relevances, the answer is right in front of us:
+an instance is simply an inferred, relevant argument. That's it! These
+are handled in the following rule, part of the judgment that converts a
+user-written polytype into \pico/:
+\[
+\ottdruleIPtCXXConstrained{}
+\]
+This rule checks the constraint $[[_t]]$, making sure it is well-typed
+as a constraint (see \pref{sec:constraint-vs-type}) and then checks
+the rest of the type, assuming the constraint. The use of a $\$$ sign
+in the name of the constraint ($[[dollar a]]$) is meant to convey that
+the variable $[[dollar a]]$ cannot appear in the Haskell source.
+
+Note that ``given'' class constraints (that is, a user-written context on
+a function type signature) are also handled without any effort, as a member
+of a telescope that unification variables are quantified over.
+
+In contrast to the \bake/ constraint generation algorithm, the \emph{solver}
+must treat instances separately and have a way of finding instances in the
+global set. However, this remains out of scope for this dissertation.
+
+\subsection{Scoped type variables}
+
+%{
+%if style == poly
+%format example1
+%format example2
+%format ttt = "[[_t]]"
+%else
+\begin{code}
+ttt :: forall a. a -> a
+ttt _ = undefined
+higherRank _ = undefined
+\end{code}
+%endif
+Scoped type variables in GHC/Haskell have an idiosyncratic set of rules
+detailing when variables are to be brought into scope~\cite{scoped-type-variables}. Consider the following two examples, where |ttt| is an arbitrary term:
+\begin{code}
+example1 = (ttt :: forall a. a -> a)
+
+higherRank :: (forall a. a -> a) -> ()
+example2 = higherRank ttt
+\end{code}
+In |example1|, the type variable |a| is in scope in |ttt|. In |example2|,
+however, |a| is not in scope. This is true despite the fact that, in both
+cases, \bake/ would check |ttt| against the same \pico/ type.
+
+Instead of trying to track all of this in the constraint generation algorithm,
+however, \bake/ divides its pool of variable names into those names that
+can appear in a source program ($[[a, b, x]]$) and those that cannot
+($[[dollar a, dollar b, dollar x]]$). When \bake/ must put a variable in the
+context that should not be available in Haskell, it uses the $[[dollar a]]$
+variant. Scoped type variables are explicitly brought into scope by
+$\lambda$ or $\Lambda$. It is thus up to the preprocessor which must introduce
+abstractions as necessary to bring the scoped type variables into scope;
+as this process is not type-directed, incorporated this into the
+preprocessor should not be a challenge.
+%}
+
+\subsection{Correspondence between \bake/ and GHC}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{cl}
+\bake/ judgment & GHC function \\ \hline
+$[[|->fun]]$ & |matchExpectedFunTys| \\
+$[[|->scrut]]$ & |matchExpectedTyConApp| \\
+$[[|->inst]]$ & |topInstantiate| \\
+$[[|->pre]]$ & |tcDeepSplitSigmaTy_maybe| \\
+$[[*<=]]$ & |tcSubTypeDS| \\
+$[[<=]]$ & |tcSubType| \\
+$[[|->prog]]$ & |tcPolyBinds|
+\end{tabular}
+\end{center}
+\caption{GHC functions that already implement \bake/ judgments}
+\label{tab:bake-ghc}
+\end{table}
+
+The design of \bake/ is already quite close to that of GHC's constraint-generation
+algorithm. \pref{tab:bake-ghc} lists correspondences between \bake/ judgments
+and functions already existent in GHC.
+
+Notably absent for \pref{tab:bake-ghc} are the main judgments such as
+$[[|->ty]]$. These are implemented in GHC via its |tcExpr| function,
+which handles both directions of the bidirectional type system at the same
+time through its use of \emph{expected types}, a mechanism there the
+synthesis judgment is implemented by checking against a \emph{hole}---essentially,
+a unification variable that can unify with a polytype. A full accounting
+of GHC's expected types and holes is out of scope here, but there should be
+no trouble adapting \bake/'s bidirectional algorithm to GHC as previous
+bidirectional algorithms have been adapted.
+
+\subsection{Unification variables in GHC}
+
+The GHC implementation takes a very different approach to unification variables
+and zonking than does \bake/. A GHC unification variable (called a metavariable
+in the source code) is a mutable cell. The solver fills in the mutable cells.
+Though the implementation details differ a bit, the same is currently true
+to unification coercion variables (called coercion holes in GHC)---they are still
+mutable cells. The \emph{zonking} operation walks through a type (or coercion
+or expression) and replaces pointers to mutable cells with the cells' contents.
+
+Another key difference between GHC and my formalization (and every other) is
+that GHC variables track their own kinds. The implementation does track a
+context used in looking up user-written variable occurrences, but no context
+is needed to, say, extract a type's kind from the type itself. Because of
+this design, GHC does not need to track unification telescopes, even though
+GHC 8 already can have arbitrarily long chains of variables that depend
+on others. Instead, the solver takes (essentially) the set of unification
+variables to solve for. Dependency checking is done after the fact as a simple
+pass making sure all variables in kinds are in scope.
+
+A further consequence of GHC's design is that there is no need for
+the concept of generalizers $[[X]]$ as I have described. Unificaton
+variable occurrences are not, in fact, applied to vectors. Along with
+the fact that GHC does not track contexts, it also uses stable names powered
+by a enumerable collection of |Unique|s. We thus do not have to worry
+about arbitrary $\alpha$-renaming during constraint generation and solving.
+Taken together, the need for generalizers is lost, and thus the generalization
+operation $[[+>]]$ disappears.
+
 \section{Discussion}
 
 \subsection{Further desirable properties of the solver}
 \label{sec:solver-properties}
-\rae{Write me}
-\rae{Include something that bars zonkers from mentioning any invisible binders.
-This avoids impredicativity.}
+
+\begin{figure}
+\begin{property}[Solver is guess-free]
+\label{prop:solver-guess-free}
+If $[[S;P |->solv O ~> D; Z]]$, then $[[S;P,O ||= D, E_ Z]]$,
+where $[[E_ Z]] = \{ [[_: au_{} [k]~[k] t]] \mathrel{\pipe} [[forall zs. t/au \in Z]] \}$
+is the equational constraint induced by the zonker $[[Z]]$.
+\end{property}
+The above property is adapted from \citet[Definition 3.2 (P1)]{outsidein}.
+
+\begin{property}[Solver avoids non-simple types]
+\label{prop:solver-tau}
+If $[[S;P |->solv O ~> D; Z]]$ and $[[forall zs. t/au \in Z]]$, then
+$[[t]]$ is a simple type, with no invisible binders (at any level of structure)
+and no dependency.
+\end{property}
+
+\begin{property}[Solver does not generalize over coercions]
+\label{lem:solver-no-co-abs}
+If $[[S;P |->solv O ~> D; Z]]$, then $[[D]]$ binds no coercion variables.
+\end{property}
+\caption{Addition solver properties}
+\label{fig:extra-solver-properties}
+\end{figure}
+
+Thus far, I have stated only one property (in \pref{sec:solver-soundness})
+that the solver must maintain, that it must output a valid zonker. However,
+it is helpful to describe further properties of the solver in order to make
+type inference more predictable and to maintain the properties stated by
+\citet{outsidein}, such as the fact that all inferred types are principal and
+that the solver makes no guesses. The full set of extra properties are listed
+in \pref{fig:extra-solver-properties}.
+
+\subsubsection{Entailment}
+
+\begin{table}
+\setlength{\mathindent}{0pt}
+\newcommand{\secondline}[1]{\multicolumn{1}{r}{#1}}
+\begin{center}
+\begin{tabular}{@@{}llr@@{}}
+Reflexivity & $[[S;P,D ||= D]]$ & (R1) \\
+Transitivity & $[[S;P,D1 ||= D2]] \wedge [[S;P,D2 ||= D3]] \implies [[S;P,D1 ||= D3]]$ & (R2) \\
+Substitution & $[[S;P,D1,P' ||= D2]] \wedge [[S;P |=subst theta : D1]]$ & (R3) \\
+& \secondline{$\implies [[S;P,P'[theta] ||= D2[theta] ]]$} \\[1ex]
+Type eq.~reflexivity & $[[S;P |=ty t : k]] \implies [[S;P ||= _: t [k]~[k] t]]$ & (R4) \\
+Type eq.~symmetry & $[[S;P ||= _: t1 [k1]~[k2] t2]] \implies [[S;P ||= _: t2 [k2]~[k1] t1]]$ & (R5) \\
+Type eq.~transitivity & $[[S;P ||= _: t1 [k1]~[k2] t2]] \wedge [[S;P ||= _: t2 [k2]~[k3] t3]]$ & (R6) \\
+& \secondline{$ \implies [[S;P ||= _: t1 [k1]~[k3] t3]]$} \\
+Conjuntions & $[[S;P ||= D1]] \wedge [[S;P ||= D2]] \implies [[S;P ||= D1,D2]]$ & (R7) \\
+Substitutivity & $[[S;P ||= _: t1 [k0]~[k0] t2]] \wedge [[S;P,a :Rel k0 |=ty t : k]]$ & (R8a) \\
+& \secondline{$ \implies [[S;P ||= _: t[t1/a] [k]~[k] t[t2/a] ]]$} \\
+& $[[S;Rel(P) ||= _: t1 [k0]~[k0] t2]] \wedge [[S;P,a :Irrel k0 |=ty t : k]]$ & (R8b) \\
+& \secondline{$ \implies [[S;P ||= _: t[t1/a] [k]~[k] t[t2/a] ]]$}
+\end{tabular}
+\end{center}
+\caption{Required properties of entailment, following \citet[Figure 3]{outsidein}}
+\label{tab:entailment}
+\end{table}
+
+These properties are stated with respect to an entailment relation, defined
+as follows:
+\begin{definition*}[Entailment]
+We say that an environment $[[S]];[[P]]$ entails a telescope $[[D]]$,
+written $[[S;P ||= D]]$, if there exists a vector $[[ps]]$ such that
+$[[S;P |=vec ps : D]]$.
+\end{definition*}
+As this section expands upon the ideas from \citet{outsidein}, it is necessary
+to check whether this definition of entailment satisfies the entailment
+requirements from that work. These requirements are presented in
+\pref{tab:entailment}.
+
+All of this properties are easily satisfied, except for property (R8) (both
+components) which requires congruence. As explored in some depth
+in \pref{sec:congruence}, \pico/ simply does not have this property. However,
+that same section argues that equality in \pico/ is ``almost congruent'',
+suggesting that the equality relation truly is congruent in the absence of
+coercion abstractions. The proof that the \outsidein/ algorithm infers
+principal types does require property R8 \cite[Theorem 3.2]{outsidein}, and so it is possible that
+\pico/'s lack of congruence prevents \bake/ from inferring principal types.
+The details have yet to be worked out.
+
+\subsubsection{A guess-free solver}
+
+One of the guiding principles I set forth at the beginning of this chapter
+is that the algorithm and solver be guess-free. We thus must assert that
+the solver is guess-free, an important step along the way to the proof
+of principal types in \citet{outsidein}. See \pref{prop:solver-guess-free}.
+
+\subsubsection{Solver does not introduce impredicativity}
+\label{sec:solver-properties-impredicativity}
+
+An important but previously unstated property is that that solver must
+not set a unification variable to anything but a simple type, one with
+no invisible binders nor dependency. (Such types are sometimes called
+$\tau$-types, referring to the $\tau/\sigma$ split in the typical presentation
+of the Hindley-Milner type system.) In the context of Dependent Haskell,
+impredicativity has perhaps an unusual definition: no type variable is
+ever instantiated with a non-simple type. For this to hold, however, we
+must make sure that this property extends to unification variables as well,
+as those are sometimes used to instantiate regular variables.
+
+Solving unification variables with simple types is also important in the
+context of the theory around principal types developed in my prior
+work~\cite{visible-type-application}. Specifically, we must ensure that
+there are no invisible binders that are hidden underneath a unification
+variable. By forbidding filling a unification variable with a non-simple
+type, we have achieved this goal. See \pref{prop:solver-tau}.
 
 \subsection{No coercion abstractions}
 \label{sec:no-coercion-abstractions}
-\rae{TODO: Write me.}
 
+In stating that \pico/ supports type erasure (\pref{sec:type-erasure}), I admit that type erasure does not mean that we can erase coercion abstractions or applications, even though we can erase the coercions themselves.
+Nevertheless, I argue that \pico/ can claim to support full type erasure
+because \bake/ never produces a \pico/ program that evaluates to a coercion
+abstraction. To support this claim, we can look at the elaborated program
+produced by \bake/ and where coercion abstractions can be inserted:
 
-%% Induction: Infer, ||->pre, DeepSkol
-%% Solver: Synthesize
-%% case: IAlt{C,}_Con
+\begin{description}
+\item[Around subsumption:] Three rules extract out a telescope of binders
+using the $[[|->pre]]$ judgment and then use these binders in the elaboration.
+If the telescope includes a coercion binder, the elaboration will include
+a coercion abstraction. However, I am arguing that there should be no
+coercion binders there in the first place, so we can handle this case
+essentially by induction. (Rules affected: \rul{ITyC\_Infer}, rules in the
+$[[|->pre]]$ judgment, and \rul{ISub\_DeepSkol})
+
+\item[During generalization after running the solver:] If the solver produces
+a telescope that binds coercions, \bake/ will similarly include a coercion
+abstract in its elaboration. We must thus assert \pref{prop:solver-no-co-abs}.
+This property is not as restrictive as it may seem, as the solver may still
+abstract over a class constraint whose instances store a coercion.\footnote{For example, the Haskell equality constraint |~| is such a class, distinct from
+the primitive equality operator in \pico/. In the terminology of
+\citet{deferred-type-errors}, the Haskell equality is lifted while the
+\pico/ equality is unlifted.} (Rule affected: \rul{IDecl\_Synthesize})
+
+\item[Elaborating |case| alternatives:] When elaborating a |case|
+alternative, coercion abstractions are inserted. This is necessary for
+two reasons:
+\begin{itemize}
+\item GADT equalities can be brought into scope in a |case| alternative.
+These are bound by coercion abstractions.
+\item The dependent-pattern-match equality (\pref{sec:dependent-pattern-match})
+must be brought into scope by a coercion abstraction.
+\end{itemize}
+However, when a |case| expression is evaluated
+(by evaluation rule \rul{S\_Match}), these coercion abstractions will be
+applied to arguments and thus cannot be the final value of evaluating the
+overall \pico/ expression. (Rules affected: \rul{IAlt\_Con}, \rul{IAltC\_Con})
+\end{description}
+
+These are the only \bake/ rules that can include a coercion abstraction in
+their elaborated types. I thus conclude that type erasure is valid, with
+no possibility of having evaluation be stuck on a coercion abstraction.
+
+\subsection{Comparison to \citet{gundry-thesis}}
+
+The \bake/ algorithm presented here is very similar to the type inference
+algorithm presented by \citet[Chapter 7]{gundry-thesis}. Here I review
+some of the salient differences.
+
+\begin{itemize}
+\item Gundry includes both a non-deterministic elaboration process and
+a deterministic one, proving that the deterministic process is sound
+with respect to the non-deterministic process (at least, in the absence
+of |case|). I have omitted a non-deterministic version of the algorithm,
+instead using the soundness of the resultant \pico/ program to set an upper
+limit on the programs that \bake/ can accept.
+
+\item Gundry's \emph{inch} source langauge and his \emph{evidence}
+intermediate language have two forms of |case| statement: one for
+traditional, non-dependent pattern matching; and one for dependent
+pattern matching. \bake/ chooses between these possibilities using
+the difference between checking and synthesis modes.
+
+\item While Gundry uses two separate judgments in synthesis mode,
+he uses only one checking judgment. The need for two judgments here
+is an innovation that derives from the need for principal types, as
+explored in my prior work~\cite{visible-type-application}.
+
+\item The \emph{inch} language does not allow annotations on the
+binders of a $\lambda$-abstraction and so Gundry did not encounter the
+thorny case detailed in \pref{sec:annotated-lambda}.
+
+\item Gundry's approach to delayed instantiation for function arguments
+follows along the lines of \citet{simple-bidirectional}, using an
+auxiliary judgment to control function application. While \bake/ has its
+$[[*|->arg]]$ judgment, which is superficially similar, \bake/'s judgment
+can only handle one argument at a time.
+
+\item Gundry's algorithm does not do deep skolemization. It would thus
+not be backward compatible with GHC's current treatment of higher-rank
+types.
+
+\item Gundry gives more details about the solver in his
+  algorithm~\cite[Section 7.5.1]{gundry-thesis}. However, this solver
+is a novel algorithm that remains to be implemented. Instead, \bake/
+targets the \outsidein/ solver. Nevertheless, I do not think it would
+be hard for Gundry's general approach to target \outsidein/, as well.
+
+\item As a point of similarity, Gundry's and \bake/'s treatment of
+unification variables are very closely aligned. This is not actually
+intentional---after reading Gundry's approach, I believed I could make
+the whole treatment of unification variables much simpler. Yet despite
+a variety of attempts, I was unable to make the basic lemmas that hold
+together a type system (e.g., substitution, regularity) go through without
+something as ornate as we have both used. I would love to see a simpler
+treatment in the future, but I do not hold out much hope.
+\end{itemize}
+
+\section{Conclusion}
+
+This chapter has presented \bake/, a type checking / inference / elaboration
+algorithm that converts type-correct Dependent Haskell types and expressions
+into \pico/. It is proven to produce type-correct \pico/ code, and it is
+designed in the hope of supporting principal types. Formulating a statement
+and proof of principal types in \bake/ is important future work.
+
+This algorithm is also designed to work well with GHC's existing type checker
+infrastructure, and in particular, its constraint solver. It is my hope and
+plan to implement this algorithm, quite closely to how it is stated here,
+in GHC in the near future.
