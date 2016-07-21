@@ -32,7 +32,7 @@ work~\cite{outsidein,visible-type-application,gundry-thesis} and targets
 \pico/ as its intermediate language. Despite its strong basis in prior work,
 \bake/ exhibits a few novelties:
 \begin{itemize}
-\item Perrhaps its biggest innovation is how
+\item Perhaps its biggest innovation is how
 it decides between dependent and non-dependent pattern matching depending
 on whether the algorithm is in checking or synthesis mode. (See also
 \pref{sec:bidir-dependent-pattern-match}.)
@@ -313,7 +313,7 @@ The difference between |forall| and |pi| in Dependent Haskell is that
 the former defines an irrelevant abstraction (fully erased during compilation)
 while the latter describes a relevant abstraction (retained at runtime).
 In terms, an expression introduced by $\lambda$ is a relevant abstraction;
-one introdcued by $\Lambda$ is an irrelevant one.
+one introduced by $\Lambda$ is an irrelevant one.
 
 \subsection{|let| should not be generalized}
 \rae{TODO: Write me}
@@ -391,7 +391,7 @@ telescope of these unification variables and solving simply produces a
 substitution. However, this naive view does not work out
 because of unification variable generalization.\footnote{The treatment
 of unification variables throughout \bake/ is essentially identical to
-the treatement by \citet{gundry-thesis}.}
+the treatment by \citet{gundry-thesis}.}
 
 Consider a $\lambda$-abstraction over the variable $[[x]]$. When doing
 constraint generation inside of the $\lambda$, the kinds of fresh unification
@@ -660,7 +660,7 @@ means that we get only one type error reported, not two.
 
 Like previous algorithms for
 GHC/Haskell~\cite{practical-type-inference,visible-type-application,gundry-thesis}, \bake/
-takes a bidirectional approach~\cite{local-type-inference}. The fundamantal
+takes a bidirectional approach~\cite{local-type-inference}. The fundamental
 idea to bidirectional typechecking is that, sometimes, the type inference
 algorithm knows what type to look for. When this happens, the algorithm
 should take advantage of this knowledge.
@@ -745,7 +745,7 @@ function call sites.
 These parameters are to functions with type signatures or with an explicit
 |forall ...|.
 \item[Inferred] parameters (called ``generalized'' in \citet{visible-type-application}) are ones invented by the type inference algorithm (like the parameter
-|a| in the example used to explaim untouchabile variables;
+|a| in the example used to explain untouchable variables;
 see \pref{sec:untouchability}). They cannot ever be instantiated
 explicitly. All coercion abstractions are inferred.
 \end{description}
@@ -788,7 +788,7 @@ no way of usefully propagating information about |tau| into |f| or |x|.
 Instead, we use the synthesis judgment for |f| and then check |x|'s type
 against the argument type found for |f|. After all of this, we will get
 a type |tau'| for |f x|. We then must check |tau'| against |tau|---but
-they do not have to match exactly. For example, if |tau'| is |foall a. a -> a|
+they do not have to match exactly. For example, if |tau'| is |forall a. a -> a|
 and |tau| is |Int -> Int|, then we're fine, as any expression of the former
 type can be used at the latter.
 
@@ -851,7 +851,7 @@ the two flavors of $\Pi$. Whenever an unmatchable $[[UPI]]$-type is expected,
 surely a matchable $[[MPI]]$-type will do. Thus we allow either $\Pi$
 on the left of the $[[<=]]$. Note that the other way would be wrong: not only
 might an unmatchable $[[UPI]]$-type not work where a matchable $[[MPI]]$-type
-is expcted, but we also have no way of creating the $[[MPI]]$-type during
+is expected, but we also have no way of creating the $[[MPI]]$-type during
 elaboration. Our need to elaborate correctly keeps us from getting this
 wrong.
 
@@ -1138,7 +1138,7 @@ check the argument with the $[[*|->arg]]$ judgment. This judgment takes
 the relevance of the argument as an input; it simply uses the $[[*|->ty]]$
 checking judgment and insert braces as appropriate.
 
-Constrast the behavior of \rul{ITy\_App} to that of \rul{ITy\_AppSpec},
+Contrast the behavior of \rul{ITy\_App} to that of \rul{ITy\_AppSpec},
 which, crucially, does not use $[[|->fun]]$. Consider what would happen if
 the function's type is not manifestly a $\Pi$-type. We could, like in
 \rul{IFun\_Cast} invent unification variables and emit a constraint. But
@@ -1375,7 +1375,7 @@ algorithm and the SB algorithm of \citet{visible-type-application}.
 That is, if \outsidein/ or SB accepts a program, so does \bake/.
 This results suggests that a version of GHC
 based on \bake/ will accept all Haskell programs currently accepted.
-These arguments---I darenot quite call them proofs---are stated in less
+These arguments---I dare not quite call them proofs---are stated in less
 formal terms than other proofs in this dissertation. While it is likely
 possible
 to work out the details fully, the presentation of the other systems and
@@ -1384,7 +1384,7 @@ would be fiddly, and artifacts of the translation would obscure the main
 point. The individual differences are discussed below.
 
 These conservativity results provide a lower bound on the power of \bake/,
-delcaring that some set of Haskell programs must be accepted by the algorithm.
+declaring that some set of Haskell programs must be accepted by the algorithm.
 \end{itemize}
 
 The results listed above bound the power of the algorithm both from below
@@ -1950,7 +1950,7 @@ variables to solve for. Dependency checking is done after the fact as a simple
 pass making sure all variables in kinds are in scope.
 
 A further consequence of GHC's design is that there is no need for
-the concept of generalizers $[[X]]$ as I have described. Unificaton
+the concept of generalizers $[[X]]$ as I have described. Unification
 variable occurrences are not, in fact, applied to vectors. Along with
 the fact that GHC does not track contexts, it also uses stable names powered
 by a enumerable collection of |Unique|s. We thus do not have to worry
@@ -2010,7 +2010,7 @@ Type eq.~reflexivity & $[[S;P |=ty t : k]] \implies [[S;P ||= _: t [k]~[k] t]]$ 
 Type eq.~symmetry & $[[S;P ||= _: t1 [k1]~[k2] t2]] \implies [[S;P ||= _: t2 [k2]~[k1] t1]]$ & (R5) \\
 Type eq.~transitivity & $[[S;P ||= _: t1 [k1]~[k2] t2]] \wedge [[S;P ||= _: t2 [k2]~[k3] t3]]$ & (R6) \\
 & \secondline{$ \implies [[S;P ||= _: t1 [k1]~[k3] t3]]$} \\
-Conjuntions & $[[S;P ||= D1]] \wedge [[S;P ||= D2]] \implies [[S;P ||= D1,D2]]$ & (R7) \\
+Conjunctions & $[[S;P ||= D1]] \wedge [[S;P ||= D2]] \implies [[S;P ||= D1,D2]]$ & (R7) \\
 Substitutivity & $[[S;P ||= _: t1 [k0]~[k0] t2]] \wedge [[S;P,a :Rel k0 |=ty t : k]]$ & (R8a) \\
 & \secondline{$ \implies [[S;P ||= _: t[t1/a] [k]~[k] t[t2/a] ]]$} \\
 & $[[S;Rel(P) ||= _: t1 [k0]~[k0] t2]] \wedge [[S;P,a :Irrel k0 |=ty t : k]]$ & (R8b) \\
@@ -2130,7 +2130,7 @@ of |case|). I have omitted a non-deterministic version of the algorithm,
 instead using the soundness of the resultant \pico/ program to set an upper
 limit on the programs that \bake/ can accept.
 
-\item Gundry's \emph{inch} source langauge and his \emph{evidence}
+\item Gundry's \emph{inch} source language and his \emph{evidence}
 intermediate language have two forms of |case| statement: one for
 traditional, non-dependent pattern matching; and one for dependent
 pattern matching. \bake/ chooses between these possibilities using
@@ -2183,3 +2183,11 @@ This algorithm is also designed to work well with GHC's existing type checker
 infrastructure, and in particular, its constraint solver. It is my hope and
 plan to implement this algorithm, quite closely to how it is stated here,
 in GHC in the near future.
+
+%%  LocalWords:  newcode isNothing endif forall SB GHC GHC's zonker dcomp Int
+%%  LocalWords:  applySing matchability letrec AbsBinds Zonking zonking zonk
+%%  LocalWords:  Zonkers touchability Bool GADT zonkers Gundry's Hindley FC
+%%  LocalWords:  isShorterThan Milner parameterisation wanteds higherRank ttt
+%%  LocalWords:  matchExpectedFunTys matchExpectedTyConApp topInstantiate
+%%  LocalWords:  tcDeepSplitSigmaTy tcSubTypeDS tcSubType tcPolyBinds tcExpr
+%%  LocalWords:  Gundry
