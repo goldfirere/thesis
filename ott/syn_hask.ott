@@ -34,6 +34,7 @@ _qvar {{ tex \mathrm{qvar} }} :: 'HQVar_' ::=
 _aqvar {{ tex \mathrm{aqvar} }} :: 'HAQVar_' ::=
 | a                         ::   :: Var
 | ( a '::' _s )             ::   :: Annot
+| as                        :: M :: Vars
 
 _alt {{ tex \mathrm{alt} }} :: 'HAlt_' ::=
 | _pat -> _t                ::   :: Alt

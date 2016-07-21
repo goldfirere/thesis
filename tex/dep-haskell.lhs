@@ -441,6 +441,10 @@ effects of the interaction between roles and dependent types will appear
 in this section.
 \end{proposal}
 
+\subsection{Dependent pattern matching}
+\label{sec:dependent-pattern-matching}
+\rae{TODO: Write me. Talk about bidirectionality.}
+
 \subsection{Impredicativity, or lack thereof}
 \label{sec:impredicativity}
 \rae{TODO: Write me.}

@@ -117,6 +117,8 @@ vars, as {{ tex \overline{\ottnt{a} } }}, bs {{ tex \overline{\ottnt{b} } }},
 | nil                   :: M :: Nil
 | prefix ( as )         :: M :: Prefix
   {{ tex [[prefix]]([[as]]) }}
+| dollar as             :: M :: Dollar
+  {{ tex \$ [[as]] }}
 
 tycovar, z :: 'TyCoVar_' ::=
 | a                     ::   :: Ty  {{ coq [[a]] }}
@@ -482,6 +484,8 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
   {{ tex [[theta]] \pipe_{[[zs]]} }}
 | theta1 o theta2                   :: M :: Compose
   {{ tex [[theta1]] \circ [[theta2]] }}
+| { theta }                         :: M :: Braces
+  {{ tex [[theta]] }}
 | theta [ Z ]                       :: M :: Zonk
 | theta [ X ]                       :: M :: Gen
 

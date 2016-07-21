@@ -117,6 +117,6 @@ ijudg :: 'IJudg_' ::=
 | S ; P |=vec ps : P2                 ::   :: Vec
 | S ; P ; s ; t |=alt alt : k         ::   :: Alt
   {{ tex [[S]];[[P]];[[s]] [[|=alt]]^{\!\!\!\raisebox{.1ex}{$\scriptstyle [[t]]$} } [[alt]] : [[k]] }}
-| S ; P |=subst theta : D             ::   :: Subst
 | S ; P |= J                          ::   :: J
 | k1 <= k2 ~> t                       ::   :: Sub
+| S ; G |- J                          ::   :: PicoJ

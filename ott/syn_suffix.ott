@@ -192,6 +192,9 @@ terminals :: 'terminals_' ::=
 | oi|->                                  ::   :: oi_inf    {{ tex \varrowyy{}{\textsc{oi} } }}
 | oi|->solv                              ::   :: oi_solv_inf  {{ tex \varrowyy{solv}{\textsc{oi} } }}
 
+| |-sb                                 ::   :: Sb_ent  {{ tex \vdashy{sb} }}
+| *|-sb                                ::   :: SbS_ent {{ tex \vdashy{sb}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

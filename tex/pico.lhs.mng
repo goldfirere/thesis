@@ -31,7 +31,6 @@ class Applicative f => Monad f where
 
 %endif
 
-\newcommand{\rulesep}{\\[1ex]}
 
 \chapter{\Pico/}
 \label{cha:pico}

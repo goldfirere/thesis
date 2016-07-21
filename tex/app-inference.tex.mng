@@ -171,7 +171,7 @@ By induction on $[[S;P,a:rel k,P' |= J]]$. We consider only the new cases.
 We must prove $[[S;P,P'[s/a] |=ty au_{{ps[s/a]}} : k[ps/dom(D)][s/a] ]]$.
 (Recall that normal substitutions $[[theta]]$ do not map unification
 variables.) We know $[[au :Rel forall D.k \in P,a:rel k,P']]$,
-$[[S |=ctx P,a:rel k,P']]$ and $[[S;P,a:rel k,P' |=subst theta : D]]$.
+$[[S |=ctx P,a:rel k,P']]$ and $[[S;P,a:rel k,P' |=vec ps : D]]$.
 By the induction hypothesis, we can conclude $[[S |=ctx P,P'[s/a] ]]$
 and $[[S;P,P'[s/a] |=vec ps[s/a] : D[s/a] ]]$.
 We now have two cases, depending on the location of $[[au]]$:
@@ -454,7 +454,7 @@ The solver ($[[|->solv]]$) must have the following properties.
 \label{prop:isolv}
 If $[[S |=ctx P,O]]$ and
 $[[S;P |->solv O ~> D; Z]]$,
-then $[[Z]]$ is idempotent, $[[S |=ctx P,D]]$ and $[[S;P,D |=z Z : O]]$.
+then $[[Z]]$ is idempotent, $[[S |=ctx P,D]]$, and $[[S;P,D |=z Z : O]]$.
 \end{property}
 
 \section{Supporting functions}
@@ -540,15 +540,7 @@ By induction on the $[[|-subst]]$ derivation. We will consider the
 type substitution case; the others are similar.
 
 \begin{description}
-\item[Case \rul{Subst\_Nil}:]
-\[
-\ottdruleSubstXXNil{}
-\]
-We must prove here that $[[fv(s/a o theta) \subseteq {dom(G,G'[s/a])} ]]$,
-given that $[[fv(theta) \subseteq {dom(G,a:rel k,G')} ]]$.
-We can see that $[[a \notin fv(s/a o theta)]]$, so we are left
-to show that $[[fv(s) \subseteq {dom(G,G'[s/a])}]]$. This last fact
-comes from \pref{lem:scoping} and $[[S;G |-ty s : k]]$.
+\item[Case \rul{Subst\_Nil}:] Trivial.
 \item[Case \rul{Subst\_TyRel}:]
 In this case, we know $[[S;G,a:rel k,G' |-subst theta : b:Rel k0, D]]$
 and must show $[[S;G,G'[s/a] |-subst s/a o theta : b:Rel k0[s/a], D[s/a] ]]$.
@@ -569,6 +561,51 @@ be rewritten to $[[D[theta \inter b][s/a] ]]$ as desired.
 Similar to previous case.
 \item[Case \rul{Subst\_Co}:]
 Similar to previous case.
+\end{description}
+\end{proof}
+
+\begin{lemma}[Closing substitution]
+\label{lem:closing-subst}
+Assume $[[S;G |-subst theta : D]]$. Let $[[theta' = theta \inter dom(D)]]$.
+\begin{enumerate}
+\item If $[[S;G,D,G' |-ty t : k]]$, then $[[S;G,G'[theta'] |-ty t[theta'] : k[theta'] ]]$.
+\item If $[[S;G,D,G' |-co g : phi]]$, then $[[S;G,G'[theta'] |-co g[theta'] : phi[theta'] ]]$.
+\item If $[[S;G,D,G' |-prop phi]]$, then $[[S;G,G'[theta'] |-prop phi[theta'] ]]$.
+\item If $[[S;G,D,G';s0;t0 |-alt alt : k]]$,
+then $[[S;G,G'[theta'];s0[theta'];t0[theta'] |-alt alt[theta'] : k[theta'] ]]$.
+\item If $[[S;G,D,G' |-vec ps : D]]$, then
+$[[S;G,G'[theta'] |-vec ps[theta'] : D[theta'] ]]$.
+\item If $[[S |-ctx G,D,G']]$, then $[[S |-ctx G,G'[theta'] ]]$.
+\item If $[[S;G,D,G' |-s t --> t']]$, then $[[S;G,G'[theta'] |-s t[theta'] --> t'[theta'] ]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By induction on $[[S;G |-subst theta : D]]$. By analogy with the $[[S;P |= J]]$
+notation, I will use $[[S;G |- J]]$ to refer collectively to the judgments
+over which this lemma is defined.
+
+\begin{description}
+\item[Case \rul{Subst\_Nil}:]
+In this case, $[[D = empty]]$ and we are done by assumption.
+\item[Case \rul{Subst\_TyRel}:]
+\[
+\ottdruleSubstXXTyRel{}
+\]
+We know $[[S;G |-subst theta : a:Rel k, D]]$ and $[[S;G,a:Rel k,D,G' |- J]]$.
+We must prove $[[S;G |- J[theta \inter a,dom(D)] ]]$.
+We know $[[S;G |-ty a[theta] : k]]$ and thus we can use
+\pref{lem:ty-subst} to get $[[S;G,D[theta \inter a],G'[theta \inter a] |- J[theta \inter a] ]]$.
+We then use the induction hypothesis to get
+$[[S;G |- J[theta \inter a][theta \inter dom(D)] ]]$.
+It remains only to show that
+$[[{theta \inter a} o {theta \inter dom(D)} = theta \inter a,dom(D)]]$.
+This amounts to showing that $[[dom(D) # a[theta] ]]$. We have
+this by \pref{lem:scoping}, and so we are done.
+\item[Case \rul{Subst\_TyIrrel}:]
+Similar to previous case.
+\item[Case \rul{Subst\_Co}:]
+Similar to previous case, referring to \pref{lem:co-subst}.
 \end{description}
 \end{proof}
 
@@ -689,6 +726,7 @@ Similar to previous case, appealing to \pref{lem:igen-covar}.
 \end{proof}
 
 \section{Soundness}
+\label{sec:app-inference-soundness}
 
 \begin{lemma}[Instantiation]
 \label{lem:iinst}
@@ -1308,26 +1346,63 @@ Thus we are done by \rul{Ty\_Fix}.
 \]
 The induction hypothesis tells us that
 $[[S;P,O |=ty t : k1]]$.
-We thus know $[[S |=ctx P,O]]$ by \pref{lem:ictx-reg}.
-\pref{prop:isolv}
-tells us that $[[S |=ctx P,D]]$ and $[[S;P,D |=z Z : O]]$.
-\pref{lem:iweakening} gives us
-$[[S;P,D,O |=ty t : k1]]$.
-\pref{lem:zonking}
-then tells us that $[[S;P,D |=ty t[Z] : k1[Z] ]]$.
-We see from the rule that $[[t' = \D .t[Z] ]]$ and 
-$[[k1' = UPI_Inf D. k1[Z] ]]$.
-Thus we can see (by repeated use of \rul{Ty\_Lam})
-that $[[S;P |=ty t' : k1']]$.
-Accordingly, \pref{lem:ikind-reg} gives us
-$[[S;Rel(P) |=ty k1' : Type{}]]$.
-We have assumed that $[[S;Rel(P) |=ty k2 : Type{}]]$.
-We thus use \pref{lem:isub} to conclude
-$[[S;P,O2 |=ty t2 : UPI x:Rel k1'. k2]]$ and then
-\rul{Ty\_AppRel} to see that
-$[[S;P,O2 |=ty t2 t' : k2[t'/x] ]]$. We are done,
-noting that the substitution in the kind has no effect by
-\pref{lem:iscoping}.
+We have assumed $[[S;Rel(P) |=ty k2 : Type{}]]$.
+We can thus use \pref{lem:ipre} to get
+$[[S;P |=ty t2 : UPI x:Rel (UPI D.k2'). k2]]$.
+\pref{lem:ikind-reg} and inversion gives us
+$[[S;Rel(P,D) |=ty k2' : Type{}]]$
+and thus \pref{lem:ictx-reg} and \pref{lem:decreasing-rel} give us
+$[[S |=ctx P,D]]$.
+We can thus use \pref{lem:iweakening} to get
+$[[S;P,D,O |=ty t : k1]]$
+and then
+\pref{lem:igen} to get
+$[[S;P,O',D |=ty t[X1] : k1[X1] ]]$.
+\pref{lem:ikind-reg} tells us $[[S;Rel(P,O',D) |=ty k1[X1] : Type{}]]$
+and \pref{lem:iweakening} tells us
+$[[S;Rel(P,O',D) |=ty k2' : Type{}]]$.
+We can thus use \pref{lem:isub} to get
+$[[S;P,O',D,O2 |=ty t2' : UPI x:Rel (k1[X1]). k2']]$.
+\pref{lem:igen} then tells us
+$[[S;P,O',O2',D |=ty t2'[X2] : (UPI x:Rel (k1[X1]). k2')[X2] ]]$,
+but \pref{lem:gen-scope} tells us that the $[[ [X2] ]]$ in the kind
+has no effect (because neither $[[k2']]$ nor $[[k1]]$ nor $[[X1]]$ can
+mention anything bound in $[[O2]]$).
+We thus have
+$[[S;P,O',O2',D |=ty t2'[X2] : UPI x:Rel (k1[X1]). k2' ]]$.
+\rul{Ty\_AppRel} (with \pref{lem:iweakening}) tells us
+$[[S;P,O',O2',D |=ty t2'[X2] t[X1] : k2'[t[X1]/x] ]]$
+but \pref{lem:iscoping} tells us that the substitution in the kind has
+no effect.
+Multiple uses of \rul{Ty\_Lam} gives us
+$[[S;P,O',O2' |=ty \ D. t2'[X2] t[X1] : UPI D. k2']]$.
+Yet another use of \pref{lem:iweakening} and \rul{Ty\_AppRel} gives us
+$[[S;P,O',O2' |=ty t2 (\D. t2'[X2] t[X1]) : k2[\D. t2'[X2] t[X1]/x] ]]$,
+where \pref{lem:iscoping} tells us that the substitution in the kind
+has no effect. We are thus done.
+
+%% The induction hypothesis tells us that
+%% $[[S;P,O |=ty t : k1]]$.
+%% We thus know $[[S |=ctx P,O]]$ by \pref{lem:ictx-reg}.
+%% \pref{prop:isolv}
+%% tells us that $[[S |=ctx P,D]]$ and $[[S;P,D |=z Z : O]]$.
+%% \pref{lem:iweakening} gives us
+%% $[[S;P,D,O |=ty t : k1]]$.
+%% \pref{lem:zonking}
+%% then tells us that $[[S;P,D |=ty t[Z] : k1[Z] ]]$.
+%% We see from the rule that $[[t' = \D .t[Z] ]]$ and 
+%% $[[k1' = UPI_Inf D. k1[Z] ]]$.
+%% Thus we can see (by repeated use of \rul{Ty\_Lam})
+%% that $[[S;P |=ty t' : k1']]$.
+%% Accordingly, \pref{lem:ikind-reg} gives us
+%% $[[S;Rel(P) |=ty k1' : Type{}]]$.
+%% We have assumed that $[[S;Rel(P) |=ty k2 : Type{}]]$.
+%% We thus use \pref{lem:isub} to conclude
+%% $[[S;P,O2 |=ty t2 : UPI x:Rel k1'. k2]]$ and then
+%% \rul{Ty\_AppRel} to see that
+%% $[[S;P,O2 |=ty t2 t' : k2[t'/x] ]]$. We are done,
+%% noting that the substitution in the kind has no effect by
+%% \pref{lem:iscoping}.
 
 \item[Invisible $\lambda$/$\Lambda$ cases:]
 Like corresponding visible $\lambda$/$\Lambda$ cases. Note that the
@@ -1605,5 +1680,232 @@ We are done.
 \end{description}
 \end{proof}
 
+\section{Conservativity with respect to \outsidein/}
+\label{sec:app-oi-expr}.
+
+This section assumes the introduction to \pref{sec:oi}, where much of
+the conservativity argument is given.
+
+\begin{claim}[Expressions]
+\label{claim:oi-expr}
+If $[[G oi|-> _t : k ~> Qw]]$ under axiom set $[[QQ]]$ and signature
+$[[S]]$, then
+$[[S;G,encode(QQ) |->ty _t ~> \cdot : k -| aus :Irrel forall{}.Type{}, encode(Qw)]]$
+where $[[aus = fuv(k) \union fuv(Qw)]]$.
+\end{claim}
+
+\begin{proof}[Proof sketch]
+\begin{description}
+\item[Case \rul{VarCon}:]
+\outsidein/ fully instantiates all variables, producing unification
+variables for any quantified type variables and emitting wanted constraints
+for any constraint in the variable's type. \bake/ does the same, via
+its $[[|->inst]]$ judgment.
+
+\item[Case \rul{App}:]
+In this case, $[[_t = _t1 _t2]]$.
+\outsidein/'s
+is a fairly typicaly application form rule, but using constraints to assert
+that the type of $[[_t1]]$ is indeed a function. \Bake/ works similarly,
+using its $[[|->fun]]$ judgment to assert that a type is a $\Pi$-type.
+Of course, \outsidein/'s treatment of $[[_t2]]$ uses synthesis while
+\bake/'s uses its checking judgment.
+
+\item[Case \rul{Abs}:]
+This rule coresponds quite closely to \bake/'s \rul{ITy\_Lam} rule.
+Note that \outsidein/ does not permit annotations on $\lambda$-bound
+variables, simplifying the treatment of abstractions. Furthermore,
+\bake/ must use its generalization judgment (written with $[[+>]]$)
+to handle its unification variables, while \outsidein/ does not need
+to have this complication.
+
+\item[Case \rul{Case}:]
+Contrast \outsidein/'s rule with \bake/'s:
+\[
+\ottdrule{%
+\ottpremise{\Gamma \varrow e : \tau \rightsquigarrow C \quad \beta, \overline{\gamma} \text{ fresh}}%
+\ottpremise{K_i{:}\forall \overline{a} \overline{b}_i . Q_i \Rightarrow \overline{\upsilon}_i \to \texttt{T}\, \overline{a} \quad \overline{b}_i \text{ fresh}}%
+\ottpremise{\Gamma,(\overline{x_i{:}[\overline{a \mapsto \gamma}]\upsilon_i}) \varrow e_i : \tau_i \rightsquigarrow C_i \quad \overline{\delta}_i = \mathit{fuv}(\tau_i,C_i) - \mathit{fuv}(\Gamma,\overline{\gamma})}%
+\ottpremise{C'_i = \left\{ \begin{array}{ll}
+C_i \wedge \tau_i \sim \beta & \text{if $\overline{b}_i = \epsilon$ and $Q_i = \epsilon$} \\
+\exists \overline{\delta}_i.([\overline{a \mapsto \gamma}]Q_i \supset C_i \wedge \tau_i \sim \beta) & \text{otherwise} \end{array} \right.}}%
+{\Gamma \varrow \texttt{case}\,e\,\texttt{of}\,\{\overline{K_i\,\overline{x}_i \to e_i}\} : \beta \rightsquigarrow C \wedge (\texttt{T}\,\overline{\gamma} \sim \tau) \wedge (\bigwedge C'_i)}%
+{\rul{Case}}
+\]
+%% \ottdrule{%
+%% \ottpremise{
+%% \Gamma \varrow e : \tau \rightsquigarrow C \quad \beta, \overline{\gamma} \text{ fresh} \quad C' = (\texttt{T}\,\overline{\gamma} \sim \tau) \wedge C}%
+%% \ottpremise{\text{for each } K_i\,\overline{x}_i \to e_i \text{ do}}%
+%% \ottpremise{\quad K_i{:}\forall \overline{a}.\overline{\upsilon}_i \to \texttt{T}\, \overline{a} \in \Gamma \quad \Gamma, (\overline{x_i{:}[\overline{a \mapsto \gamma}]\upsilon_i}) \varrow e_i : \tau_i \rightsquigarrow C_i}%
+%% \ottpremise{\quad C'_i = C_i \wedge \tau_i \sim \beta}}%
+%% {\Gamma \varrow \texttt{case}\,e\,\texttt{of}\,\{\overline{K_i \overline{x}_i \to e_i}\} : \beta \rightsquigarrow C' \wedge (\bigwedge C'_i)}%
+%% {\rul{Case}}
+\[
+\ottdruleITyXXCase{}
+\]
+\[
+\ottdruleIAltXXCon{}
+\]
+The first premises line up well, with both checking the scrutinee. Both
+rules then must ensure that the scrutinee's type is headed by a type
+constant (\texttt{T} in \outsidein/, $[[H]]$ in \bake/). This is done
+via the emission of a constraint in \outsidein/ (the $\texttt{T}\,\overline{\gamma} \sim \tau$ constraint in the conclusion)
+and the use of $[[|->scrut]]$ in \bake/. One reason for a difference in
+treatment here is that \bake/ wishes to use any information available because
+of the existence of its checking judgment, whereas \outsidein/ is free to
+invent new, uninformative unification variables ($\overline{\gamma}$).
+This difference makes \bake/ produce the unification variables only when
+the scrutinee's type ($[[k0]]$) is not already manifestly the right shape.
+
+Both rules then check the individual alternatives, which have to look
+up the constructor ($K_i$ and $[[H]]$, respectively) in the environment.
+\Pico/ gathers the three sorts of existentials together in $[[D2]]$;
+\outsidein/ expands this out to the $\overline{b}_i$, $Q_i$, and $\overline{\upsilon}_i$. \outsidein/ does not permit unsaturated matching, so we can
+treat $[[D4]]$ as empty. \outsidein/ does not consider scoped type variables;
+it thus only brings in $\overline{x}_i$ of types $\overline{\upsilon}_i$
+while checking each alternative; \bake/ brings all of $[[D3]]$ into scope.
+\outsidein/ checks the synthesized type of each alternative, $\tau_i$ against
+the overall result type $\beta$; \bake/ ensures the types of the alternatives
+line up by using a checking judgment against the result kind $[[k]]$. (Note
+that, like \outsidein/, this result kind is a unification variable. We can
+see that the $[[k]]$ in \rul{IAlt\_Con} is the $[[au]]$ from \rul{ITy\_Case}.)
+
+The constraint $C'_i$ emitted by \outsidein/ is delicately constructed.
+If there are no existential type variables and no local constraints,
+\outsidein/ emits a simple constraint. Otherwise, it has to emit
+an implication constraint. \outsidein/'s implication constraints
+allow unification variables to be local to a certain constraint; the
+treatment of implication constraints is somewhat different than that of
+simple constraints. In particular, when solving an implication constraint,
+any unification variables that arose outside of that implication are
+considered untouchable---they cannot then be unified.
+(See \pref{sec:untouchability}.) In order
+to avoid imposing the untouchability restriction, \outsidein/ makes a
+simple constraint when possible. Due to \bake/'s more uniform treatment
+of implications, this distinction is not necessary; untouchability is
+informed by the order of unification variables in the context passed
+to the solver.
+
+\Bake/ makes its version of implication constraints via the generalization
+judgment (written with $[[+>]]$). All of the constraints generated while
+checking the alternative are quantified over variables in $[[D3]]$; this
+precisely corresponds to the apapearance of the $Q_i$ to the left of the
+$\supset$ in \outsidein/'s constraint $C'_i$. (Recall that $Q_i$ is a
+component of \bake/'s $[[D3]]$.) \Bake/ also adds another equality
+assumption into its $[[D3']]$; this equality has to do with dependent
+pattern matching (\pref{sec:dependent-pat-match}) and has no place in
+the non-dependent language of \outsidein/.
+
+\item[Case \rul{Let}:]
+Other than \bake/'s generalization step, these rules line up perfectly.
+
+\item[Cases \rul{LetA} and \rul{GLetA}:]
+These cases cover annotated \ottkw{let}s, where the bound variable is
+also given a type. I do not consider this form separately, instead
+preferring to use the checking judgments to handle this case.
+\end{description}
+\end{proof}
+
+\section{Conservativity with respect to System SB}
+\label{sec:app-sb}
+
+This section compares \bake/ with System SB, as presented by
+\citet[Figure 8]{visible-type-application}. Omitted elaborations
+are denoted with $[[\cdot]]$. Please refer to the introduction to
+\pref{sec:sb} for changes needed to both System SB and \bake/ in
+order to prove the following claims.
+
+\begin{claim}[System SB Subsumption]
+\label{claim:sb-sub}
+If $[[k1 <=dsk k2]]$, then $[[k1 <= k2 ~> \cdot -| O]]$.
+\end{claim}
+
+\begin{proof}[Proof sketch]
+Note that this refers to the judgment in \citet[bottom of Figure 9]{visible-type-application}. If we assume all relevances are $[[Rel]]$, the rules of
+the \bake/ subsumption judgments are identical to those of the SB judgments.
+The one exception is the comparison between \rul{DSK\_Refl} and
+\rul{ISub\_Unify}, where \bake/ emits an equality constraint instead of
+simply asserting that the two types are equal. This variance is addressed
+by the tweaks above, and thus we are done.
+\end{proof}
+
+\begin{claim}[Conservativity with respect to System SB] ~
+\label{claim:sb}
+Assume $[[P]] \approx [[G]]$.
+\begin{enumerate}
+\item If $[[G |-sb _t => k]]$, then
+$[[S;P |->ty _t ~> \cdot : k -| O]]$.
+\item If $[[G *|-sb _t => k]]$, then
+$[[S;P *|->ty _t ~> \cdot : k -| O]]$.
+\item If $[[G |-sb _t <= k]]$, then
+$[[S;P |->ty _t : k ~> \cdot -| O]]$.
+\item If $[[G *|-sb _t <= k]]$, then
+$[[S;P *|->ty _t : k ~> \cdot -| O]]$.
+\end{enumerate}
+\end{claim}
+
+\begin{proof}[Proof sketch]
+By induction on the input derivation. This remains only a proof sketch because
+I have not concretely defined the tweaks above, nor have I given a full
+accounting of how types written in SB source are checked to become \pico/
+types.
+
+\begin{description}
+\item[Case \rul{SB\_Abs}:]
+We know here that $[[_t = \ x . _t0]]$, $[[k = UPI_Req x:Rel au_{}.k2]]$, and
+that $[[G, x :Rel au_{} *|-sb _t0 => k2]]$.
+We will use \rul{ITy\_Lam}.
+By \rul{IQVar\_Req} and \rul{IAQVar\_Var},
+we can see that $[[S;P |->q x ~> x : au_{}; Req -| au :Irrel forall{}. Type{}]]$.
+The induction hypothesis tells us that
+$[[S;P, au :Irrel forall{}.Type{}, x :Rel au_{} *|->ty _t0 ~> \cdot : k2 -| O]]$.
+We can thus use \rul{ITy\_Lam} to get
+$[[S;P *|->ty \ x . _t0 ~> \cdot : UPI_Req x:Rel au_{}. k2 -| au :Irrel forall{}. Type{}, O]]$.
+We then must use \rul{ITy\_Inst} to remove the star from the judgment;
+however, given that the kind starts with a visible binder, instantiation has
+no effect, and we are thus done.
+\item[Case \rul{SB\_InstS}:]
+By \rul{ITy\_Inst}, noting that \bake/'s instantiation operation $[[|->inst]]$
+behaves exactly like the manual instantation in \rul{SB\_InstS}'s conclusion.
+\item[Case \rul{SB\_Var}:]
+By \rul{ITy\_Var}.
+\item[Case \rul{SB\_App}:]
+By \rul{ITy\_App}, noting that all visible quantification in System SB
+is relevant, and thus the $[[*|->arg]]$ judgment reduces to $[[*|->ty]]$.
+\item[Case \rul{SB\_TApp}:]
+By \rul{ITy\_AppSpec}.
+\item[Case \rul{SB\_Annot}:]
+Here, we know $[[_t = (/\ @as . _t0) :: _s0]]$ where
+$[[S;P |->pt _s0 ~> k -| O1]]$ and $[[k = UPI_Spec as :Irrel Type{}, bs :Irrel Type{}. k0]]$.
+Furthermore, we know $[[G, as :Irrel Type{} *|-sb _t0 <= k0]]$.
+The induction hypothesis tells us
+$[[S;P, as:Irrel Type{}, dollar bs:Irrel Type{} *|->ty _t0 : k0 ~> \cdot -| O2]]$.
+We wish to use \rul{ITyC\_Skol} (repeatedly) to get from that last judgment
+to $[[S;P, as:Irrel Type{} *|->ty _t0 : UPI_Spec dollar bs :Irrel Type{}. k0 ~> \cdot -| O3]]$. Rename $[[dollar bs]]$ to $[[bs]]$.
+We now wish to use \rul{ITyC\_LamInvisIrrel} (repeatedly). Consider one use.
+We can see that $[[S;P |->aq a : Type{} ~> a : Type{}; x.x -| empty]]$.
+We know $[[S;P, as:Irrel Type{} *|->ty _t0 : UPI_Spec bs:Irrel Type{}. k0 ~> \cdot -| O3]]$
+and can thus conclude
+$[[S;P *|->ty /\ @a . _t0 : UPI_Spec a :Irrel Type{}, bs:Irrel Type{}. k0 ~> \cdot -| O4]]$. Repeat this process to get
+$[[S;P *|->ty /\ @as . _t0 : UPI_Spec as:Irrel Type{}, bs:Irrel Type{}. k0 ~> \cdot -| O5]]$.
+This can be rewritten as
+$[[S;P *|->ty /\ @as . _t0 : k ~> \cdot -| O5]]$.
+Thus \rul{ITy\_Annot} gives us
+$[[S;P *|->ty (/\ @as . _t0) :: _s0 ~> \cdot : k -| O6]]$ as desired.
+\item[Case \rul{SB\_Let}:]
+By \rul{ITy\_Let}.
+\item[Case \rul{SB\_DLet}:]
+By \rul{ITyC\_Let}. Note that System SB's decision to put \rul{SB\_DLet}
+in the unstarred judgment is immaterial, as pointed out by
+\citet[footnote 13]{visible-type-application}.
+\item[Case \rul{SB\_DAbs}:]
+By \rul{ITyC\_Lam}.
+\item[Case \rul{SB\_Infer}:]
+By \rul{ITyC\_Infer} and \pref{claim:sb-sub}.
+\item[Case \rul{SB\_DeepSkol}:]
+Recall that according to the tweaks I have made to this algorithm, this
+rule now does shallow skolemization. We are done by \rul{ITyC\_Skol}.
+\end{description}
+\end{proof}
 
 %%  LocalWords:  Zonking Zonker zonker zonking

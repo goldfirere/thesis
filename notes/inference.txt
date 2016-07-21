@@ -1,8 +1,5 @@
 
-INFERENCE SECTION
-- We can't always just use a coercion in |->fun because then we won't be
-  able to recognize proper dependent function types. In other words,
-  application forms default to non-dependent application.
+INFERENCE SECTION (ACTUALLY, OMIT)
 - ITyC_Case is in the unstarred judgment, because of tauifyMultipleMatches
 - Similarly, |->alt can use the unstarred checking judgment, for the same reason.
 - Unclear where ITyC_Fix should live. Starred judgment or not? I think this
@@ -26,7 +23,7 @@ PRACTICALITIES
   OutsideIn. Do generalization there.
 
 SOUNDNESS
-- theta|_zs as domain restriction
+- DONE theta|_zs as domain restriction
 
 OMIT?
 - Fix requires its argument to take a visible argument. I just can't
@@ -36,13 +33,13 @@ OMIT?
   an equality predicate is powerful enough.
 - All unification variables must be gone during zonking.
 
-Design decisions:
-- Include let (with a desugaring to use lambda) but not letrec. The only
+Design decisions (DONE):
+- DONE Include let (with a desugaring to use lambda) but not letrec. The only
   way I can see doing letrec is to mimic GHC's local monomorphic functions
   and exported polymorphic functions (i.e. AbsBinds), and I don't want to
   get involved with that. I will comment about this in the writeup.
 
-Preprocessing:
+Preprocessing (DONE):
 - Each qvar is appropriately labeled.
 - `case scrut of _ -> blah` becomes `blah`
 - case patterns are expanded out (a la Match.hs)
@@ -73,6 +70,9 @@ DONE:
   With UCtx_TyVar and UCtx_CoVar
 - DONE And we allow only Inf on coercion abstractions.
 - DONE We often elide the forall{} and _{}.
+- DONE We can't always just use a coercion in |->fun because then we won't be
+  able to recognize proper dependent function types. In other words,
+  application forms default to non-dependent application.
 
 OLD:
 - OLD Label given class constraints with :c

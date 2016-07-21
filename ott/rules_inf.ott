@@ -149,14 +149,13 @@ S;P |->ty _t : UPI_Req a:Rel k.k ~> t -| O
 ------------------------------- :: Fix
 S;P |->ty fix _t : k ~> fix t -| O
 
-% NB: This does generalization
 S;P *|->ty _t ~> t : k1 -| O
-S;P |->solv O ~> D; Z
-t' = \ D. t[Z]
-k1' = UPI_Inf D. k1[Z]
-k1' <= k2 ~> t2 -| O2
+|->pre k2 ~> D; k2'; t2
+O +> D ~> O'; X1
+k1[X1] *<= k2' ~> t2' -| O2
+O2 +> D ~> O2'; X2
 ---------------------------- :: Infer
-S;P |->ty _t : k2 ~> t2 t' -| O2
+S;P |->ty _t : k2 ~> t2 (\D. t2'[X2] t[X1]) -| O',O2'
 
 % precondition: k has no UPI Inf binders at top or to the right of any
 % arrow
@@ -521,7 +520,7 @@ by
 k1' *<= k2' ~> t2 -| O2
 O1,O2 +> D ~> O'; X
 ------------- :: DeepSkol
-k1 <= k2 ~> \ x:Rel (k1). t1 (\ D. t2[X] (x ps[X])) -| O'
+k1 <= k2 ~> \ x:Rel k1. t1 (\ D. t2[X] (x ps[X])) -| O'
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Generalization  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -627,7 +626,6 @@ S ; G |-subst theta : D  :: :: Subst :: 'Subst_'
   {{ com ``[[theta]] substitutes the variables in [[D]] away.'' }}
 by
 
-fv(theta) \subseteq {dom(G)}
 --------------------- :: Nil
 S;G |-subst theta : empty
 
@@ -652,6 +650,7 @@ S;G |-subst theta : c:phi, D
 
 defn
 S ; P |=z Z : O :: :: Zonk :: 'Zonk_'
+  {{ com ``[[Z]] zonks all the unification variables in [[O]].'' }}
 by
 
 ---------------------- :: Nil

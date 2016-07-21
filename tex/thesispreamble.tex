@@ -67,6 +67,7 @@
 \newtheorem{axiom}[theorem]{Axiom}
 \newtheorem{property}[theorem]{Property}
 \newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{claim}[theorem]{Claim}
 \newtheorem*{lemma*}{Lemma}
 \newtheorem*{definition*}{Definition}
 \newtheorem*{theorem*}{Theorem}
@@ -82,8 +83,15 @@
 \newrefformat{axm}{Axiom~\ref{#1}}
 \newrefformat{fig}{Figure~\vref{#1}}
 \newrefformat{tab}{Table~\vref{#1}}
+\newrefformat{tab}{Table \ref{#1}}  % RAE: How annoying. Try to fix.
 \newrefformat{prop}{Property~\ref{#1}}
 \newrefformat{assn}{Assumption~\ref{#1}}
+\newrefformat{example}{example~(\ref{#1})}
+\newrefformat{app}{Appendix~\ref{#1}}
+\newrefformat{claim}{Claim~\ref{#1}}
+
+% drop chapter numbers from equations
+\renewcommand{\theequation}{\arabic{equation}}
 
 % write proposal-only stuff in blue
 \ifproposal
@@ -126,8 +134,8 @@
 % enable numbering of subsubsections
 \setcounter{secnumdepth}{3}
 
-\newrefformat{app}{Appendix \ref{#1}}
-\newrefformat{tab}{Table \ref{#1}}
-
 % hyphenation customization
 \hyphenation{Has-kell}
+
+% separate out ott rules
+\newcommand{\rulesep}{\\[1ex]}

@@ -7,7 +7,7 @@
 
 import Data.Maybe ( isNothing )
 import Data.Kind
-import Data.Singletons
+import Data.Singletons hiding ( Proxy )
 
 \end{code}
 
@@ -314,6 +314,9 @@ the former defines an irrelevant abstraction (fully erased during compilation)
 while the latter describes a relevant abstraction (retained at runtime).
 In terms, an expression introduced by $\lambda$ is a relevant abstraction;
 one introdcued by $\Lambda$ is an irrelevant one.
+
+\subsection{|let| should not be generalized}
+\rae{TODO: Write me}
 
 \subsection{Omissions from the Haskell grammar}
 
@@ -653,6 +656,7 @@ means that we get only one type error reported, not two.
 %}
 
 \section{Bidirectional typechecking}
+\label{sec:bidirectional}
 
 Like previous algorithms for
 GHC/Haskell~\cite{practical-type-inference,visible-type-application,gundry-thesis}, \bake/
@@ -808,7 +812,7 @@ of non-prenex types in GHC.
 
 \bake/'s subsumption relation is in \pref{fig:subsumption}. The rules
 in this figure are simplified from the full rules (which appear in
-\pref{app:subsumption}), omitting constraint generation and elaboration.
+\pref{sec:app-subsumption}), omitting constraint generation and elaboration.
 The rules in each judgment are meant to be understood as an algorithm,
 trying earlier rules before later ones. Thus, for example, rule \rul{Sub\_Unify}
 is not as universal as it appears.
@@ -897,22 +901,34 @@ visibility override.
 
 The type we are checking against
 does not have any invisible binders at the top (its first binder is the
-visible one for |Int|), so we do not skolemize. Instead, we look up |x|'s
-type and instantiate |a| with a unification variable $[[au]]$. We then
-check whether |Int -> alpha -> alpha| subsumes
-|Int -> forall b. b -> b|. The subsumption check does deep skolemization
-and then compares |Int -> alpha -> alpha| with |Int -> b -> b|. Of course,
-the solution is $[[&&bx/au]]$. Yet, there is a lurking problem: $[[au]]$
-is added to the unification telescope \emph{before} |b| is skolemized. This
-means that it would be ill-scoped for $[[au]]$ to refer to |b|.\footnote{Saying
+visible one for |Int|), so we do not initially skolemize.
+We instead discover that there is no checking rule for variables
+and have to use the fall-through case for checking, which does
+synthesis and then a subsumption check.
+However, a naive approach would be wrong here: if we synthesize the
+type of |x|, we will get the instantiated |Int -> alpha -> alpha|.
+This is because $[[Inf]]$ binders are always instantiated immediately,
+much like in the original syntax-directed version of the Hindley-Milner
+type system~\cite{damas-thesis,mini-ml}. In the subsumption check, we will
+want to set |alpha| to be |b|, the skolem created from |y|'s type
+signature. We will be unable to do so, however, because doing so would
+be ill-scoped: |alpha| occurs in the unification telescope before |b|
+is ever brought into scope. This means that it would be ill-scoped for
+the value chosen for |alpha| to refer to |b|.\footnote{Saying
 that this example fails because of scoping is a vast improvement over
 the state of affairs in \citet{visible-type-app-extended}, where a delicate
 line of reasoning based on the subtleties of the Barendregt convention is
 necessary to show how this example goes awry. By tracking our unification
-variables in a telescope, problems like this become much clearer.} However,
-it is quite unfortunate that this example is rejected, because the subsumption
+variables in a telescope, problems like this become much clearer.}
+It would  quite unfortunate to reject this example, because the subsumption
 judgment, with its deep skolemization, would have this work out if only we
 didn't instantiate that $[[Inf]]$ binder so eagerly.
+
+Instead, I have written the \rul{ITyC\_Infer} rule (details in
+\pref{sec:infer-rule}) to eagerly skolemize the known type deeply,
+effectively \emph{before} ever looking at the expression. This puts
+|b| firmly into scope when consider |alpha|, and the subsumption check
+(and later solver) succeeds.
 
 The solution to this problem proposed in prior work is to do deep skolemization
 in the checking $[[*|->ty]]$ judgment. This works in the System SB
@@ -922,30 +938,28 @@ is that Dependent Haskell allows for constructs like
 |Int -> forall a. a -> a|, we want the |a|s to match up. Yet deeply skolemizing
 the type we are checking against will eliminate the |a| and our algorithm
 will reject the code. We thus instead do shallow skolemization in
-$[[*|->ty]]$ and instead generalize the synthesized type right before
-the subsumption check. This alternative solution to the problem was
-also proposed in my prior work but rejected because of mild implementation
-challenges. Now with a clear motivation for shallow skolemization over
-deep, that is what we will have to do. I do not expect this implementation
-burden to be the leading factor in the challenge of
-implementing the ideas in this
-dissertation.
+$[[*|->ty]]$ and instead save the deep skolemization until we are forced
+to switch into synthesis mode.
 
 Returning to the |x|/|y| example, here is how it plays out:
 \begin{enumerate}
-\item The variable |x| is inferred to have type |forall {a}. Int -> a -> a|.
-\item When synthesizing the type of the expression |x| (in the body of |y|),
-the inferred variable |a| is instantiated with |alpha|. The type of the
-expression |x| is thus |Int -> alpha -> alpha|.
-\item Right before the subsumption check, |x|'s type is generalized, thus
-becoming |forall {a}. Int -> a -> a| again.
-\item The subsumption relation checks whether |forall {a}. Int -> a -> a|
-subsumes |Int -> forall b. b -> b|. This is indeed true, and the definition
-for |y| is accepted.\footnote{Although not visible in \rul{Sub\_DeepSkol}
+\item The variable |x| is inferred to have type |forall {a}. Int -> a -> a|
+when processing the declaration for |x|.
+\item We then check the body of |y| against the type |Int -> forall b. b -> b|.
+As there are no invisible binders, no skolemization happens right away.
+\item We quickly find that no checking rules apply. We then deeply skolemize
+the expected type, getting |Int -> b -> b| for a skolem |b|.
+\item Now, we synthesize the type for the expression |x|, getting
+|Int -> alpha -> alpha|.
+\item The subsumption relation checks whether |Int -> alpha -> alpha|
+subsumes |Int -> b -> b|. This is indeed true with |alpha := b|,
+and the definition
+for |y| is accepted.\footnote{Although not visible in the simplified
+presentation of \rul{Sub\_DeepSkol}
 in \pref{fig:subsumption},
 it is critical that $[[k2]]$ is skolemized \emph{before} $[[k1]]$ is
 instantiated, lest we end up with the same scoping problem. This can be
-seen in the full rule (\pref{app:subsumption}) with the fact that
+seen in the full rule (\pref{sec:app-subsumption}) with the fact that
 we include $[[O1]]$ in the final generalization step. In contrast to
 other potential pitfalls mentioned earlier, leaving $[[O1]]$ out of this
 line does not imperil the soundness of elaboration; it is only a matter
@@ -1055,17 +1069,290 @@ to those already there.
 The schema of the judgments that define \bake/ appear in \pref{fig:bake-judgments}. I will not walk through each rule of each judgment to explain its inner
 workings. As discussed in the introduction to this chapter, the individual
 rules are largely predictable. They can be reviewed in their entirety in
-\pref{app:inference-rules}. Instead, this section will call out individual
+\pref{app:inference-rules}, and the statements of lemmas that assert the
+soundness of many of these judgments appear in \pref{sec:soundness-lemmas}.
+Instead of a thorough review of the algorithm,
+this section will call out individual
 rules with interesting characteristics.
 
-\subsection{No coercion abstractions}
-\label{sec:no-coercion-abstractions}
-\rae{TODO: Write me.}
+\subsection{Function application}
+
+\begin{figure}[t!]
+\begin{gather*}
+\ottdruleITyXXApp{}\rulesep
+\ottdruleITyXXAppSpec{}
+\end{gather*}
+\ottdefnIIFun{}
+\ottdefnIIArg{}
+\caption{Function applications in \bake/}
+\label{fig:bake-app}
+\end{figure}
+
+As discussed above (\pref{sec:bidirectional}) function applications can
+only synthesize their type. The two rules for synthesizing the type
+of a function application (one for regular application and one for application
+with $\at$) appear in \pref{fig:bake-app}, along with auxiliary judgments.
+
+Walking through the \rul{ITy\_App} rule, we see that \bake/ first infers
+the type $[[k0]]$ for the Haskell expression $[[_t1]]$, elaborating
+$[[_t1]]$ to become $[[t1]]$ and producing a unification telescope $[[O1]]$.
+The type for $[[t1]]$, though, might not manifestly be a function. This
+would happen, for example, when inferring the type of |\x y -> x y|, where
+the type initially assigned to |x| is just a unification variable $[[au]]$.
+Instead of writing $[[k0]]$ as a function, \bake/ instead uses its
+$[[|->fun]]$ judgment, which extracts out the component parts of a function
+type.
+
+It may be helpful in understanding the $[[|->fun]]$ judgment to see its
+correctness property, as proved in \pref{sec:app-inference-soundness}:
+\begin{lemma*}[Function position {[\pref{lem:ifun}]}]
+If $[[S;P |=ty k : Type{}]]$ and $[[|->fun k; rel1 ~> g; PI; a; rel2; k1; k2 -| O]]$,
+then $[[S;P,O |=co g : k [Type{}]~[Type{}] PI_Req a:rel2 k1.k2]]$.
+\end{lemma*}
+We can see here that $[[|->fun]]$ produces a coercion $[[g]]$ that relates
+the input type $[[k]]$ to the output type $[[PI a:rel2 k1.k2]]$.
+The input relevance $[[rel1]]$ is to be used as a default---\bake/ will
+assume that a function uses its argument relevantly unless told otherwise.
+Note that relevance of arguments is not denoted in the user-written source
+code.
+
+Looking at the definition of $[[|->fun]]$, we see two cases:
+\begin{itemize}
+\item If the input type $[[k]]$ is manifestly a $\Pi$-type, \bake/ just
+returns its component pieces along with a reflexive coercion.
+\item Otherwise, it invents fresh unification variables as emits a constraint
+relating this variables to the input.
+\end{itemize}
+It might be tempting to define $[[|->fun]]$ only by the second rule,
+\rul{IFun\_Cast}, but this would greatly weaken \bake/'s power. Doing so
+would mean that the bidirectional algorithm would never be able to take
+advantage of knowing a function's argument type. Furthermore, note that
+$[[bu2]]$, the result type of the function in \rul{IFun\_Cast}, is not
+generalized with respect to $[[a :rel bu1_{}]]$; a function type inferred
+via \rul{IFun\_Cast} will surely be non-dependent. This decision was made
+in keeping with the guiding principle that only simple types should be
+inferred.
+
+Once we have extracted the component parts of the function type, we can
+check the argument with the $[[*|->arg]]$ judgment. This judgment takes
+the relevance of the argument as an input; it simply uses the $[[*|->ty]]$
+checking judgment and insert braces as appropriate.
+
+Constrast the behavior of \rul{ITy\_App} to that of \rul{ITy\_AppSpec},
+which, crucially, does not use $[[|->fun]]$. Consider what would happen if
+the function's type is not manifestly a $\Pi$-type. We could, like in
+\rul{IFun\_Cast} invent unification variables and emit a constraint. But
+this would mean that the argument is \emph{inferred}, not \emph{specified}.
+Using an inferred argument with a visibility override violates the
+inference principles set forth by \citet{visible-type-application} and
+would surely eliminate the possibility of principal types. Accordingly,
+\rul{ITy\_AppSpec} avoids such behavior and simply looks to make sure
+that the function's type is of the appropriate shape. If it is not,
+\bake/ issues an error.
+
+\subsection{Mediating between checking and synthesis}
+
+The two modes of \bake/ meet head-on when we are checking an expression
+(such as a function application) that has no rules in the checking judgment.
+The fall-through case of the checking judgment is this rule:
+\[
+\ottdruleITyCXXInfer{}
+\]
+We are checking that $[[_t]]$ has type $[[k2]]$. First, \bake/ synthesizes
+$[[_t]]$'s type $[[k1]]$, producing unification telescope $[[O]]$.
+We then must, as described in \pref{sec:skolemization}, deeply skolemize
+$[[k2]]$. Pulling out the quantifiers in $[[k2]]$ (according to the
+$[[|->pre]]$ judgment) gives us $[[UPI D.k2']]$.
+We then \emph{generalize} $[[O]]$ by $[[D]]$. It is this generalization
+step that allows the solver to solve unification variables in $[[O]]$
+with skolems in $[[D]]$ and allows the example from \pref{sec:skolemization}
+to be accepted. Having generalized, we then do the subsumption check.
+We now must generalize $[[O2]]$, the output unification telescope from
+the subsumption check, as $[[O2]]$ might refer to skolems bound in $[[D]]$.
+
+Once again, the key interesting part of this rule is the first generalization
+step. It is not necessary to do this in order to get correct elaboration,
+but the analysis in my prior work~\cite[end of Section 6.1]{visible-type-application} suggests
+that this is necessary in order to have principal types.
+
+\subsection{|case| expressions}
+
+We see in \pref{fig:bake-judgments} that there are two judgments for checking
+|case| alternatives. These correspond to the two rules for checking |case|
+expressions, one for synthesis (\rul{ITy\_Case})
+and one for checking (\rul{ITyC\_Case}). I refrain from including
+the actual rules here, as their myriad and ornate details would be
+distracting; the overly-curious can see \pref{app:inference-rules} for these
+details.
+
+As discussed previously (Sections \ref{sec:dependent-pattern-matching} and
+\ref{sec:bidirectional}), a |case| expression is treated differently depending
+on whether we can know its result type. In the case where we do not
+(\rul{ITy\_Case}), \bake/ invents a new unification variable $[[bu]]$ for
+the result type and checks each case alternative against it. This is why
+the $[[|->alt]]$ judgment takes a result type, even though it is used
+during synthesis. After all, we do require all alternatives to produce the
+\emph{same} result type. Producing the unification variable within each
+alternative would risk running into a skolem escape, whereby the result type
+might mention a variable locally bound within the alternative. It is simpler
+just to propagate the $[[bu]]$ down into $[[|->alt]]$. The $[[|->alt]]$ judgment,
+in turn, does not use the equality gotten from dependent pattern matching
+when checking alternatives. Recall that doing so during synthesis mode
+would cause trouble
+because the equality assumption would make the $[[bu]]$ unification variable
+untouchable when solving constraints emitted while processing the alternatives.
+
+On the other hand, the $[[|->altc]]$ judgment is used from \rul{ITyC\_Case},
+in checking mode. This judgment is almost identical to $[[|->alt]]$ except
+that it allows the alternatives to make use of the dependent-pattern-match
+equality.
+
+\subsection{Checking $\lambda$-expressions}
+\label{sec:annotated-lambdas}
+
+Consider checking this expression:
+\begin{equation} \label{example:non-dep}
+| (\ (f :: Int -> Int) -> f 5) :: (forall a. a -> a) -> Int |
+\end{equation}
+%if style == newcode
+\begin{code}
+test8 = (\ (f :: Int -> Int) -> f 5) :: (forall a. a -> a) -> Int
+-- test9 = (\ (f :: forall a. a -> a) -> f 5) :: (Int -> Int) -> Int
+\end{code}
+%endif
+This expression should be accepted. The $\lambda$ takes a function
+over |Int|s and applies it. The type signature then says that the
+$\lambda$ should actually be applicable to any polymorphic endofunction.
+Of course, such a function can be specialized to |Int|, so all is well.
+Indeed, the expression above is accepted by GHC.
+
+The example above, however, is not dependent. Surprisingly, the intuition
+in the above paragraph does not generalize to the dependent case.
+Consider this (contrived) example:
+\begin{equation} \label{example:dep}
+| (\ (f :: Bool -> Bool) -> P) :: pi (g :: forall a. a -> a) -> Proxy !(g 5, g !True) |
+\end{equation}
+where we have
+\begin{code}
+data Proxy :: forall k. k -> Type where
+  P :: forall k (a :: k). Proxy a
+-- equivalent to |data Proxy a = P|
+\end{code}
+Once again, the annotation on the $\lambda$ argument is a specialized version
+of the argument's type as given in the type signature. And yet, this expression
+must be rejected.
+
+One way to boil this problem down is to consider what type we check the expression
+|P| against. When we are checking |P|, we clearly have |f :: Bool -> Bool|
+in scope. Yet the natural type to check |P| against is |Proxy !(g 5, g !True)|,
+which mentions |g|, not |f|. Even if the names were to be fixed, we would
+still have the problem that |g 5| is certainly not well-typed if
+|g| has type |Bool -> Bool|. We are stuck.
+
+Another way to see this problem is to think about elaborating the subsumption
+judgment. In \pref{example:non-dep}, type inference will check whether
+$|forall a. a -> a| [[<=]] |Int -> Int|$. When it discovers that this is
+true, the subsumption algorithm will also produce a function that takes something
+of type |forall a. a -> a| to something of type |Int -> Int|. If the
+expression in \pref{example:non-dep} is applied to an argument 
+(naturally, of type |forall a. a -> a|), then this conversion function readies
+the argument to pass to the $\lambda$-expression.
+
+In \pref{example:dep}, however, we need conversions both ways. We still need
+the conversion from |forall a. a -> a| to |Bool -> Bool|, for exactly
+the same reason that we need it for \pref{example:non-dep}. We also need
+the conversion in the other direction (in this case, the impossible
+conversion from |Bool -> Bool| to |forall a. a -> a|) when checking that
+|P|, with |f :: Bool -> Bool| in scope, has type |Proxy !(g 5, g !True)|,
+using |g :: forall a. a -> a|.
+
+The solution to this is to have two separate rules, one in the non-dependent
+case and one in the dependent case. \Bake/ looks at the type being checked
+against (let's call it $[[t]]$).
+If $[[t]]$ uses its argument dependently, then \bake/ requires that
+the annotation on the $\lambda$ argument and the function type as found
+in $[[t]]$ can be proved equal---that is, that there is a coercion between
+them. Otherwise, we use subsumption, just as in \pref{example:non-dep}.
+You can view the two rules in \pref{sec:checking-judgments}; as usual,
+the rules are a bit cluttered to present here.
+
+\section{Program elaboration}
+
+\begin{figure}[t!]
+\ottdefnIIDecl{}\\
+\ottdefnIIProg{}
+\caption{Elaborating declarations and programs}
+\label{fig:prog-decl-elab}
+\end{figure}
+
+Up until now, this chapter has focused more on the gate-keeping services
+provided by \bake/, preventing ill-formed programs from being accepted.
+In this section, we will discuss elaboration, the process of creating the
+\pico/ program that corresponds to an input Haskell program. Let's look
+in particular on the highest levels of elaboration, processing Haskell
+declarations and programs. See \pref{fig:prog-decl-elab} for the two judgments
+of interest.
+
+\subsection{Declarations}
+The $[[|->decl]]$ judgment processes the two forms of declaration included
+in the Haskell subset formalized here: unannotated variable declarations
+and annotated variable declarations. It outputs the name of the new
+variable, its type $[[k]]$ and its value $[[t]]$. Note that the environment
+used in $[[|->decl]]$ is $[[S]];[[G]]$, with a context containing only
+\pico/ variables, no unification variables. These are top-level declarations
+only.
+
+Rule \rul{IDecl\_Synthesize} simply ties together the pieces of using the
+synthesis judgment and the solver. Note that the definitions of
+$[[t']]$ and $[[k']]$ in the rule generalize over the telescope $[[D]]$
+produced by the solver, and that the $\Pi$-type formed marks the
+binders as inferred, never specified.
+
+Rule \rul{IDecl\_Check} is a bit more involved. It first must check the
+type signature using the $[[|->pt]]$ judgment,
+to make sure $[[_s]]$ it is a well-formed polytype.
+This process might emit constraints, and we must solve these before tackling
+the term-level expression. This would happen, for example, in the type
+|forall a. Proxy a -> ()|, as |a|'s kind is unspecified. The solver may
+produce a telescope $[[D1]]$ to generalize by. In our example, this
+telescope would include $[[&&kx :Irrel Type{}]]$, the type of |a|.
+Having sorted out the type signature, we can now proceed to the expression
+$[[_t]]$, which is checked against $[[s']]$ the generalized
+\pico/ translation of the user-written polytype $[[_s]]$. We must solve
+once again. In this invocation of the solver, we insist that no further
+generalization be done because the user has already written the entire
+type of the expression. This decision is in keeping with standard Haskell,
+where a declaration like
+\begin{spec}
+bad :: a -> String
+bad x = show x
+\end{spec}
+is rejected, because accepting the function body requires generalizing over
+an extra |Show a| constraint.
+
+\subsection{Programs}
+The elaboration of whole programs is generally straightforward. This 
+algorithm
+appears in \pref{fig:prog-decl-elab}. The judgment
+$[[S;G |->prog _prog ~> G'; theta]]$ produces as output an extension to
+the context, $[[G']]$, as well as a closing substitution $[[theta]]$
+which maps the newly bound variable to its definition. (Recall that
+this formalization of \bake/ ignores recursion; thus no variable
+can be mentioned in its own declaration.)
+
+The one non-trivial rule,
+\rul{IProg\_Decl}, checks a declaration and then incorporates this declaration
+into the context $[[G]]$ used to check later declarations.
+There is one small twist here, though: because declared variables can be
+used in types as well as in terms, we wish the typing context to remember
+the equality between the variable and its definition. This is done via
+the coercion variable $[[c]]$ included in the context in the second premise
+to \rul{IProg\_Decl}.
 
 \section{Metatheory}
 \label{sec:bake-metatheory}
 
-This chapter has explained the \bake/ algorithm in detail, but what
+This chapter has explained the \bake/ algorithm in some detail, but what
 theoretical properties does it have? A type inference algorithm is often
 checked for soundness and completeness against a specification. However, as
 argued by \citet[Section 6.3]{outsidein}, lining up an algorithm such as
@@ -1106,9 +1393,199 @@ It is left as future work to define a precise specification of \bake/ and
 prove that it meets the specification.
 
 \subsection{Soundness}
-\rae{Write me.}
+
+Here is the fundamental soundness result:
+\begin{theorem*}[Soundness of \bake/ elaboration {[\pref{thm:iprog}]}]
+If $[[S |-ctx G]]$ and $[[S;G |->prog _prog ~> G'; theta]]$, then:
+\begin{enumerate}
+\item $[[S |-ctx G,G']]$
+\item $[[S;G |-subst theta : G']]$
+\item $[[dom(_prog) \subseteq dom(G')]]$
+\end{enumerate}
+\end{theorem*}
+This theorem assumes that the starting environment is well-formed
+$[[S |-ctx G]]$ and that \bake/ accepts the source language program
+$[[_prog]]$. In return, the theorem claims that the context extension
+$[[G']]$ is well-formed (assuming it is appended after $[[G]]$),
+that the substitution $[[theta]]$ is a valid closing substitution (see below),
+and that indeed the new context $[[G']]$ binds the variables declared in
+$[[_prog]]$.
+
+\begin{figure}
+\ottdefnSubst{}
+\caption{Validity of closing substitutions}
+\label{fig:closing-subst}
+\end{figure}
+
+Closing substitutions are recognized by the new judgment $[[|-subst]]$,
+which appears in \pref{fig:closing-subst}.
+(Note the turnstile $[[|-]]$; this is a pure \pico/ judgment with no
+unification variables in sight.) It uses a new notation $[[theta \inter zs]]$
+which restricts the domain of a substitution $[[theta]]$ to operate only
+on the variables $[[zs]]$. Informally, $[[S;G |-subst theta : D]]$
+holds when the substitution $[[theta]]$ eliminates the appearance
+of any of the variables in $[[D]]$. Here is the key lemma that asserts
+the correctness of the judgment:
+
+\begin{lemma*}[Closing substitution {[\pref{lem:closing-subst}]}]
+If $[[S;G |-subst theta : D]]$ and $[[S;G,D,G' |- J]]$, then
+$[[S;G,G'[theta \inter dom(D)] |- J[theta \inter dom(D)] ]]$.
+\end{lemma*}
+
+Here, I use a notation where $[[J]]$ stands for a judgment chosen from
+$[[|-ty]]$, $[[|-co]]$, $[[|-prop]]$, $[[|-alt]]$, $[[|-vec]]$, $[[|-ctx]]$,
+or $[[|-s]]$.
+
+The use of $[[|-subst]]$ in the conclusion of the elaboration soundness
+theorem means that the variable values stored in $[[theta]]$ actually
+have the types as given in $[[G']]$.
+
+Naturally, proving this theorem requires proving the soundness of all
+the individual judgments that form \bake/. This proofs all appear
+in \pref{sec:app-inference-soundness}.
+
+\subsubsection{Adapting lemmas on $[[|-]]$ to $[[|=]]$}
+
+The first step in establishing the soundness result is to ensure that
+the structural lemmas proved for $[[|-]]$ judgments still hold over
+the $[[|=]]$ judgments. While doing this for the definitions as given
+does not pose a challenge, it is in getting these proofs to work
+that all of the complications around unification variables (to wit,
+zonkers and generalizers) arise.
+
+Relating the two sets of judgments is accomplished by this key lemma:
+\begin{lemma*}[Extension {[\pref{lem:extension}]}]
+$[[S;G |- J]]$ if and only if $[[S;G |= J]]$.
+\end{lemma*}
+Note that the context must contain only \pico/ variables, never unification
+variables. This fact is what allows the larger $[[S;G |= J]]$ to imply
+the smaller $[[S;G |- J]]$.
+
+\subsubsection{Soundness of the solver}
+\label{sec:solver-soundness}
+
+\begin{figure}
+\ottdefnZonk{}
+\caption{Zonker validity}
+\label{fig:zonker-judgment}
+\end{figure}
+
+The solver $[[S;P |->solv O ~> D; Z]]$ produces a generalization telescope
+and a zonker. In order to define a correctness property for this solver,
+we first need a judgment that asserts the validity of the zonker. This
+judgment appears in \pref{fig:zonker-judgment}. The judgment is quite
+similar to the judgment classifying closing substitutions ($[[|-subst]]$,
+in \pref{fig:closing-subst}), but it deals also with the complexity
+of having unification variables quantified over telescopes.
+
+Naturally, we must require that the solver produce a valid zonker.
+We also require that the zonker be idempotent, as that is a necessary
+requirement to prove the zonking lemma, below. Here is the soundness
+property we are assuming of the solver. Note that this property is
+the \emph{only} one we need to prove soundness of elaboration.
+
+\begin{property*}[Solver is sound {[\pref{prop:isolv}]}]
+If $[[S |=ctx P,O]]$ and
+$[[S;P |->solv O ~> D; Z]]$,
+then $[[Z]]$ is idempotent, $[[S |=ctx P,D]]$, and $[[S;P,D |=z Z : O]]$.
+\end{property*}
+
+\begin{lemma*}[Zonking {[\pref{lem:zonking}]}]
+If $[[Z]]$ is idempotent, $[[S;P |=z Z : O]]$, and $[[S;P,O,D |= J]]$, then
+$[[S;P,D[Z] |= J[Z] ]]$.
+\end{lemma*}
+
+\subsubsection{Soundness of generalization}
+
+The following lemma asserts the correctness of the generalization judgment:
+\begin{lemma*}[Generalization {[\pref{lem:igen}]}]
+If $[[O +> D ~> O'; X]]$ and $[[S;P,D,O |= J]]$,
+then $[[S;P,O',D |= J[X] ]]$.
+\end{lemma*}
+
+The proof of this lemma relies on the following smaller lemma (and its
+counterpart for coercion variables):
+\begin{lemma*}[Generalization by type variable {[\pref{lem:igen-tyvar}]}]
+If $[[S;P,D,au :rel forall D'.k,P' |= J]]$,
+then
+$[[S;P,au :rel forall D,D'.k,D,P'[au |-> dom(D)] |= J[au |-> dom(D)] ]]$.
+\end{lemma*}
+
+\subsubsection{Soundness lemmas for individual judgments}
+\label{sec:soundness-lemmas}
+
+\begin{lemma*}[Instantiation {[\pref{lem:iinst}]}]
+If $[[S;P |=ty t : k]]$ and $[[|->inst_vis k ~> ps; k' -| O]]$,
+then $[[S;P,O |=ty t ps : k']]$ and $[[k']]$ is not a $\Pi$-type
+with a binder (with visibility $[[vis2]]$) such that $[[vis2 <= vis]]$.
+\end{lemma*}
+
+\begin{lemma*}[Scrutinee position {[\pref{lem:iscrut}]}]
+If $[[S;P |=ty t : k]]$ and $[[S;P |->scrut _alts; k ~> g; D; H'; ts -| O]]$,
+then $[[S;P,O |=ty t |> g : MPI D. H'{} ts]]$ and
+$[[S;Rel(P,O) |=ty H'{} ts : Type{}]]$.
+\end{lemma*}
+
+\begin{lemma*}[Prenex {[\pref{lem:ipre}]}]
+If $[[S;Rel(P) |=ty k : Type{}]]$ and
+$[[|->pre k ~> D; k'; t]]$, then
+$[[S;P |=ty t : UPI x:Rel (UPI D. k'). k]]$.
+\end{lemma*}
+
+\begin{lemma*}[Subsumption {[\pref{lem:isub}]}] ~
+Assume $[[S;Rel(P) |=ty k1 : Type{}]]$ and $[[S;Rel(P) |=ty k2 : Type{}]]$.
+If either
+\begin{enumerate}
+\item $[[k1 *<= k2 ~> t -| O]]$, OR
+\item $[[k1 <= k2 ~> t -| O]]$
+\end{enumerate}
+Then $[[S;P,O |=ty t : UPI x:Rel k1. k2]]$.
+\end{lemma*}
+
+\begin{lemma*}[Type elaboration is sound {[\pref{lem:isound}]}] ~
+\begin{enumerate}
+\item If any of the following:
+\begin{enumerate}
+\item $[[S |=ctx P]]$ and $[[S;P |->ty _t ~> t : k -| O]]$, OR
+\item $[[S |=ctx P]]$ and $[[S;P *|->ty _t ~> t : k -| O]]$, OR
+\item $[[S;Rel(P) |=ty k : Type{}]]$ and $[[S;P |->ty _t : k ~> t -| O]]$, OR
+\item $[[S;Rel(P) |=ty k : Type{}]]$ and $[[S;P *|->ty _t : k ~> t -| O]]$
+\end{enumerate}
+Then $[[S;P,O |=ty t : k]]$.
+\item
+If $[[S |=ctx P]]$ and $[[S;P |->pt _s ~> s -| O]]$,
+then $[[S;Rel(P,O) |=ty s : Type{}]]$.
+\item
+If $[[S;P |=ty t1 : PI_vis a:rel k1.k2]]$
+and $[[S;P;rel *|->arg _t2 : k1 ~> p2; t2 -| O]]$,
+then $[[S;P,O |=ty t1 p2 : k2[t2/a] ]]$.
+\item
+If $[[S;Rel(P) |=ty k : Type{}]]$,
+$[[S;P |=ty t0 : MPI D. H{} ts]]$,
+$[[S;Rel(P) |=ty H{} ts : Type{}]]$, and
+$[[S;P;MPI D.H{} ts;t0 |->alt _alt : k ~> alt -| O]]$, then
+$[[S;P,O;MPI D.H{} ts;t0 |=alt alt : k]]$.
+\item
+If $[[S;Rel(P) |=ty k : Type{}]]$,
+$[[S;P |=ty t0 : MPI D. H{} ts]]$, 
+$[[S;Rel(P) |=ty H{} ts : Type{}]]$,
+and
+$[[S;P;k0;t0 |->altc _alt : k ~> alt -| O]]$, then
+$[[S;P,O;k0;t0 |=alt alt : k]]$.
+\item
+If $[[S |=ctx P]]$ and $[[S;P |->q _qvar ~> a : k; vis -| O]]$,
+then $[[S;Rel(P,O) |=ty k : Type{}]]$.
+\item
+If $[[S |=ctx P]]$ and $[[S;P |->aq _aqvar ~> a : k -| O]]$,
+then $[[S;Rel(P,O) |=ty k : Type{}]]$.
+\item
+If $[[S;P |=ty t0 : k]]$ and $[[S;P |->aq _aqvar : k ~> a : k'; x.t -| O]]$,
+then $[[S;P,O |=ty t[t0/x] : k']]$.
+\end{enumerate}
+\end{lemma*}
 
 \subsection{Conservativity with respect to \outsidein/}
+\label{sec:oi}
 
 I do not endeavor to give a full accounting of the \outsidein/ algorithm
 here, instead referring readers to the original~\cite{outsidein}. I will
@@ -1179,7 +1656,7 @@ that is inconsequential in this comparison.
 
 \subsubsection{Expressions}
 
-\begin{claim*}[Expressions]
+\begin{claim*}[Expressions {[\pref{claim:oi-expr}]}]
 If $[[G oi|-> _t : k ~> Qw]]$ under axiom set $[[QQ]]$ and signature
 $[[S]]$, then
 $[[S;G,encode(QQ) |->ty _t ~> \cdot : k -| aus :Irrel forall{}.Type{}, encode(Qw)]]$
@@ -1193,117 +1670,8 @@ both the wanteds ($[[encode(Qw)]]$) and also any unification variables
 required during synthesis ($[[aus]]$).
 
 To argue this claim, we examine the different rules that make up
-\outsidein/'s judgment, using structural induction.
-
-\begin{description}
-\item[Case \rul{VarCon}:]
-\outsidein/ fully instantiates all variables, producing unification
-variables for any quantified type variables and emitting wanted constraints
-for any constraint in the variable's type. \bake/ does the same, via
-its $[[|->inst]]$ judgment.
-
-\item[Case \rul{App}:]
-In this case, $[[_t = _t1 _t2]]$.
-\outsidein/'s
-is a fairly typicaly application form rule, but using constraints to assert
-that the type of $[[_t1]]$ is indeed a function. \Bake/ works similarly,
-using its $[[|->fun]]$ judgment to assert that a type is a $\Pi$-type.
-Of course, \outsidein/'s treatment of $[[_t2]]$ uses synthesis while
-\bake/'s uses its checking judgment.
-
-\item[Case \rul{Abs}:]
-This rule coresponds quite closely to \bake/'s \rul{ITy\_Lam} rule.
-Note that \outsidein/ does not permit annotations on $\lambda$-bound
-variables, simplifying the treatment of abstractions. Furthermore,
-\bake/ must use its generalization judgment (written with $[[+>]]$)
-to handle its unification variables, while \outsidein/ does not need
-to have this complication.
-
-\item[Case \rul{Case}:]
-Contrast \outsidein/'s rule with \bake/'s:
-\[
-\ottdrule{%
-\ottpremise{\Gamma \varrow e : \tau \rightsquigarrow C \quad \beta, \overline{\gamma} \text{ fresh}}%
-\ottpremise{K_i{:}\forall \overline{a} \overline{b}_i . Q_i \Rightarrow \overline{\upsilon}_i \to \texttt{T}\, \overline{a} \quad \overline{b}_i \text{ fresh}}%
-\ottpremise{\Gamma,(\overline{x_i{:}[\overline{a \mapsto \gamma}]\upsilon_i}) \varrow e_i : \tau_i \rightsquigarrow C_i \quad \overline{\delta}_i = \mathit{fuv}(\tau_i,C_i) - \mathit{fuv}(\Gamma,\overline{\gamma})}%
-\ottpremise{C'_i = \left\{ \begin{array}{ll}
-C_i \wedge \tau_i \sim \beta & \text{if $\overline{b}_i = \epsilon$ and $Q_i = \epsilon$} \\
-\exists \overline{\delta}_i.([\overline{a \mapsto \gamma}]Q_i \supset C_i \wedge \tau_i \sim \beta) & \text{otherwise} \end{array} \right.}}%
-{\Gamma \varrow \texttt{case}\,e\,\texttt{of}\,\{\overline{K_i\,\overline{x}_i \to e_i}\} : \beta \rightsquigarrow C \wedge (\texttt{T}\,\overline{\gamma} \sim \tau) \wedge (\bigwedge C'_i)}%
-{\rul{Case}}
-\]
-%% \ottdrule{%
-%% \ottpremise{
-%% \Gamma \varrow e : \tau \rightsquigarrow C \quad \beta, \overline{\gamma} \text{ fresh} \quad C' = (\texttt{T}\,\overline{\gamma} \sim \tau) \wedge C}%
-%% \ottpremise{\text{for each } K_i\,\overline{x}_i \to e_i \text{ do}}%
-%% \ottpremise{\quad K_i{:}\forall \overline{a}.\overline{\upsilon}_i \to \texttt{T}\, \overline{a} \in \Gamma \quad \Gamma, (\overline{x_i{:}[\overline{a \mapsto \gamma}]\upsilon_i}) \varrow e_i : \tau_i \rightsquigarrow C_i}%
-%% \ottpremise{\quad C'_i = C_i \wedge \tau_i \sim \beta}}%
-%% {\Gamma \varrow \texttt{case}\,e\,\texttt{of}\,\{\overline{K_i \overline{x}_i \to e_i}\} : \beta \rightsquigarrow C' \wedge (\bigwedge C'_i)}%
-%% {\rul{Case}}
-\[
-\ottdruleITyXXCase{}
-\]
-\[
-\ottdruleIAltXXCon{}
-\]
-The first premises line up well, with both checking the scrutinee. Both
-rules then must ensure that the scrutinee's type is headed by a type
-constant (\texttt{T} in \outsidein/, $[[H]]$ in \bake/). This is done
-via the emission of a constraint in \outsidein/ (the $\texttt{T}\,\overline{\gamma} \sim \tau$ constraint in the conclusion)
-and the use of $[[|->scrut]]$ in \bake/. One reason for a difference in
-treatment here is that \bake/ wishes to use any information available because
-of the existence of its checking judgment, whereas \outsidein/ is free to
-invent new, uninformative unification variables ($\overline{\gamma}$).
-This difference makes \bake/ produce the unification variables only when
-the scrutinee's type ($[[k0]]$) is not already manifestly the right shape.
-
-Both rules then check the individual alternatives, which have to look
-up the constructor ($K_i$ and $[[H]]$, respectively) in the environment.
-\Pico/ gathers the three sorts of existentials together in $[[D2]]$;
-\outsidein/ expands this out to the $\overline{b}_i$, $Q_i$, and $\overline{\upsilon}_i$. \outsidein/ does not permit unsaturated matching, so we can
-treat $[[D4]]$ as empty. \outsidein/ does not consider scoped type variables;
-it thus only brings in $\overline{x}_i$ of types $\overline{\upsilon}_i$
-while checking each alternative; \bake/ brings all of $[[D3]]$ into scope.
-\outsidein/ checks the synthesized type of each alternative, $\tau_i$ against
-the overall result type $\beta$; \bake/ ensures the types of the alternatives
-line up by using a checking judgment against the result kind $[[k]]$. (Note
-that, like \outsidein/, this result kind is a unification variable. We can
-see that the $[[k]]$ in \rul{IAlt\_Con} is the $[[au]]$ from \rul{ITy\_Case}.)
-
-The constraint $C'_i$ emitted by \outsidein/ is delicately constructed.
-If there are no existential type variables and no local constraints,
-\outsidein/ emits a simple constraint. Otherwise, it has to emit
-an implication constraint. \outsidein/'s implication constraints
-allow unification variables to be local to a certain constraint; the
-treatment of implication constraints is somewhat different than that of
-simple constraints. In particular, when solving an implication constraint,
-any unification variables that arose outside of that implication are
-considered untouchable---they cannot then be unified.
-(See \pref{sec:untouchability}.) In order
-to avoid imposing the untouchability restriction, \outsidein/ makes a
-simple constraint when possible. Due to \bake/'s more uniform treatment
-of implications, this distinction is not necessary; untouchability is
-informed by the order of unification variables in the context passed
-to the solver.
-
-\Bake/ makes its version of implication constraints via the generalization
-judgment (written with $[[+>]]$). All of the constraints generated while
-checking the alternative are quantified over variables in $[[D3]]$; this
-precisely corresponds to the apapearance of the $Q_i$ to the left of the
-$\supset$ in \outsidein/'s constraint $C'_i$. (Recall that $Q_i$ is a
-component of \bake/'s $[[D3]]$.) \Bake/ also adds another equality
-assumption into its $[[D3']]$; this equality has to do with dependent
-pattern matching (\pref{sec:dependent-pat-match}) and has no place in
-the non-dependent language of \outsidein/.
-
-\item[Case \rul{Let}:]
-Other than \bake/'s generalization step, these rules line up perfectly.
-
-\item[Cases \rul{LetA} and \rul{GLetA}:]
-These cases cover annotated \ottkw{let}s, where the bound variable is
-also given a type. I do not consider this form separately, instead
-preferring to use the checking judgments to handle this case.
-\end{description}
+\outsidein/'s judgment, using structural induction. The details appear
+in \pref{sec:app-oi-expr}.
 
 \subsubsection{The solver}
 
@@ -1371,7 +1739,8 @@ directly from the previous claim.
 Because of this, I believe that any program without top-level annotations
 accepted by \outsidein/ is also accepted by \bake/.
 
-\subsection{Conservativity with respect to SB}
+\subsection{Conservativity with respect to System SB}
+\label{sec:sb}
 
 Here, I compare \bake/ with the bidirectional algorithm (called SB)
 in Figure 8 of
@@ -1382,4 +1751,81 @@ This SB algorithm, along with \outsidein/,
  is part of the basis for the algorithm currently
 implemented in GHC 8. 
 
+Before we can successfully relate these systems, we must tweak both a bit
+to bring their approaches more in line with one another:
+\begin{itemize}
+\item System SB assumes an ability to guess monotypes. This is evident,
+for example, in the \rul{SB\_Abs} rule, where an unannotated $\lambda$-expression
+is processed and the monotype of the argument is guessed. \Bake/, of course,
+uses unification variables. I thus modify System SB to always guess
+a unification variable when it guesses. The modified rules are
+\rul{SB\_Abs}, \rul{SB\_InstS}, and \rul{SB\_Var}.
+\item Because of the previous change, it is now unfair in
+rule \rul{SB\_App} to insist that the result of synthesis be a function
+type. Instead, the result of synthesizing the type of $e_1$ is an arbitrary
+monotype, and the $[[|->fun]]$ judgment is used to expand this out to a
+proper function type. Note that we do \emph{not} make a similar change
+in \rul{SB\_TApp}; doing so would be tantamount to saying that a unification
+variable might unify with a type with an invisible binder, something we
+have forbidden. (See \pref{sec:solver-properties}.) We similarly must
+modify \rul{SB\_DAbs} to allow for the possibility of a unification variable
+being checked against.
+\item There is no convenient equivalent of integers in \bake/; I omit
+the rule \rul{SB\_Int}.
+\item \Bake/ does not do |let|-generalization. I thus modify
+\rul{SB\_Let} and \rul{SB\_DLet} 
+to use the $[[*|-sb]]$ judgment instead of the
+generalizing judgment.
+\item System SB skolemizes deeply in its checking $[[*|-sb]]$ judgment,
+while \bake/ skolemizes only shallowly. We thus move the prenex operation
+from \rul{SB\_DeepSkol} to \rul{SB\_Infer}. I claim that this change
+does not alter the set of programs that System SB accepts, due to the
+fact that neither non-\rul{Infer} rule in the $[[|-sb]]$ judgment interacts
+with $[[forall]]$s.
+\item \Bake/ expends a great deal of effort tracking telescopes of
+unification variables, requiring the notion of a generalizer $[[X]]$.
+However, in the language supported by System SB, all type variables always
+have kind $[[Type]]$ and so these telescopes are unnecessary. We thus
+simply ignore generalizers and the generalization judgment (which always
+succeeds, regardless).
+\end{itemize}
+
+The theorem below also needs to relate a context $[[P]]$ used in \bake/ with
+the more traditional context $[[G]]$ used in System SB. In the claim below,
+I use $[[P]] \approx [[G]]$ to mean that all $[[P]]$ has no coercion bindings,
+that all irrelevant bindings in $[[P]]$ are of kind $[[Type]]$, and that
+no relevant bindings depend on any other. Furthermore, all unification
+variables bound in $[[P]]$ are absent from $[[G]]$.
+
+I can now make the following claim:
+\begin{claim*}[Conservativity with respect to System SB {[\pref{claim:sb}]}]
+Assume $[[P]] \approx [[G]]$.
+\begin{enumerate}
+\item If $[[G |-sb _t => k]]$, then
+$[[S;P |->ty _t ~> \cdot : k -| O]]$.
+\item If $[[G *|-sb _t => k]]$, then
+$[[S;P *|->ty _t ~> \cdot : k -| O]]$.
+\item If $[[G |-sb _t <= k]]$, then
+$[[S;P |->ty _t : k ~> \cdot -| O]]$.
+\item If $[[G *|-sb _t <= k]]$, then
+$[[S;P *|->ty _t : k ~> \cdot -| O]]$.
+\end{enumerate}
+\end{claim*}
+A detailed argument for this claim appears in \pref{sec:app-sb}.
+
 \section{Discussion}
+
+\subsection{Further desirable properties of the solver}
+\label{sec:solver-properties}
+\rae{Write me}
+\rae{Include something that bars zonkers from mentioning any invisible binders.
+This avoids impredicativity.}
+
+\subsection{No coercion abstractions}
+\label{sec:no-coercion-abstractions}
+\rae{TODO: Write me.}
+
+
+%% Induction: Infer, ||->pre, DeepSkol
+%% Solver: Synthesize
+%% case: IAlt{C,}_Con

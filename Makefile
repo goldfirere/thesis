@@ -1,7 +1,7 @@
-C = type-inference
+C = app-inference
 C_EXT = $(if $(wildcard tex/$(C).lhs*),$(C).lhs,$(C).tex)
 
-OTT_FILES_BASE = syn syn_hask syn_inf syn_oi syn_suffix rules rules_inf
+OTT_FILES_BASE = syn syn_hask syn_inf syn_oi syn_sb syn_suffix rules rules_inf
 PAPER_BASE = thesis
 OTT_PICKY = false
 BIB_FILES_FULL = bib/rae.bib
