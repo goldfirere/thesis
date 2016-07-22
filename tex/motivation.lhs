@@ -25,7 +25,8 @@ dissertation, all the indented, typeset code
 is type-checked against my implementation
 every time the text is typeset.
 
-The code snippets throughout this proposal are presented on a variety of
+\rae{Revisit.}
+The code snippets throughout this dissertation are presented on a variety of
 background colors. A \colorbox{working}{\workingcolorname} background
 highlights code that newly works in GHC~8.0 due to my implementations
 of previously published papers~\cite{nokinds,visible-type-application}.
@@ -340,12 +341,6 @@ it still requires two explicit, if short, places where equality proofs must
 be explicitly manipulated.
 %}
 \end{itemize}
-
-\begin{proposal}
-The above limitations in Coq, Agda, and Idris are from my experimentation. I am
-not an expert in any of these languages, and I will consult experts before the
-final dissertation.
-\end{proposal}
 
 \subsubsection{Conclusion}
 

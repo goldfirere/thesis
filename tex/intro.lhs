@@ -6,13 +6,6 @@
 
 \chapter{Introduction}
 
-\begin{proposal}
-I have formatted this proposal as an outline of my eventual dissertation,
-with drafts of parts of the final text already written.
-Paragraphs rendered in blue, such as this one, are meant to appear only
-in the proposal.
-\end{proposal}
-
 Haskell has become a wonderful and rich playground for type system
 experimentation. Despite its relative longevity---at roughly 25 years
 old~\cite{history-of-haskell}---type theorists still turn to

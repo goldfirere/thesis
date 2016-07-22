@@ -146,7 +146,6 @@ All arguments are always ``visible'' in \pico/.
 
 \subsubsection{Invisibility in other languages}
 
-\begin{noproposal}
 \begin{itemize}
 %{
 %format dbo = "\{\!\{"
@@ -229,10 +228,9 @@ the details.
 %}
 
 \end{itemize}
-\end{noproposal}
+
 \subsubsection{Visibility overrides}
 
-\begin{noproposal}
 It is often desirable when using rich types to override a declared visibility
 specification. That is, when a function is declared to have an invisible
 parameter |a|, a call site may wish to instantiate |a| visibly. Conversely,
@@ -331,7 +329,6 @@ program. (This is not unlike Agda's \emph{sheds} feature or Idris's
 \emph{metavariables} feature.) However, this is not a true conflict, as an
 uninferrable omitted visible parameter is indeed an error and should be
 reported; the error report is that of a typed hole.
-\end{noproposal}
 
 \subsection{The six quantifiers of Dependent Haskell}
 

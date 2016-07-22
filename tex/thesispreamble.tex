@@ -1,6 +1,5 @@
 % LaTeX preamble
 \newif \ifdraft \drafttrue
-\newif \ifproposal \proposalfalse
 
 \newcommand{\Title}{DEPENDENT TYPES IN HASKELL: THEORY AND PRACTICE}
 \newcommand{\Author}{Richard A.~Eisenberg}
@@ -94,16 +93,8 @@
 \renewcommand{\theequation}{\arabic{equation}}
 
 % write proposal-only stuff in blue
-\ifproposal
-
 \definecolor{proposal}{rgb}{0,0,0.5}
-
 \newenvironment{proposal}{\color{proposal}}{}
-\newenvironment{noproposal}{\comment}{\endcomment}
-\else
-\newenvironment{proposal}{\comment}{\endcomment}
-\newenvironment{noproposal}{}{}
-\fi
 
 % that trailing / prevents the macro from gobbling up a space
 \def\outsidein/{\textmd{\textsc{OutsideIn}}}

@@ -22,23 +22,19 @@
 \newcommand{\singlespaced}{\renewcommand{\baselinestretch}{1}\normalfont}
 
 \include{titlepage}
-\ifproposal\else
 \include{copyright}
 \include{acks}
 \include{abstract}
-\fi
 
 \singlespaced
 
 \tableofcontents
 
-\ifproposal\else
 \newpage
 
 \listoftables
 
 \listoffigures
-\fi
 
 \newpage
 \setcounter{page}{1}
@@ -54,9 +50,6 @@
 \include{implementation}
 \include{related}
 %
-\ifproposal
-\include{proposal}
-\fi
 
 \appendix
 
