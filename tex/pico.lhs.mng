@@ -32,7 +32,7 @@ class Applicative f => Monad f where
 %endif
 
 
-\chapter{\Pico/}
+\chapter{\Pico/: The intermediate language}
 \label{cha:pico}
 
 This chapter presents \pico/, the internal language Dependent Haskell compiles
@@ -3047,8 +3047,7 @@ translated the Haskell program |1 + 2| into the expression
 $[[\]] {[[o]]}. |1 + 2|$, then we would never get |3|. I thus make this claim:
 no Haskell program ever evaluates to a coercion abstraction. This claim
 is properly a property of the type inference / elaboration algorithm and so
-is deferred until \pref{sec:no-coercion-abstractions}. \rae{Make sure this lines
-up.}
+is deferred until \pref{sec:no-coercion-abstractions}.
 \end{itemize}
 
 One may wonder why \pico/ needs coercion abstractions at all. I can provide
@@ -3508,7 +3507,7 @@ That is, no value has an arrow type, because all $\lambda$-forms have
 $\Pi$-types instead. With this in hand, the progress proof should
 go through unimpeded.
 
-\paragraph{Conclusion}
+\section{Conclusion}
 
 This chapter is a full consideration of \pico/. The detail presented here
 is intended to be useful to implementors of the language and researchers

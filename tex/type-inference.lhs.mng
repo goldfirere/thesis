@@ -268,7 +268,7 @@ so that it is easier to consider individual bound variables.
 
 The exception to the irrelevance of type information is in dealing with
 pattern matches. Haskell pattern matches can be nested, support guards,
-perhaps view patterns~\cite{view-patterns},
+perhaps view patterns,
 perhaps pattern synonyms~\cite{pattern-synonyms}, etc. However, translating
 such a rich pattern syntax into a simple one
 is a well-studied problem with widely-used
@@ -316,7 +316,14 @@ In terms, an expression introduced by $\lambda$ is a relevant abstraction;
 one introduced by $\Lambda$ is an irrelevant one.
 
 \subsection{|let| should not be generalized}
-\rae{TODO: Write me}
+
+Though the formalized Haskell grammar includes |let|, I will take the
+advice of \citet{let-should-not-be-generalised} that |let| should not
+be generalized. As discussed at some length in the work cited, local,
+generalized |let|s are somewhat rare and can easily be generalized by
+a type signature. For all the same reasons articulated in that work,
+generalizing |let| poses a problem for \bake/. We thus live with an
+ungeneralized |let| construct.
 
 \subsection{Omissions from the Haskell grammar}
 
@@ -354,6 +361,7 @@ by introducing the additions to the grammar needed to describe the inference
 algorithm.
 
 \section{Unification variables}
+\label{sec:quantified-kinds-and-props}
 
 \begin{figure}
 Metavariables:
@@ -420,6 +428,8 @@ variable should be solved for.
 
 \subsection{Zonking}
 \label{sec:zonking}
+\label{sec:zonker}
+
 Solving produces a substitution from unification variables to types/coercions.
 Following the nomenclature within GHC, I call applying this substitution
 \emph{zonking}. The substitution itself, written $[[Z]]$, is called a
@@ -657,6 +667,7 @@ means that we get only one type error reported, not two.
 
 \section{Bidirectional typechecking}
 \label{sec:bidirectional}
+\label{sec:bidir-dependent-pattern-match}
 
 Like previous algorithms for
 GHC/Haskell~\cite{practical-type-inference,visible-type-application,gundry-thesis}, \bake/
@@ -802,7 +813,7 @@ This means that the types |forall a. Int -> a -> a| and |Int -> forall a. a -> a
 are fully equivalent and is backward compatible with the current treatment
 of non-prenex types in GHC.
 
-\begin{figure}
+\begin{figure}[t!]
 \ottdefnIPrenexSimp{}\\
 \ottdefnISubTwoSimp{}\\
 \ottdefnISubSimp{}
@@ -916,7 +927,7 @@ be ill-scoped: |alpha| occurs in the unification telescope before |b|
 is ever brought into scope. This means that it would be ill-scoped for
 the value chosen for |alpha| to refer to |b|.\footnote{Saying
 that this example fails because of scoping is a vast improvement over
-the state of affairs in \citet{visible-type-app-extended}, where a delicate
+the state of affairs in \citet{visible-type-application-extended}, where a delicate
 line of reasoning based on the subtleties of the Barendregt convention is
 necessary to show how this example goes awry. By tracking our unification
 variables in a telescope, problems like this become much clearer.}
@@ -971,6 +982,7 @@ declarative system proposed in my prior
 work~\cite[Section 6.2]{visible-type-application}.
 
 \section{Generalization}
+\label{sec:generalizer}
 
 There is one final aspect of the inference algorithm that requires study
 before we look at the individual pieces: the generalization operation.\footnote{What I call generalization here is precisely what \citet[Section 7.5]{gundry-thesis} calls
@@ -1151,6 +1163,7 @@ that the function's type is of the appropriate shape. If it is not,
 \bake/ issues an error.
 
 \subsection{Mediating between checking and synthesis}
+\label{sec:infer-rule}
 
 The two modes of \bake/ meet head-on when we are checking an expression
 (such as a function application) that has no rules in the checking judgment.
@@ -1277,6 +1290,7 @@ You can view the two rules in \pref{sec:checking-judgments}; as usual,
 the rules are a bit cluttered to present here.
 
 \section{Program elaboration}
+\label{sec:idecl}
 
 \begin{figure}[t!]
 \ottdefnIIDecl{}\\
@@ -1827,7 +1841,7 @@ are already subsumed by these formalizations' handling of regular variables.
 
 Classes in Haskell are already compiled into record types that store the
 implementations of methods, and instances
-are record values (often called \emph{dictionaries})~\cite{type-classes-impl}.
+are record values (often called \emph{dictionaries}) (\pref{sec:type-classes}).
 As \pico/ supports datatypes, it also supports classes. Nothing about
 the type class system should matter at all in \pico/. Indeed, System FC
 as currently implemented in GHC 8 cares not about type classes, to no ill
@@ -1958,6 +1972,25 @@ about arbitrary $\alpha$-renaming during constraint generation and solving.
 Taken together, the need for generalizers is lost, and thus the generalization
 operation $[[+>]]$ disappears.
 
+\subsection{|Constraint| vs.~|Type|}
+\label{sec:constraint-vs-type}
+Haskell includes the kind |Constraint| that classifies all constraints;
+we thus have |Show :: Type -> Constraint|. However, due to the datatype
+encoding of classes and the dictionary
+encoding of instances,
+\pico/ manipulates constraints just as it does
+ordinary types. For this reason, \pico/ makes no distinction between
+|Constraint| and |Type|. This choice follows GHC's current practice, where
+|Constraint| and |Type| are distinct in the source language but indistinguishable
+in the intermediate language. This design has some unfortunate consequences;
+see GHC ticket \#11715\footnote{\url{https://ghc.haskell.org/trac/ghc/ticket/11715}} for a considerable
+amount of discussion.
+
+Extending the language with dependent types is orthogonal to the problems
+presented there, however. For simplicity, \bake/ as described here does
+not recognize |Constraint|, putting all constraints in the kind |Type| with
+all the other types. 
+
 \section{Discussion}
 
 \subsection{Further desirable properties of the solver}
@@ -1980,7 +2013,7 @@ and no dependency.
 \end{property}
 
 \begin{property}[Solver does not generalize over coercions]
-\label{lem:solver-no-co-abs}
+\label{prop:solver-no-co-abs}
 If $[[S;P |->solv O ~> D; Z]]$, then $[[D]]$ binds no coercion variables.
 \end{property}
 \caption{Addition solver properties}
@@ -2143,7 +2176,7 @@ explored in my prior work~\cite{visible-type-application}.
 
 \item The \emph{inch} language does not allow annotations on the
 binders of a $\lambda$-abstraction and so Gundry did not encounter the
-thorny case detailed in \pref{sec:annotated-lambda}.
+thorny case detailed in \pref{sec:annotated-lambdas}.
 
 \item Gundry's approach to delayed instantiation for function arguments
 follows along the lines of \citet{simple-bidirectional}, using an

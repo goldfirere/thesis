@@ -31,7 +31,7 @@ term \emph{quantifiee} to refer to the argument quantified over. The
 
 \subsection{Dependency}
 
-A quantifier may be either dependent or non-dependent. A dependent quantifiee
+A quantifiee may be either dependent or non-dependent. A dependent quantifiee
 may be used in the quantifier body; a non-dependent quantifiee may not.
 
 Today's Haskell uses |forall| for dependent quantification, as follows:
@@ -39,7 +39,7 @@ Today's Haskell uses |forall| for dependent quantification, as follows:
 id :: forall a. a -> a
 \end{code}
 In this example, |a| is the quantifiee, and |a -> a| is the quantifier body.
-Note that |a| is used in the quantifier body.
+Note that the quantifiee |a| is used in the quantifier body.
 
 The normal function arrow |(->)| is an example of a non-dependent quantifier.
 Consider the predecessor function:
@@ -49,19 +49,17 @@ pred :: Int -> Int
 The |Int| quantifiee is not named in the type, nor is it mentioned in the
 quantifier body.
 
-Dependent Haskell adds a new dependent quantifier, |pi|, as discussed below.
-
-A key requirement of dependent arguments---that is, concrete choices of
-instantiations of dependent quantifiees---is that they are expressible
-in types. See \pref{sec:shared-subset} for a discussion of how this plays
-out in practice.
+In addition to |forall|, Dependent Haskell adds a new dependent quantifier,
+|pi|. The only difference between |pi| and |forall| is that |pi|-quantifiee
+is relevant, as we'll explore next.
 
 \subsection{Relevance}
 \label{sec:relevance}
 
-A quantifier may be either relevant or irrelevant. A relevant quantifiee
-may be used in a relevant position in the \emph{function} quantified over;
-an irrelevant quantifiee may be used only in irrelevant positions. Note
+A quantifiee may be either relevant or irrelevant. A relevant quantifiee
+may be used anywhere in the function quantified over;
+an irrelevant quantifiee may be used only in irrelevant positions---that is,
+as an irrelevant argument to other functions or in type annotations. Note
 that relevance talks about usage in the function quantified over, not the
 type quantified over (which is covered by the \emph{dependency}
 property).
@@ -83,7 +81,7 @@ are not within a type annotation or other type-level context, as will be
 demonstrated in the next example.
 
 Today's Haskell uses |forall| for irrelevant quantification. For example,
-here is the body of |id|:
+here is the body of |id| (as given a type signature above):
 \begin{code}
 id x = (x :: a)
 \end{code}
@@ -102,12 +100,18 @@ is both relevant and dependent is the very reason for |pi|'s existence!
 
 \subsection{Visibility}
 \label{sec:visibility}
+\label{sec:dep-haskell-vis}
+\label{sec:visible-type-pat}
 
-A quantifier may be either visible or invisible. The argument used to instantiate
+\rae{TODO: Add something about ``visible type patterns''. Make sure the
+label above follows the text.}
+
+A quantifiee may be either visible or invisible. The argument used to instantiate
 a visible quantifiee appears in the Haskell source; the argument used to
 instantiate an invisible quantifiee is elided. Some readers may prefer the
 terms \emph{explicit} and \emph{implicit} to describe visibility; however,
-these terms are sometimes used in the literature when talking about erasure
+these terms are sometimes used in the literature (e.g.,~\cite{miquel-icc})
+when talking about erasure
 properties. I will stick to \emph{visible} and \emph{invisible} throughout this
 dissertation.
 
@@ -138,7 +142,7 @@ Dependent Haskell offers both visible and invisible forms of |forall| and
 retains, of course, the invisible quantifier |(=>)|, which is instantiated
 via instanced lookup and solving.
 Finally, note that visibility is a quality only of source Haskell.
-All arguments are always ``visible'' in System FCD.
+All arguments are always ``visible'' in \pico/.
 
 \subsubsection{Invisibility in other languages}
 
@@ -382,6 +386,7 @@ it is used in types, a subject we explore next.
 
 \section{Pattern matching}
 \label{sec:pattern-matching}
+\label{sec:dependent-pattern-match}
 
 \begin{proposal}
 This section will address how dependent pattern matching works, illustrated

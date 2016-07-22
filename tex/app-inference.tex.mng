@@ -275,6 +275,7 @@ above for \rul{Ty\_UVar}. Other cases are as before.
 \rae{Move this out from the appendix. May need to reduplicate at-signs.}
 
 \begin{definition}[Zonker]
+\label{defn:zonking}
 A \emph{zonker} $[[Z]]$
 is a substitution from unification variables $[[au]]$
 and $[[cu]]$ to types and coercions, respectively. Each mapping also
@@ -1793,7 +1794,7 @@ precisely corresponds to the apapearance of the $Q_i$ to the left of the
 $\supset$ in \outsidein/'s constraint $C'_i$. (Recall that $Q_i$ is a
 component of \bake/'s $[[D3]]$.) \Bake/ also adds another equality
 assumption into its $[[D3']]$; this equality has to do with dependent
-pattern matching (\pref{sec:dependent-pat-match}) and has no place in
+pattern matching (\pref{sec:dependent-pattern-match}) and has no place in
 the non-dependent language of \outsidein/.
 
 \item[Case \rul{Let}:]
