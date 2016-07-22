@@ -48,7 +48,7 @@
 %include pico.lhs
 %include type-inference.lhs
 \include{implementation}
-\include{related}
+%include related.lhs
 %
 
 \appendix

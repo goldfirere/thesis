@@ -108,7 +108,6 @@ many potential traps that have snagged other dependently typed languages
 that rely on intricate termination checks.\footnote{For example, see \url{https://coq.inria.fr/cocorico/CoqTerminationDiscussion}.}
 
 \subsection{Features of \pico/}
-\label{sec:unsaturated-match-example}
 
 \Pico/ is a dependently typed $\lambda$-calculus with algebraic datatypes and
 a fixpoint operator. Recursion is modeled only via this fixpoint operator;
@@ -121,7 +120,7 @@ The typing relations, however, have a few features worth mentioning up front;
 other unusual features are best explained after the detailed coverage of
 \pico/; see \pref{sec:pico-design-decisions}.
 
-\paragraph{Relevance annotations and type erasure}
+\subsubection{Relevance annotations and type erasure}
 A key concern when compiling a dependently typed language is type erasure.
 Given that terms and types can intermingle, what should be erased during
 compilation? And what data is necessary to be retained until runtime.
@@ -148,7 +147,9 @@ As they are also erased, coercions are considered fully irrelevant as well.
 My treatment of resetting the context is precisely like what is done
 by \citet{erasure-pure-type-systems}.
 
-\paragraph{Matching on partially-applied constants}
+\subsubsection{Matching on partially-applied constants}
+\label{sec:unsaturated-match-example}
+
 \Pico/ does not contain type families. Instead, it uses $\lambda$-abstractions
 and \ottkw{case} expressions, as are more familiar to functional programmers.
 And yet, I wish for \pico/ to support the variety of ways in which type families
@@ -178,7 +179,7 @@ Only matchable $[[MPI]]$-types are allowed as \ottkw{case} scrutinees.
 When I write the unadorned $[[PI]]$, I actually mean a metavariable which
 might be instantiated either to $[[MPI]]$ or $[[UPI]]$.
 
-\paragraph{Matching on $[[Type]]$}
+\subsubsection{Matching on $[[Type]]$}
 
 Today's Haskell also has the ability, through its type families, to match on
 members of $[[Type]]$. For example:
@@ -214,7 +215,7 @@ expanded to list all possible constructors. For an open type, like $[[Type]]$,
 the availability of the default pattern is essential. It is for this reason alone
 that I have chosen to include default patterns in \pico/.
 
-\paragraph{Hypothetical equality}
+\subsubsection{Hypothetical equality}
 
 \Pico/ allows abstraction over coercions, much like any $\lambda$-calculus
 allows abstraction over expressions (or, in a call-by-value calculus,

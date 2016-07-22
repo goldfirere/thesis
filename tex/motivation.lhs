@@ -44,6 +44,8 @@ working.
 \subsection{Simple example: Length-indexed vectors}
 \label{sec:length-indexed-vectors}
 \rae{Make sure |replicate| is here. It's referenced later.}
+\rae{There will be overlap between this section and \pref{sec:pattern-matching}.
+Double-check it.}
 
 \subsection{A strongly typed simply typed lambda calculus interpreter}
 \label{sec:stlc}

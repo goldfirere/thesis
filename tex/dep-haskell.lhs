@@ -4,10 +4,15 @@
 %include rae.fmt
 
 \begin{code}
-import GHC.TypeLits ( type (-) )
-import Prelude hiding ( replicate )
+import GHC.TypeLits ( type (-), TypeError, ErrorMessage(..) )
+import qualified Prelude as P
+import Prelude ( Num, Int, String, Either(..), (-), fromInteger, undefined,
+                 Bool(..), Maybe(..) )
 import Unsafe.Coerce
-import Data.Kind ( type (*) )
+import Data.Kind ( Type )
+import Data.Singletons.Prelude
+import Data.Singletons.TH hiding ( (:~:)(..) )
+
 \end{code}
 
 %endif
@@ -15,14 +20,148 @@ import Data.Kind ( type (*) )
 \chapter{Dependent Haskell}
 \label{cha:dep-haskell}
 
-This chapter lays out the differences between the Haskell of today and
-Dependent Haskell. The most important distinction is the introduction
-of more quantifiers, which we will study first.
+
+This chapter provides an overview of Dependent Haskell, focusing on the
+aspects of Dependent Haskell that are different from the Haskell implemented
+in GHC 8 and described in \pref{cha:prelim}. I will review the new
+features of the type language (\pref{sec:new-type-features}), introduce
+the small menagerie of quantifiers available in Dependent Haskell
+(\pref{sec:quantifiers}), explain pattern matching in the presence
+of dependent types
+(\pref{sec:dependent-pattern-match}), and conclude the chapter by
+discussing several further points of interest in the design of the language.
+
+There are many examples throughout this chapter, many of which depend on
+the following definitions:
+\begin{code}
+-- Length-indexed vectors, from \pref{sec:length-indexed-vectors}
+data Nat = Zero | Succ Nat
+data Vec :: Type -> Nat -> Type where
+  Nil   ::  Vec a !Zero
+  (:>)  ::  a -> Vec a n -> Vec a (!Succ n)
+infixr 5 :>
+
+-- Propositional equality, from \pref{sec:prop-equality}
+data a :~: b where
+  Refl :: a :~: a
+
+-- Heterogeneous lists, indexed by the list of types of elements
+data HList :: [Type] -> Type where
+  HNil   :: HList ![]
+  (:::)  :: h -> HList t -> HList (h !: t)
+infixr 5 :::
+\end{code}
+
+\section{Dependent Haskell is dependently typed}
+\label{sec:new-type-features}
+The most noticeable change when going from Haskell to Dependent Haskell
+is that the latter is, of course, a full-spectrum dependently typed language.
+Expressions and types intermix. This actually is not too great a shock
+to the Haskell programmer, as the syntax of Haskell expressions and Haskell
+types is so similar. However, by utterly dropping the distinction, Dependent
+Haskell has many more possibilities in types, as seen in the last chapter.
+
+\paragraph{Expression variables in types}
+Dependent Haskell obviates the need for most closed type families by allowing
+the use of ordinary functions directly in types. Because Haskell has a separate
+term-level namespace from its type-level namespace, any term-level definition
+used in a type must be prefixed with a |!| mark. This expands the use of a
+|!| mark to promote constructors as initially introduced by \citet{promotion}.
+For example:
+%format !+ = "\mathop{\tick{+}}"
+\begin{notyet}
+\begin{spec}
+(+) :: Nat -> Nat -> Nat
+Zero    +  m  =  m
+Succ n  +  m  =  Succ (n + m)
+
+append :: Vec a n -> Vec a m -> Vec a (n !+ m)
+append Nil       v  =  v
+append (h :> t)  v  =  h :> (append t v)
+\end{spec}
+\end{notyet}
+%if style == newcode
+\begin{code}
+type family n + m where
+  !Zero + m = m
+  !Succ n + m = !Succ (n + m)
+append :: Vec a n -> Vec a m -> Vec a (n + m)
+append Nil v = v
+append (h :> t) v = h :> (append t v)
+\end{code}
+%endif
+Note that this ability does not eliminate all closed type families, as
+term-level function definitions cannot use non-linear patterns nor can
+they perform unsaturated matches (see \pref{sec:unsaturated-match-example}).
+
+\paragraph{Pattern matching in types}
+It is now possible to use |case| directly in a type:
+\begin{notyet}
+\begin{spec}
+tailOrNil :: Vec a n -> Vec a  (case n of
+                                  Zero     -> Zero
+                                  Succ n'  -> n')
+tailOrNil Nil       = Nil
+tailOrNil (_ :> t)  = t
+\end{spec}
+\end{notyet}
+%if style == newcode
+\begin{code}
+type family PredOrZero n where
+  PredOrZero !Zero = !Zero
+  PredOrZero (!Succ n) = n
+
+tailOrNil :: Vec a n -> Vec a (PredOrZero n)
+tailOrNil Nil = Nil
+tailOrNil (_ :> t) = t
+\end{code}
+%endif
+
+\paragraph{Anonymous functions in types}
+Types may now include $\lambda$-expressions:
+\begin{notyet}
+\begin{spec}
+eitherize :: HList types -> HList (!map (\ ty -> Either ty String) types)
+eitherize HNil       =  HNil
+eitherize (h ::: t)  =  Left h ::: eitherize t
+\end{spec}
+\end{notyet}
+%if style == newcode
+\begin{code}
+type Eitherize t = Either t String
+$(genDefunSymbols [''Eitherize])
+eitherize :: HList types -> HList (Map EitherizeSym0 types)
+eitherize HNil = HNil
+eitherize (h ::: t) = Left h ::: eitherize t
+\end{code}
+%endif
+
+\paragraph{Other expression-level syntax in types}
+Having merged types and expressions, \emph{all} expression-level syntax
+is now available in types (for example, |do|-notation, |let| bindings,
+even arrows~\cite{arrows}). From a compilation standpoint, supporting
+these features is actually not a great challenge (once we have
+Chapters~\ref{cha:pico} and \ref{cha:type-inference} implemented);
+it requires only interleaving typechecking with desugaring.\footnote{GHC
+currently typechecks the Haskell source directly, allowing it to produce
+better error messages. Only after typechecking and type inference does
+it convert Haskell source into its internal language, the process
+called \emph{desugaring}.} When a type-level use of elaborate expression-level
+syntax is encountered, we will need to work with the desugared version,
+hence the interleaving.
 
 \section{Quantifiers}
+\label{sec:quantifiers}
+
+Beyond simply allowing old syntax in new places, as demonstrated above,
+Dependent Haskell also introduces new quantifiers that allow users to write
+a broader set of functions than was previously possible. Before looking at
+the new quantifiers of Dependent Haskell, it is helpful to understand the
+several axes along which quantifiers can vary in the context of today's
+Haskell.
 
 A \emph{quantifier} is a type-level operator that introduces the type of an
-abstraction, or function. In Dependent Haskell, there are three essential
+abstraction, or function. In Dependent Haskell, there are four essential
 properties of quantifiers, each of which can vary independently of the others.
 To understand the range of quantifiers that the language offers, we must
 go through each of these properties. In the text that follows, I use the
@@ -101,10 +240,6 @@ is both relevant and dependent is the very reason for |pi|'s existence!
 \subsection{Visibility}
 \label{sec:visibility}
 \label{sec:dep-haskell-vis}
-\label{sec:visible-type-pat}
-
-\rae{TODO: Add something about ``visible type patterns''. Make sure the
-label above follows the text.}
 
 A quantifiee may be either visible or invisible. The argument used to instantiate
 a visible quantifiee appears in the Haskell source; the argument used to
@@ -144,92 +279,11 @@ via instanced lookup and solving.
 Finally, note that visibility is a quality only of source Haskell.
 All arguments are always ``visible'' in \pico/.
 
-\subsubsection{Invisibility in other languages}
-
-\begin{itemize}
-%{
-%format dbo = "\{\!\{"
-%format dbc = "\}\!\}"
-\item In Agda, an argument in single braces |{ ... }| is invisible and is
-instantiated via unification. An argument in double braces |dbo ... dbc| is
-invisible and is instantiated by looking for an in-scope variable of the
-right type. One Agda encoding of, say, the |Show| class and its |Show Bool|
-instance would be to make |Show| a record containing a |show| field (much
-like GHC's dictionary for |Show|) and a top-level variable of type |Show Bool|.
-The lookup process for |dbo ... dbc| arguments would then find this top-level
-variable.
-
-Thus, |show|'s type in Agda might look like |forall {a} -> dbo Show a dbc -> a ->
-String|.
-%}
-%{
-%format proof = "\keyword{proof}"
-%format trivial = "\keyword{trivial}"
-%format auto = "\keyword{auto}"
-\item Idris supports type classes in much the same way as Haskell. A constraint
-listed before a |(=>)| is solved just like a Haskell type class is. However,
-other invisible arguments can also have custom solving tactics. An Idris
-argument in single braces |{ ... }| is solved via unification, just like in
-Agda. But a programmer may insert a proof script in the braces as well to
-trigger that proof script whenever the invisible parameter needs to be
-instantiated. For example, a type signature like
-|func : {default proof { trivial } pf : tau } -> ...| names a (possibly-dependent)
-parameter |pf|, of type |tau|. When |func| is called, Idris will run the
-|trivial| tactic to solve for a value of type |tau|. This value will then
-be inserted in for |pf|. Because a default proof script of |trivial| is so
-common, Idris offers an abbreviation |auto| which means |default proof { trivial }|.
-%}
-\item
-Coq has quite a different view of invisible arguments than do Dependent Haskell,
-Agda, or Idris. In all three of those languages, the visibility of an argument
-is part of a type. In Coq, top-level directives allow the programmer to change
-the visibility of arguments to already-defined functions. For example, if we
-have the definition
-%{
-%format Definition = "\keyword{Definition}"
-%format Arguments = "\keyword{Arguments}"
-%format Set = "\keyword{Set}"
-%format Implicit = "\keyword{Implicit}"
-%format mytrue1
-%format mytrue2
-%format forall = "\keyword{forall}"
-\begin{spec}
-Definition id A (x : A) := x.
-\end{spec}
-(without having used |Set Implicit Arguments|) both the |A| and |x| parameters
-are visible. Thus the following line is accepted:
-\begin{spec}
-Definition mytrue1 := id bool true.
-\end{spec}
-However, we can now change the visibility of the arguments to |id| with the
-directive
-\begin{spec}
-Arguments id {A} x.
-\end{spec}
-allowing the following to be accepted:
-\begin{spec}
-Definition mytrue2 := id true.
-\end{spec}
-
-Although Coq does not allow the programmer to specify an instantiation technique
-for invisible arguments, it does allow the programmer to specify whether or
-not invisible arguments should be \emph{maximally inserted}. A maximally
-inserted invisible argument is instantiated whenever possible; a non-maximally
-inserted argument is only instantiated when needed. For example, if the |A|
-argument to |id| were invisible and maximally inserted, then any use of |id|
-would immediately try to solve for |A|; if this were not possible, Coq would
-report a type error. If |A| were not maximally inserted, than a use of |id|
-would simply have the type |forall A, A -> A|, with no worry about invisible
-argument instantiation.
-
-The issue of maximal insertion in Dependent Haskell is solved via its
-bidirectional type system. See \pref{sec:bidirectional-type-system} for
-the details.
-%}
-
-\end{itemize}
+It may be helpful to compare Dependent Haskell's treatment of visibility
+to that in other languages; see \pref{sec:vis-other-lang}.
 
 \subsubsection{Visibility overrides}
+\label{sec:visible-type-pat}
 
 It is often desirable when using rich types to override a declared visibility
 specification. That is, when a function is declared to have an invisible
@@ -239,10 +293,11 @@ choice for |b| can be discovered by unification and so wishes to omit it
 at the call site.
 
 \paragraph{Instantiating invisible parameters visibly}
-Dependent Haskell introduces the new syntax |@...| to instantiate an invisible
-parameter visibly. Continuing our example with |id|, we could write |id ^^ @Bool
+Dependent Haskell adopts the $\at\ldots$ syntax of \citet{visible-type-application} to instantiate any invisible
+parameter visibly, whether it is a type or not.
+Continuing our example with |id|, we could write |id (at Bool)
 True| instead of |id True|. This syntax works in patterns, expressions, and
-types. In patterns, the choice of |@| conflicts with as-patterns, such as
+types. In patterns, the choice of $\at$ conflicts with as-patterns, such as
 using the pattern |list@(x:xs)| to bind |list| to the whole list while
 pattern matching. However, as-patterns are almost always written without
 whitespace. I thus use the presence of whitespace before the |@| to signal
@@ -270,17 +325,12 @@ theSimons = replicate 2 "Simon"
 \end{notyet}
 %if style == newcode
 \begin{code}
-data Nat = Zero | Succ Nat
 type instance FromNat n = U n
 type family U n where
   U 0 = !Zero
   U n = !Succ (U (n-1))
-data Vec :: * -> Nat -> * where
-  Nil  :: Vec a !Zero
-  (:>) :: a -> Vec a n -> Vec a (!Succ n)
-infixr 5 :>
 
-data SNat :: Nat -> * where
+data SNat :: Nat -> Type where
   SZero :: SNat !Zero
   SSucc :: SNat n -> SNat (!Succ n)
 
@@ -328,33 +378,132 @@ error message about the type of expression expected at that point in the
 program. (This is not unlike Agda's \emph{sheds} feature or Idris's
 \emph{metavariables} feature.) However, this is not a true conflict, as an
 uninferrable omitted visible parameter is indeed an error and should be
-reported; the error report is that of a typed hole.
+reported; the error report is that of a typed hole. Depending on user feedback,
+this override of the underscore symbol may be hidden behind a language extension
+or other compiler flag.
 
-\subsection{The six quantifiers of Dependent Haskell}
+\subsection{Matchability}
+Suppose we know that |f a| equals |g b|. What relationship can we conclude
+about the individual pieces? In general, nothing: there is no way to reduce
+|f a ~ g b| for arbitrary |f| and |g|. Yet Haskell type inference must
+simplify such equations frequently. For example:
+%{
+%if style == newcode
+%format ... = " "
+\begin{code}
+instance Monad Maybe where
+  return = Just
+\end{code}
+%endif
+\begin{code}
+class Monad m where
+  return :: a -> m a
+  ...
+
+just5 :: Maybe Int
+just5 = return 5
+\end{code}
+%}
+When calling |return| in the body of |just5|, type inference must determine
+how to instantiate the call to |return|. We can see that |m a| (the return type
+of |return|) must be |Maybe Int|. We surely want type inference to decide
+to set |m| to |Maybe| and |a| to |Int|! Otherwise, much current Haskell
+code would no longer compile.
+
+The reason it is sensible to reduce |m a ~ Maybe Int| to |m ~ Maybe| and
+|a ~ Int| is that all type constructors in Haskell are generative and
+injective, according to these definitions:
+\begin{definition*}[Generativity]
+If |f| and |g| are \emph{generative}, then |f a ~ g b| implies
+|f ~ g|.
+\end{definition*}
+\begin{definition*}[Injectivity]
+If |f| is \emph{injective}, then |f a ~ f b| implies |a ~ b|.
+\end{definition*}
+Because these two notions go together so often in the context of Haskell,
+I introduce a new word \emph{matchable}, thus:
+\begin{definition*}[Matchability]
+A function |f| is \emph{matchable} iff it is generative and injective.
+\end{definition*}
+Thus, we say that all type constructors in Haskell are matchable.
+Note that if |f| and |g| are matchable, then |f a ~ g b| implies
+|f ~ g| and |a ~ b|, as desired.
+
+On the other hand, ordinary Haskell functions are not, in general,
+matchable. The inability to reduce |f a ~ g b| to |f ~ g| and |a ~ b|
+for arbitrary functions is precisely why type families must be saturated
+in today's Haskell. If the were allowed to appear unsaturated, then
+the type inference algorithm could no longer assume that higher-kinded types
+are always matchable, and inference would grind to a halt.
+
+The solution is to separate out matchable functions from unmatchable ones,
+classifying each by their own
+quantifier, as described in my prior work~\cite{promoting-type-families}.
+
+The difference already exists in today's Haskell between a matchable arrow
+and an unmatchable arrow, though this difference is invisible. When we write
+an arrow in a type that classifies an expression, that arrow is unmatchable.
+But when we write an arrow in a kind that classifies a type, the arrow
+is matchable. This is why |map :: (a -> b) -> [a] -> [b]| does \emph{not}
+cleanly
+promote to the type |Map :: (a -> b) -> [a] -> [b]|; if you write that
+type family, it is much more restrictive than the term-level function.
+
+The idea
+of matchability also helps to explain why, so far, we have been able only
+to promote data constructors into types: data constructors are matchable---this
+is why pattern matching on constructors makes any sense at all. When we
+promote a data constructor to a type constructor, the constructor's matchable
+nature fits well with the fact that all type constructors are matchable.
+
+Dependent Haskell thus introduces a new arrow, spelled |!->|, that classifies
+matchable functions. The idea is that |!| is used to promote data constructors,
+and |!->| promotes the arrow used in data constructor types.
+In order to be backward compatible, types of
+type constructors (as in |data Vec :: Type -> Nat -> Type|) and types of
+data constructors (as in |Just :: a -> Maybe a|) can still be written with
+an ordinary arrow, even though those arrows should properly be |!->|.
+Along similar lines, any arrow written in a stretch of Haskell that is
+lexically a kind (that is, in a type signature in a type) is interpreted as
+|!->| as long as the \ext{-XDependentTypes} extension is not enabled.
+
+We can now say |!map :: (a -> b) -> [a] -> [b]|, with unmatchable |->|,
+and retain the flexibility we have in the expression |map|.
+
+\subsection{The eleven quantifiers of Dependent Haskell}
 
 \begin{table}
 \begin{center}
-\begin{tabular}{rccc}
-\multicolumn{1}{c}{Quantifier} & Dependency & Relevance & Visibility \\ \hline
-|forall (a :: tau). ...| & dependent & irrelevant & invisible (unification)\\
-|forall (a :: tau) -> ...| & dependent & irrelevant & visible \\
-|pi (a :: tau). ...| & dependent & relevant & invisible (unification) \\
-|pi (a :: tau) -> ...| & dependent & relevant & visible \\
-|tau => ...| & non-dependent & relevant & invisible (solving) \\
-|tau -> ...| & non-dependent & relevant & visible \\
+\begin{tabular}{rcccc}
+% & \multicolumn{2}{l}{Dependency} & \multicolumn{2}{l}{Visibility} \\
+\multicolumn{1}{c}{Quantifier} & Dependency & Relevance & Visibility & Matchability \\ \hline
+|forall (a :: tau). ...| & dep. & irrel. & inv. (unification) & unmatchable\\
+|!forall (a :: tau). ...| & dep. & irrel. & inv. (unification) & matchable \\
+|forall (a :: tau) -> ...| & dep. & irrel. & vis. & unmatchable \\
+|!forall (a :: tau) -> ...| & dep. & irrel. & vis. & matchable \\
+|pi (a :: tau). ...| & dep. & rel. & inv. (unification) & unmatchable \\
+|!pi (a :: tau). ...| & dep. & rel. & inv. (unification) & matchable \\
+|pi (a :: tau) -> ...| & dep. & rel. & vis. & unmatchable \\
+|!pi (a :: tau) -> ...| & dep. & rel. & vis. & matchable \\
+|tau => ...| & non-dep. & rel. & inv. (solving) & unmatchable \\
+|tau -> ...| & non-dep. & rel. & vis. & unmatchable \\
+|tau !-> ...| & non-dep. & rel. & vis. & matchable \\
 \end{tabular}
 \end{center}
-\caption{The six quantifiers of Dependent Haskell}
+\caption{The eleven quantifiers of Dependent Haskell}
 \label{tab:quantifiers}
 \end{table}
 
 Now that we have enumerated the quantifier properties, we are ready to
-describe the six quantifiers that exist in Dependent Haskell. They
+describe the eleven quantifiers that exist in Dependent Haskell. They
 appear in \pref{tab:quantifiers}. The first one (|forall (a :: t). ...|)
-and the last two (|=>| and |->|) exist in today's Haskell and are completely
-unchanged. Dependent Haskell adds a visible |forall| and the two |pi|
-quantifiers.\footnote{The choice of syntax here is directly due to the
+and the two near the bottom (|=>| and |->|)
+exist in today's Haskell and are completely
+unchanged. Dependent Haskell adds a visible |forall|, the |pi|
+quantifiers, and matchable versions of everything save |=>|.\footnote{The choice of syntax here is directly due to the
 work of \citet{gundry-thesis}.}
+
+
 
 The visible |forall| is useful in situations where a type parameter might
 otherwise be ambiguous. For example, suppose |F| is a type family and
@@ -384,6 +533,64 @@ it is used in types, a subject we explore next.
 \section{Pattern matching}
 \label{sec:pattern-matching}
 \label{sec:dependent-pattern-match}
+
+We will approach an understanding of pattern matches in stages, working
+through three examples of increasing complexity. All these examples will
+work over the somewhat hackneyed length-indexed vectors
+for simplicity and familiarity.
+
+\subsection{A simple pattern match}
+Naturally, Dependent Haskell retains the capability for simple pattern matches:
+\begin{code}
+-- |isEmpty :: Vec a n -> Bool|
+isEmpty v = case v of
+  Nil  ->  True
+  _    ->  False
+\end{code}
+A simple pattern match looks at a \emph{scrutinee}---in this case, |v|---and
+chooses a |case| alternative depending on the value of the scrutinee.
+The bodies of the |case| alternatives need no extra information to be well-typed.
+In this case, every body is clearly a |Bool|, with no dependency on which
+case has been chosen. Indeed, swapping the bodies would yield a well-typed
+pattern match, too. In a simple pattern match, no type signature is required.\footnote{Expert readers may be puzzled why this example is accepted without a type
+signature. After all, pattern-matching against |Nil| indeed \emph{does}
+introduce a type equality, making the result type of the match hard to infer.
+In this case, however, the existence of the last pattern, |_|, which introduces
+no equalities, allows the return type to be inferred as |Bool|.}
+
+\subsection{A GADT pattern match}
+Today's Haskell (and Dependent Haskell) supports GADT pattern-matches,
+where learning about the constructor that forms a scrutinee's value can
+affect the types in a |case| alternative body. Here is the example:
+\rae{color?}
+\begin{spec}
+pred :: Nat -> Nat
+pred Zero      = error "pred Zero"
+pred (Succ n)  = n
+
+safeTail :: Vec a n -> Either (n :~: !Zero) (Vec a (!pred n))
+safeTail Nil       = Left Refl
+safeTail (_ :> t)  = Right t
+\end{spec}
+%if style == newcode
+\begin{code}
+type family Pred (n :: Nat) :: Nat where
+  Pred !Zero = TypeError (!Text "pred Zero")
+  Pred (!Succ n) = n
+
+safeTail :: Vec a n -> Either (n :~: !Zero) (Vec a (Pred n))
+safeTail Nil = Left Refl
+safeTail (_ :> t) = Right t
+\end{code}
+%endif
+
+
+isEmpty: simple pattern match
+append: GADT pattern match
+replicate: dependent pattern match
+
+
+We will use |replicate| as a solid, simple example of a dependent pattern
 
 \begin{proposal}
 This section will address how dependent pattern matching works, illustrated
