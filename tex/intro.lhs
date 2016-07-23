@@ -11,8 +11,8 @@ experimentation. Despite its relative longevity---at roughly 25 years
 old~\cite{history-of-haskell}---type theorists still turn to
 Haskell as a place to build new type system ideas and see how they work in a
 practical setting~\cite{fundeps, chak1, chak2, arrows, syb,
-  closed-type-families, generics-with-closed-type-families, safe-coercions,
-  gadts-meet-their-match, helium}. As a result, Haskell's type system has
+  closed-type-families, generics-with-closed-type-families, safe-coercions-jfp,
+  gadts-meet-their-match, helium, pattern-synonyms, typerep}. As a result, Haskell's type system has
 grown ever more intricate over the years. As the power of types in Haskell has
 increased, Haskellers have started to integrate dependent types into their
 programs~\cite{singletons, hasochism, she, clash}, despite the fact that
@@ -101,7 +101,7 @@ Haskell.
   (as in Coq), type equality in \pico/ is just $\alpha$-equivalence. A richer
   notion of type equivalence is permitted through coercions, which witness the
   equivalence between two types. In this way, \pico/ is a direct descendent
-  of System FC~\cite{systemfc,promotion,nokinds,closed-type-families,safe-coercions} and of the \emph{evidence} language of \citet{gundry-thesis}.
+  of System FC~\cite{systemfc,promotion,nokinds,closed-type-families,safe-coercions-jfp} and of the \emph{evidence} language of \citet{gundry-thesis}.
 
   In \pref{app:pico-proofs}, I prove the usual preservation and progress theorems
   for \pico/ as well as a type erasure theorem that relates the operational

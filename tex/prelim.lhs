@@ -291,8 +291,7 @@ with \flag{-fprint-explicit-kinds}, it will print |T * Maybe Bool|, making
 the |*| kind parameter visible. Today's Haskell makes an inflexible choice
 that kind arguments are always invisible, which is relaxed in Dependent
 Haskell. See \pref{sec:visibility} for more information on visibility in
-Dependent Haskell and \pref{sec:visible-kinds} for more information on visible
-kind arguments.
+Dependent Haskell.
 
 \subsection{Constraint kinds}
 

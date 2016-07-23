@@ -16,6 +16,10 @@
 
 \section{Comparison to Idris}
 
+\section{Comparison to Cayenne}
+\label{sec:cayenne}
+\rae{TODO: Write me.}
+
 \begin{proposal}
 Although I compare Dependent Haskell against Coq, Agda, and Idris throughout
 this proposal, I plan on writing a more detailed comparison against just Idris
@@ -105,8 +109,9 @@ would simply have the type |forall A, A -> A|, with no worry about invisible
 argument instantiation.
 
 The issue of maximal insertion in Dependent Haskell is solved via its
-bidirectional type system. See \pref{sec:bidirectional-type-system} for
-the details.
+bidirectional type system (\pref{sec:bidirectional}). The subsumption relation
+effectively ensures that the correct number of invisible parameters are provided,
+depending on the context.
 %}
 
 \end{itemize}

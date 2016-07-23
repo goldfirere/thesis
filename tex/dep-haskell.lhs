@@ -28,7 +28,7 @@ features of the type language (\pref{sec:new-type-features}), introduce
 the small menagerie of quantifiers available in Dependent Haskell
 (\pref{sec:quantifiers}), explain pattern matching in the presence
 of dependent types
-(\pref{sec:dependent-pattern-match}), and conclude the chapter by
+(\pref{sec:pattern-matching}), and conclude the chapter by
 discussing several further points of interest in the design of the language.
 
 There are many examples throughout this chapter, many of which depend on
@@ -99,8 +99,8 @@ It is now possible to use |case| directly in a type:
 \begin{notyet}
 \begin{spec}
 tailOrNil :: Vec a n -> Vec a  (case n of
-                                  Zero     -> Zero
-                                  Succ n'  -> n')
+                                  !Zero     -> !Zero
+                                  !Succ n'  -> n')
 tailOrNil Nil       = Nil
 tailOrNil (_ :> t)  = t
 \end{spec}
@@ -334,10 +334,6 @@ data SNat :: Nat -> Type where
   SZero :: SNat !Zero
   SSucc :: SNat n -> SNat (!Succ n)
 
-replicate :: SNat n -> a -> Vec a n
-replicate SZero _ = Nil
-replicate (SSucc n) x = x :> replicate n x
-
 instance Num (SNat n) where
   fromInteger 0 = unsafeCoerce SZero
   fromInteger n = unsafeCoerce (SSucc (fromInteger (n-1)))
@@ -353,12 +349,12 @@ instance Num (SNat n) where
 In this case, the two uses of |2| are redundant. We know from the
 type signature that the length of |theSimons| should be 2. So we can omit
 the visible parameter |n| when calling |replicate|:
-\begin{noway}
+\begin{notyet}
 \begin{spec}
 theSimons' :: Vec String (FromNat 2)
 theSimons' = replicate _ "Simon"
 \end{spec}
-\end{noway}
+\end{notyet}
 The underscore tells GHC to infer the missing parameter via unification.
 
 The two overrides can usefully be combined, when we wish to infer the
@@ -470,40 +466,46 @@ lexically a kind (that is, in a type signature in a type) is interpreted as
 We can now say |!map :: (a -> b) -> [a] -> [b]|, with unmatchable |->|,
 and retain the flexibility we have in the expression |map|.
 
-\subsection{The eleven quantifiers of Dependent Haskell}
+\subsection{The twelve quantifiers of Dependent Haskell}
 
 \begin{table}
 \begin{center}
 \begin{tabular}{rcccc}
 % & \multicolumn{2}{l}{Dependency} & \multicolumn{2}{l}{Visibility} \\
 \multicolumn{1}{c}{Quantifier} & Dependency & Relevance & Visibility & Matchability \\ \hline
-|forall (a :: tau). ...| & dep. & irrel. & inv. (unification) & unmatchable\\
-|!forall (a :: tau). ...| & dep. & irrel. & inv. (unification) & matchable \\
+|forall (a :: tau). ...| & dep. & irrel. & inv.~(unification) & unmatchable\\
+|!forall (a :: tau). ...| & dep. & irrel. & inv.~(unification) & matchable \\
 |forall (a :: tau) -> ...| & dep. & irrel. & vis. & unmatchable \\
 |!forall (a :: tau) -> ...| & dep. & irrel. & vis. & matchable \\
-|pi (a :: tau). ...| & dep. & rel. & inv. (unification) & unmatchable \\
-|!pi (a :: tau). ...| & dep. & rel. & inv. (unification) & matchable \\
+|pi (a :: tau). ...| & dep. & rel. & inv.~(unification) & unmatchable \\
+|!pi (a :: tau). ...| & dep. & rel. & inv.~(unification) & matchable \\
 |pi (a :: tau) -> ...| & dep. & rel. & vis. & unmatchable \\
 |!pi (a :: tau) -> ...| & dep. & rel. & vis. & matchable \\
-|tau => ...| & non-dep. & rel. & inv. (solving) & unmatchable \\
+|tau => ...| & non-dep. & rel. & inv.~(solving) & unmatchable \\
+|tau !=> ...| & non-dep. & rel. & inv.~(solving) & matchable \\
 |tau -> ...| & non-dep. & rel. & vis. & unmatchable \\
 |tau !-> ...| & non-dep. & rel. & vis. & matchable \\
 \end{tabular}
 \end{center}
-\caption{The eleven quantifiers of Dependent Haskell}
+\caption{The twelve quantifiers of Dependent Haskell}
 \label{tab:quantifiers}
 \end{table}
 
 Now that we have enumerated the quantifier properties, we are ready to
-describe the eleven quantifiers that exist in Dependent Haskell. They
+describe the twelve quantifiers that exist in Dependent Haskell. They
 appear in \pref{tab:quantifiers}. The first one (|forall (a :: t). ...|)
-and the two near the bottom (|=>| and |->|)
+and two near the bottom (|=>| and |->|)
 exist in today's Haskell and are completely
 unchanged. Dependent Haskell adds a visible |forall|, the |pi|
-quantifiers, and matchable versions of everything save |=>|.\footnote{The choice of syntax here is directly due to the
+quantifiers, and matchable versions of everything.\footnote{The choice of syntax here is directly due to the
 work of \citet{gundry-thesis}.}
 
-
+It is expected that the matchable quantifiers will be a rarity in
+user code. These quantifiers are used to describe type and data constructors,
+but matchability is assumed in a type or data constructor signature. Beyond
+those signatures, I don't imagine many users will need to write matchable
+function types. However, there is no reason to \emph{prevent} users from
+writing these, so I have included them in the user-facing design.
 
 The visible |forall| is useful in situations where a type parameter might
 otherwise be ambiguous. For example, suppose |F| is a type family and
@@ -516,11 +518,11 @@ when it is written. Suppose that we know we
 want a particular use of |frob| to have type |Int -> Bool|. Even with
 that knowledge, there is no way to determine how to instantiate |a|.
 To fix this problem, we simply make |a| visible:
-\begin{noway}
+\begin{notyet}
 \begin{spec}
 frob :: forall a -> F a -> F [a]
 \end{spec}
-\end{noway}
+\end{notyet}
 Now, any call to |frob| must specify the choice for |a|, and the type
 is no longer ambiguous.
 
@@ -532,7 +534,6 @@ it is used in types, a subject we explore next.
 
 \section{Pattern matching}
 \label{sec:pattern-matching}
-\label{sec:dependent-pattern-match}
 
 We will approach an understanding of pattern matches in stages, working
 through three examples of increasing complexity. All these examples will
@@ -559,10 +560,11 @@ In this case, however, the existence of the last pattern, |_|, which introduces
 no equalities, allows the return type to be inferred as |Bool|.}
 
 \subsection{A GADT pattern match}
+\label{sec:safeTail}
 Today's Haskell (and Dependent Haskell) supports GADT pattern-matches,
 where learning about the constructor that forms a scrutinee's value can
 affect the types in a |case| alternative body. Here is the example:
-\rae{color?}
+\begin{notyet}
 \begin{spec}
 pred :: Nat -> Nat
 pred Zero      = error "pred Zero"
@@ -572,6 +574,7 @@ safeTail :: Vec a n -> Either (n :~: !Zero) (Vec a (!pred n))
 safeTail Nil       = Left Refl
 safeTail (_ :> t)  = Right t
 \end{spec}
+\end{notyet}
 %if style == newcode
 \begin{code}
 type family Pred (n :: Nat) :: Nat where
@@ -583,112 +586,252 @@ safeTail Nil = Left Refl
 safeTail (_ :> t) = Right t
 \end{code}
 %endif
-
-
-isEmpty: simple pattern match
-append: GADT pattern match
-replicate: dependent pattern match
-
-
-We will use |replicate| as a solid, simple example of a dependent pattern
-
-\begin{proposal}
-This section will address how dependent pattern matching works, illustrated
-by examples. The key points will be
+In this example, we must use type information learned through the pattern
+match in order for the body of the pattern match to typecheck. (Here,
+and in the last example, I use the more typical syntax of defining a function
+via pattern matching. The reasoning is the same as if I had used an 
+explicit |case|.) Let's examine the two pattern match bodies individually:
 \begin{itemize}
-\item A dependent pattern match is one where the term-level match also informs
-a |pi|-quantified variable in types.
-\item Dependent Haskell source will include only one |case| construct. Whether
-or not to do dependent matching will depend on the context. Specifically,
-a pattern match will be dependent iff:
-\begin{enumerate}
-\item The scrutinee (the expression between |case| and |of|) mentions only
-  |pi|-quantified variables and expressions in the shared subset
-  (\pref{sec:shared-subset}), \emph{and}
-\item The result type of the pattern-match is known (via bidirectional
-type inference).
-\end{enumerate}
-I will also explain why we need these conditions.
+\item For |Left Refl| to be well-typed at |Either (n :~: !Zero) tau|,
+we need to know that |n| is indeed |!Zero|. This fact is known only
+because we have pattern-matched on |Nil|. Note that the type of
+|Nil| is |Vec a !Zero|. Because we have discovered that our argument
+of type |Vec a n| is |Nil :: Vec a !Zero|, it must be that |n ~ !Zero|,
+as desired.
+\item For |Right t| to be well-typed at |Either tau (Vec a (!pred n))|
+(where |t :: Vec a n'| for some |n'|), we need to know that |n ~ !Succ n'|,
+so that we can simplify |!pred n| to |!pred (!Succ n')| to |n'|. The
+equality |n ~ !Succ n'| is exactly what we get by pattern-matching on
+|:>|.
 \end{itemize}
-\end{proposal}
+Note that I have provided a type signature for |safeTail|. This is
+necessary in the event of a GADT pattern match, because there is no
+way, in general, to infer the return type of a pattern match where
+each branch has a type equality in scope.\footnote{If this last
+statement is a surprise to you, the introduction of
+\citet{outsidein} has a nice explanation of why this is a hard problem.}
 
-\section{Inferring |pi|}
+\subsection{Dependent pattern match}
+\label{sec:dependent-pattern-match}
 
-\begin{proposal}
-If a function is written at top-level without a signature, will it have
-any |pi|-quantified parameters? At the time of writing, I think the answer
-is ``no''. This section will describe inference around |pi|-quantified
-parameters and will address how a user-written |\|-expression will be
-treated. (My current plan: all variables bound by an explicit |\| will
-be |(->)|-quantified, never |pi|-quantified.)
-\end{proposal}
+New to Dependent Haskell is the dependent pattern match, shown here:
+\begin{notyet}
+\begin{spec}
+replicate :: pi n -> a -> Vec a n
+replicate Zero       _  =  Nil
+replicate (Succ n')  x  =  x :> replicate n' x
+\end{spec}
+\end{notyet}
+%if style == newcode
+\begin{code}
+replicate :: SNat n -> a -> Vec a n
+replicate SZero _ = Nil
+replicate (SSucc n) x = x :> replicate n x
+\end{code}
+%endif
+Let's again consider the function bodies one at a time:
+\begin{itemize}
+\item Its type signature tells us |Nil| has type |Vec a !Zero|. Thus
+for |Nil| to be well-typed in |replicate|, we must know that |n ~ !Zero|.
+We indeed do know this, as we have scrutinized |n| and found that |n|
+is |!Zero|.
+\item For the recursive call to be well-typed, we need to know that
+|n ~ !Succ n'|, which is, once again, what we know by the pattern match.
+\end{itemize}
+Note the difference between this case of dependent pattern match and
+the previous case of GADT pattern match. In GADT pattern matching,
+the equality assumption
+of interest is found by looking at the type of the constructor that we have
+found. In a dependent pattern match, on the other hand, the equality
+assumption of interest is between the scrutinee and the constructor. In
+our case here, the scrutinized value is not even of a GADT; |Nat| is a
+perfectly ordinary, Haskell98 datatype.
 
-\section{Shared subset of terms and types}
-\label{sec:shared-subset}
+A question naturally comes up in this example: when should we do dependent
+pattern match and when should we do a traditional (non-dependent)
+pattern match? A naive answer might be to always do dependent pattern matching,
+as we can always feel free to ignore the extra, unused equality if we do not
+need it. However, this would not work in practice---with an equality assumption
+in scope, we cannot accurately infer the return type of a pattern match.
+Yet this last problem delivers us the solution: use dependent pattern matching
+only when we know a match's result type. If we know a result type and do not
+need the dependent pattern match equality, no harm is done. On the other hand,
+if we do not know the result type, this design decision means that
+dependent pattern matching does not get in the way of inferring the types
+of Haskell98 programs.
 
-\begin{proposal}
-Not every term can appear in a type. For example, today's Haskell does not
-permit |\|, |case|, or |let| in types. Types also do not yet permit
-unsaturated type functions. This section will explore the limits of what
-can be expressed in both types and terms. Depending on time constraints
-as I write this dissertation, I may work on expanding this subset to
-include some of the constructs above. Inspiration for doing so will
-come from previous work~\cite{promoting-functions-to-type-families},
-which suggests that allowing \emph{universal} promotion may well be
-possible.
-\end{proposal}
+\section{Discussion}
 
-\section{Roles and dependent types}
+The larger user-facing changes to Haskell as it becomes Dependent Haskell
+are sketched above. In addition to these changes, Haskell's typing rules
+naturally become much more involved. Though a declarative specification
+remains out of reach, \pref{cha:type-inference} describes
+(and \pref{app:inference-rules} details) the algorithm \bake/, which is
+used to detect type-correct Dependent Haskell programs. It is important
+future work to develop a more declarative specification of Dependent Haskell.
+
+This section comments on several smaller topics that affect the design
+of Dependent Haskell.
+
+\subsection{Inferring |pi|}
+
+The discussion of quantifiers in this chapter begs a question: which quantifier
+is chosen when the user has not written any? The answer: |->|. Despite
+all of the advances to the type system that come with Dependent Haskell,
+the non-dependent, relevant, visible, and unmatchable function type, |->|,
+remains the bedrock. In absence of other information, this is the quantifier
+that will be used.
+
+However, as determined by the type inference process (\pref{cha:type-inference}),
+an inferred type might still have a |pi| in it. For example, if I declare
+\begin{code}
+replicate' = replicate
+\end{code}
+without giving a type signature to |replicate'|, it should naturally get
+the same type (which includes a |pi|) as |replicate|. Indeed this is what
+is delivered by \bake/, Dependent Haskell's type inference algorithm.
+
+On the other hand, the generalized type of the expression |\f g x -> f (g x)| is
+|forall a b c. (b -> c) -> (a -> b) -> (a -> c)|, the traditional type for
+function composition, not the much more elaborate type (see \pref{sec:dependent-compose}) for a dependently typed composition function. The more exotic
+types are introduced only when written in by the user.
+
+\subsection{Roles and dependent types}
 \label{sec:roles-and-dependent-types}
 
-\begin{proposal}
-\rae{TODO: Remove.}
-Roles and dependent types have a tricky interaction, the details of which
-are beyond the scope of this proposal. One approach to combining the two
-features appears in a recent draft paper. The user-facing
-effects of the interaction between roles and dependent types will appear
-in this section.
-\end{proposal}
-
-\subsection{Dependent pattern matching}
-\label{sec:dependent-pattern-matching}
-\rae{TODO: Write me. Talk about bidirectionality.}
+Integrating dependent types with Haskell's \emph{role}
+mechanism~\cite{safe-coercions-jfp} is a challenge, as explored in some depth
+in my prior, unpublished work~\cite{overabundance-of-equalities}.
+Instead of addressing this issue head-on, I am deferring the resolution
+until we can find a better solution that what was proposed in that prior
+work. That approach, unworthy of being repeated here, is far too ornate
+and hard-to-predict. Instead, I make a simplifying assumption that all
+coercions used in types have a nominal role.\footnote{If you are unfamiliar
+with roles, do not fret. Instead, safely skip the rest of this subsection.}
+This choice restricts the way Haskell |newtype|s can work with dependent types
+if the |coerce| function has been used. A violation of this restriction
+(still yet to be nailed down, exactly) can be detected after type-checking
+and does not affect the larger type system. It is my hope that, once the
+rest of Dependent Haskell is implemented, a solution to this thorny problem
+will present itself. A leading, unexplored candidate is to have two
+types of casts: representational and nominal. Currently, all casts
+are representational; possibly, tracking representational casts separately
+from nominal casts will allow a smoother integration of roles and dependent
+types than does the ornate approach in my prior work.
 
 \subsection{Impredicativity, or lack thereof}
 \label{sec:impredicativity}
-\rae{TODO: Write me.}
+
+Despite a published paper~\cite{boxy-types} \rae{and some recent, ongoing
+  work---cite Alejandro if I can}, GHC lacks support for impredicativity.\footnote{There does exist an extension \ext{-XImpredicativeTypes}. However, it is
+unmaintained and quite broken.}
+Here, I use the following definitions in my meaning of impredicativity:
+\begin{definition*}[Simple types]
+A \emph{simple type} has no constraint, quantification, or dependency.
+\end{definition*}
+\begin{definition*}[Impredicativity]
+A program is \emph{impredicative} if it requires a non-simple type to
+be substituted for a type variable.
+\end{definition*}
+Impredicativity is challenging to implement while retaining predictable
+type inference, essentially because it is impossible to know where to
+infer invisible arguments---invisible arguments can be hidden behind
+a
+type variable in an impredicative type system.
+
+Dependent Haskell does not change this state of affairs in any way.
+In Dependent Haskell, just like in today's Haskell, impredicativity
+is simply not allowed.
+
+There is a tantalizing future direction here, however: are the restrictions
+around impredicativity due to invisible binders only? Perhaps. Up until now,
+it has been impossible to have a dependent or irrelevant binder without
+that binder also being invisible. (To wit, |forall| is the invisible,
+dependent, irrelevant binder of today's Haskell.) One of the tasks of
+enhancing Haskell with dependent types is picking apart the relationship
+among all of the qualities of quantifiers~\cite{hasochism}. It is conceivable
+that the reason impredicativity hinders the predictability of type inference
+has to do only with visibility, allowing arbitrary instantiations of type
+variables with complex types, as long as they have no invisible binders.
+Such an idea requires close study before implementing, but by pursuing this
+idea, we may be able to relax the impredicativity restriction substantially.
 
 \subsection{Running proofs}
 \label{sec:running-proofs}
-\rae{TODO: Write me.}
 
-\section{Other syntax changes}
-\subsection{Parsing for |*|}
-\label{sec:parsing-star}
+Haskell is a partial language. It has a multitude of ways of introducing a
+computation that does not reduce to a value: |undefined|/|error|, general
+recursion, incomplete pattern matches, non-strictly-positive datatypes,
+baked-in type representations~\cite{typerep}, possibly Girard's
+paradox~\cite{girard-thesis,simplification-girard-paradox}, among others.
+This is in sharp contrast to many other dependently typed language, which
+are total. (An important exception is Cayenne. See \pref{sec:cayenne}.)
 
-\subsection{Visible kind variables}
-\label{sec:visible-kinds}
+In a total language, if you have a function |pf| that results in a proof that
+|a ~ b|, you never need to run the function. (Here, I'm ignoring the possibility
+of multiple, different proofs of equality~\cite{hott}.) By the totality of
+that language, you are assured that |pf| will always terminate, and thus running
+|pf| yields no information.
 
-\begin{proposal}
-Today's Haskell requires that all kind parameters always be invisible.
-My work changes this, as will be discussed here.
-\end{proposal}
+On the other hand, in a partial language like Haskell, it is always possible that
+|pf| diverges or errors. We are thus required to run |pf|, every time, to make sure
+that it terminates. This is disappointing, as the only point of running |pf| is
+to prove a type equality, and types are supposed to be erased. However, the
+Haskell function |pf| has two possible outcomes: an uninformative (at runtime)
+proof of type equality, or divergence. There seems to be no easy, sound way around this
+restriction, which will unfortunately have a real effect on the runtimes of
+dependently typed Haskell programs.
+
+Despite not have an easy, sound workaround, GHC already comes with an easy, unsound
+workaround: rewrite rules~\cite{rules}. A rewrite rule (written with a
+|{-# RULES ... #-}| pragma in GHC) instructs GHC to exchange one fragment of a program
+in its intermediate language with another, by pattern matching on the program structure.
+For example, a user can write a rule to change |map id| to |id|. To the case in point,
+a user could write a rule that changes |pf ...| to |unsafeCoerce Refl|. Such a rule would
+eliminate the possibility of a runtime cost to the proof. By writing this rule,
+the user is effectively asserting that the proof always terminates.
 
 \subsection{Import and export lists}
 
-\begin{proposal}
-If any functions are promoted into types, module writers should have the
-option of whether or not to export a function's definition along with its
-type. Exporting just the type will allow the function to be used in terms
-and in types, but no compile-time reduction will be possible. Exporting
-the full definition allows, also, compile-time reduction in types. Supporting
-the choice between these export modes will require a small change to export
-and import lists, as will be detailed here.
-\end{proposal}
+Recall the |safeTail| example from \pref{sec:safeTail}. As discussed in that section,
+for |safeTail| to compile,
+it is necessary to reduce |!pred (!Succ n')| to |n'|. This reduction requires knowledge
+of the details of the implementation of |pred|. However, if we imagine that |pred|
+is defined in another module, it is conceivable that the author of |pred| wishes
+to keep the precise implementation of |pred| private---after all, it might change in
+future versions of the module. Naturally, hiding the implementation of |pred| would
+prevent an importing module from writing |safeTail|, but that should be the library
+author's prerogative.
 
-\rae{Need to define generativity and injectivity, in this chapter or elsewhere}
+Another way of examining this problem is to recognize that the definition of |pred|
+encompasses two distinct pieces of information: |pred|'s type and |pred|'s body.
+A module author should have the option of exporting the type without the body.
+
+This finer control is done by a small generalization of the syntax in import and
+export lists. If a user includes |pred| in an import/export list, only the name
+|pred| and its type are involved. On the other hand, writing |pred(..)| (with a
+literal |(..)| in the source code) in the
+import/export list also includes |pred|'s implementation. This echoes the current
+syntax of using, say, |Bool| to export only the |Bool| symbol while |Bool(..)|
+exports |Bool| with all of its constructors.
+
+\section{Conclusion}
+
+This chapter has offered a concrete description of Dependent Haskell. Other
+than around the addition of new quantifiers, most of the changes are loosening
+of restrictions that exist in today's Haskell. (For example, a |!| mark in a type
+today can promote only a constructor; Dependent Haskell allows any identifier to
+be so promoted.) Accordingly, and in concert with the conservativity of the
+type inference algorithm (Sections~\ref{sec:oi} and~\ref{sec:sb}), programs that
+compile today will continue to do so under Dependent Haskell.
+
+Naturally, what is described here is just my own considered vision for Dependent
+Haskell. I am looking forward to the process of getting feedback from the Haskell
+community and evolving this description of the language to fit the community's
+needs.
 
 %%  LocalWords:  newcode rae fmt TypeLits endif quantifiee pred outsidein FCD
 %%  LocalWords:  mytrue bool Vec theSimons FromNat Succ infixr SNat SZero Num
 %%  LocalWords:  SSucc fromInteger unsafeCoerce abs signum MkAge newtype frob
-%%  LocalWords:  gundry
+%%  LocalWords:  gundry TypeError ErrorMessage Refl HList HNil tailOrNil
+%%  LocalWords:  PredOrZero eitherize

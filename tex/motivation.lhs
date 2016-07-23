@@ -657,33 +657,12 @@ unpredictable. Furthermore, Haskellers expect the type inference engine
 to work hard on their behalf and should rarely resort to manual proving
 techniques.
 
-Although it is conceivable that dependent types are available only with
-the new \ext{DependentTypes} extension that is not backward compatible, this
-is not what I have done. Instead, with two exceptions, all programs that compile
-without \ext{DependentTypes} continue to compile with that extension enabled.
-The two exceptions are as follows:
-\begin{itemize}
-\item There is now a parsing ambiguity around the glyph @*@. Today's Haskell
-treats @*@ in a kind as the kind of types. It is parsed just like an
-alphanumeric identifier. On the other hand, @*@ in types is an infix binary
-operator with a user-assigned fixity. This leads to an ambiguity: is @Foo * Int@
-the operator @*@ applied to @Foo@ and @Int@ or is it @Foo@ applied to @*@ and
-@Int@? The resolution to this problem is detailed in \pref{sec:parsing-star}
-but it is not backward-compatible in all cases.
-
-\item The \ext{DependentTypes} extension implies the \ext{MonoLocalBinds}
-  extension, which disables |let|-generalization when the |let|-bound
-  definition is not closed. This is described in the work of
-  \citet{let-should-not-be-generalised}. This restriction does not bite
-  often in practice, as discussed in the cited work.
-\end{itemize}
-Other than these two trouble spots, all programs that compiled previously
-continue to do so.
-
 The requirement of backward compatibility ``keeps me honest'' in my design of
 type inference---I cannot cheat by asking the user for more information. The
 technical content of this statement is discussed in \pref{cha:type-inference}
-by comparison with the work of \citet{outsidein}. A further advantage of
+by comparison with the work of \citet{outsidein} and \citet{visible-type-application}.
+See Sections~\ref{sec:oi} and~\ref{sec:sb}.
+A further advantage of
 working in Haskell is that the type inference of Haskell is well-studied in
 the literature. This dissertation continues this tradition in
 \pref{cha:type-inference}.

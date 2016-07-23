@@ -58,6 +58,7 @@ in \pref{app:inference}.
 
 \section{Overview}
 \label{sec:solv-spec}
+\label{sec:dependent-compose}
 
 \Bake/ is a bidirectional~\cite{local-type-inference}
 constraint-generation algorithm~\cite{remy-attapl}. It walks over
@@ -705,7 +706,7 @@ bring equality constraints into scope, where the equality relates the scrutinee
 with the pattern. For example, if I say something as simple as
 |case b of { True -> x ; False -> y }|, I may want to use the fact that
 |b ~ True| when typechecking |x| or |b ~ False| when typechecking |y|. This
-is, of course, dependent pattern matching (\pref{sec:dependent-pattern-matching}).
+is, of course, dependent pattern matching (\pref{sec:dependent-pattern-match}).
 Our problem now is that it seems that \emph{every} pattern match introduces
 an equality constraint, meaning that the basic type inference of Haskell might
 no longer work.
@@ -1198,7 +1199,7 @@ the actual rules here, as their myriad and ornate details would be
 distracting; the overly-curious can see \pref{app:inference-rules} for these
 details.
 
-As discussed previously (Sections \ref{sec:dependent-pattern-matching} and
+As discussed previously (Sections \ref{sec:dependent-pattern-match} and
 \ref{sec:bidirectional}), a |case| expression is treated differently depending
 on whether we can know its result type. In the case where we do not
 (\rul{ITy\_Case}), \bake/ invents a new unification variable $[[bu]]$ for

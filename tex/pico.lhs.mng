@@ -120,7 +120,7 @@ The typing relations, however, have a few features worth mentioning up front;
 other unusual features are best explained after the detailed coverage of
 \pico/; see \pref{sec:pico-design-decisions}.
 
-\subsubection{Relevance annotations and type erasure}
+\subsubsection{Relevance annotations and type erasure}
 A key concern when compiling a dependently typed language is type erasure.
 Given that terms and types can intermingle, what should be erased during
 compilation? And what data is necessary to be retained until runtime.
@@ -334,7 +334,7 @@ constructor, for example.
 
 \subsection{No roles in \pico/}
 
-Recent versions of System FC have included \emph{roles}~\cite{safe-coercions},
+Recent versions of System FC have included \emph{roles}~\cite{safe-coercions-jfp},
 which distinguish between two different notions of type equality:
 nominal equality is the equality relation embodied in Haskell's |(~)|
 operator, whereas representational equality relates types that have

@@ -7,6 +7,7 @@
 %format !: = "\mathop{\tick{:}}"
 %format !:~> = "\mathop{\tick{{:}{\rightsquigarrow}}}"
 %format !-> = "\mathop{\tick{\to}}"
+%format !=> = "\mathop{\tick{\Rightarrow}}"
 %format !++ = "\mathop{\tick{" ++ "}}"
 %format :~> = "\mathop{{:}{\rightsquigarrow}}"
 %format :~: = "\mathop{{:}{\sim}{:}}"
