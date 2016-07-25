@@ -1,6 +1,6 @@
 [submodule "formatting/byorgey"]
 	path = formatting/byorgey
-	url = ssh://git@github.com/byorgey/thesis.git
+	url = git://github.com/byorgey/thesis.git
 [submodule "bib"]
 	path = bib
-	url = ssh://git@github.com/goldfirere/bib.git
+	url = git://github.com/goldfirere/bib.git
