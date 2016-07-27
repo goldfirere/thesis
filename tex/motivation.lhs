@@ -612,12 +612,15 @@ see that |dynApply| can remain safely outside the trusted code base.
 
 \subsection{Inferred algebraic effects}
 
-\begin{proposal}
-This section will contain a Haskell translation of Idris's implementation of
-algebraic effects~\cite{algebraic-effects}. The algebraic effects library
-allows Idris code to compose effects in a more modular way than can be done
-with Haskell's monad transformers. It relies critically on dependent types.
-\end{proposal}
+\citet{idris-effects} describes an approach to the challenge of embedding
+side effects into a pure, functional language. His approach is to
+use composable algebraic effects, implemented as a domain-specific language
+embedded in Idris~\cite{idris}, a full spectrum dependently typed language. Brady's
+library is translatable directly into Dependent Haskell. With heavy
+use of singletons, all of the code described in the original paper
+is even implementable in GHC 8.\footnote{The code is
+available at 
+
 
 \section{Why Haskell?}
 \label{sec:why-haskell}

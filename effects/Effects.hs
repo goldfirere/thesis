@@ -1,3 +1,5 @@
+-- Based on https://github.com/idris-lang/Idris-dev/blob/v0.9.10/libs/effects/Effects.idr
+
 {-# LANGUAGE TypeOperators, TypeInType, GADTs, MultiParamTypeClasses,
              AllowAmbiguousTypes, TypeFamilies, ScopedTypeVariables,
              RebindableSyntax, MonadFailDesugaring, TypeApplications,
@@ -247,8 +249,6 @@ test :: forall e l r prf m xs' t.
      -> EffM m (UpdateResTyImm xs prf r) xs' t
      -> EffM m xs xs' t
 test = Test (sing :: Sing prf)
-
--- tag :! val = !(tag :- val)
 
 return :: a -> EffM m xs xs a
 return x = Value x

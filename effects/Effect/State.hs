@@ -1,3 +1,5 @@
+-- adapted from Idris's algebraic effects library
+
 {-# LANGUAGE TypeInType, TypeOperators, GADTs, FlexibleInstances,
              MultiParamTypeClasses, TypeFamilies, ScopedTypeVariables,
              InstanceSigs, TypeApplications, RebindableSyntax,
@@ -8,6 +10,7 @@ module Effect.State where
 import Effects
 import Data.Singletons
 import Data.Kind
+
 data State :: Type -> Type -> Type -> Type where
   Get :: State a a a
   Put :: b -> State a b ()
@@ -33,7 +36,6 @@ type STATE t = MkEff t (TyCon3 State)
 
 get_ :: forall m x. Good x => Eff m '[STATE x] x
 get_ = effect @(TyCon3 State) sElemProof SGet
-
 
 get :: forall x xs prf m.
        (SingI (prf :: SubList '[STATE x] xs), Good x)

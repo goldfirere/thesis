@@ -1,3 +1,5 @@
+-- based on implementation in Idris's standard library
+
 {-# LANGUAGE TypeInType, TypeOperators, MultiParamTypeClasses,
              AllowAmbiguousTypes, FlexibleInstances, TypeFamilies #-}
 
