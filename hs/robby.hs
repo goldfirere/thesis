@@ -1,7 +1,9 @@
-{-# LANGUAGE GADTs, PolyKinds, TypeOperators, 
+-- Encoding a little calculus (no lambda!) with a proved-safe optimizer.
+
+{-# LANGUAGE GADTs, PolyKinds, TypeOperators,
              DataKinds, TypeFamilies, ImpredicativeTypes,
              RankNTypes, ScopedTypeVariables,
-             UndecidableInstances, FlexibleContexts, 
+             UndecidableInstances, FlexibleContexts,
              FlexibleInstances #-}
 {-# OPTIONS_GHC -fprint-explicit-kinds #-}
 
@@ -10,7 +12,7 @@ module Wg28 where
 
 {-
 
-   Towards Dependently Typed Haskell 
+   Towards Dependently Typed Haskell
    =================================
 
    Stephanie Weirich, University of Pennsylvania
@@ -47,8 +49,8 @@ GOAL:
      - Type-level computation: Making the type-level like a
        functional programming language
 
-     - Equality constraint abstraction: ( tau1 ~ tau2 ) => tau3 
-       and existential quantification. 
+     - Equality constraint abstraction: ( tau1 ~ tau2 ) => tau3
+       and existential quantification.
 
 -}
 
@@ -59,7 +61,7 @@ GOAL:
 {-
 
   But there is a key limitation: equality constraints are only
-  between types, not kinds. 
+  between types, not kinds.
 
      - GADTs only indexed by types, not kinds
 
@@ -126,7 +128,7 @@ data Tycon (a :: k) where
   TBool    :: Tycon Bool
   TFun     :: Tycon (->)
   TProd    :: Tycon (,)
-  
+
 data TypeRep (a :: k) where
   TCon  :: Tycon c -> TypeRep c
   TApp  :: TypeRep a -> TypeRep b -> TypeRep (a b)
@@ -137,7 +139,7 @@ dynIf (Dyn (TCon TBool) False) _ f = f
 dynIf (Dyn _ _) _ _ = error "runtime type error"
 
 dynApply :: Dynamic -> Dynamic -> Dynamic
-dynApply (Dyn (TApp (TApp (TCon TFun) t1) t2) f) (Dyn t3 x)  
+dynApply (Dyn (TApp (TApp (TCon TFun) t1) t2) f) (Dyn t3 x)
   | Just HRefl <- eqT t1 t3 = Dyn t2 (f x)
 dynApply (Dyn _ _) _ = error "runtime type error"
 
@@ -148,7 +150,7 @@ dynFst (Dyn _ _) = error "runtime type error"
 
 
 data ((a :: k1) :~~: (b :: k2)) where
-  HRefl :: (k1 ~ k2, a ~ b) => a :~~: b  
+  HRefl :: (k1 ~ k2, a ~ b) => a :~~: b
 
 
 eqtycon :: Tycon a -> Tycon b -> Maybe (a :~~: b)
@@ -160,11 +162,11 @@ eqtycon _ _ = Nothing
 
 eqT :: TypeRep a -> TypeRep b -> Maybe (a :~~: b)
 eqT (TCon c1) (TCon c2) = eqtycon c1 c2
-eqT (TApp a1 b1) (TApp a2 b2) = case eqT a1 a2 of 
+eqT (TApp a1 b1) (TApp a2 b2) = case eqT a1 a2 of
   Just HRefl -> case eqT b1 b2 of
      Just HRefl -> Just HRefl
      Nothing -> Nothing
-  Nothing -> Nothing 
+  Nothing -> Nothing
 eqT _ _ = Nothing
 
 
@@ -176,7 +178,7 @@ eqT _ _ = Nothing
 -- entire expression
 data Expr (g :: [*]) (n :: *) :: * -> * where
   Val  :: t -> Expr g n t
-  Plus :: Expr g n n -> Expr g n n -> Expr g n n 
+  Plus :: Expr g n n -> Expr g n n -> Expr g n n
   Cond :: Expr g n Bool -> Expr g n t -> Expr g n t -> Expr g n t
   Var  :: Var g t -> Expr g n t
 
@@ -189,13 +191,13 @@ data Env ( g :: [*] ) :: * where
   EZ   :: Env '[]
   ES   :: t -> Env ts -> Env (t ': ts)
 
-                         
+
 vlookup :: Var g t -> Env g -> t
 vlookup VZ (ES x _) = x
 vlookup (VS v) (ES _ xs) = vlookup v xs
 
 
-                          
+
 eval :: Num n =>  Expr g n t -> Env g -> t
 eval (Val n)         r = n
 eval (e1 `Plus` e2)  r = eval e1 r + eval e2 r
@@ -230,11 +232,11 @@ type family Eval (x :: Expr g Nat t) (r :: Env g) :: t where
   Eval ('Cond e0 e1 e2) r = If (Eval e0 r) (Eval e1 r) (Eval e2 r)
   Eval ('Var x) r = VLookup x r
   -- Eval ('Abs t) r = \x -> Eval t (x ': r)
-  
+
 
 -- a Singleton for that promoted GADT (i.e. a GADT indexed by a GADT)
 -- Sing is a data family for singleton types
-        
+
 -- NOTE that we have defined (Sing u :: Nat) to use Integers as the
 -- runtime representation of type-level Nats (see singletons.hs)
 
@@ -253,14 +255,14 @@ data instance Sing (r :: Env g) where
   SEZ   :: Sing ('EZ :: Env '[])
   SES   :: Sing (u :: t) -> Sing (us :: Env ts)
             -> Sing (ES u us :: Env (t ': ts))
-                                                                      
+
 
 sLookup :: Sing (v :: Var g t) -> Sing (r :: Env g) -> Sing (VLookup v r)
 sLookup SVZ (SES sx _) = sx
 sLookup (SVS sv) (SES _ sxs) = sLookup sv sxs
 
 
-                                     
+
 -- An evaluator for the singletons; in lock-step with the type level
 sEval :: Sing e -> Sing g -> Sing (Eval e g)
 sEval (SVal n) r = n
@@ -278,7 +280,7 @@ data Equivalent e where
 
 
 sOpt :: Sing e -> Equivalent e
-sOpt (SVal x) = Result (\ _ -> Refl) (SVal x) 
+sOpt (SVal x) = Result (\ _ -> Refl) (SVal x)
 
 sOpt (SCond (SVal STrue)  e1 _) = Result (\ _ -> Refl) e1
 sOpt (SCond (SVal SFalse) _ e2) = Result (\ _ -> Refl) e2
@@ -292,7 +294,7 @@ sOpt e@(SPlus (SVal sn) se) =
   case sEqNat sn (sing :: Sing 0) of
      Just Refl -> case sOpt se of
        Result p se' -> Result (\r -> case p r of
-                                      Refl -> Refl) se' 
+                                      Refl -> Refl) se'
      Nothing   -> Result (\_ -> Refl) e
 
 -- uses TypeNat equality (n + 0) ~ n
@@ -316,9 +318,9 @@ sOpt (SVar x) = Result (\_ -> Refl) (SVar x)
 {- Part III: What's next -}
 
 -- Pi!
-  
+
 -- replace  "forall e. Sing e ->"  with "pi e -> " in types
-  
+
 -- no need for type family as eval/Eval available from single definition
 
 {-
@@ -327,22 +329,22 @@ data Equivalent e where
   Result :: pi e' -> (Eval e ~ Eval e') => Equivalent e
 
 opt :: pi e -> Equivalent e
-opt (Val x) = Result (Val x) 
+opt (Val x) = Result (Val x)
 opt (Plus e0 e1) = case (opt e0, opt e1) of
-   (Result e0', Result e1') -> Result (Plus e0' e1')                           
-opt (Cond (Val True)  e1 e2) = Result e1 
-opt (Cond (Val False) e1 e2) = Result e2 
+   (Result e0', Result e1') -> Result (Plus e0' e1')
+opt (Cond (Val True)  e1 e2) = Result e1
+opt (Cond (Val False) e1 e2) = Result e2
 opt (Cond e0 e1 e2) = case (opt e0, opt e1, opt e2) of
-  (Result e0', Result e1' , Result e2') -> Result (Cond e0' e1' e2') 
+  (Result e0', Result e1' , Result e2') -> Result (Cond e0' e1' e2')
 opt (Plus (Val 0) e) = case opt e of
-  Result e' -> Result e' 
+  Result e' -> Result e'
 opt (Plus e (Val 0)) = case (opt e) of
-  (Result e') ->  Result e' 
+  (Result e') ->  Result e'
 
 -}
 
 
--- Sigma! 
+-- Sigma!
 
 -- Equivalent e is a (refined) Sigma type.
 -- What if we had such types without having to predeclare them?
@@ -350,7 +352,7 @@ opt (Plus e (Val 0)) = case (opt e) of
 
 {-
 opt :: pi e -> { e' | Eval e ~ Eval e' }
-opt (Val x) = (Val x) 
+opt (Val x) = (Val x)
 opt (Plus e0 e1) = Plus e0' e1' where
   e0' = opt e0
   e1' = opt e1
@@ -363,12 +365,12 @@ opt (Cond e0 e1 e2) = Cond e0' e1' e2' where
 opt (Plus (Val 0) e) = e' where
   e' = opt e
 opt (Plus e (Val 0)) = e' where
-  e' = opt e 
+  e' = opt e
 -}
 
 {- Part IV: References -}
 
-{-   
+{-
 
 Available from http://www.cis.upenn.edu/~eir/pubs.html
 

@@ -400,7 +400,8 @@ telescope of these unification variables and solving simply produces a
 substitution. However, this naive view does not work out
 because of unification variable generalization.\footnote{The treatment
 of unification variables throughout \bake/ is essentially identical to
-the treatment by \citet{gundry-thesis}.}
+the treatment by \citet{gundry-thesis}, which is itself closely based
+on the work of \citet{simple-bidirectional}.}
 
 Consider a $\lambda$-abstraction over the variable $[[x]]$. When doing
 constraint generation inside of the $\lambda$, the kinds of fresh unification
@@ -408,7 +409,7 @@ variables might mention $[[x]]$. Here is a case in point, which will serve
 as a running example:
 %
 \begin{spec}
-poly :: forall k (a :: k) -> ...
+poly :: forall j (b :: j) -> ...
 
 example = \ k a -> poly k a
 \end{spec}

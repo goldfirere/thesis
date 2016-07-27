@@ -1,3 +1,5 @@
+-- Using singletons, etc., to do a "matchable" thing.
+
 {-# LANGUAGE DeriveDataTypeable, TypeFamilies, TemplateHaskell, DataKinds,
              PolyKinds, GADTs, RankNTypes, MultiParamTypeClasses,
              FlexibleInstances, UndecidableInstances,
@@ -11,6 +13,7 @@
              ExtendedDefaultRules, PatternSynonyms, EmptyCase,
              DeriveFunctor, OverloadedLists -- , OverlappingInstances,
              -- NullaryTypeClasses
+             , TypeInType
  #-}
 
 module Scratch where

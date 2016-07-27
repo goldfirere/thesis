@@ -16,7 +16,7 @@ import Data.Kind ( type (*) )
 Functional programmers use dependent types in two primary ways, broadly
 speaking: in order to eliminate erroneous programs from being accepted, and in
 order to write intricate programs that a simply-typed language cannot accept.
-In this chapter, we will motivate the use of dependent types from both of
+In this chapter, I will motivate the use of dependent types from both of
 these angles. The chapter concludes with a section motivating why Haskell, in
 particular, is ripe for dependent types.
 
@@ -47,20 +47,20 @@ working.
 \rae{There will be overlap between this section and \pref{sec:pattern-matching}.
 Double-check it.}
 
-\subsection{A strongly typed simply typed lambda calculus interpreter}
+\subsection{A strongly typed simply typed $\lambda$-calculus interpreter}
 \label{sec:stlc}
 
-It is straightforward to write an interpreter for the simply typed lambda
-calculus (STLC) in Haskell. However, how can we be sure that our interpreter
-is written correctly? Using some features of dependent types---notably,
-generalized algebraic datatypes, or GADTs---we can incorporate the STLC's
-type discipline into our interpreter. Using the extra features in Dependent
-Haskell, we can then write both a big-step semantics and a small-step
-semantics and have GHC check that they correspond.
+It is straightforward to write an interpreter for the simply typed
+$\lambda$-calculus (STLC) in Haskell. However, how can we be sure that our
+interpreter is written correctly? Using some features of dependent
+types---notably, generalized algebraic datatypes, or GADTs---we can
+incorporate the STLC's type discipline into our interpreter. Using the extra
+features in Dependent Haskell, we can then write both a big-step semantics and
+a small-step semantics and have GHC check that they correspond.
 
 \subsubsection{Type definitions}
 
-Our first step is to write a type to represent the types in our lambda-calculus:
+Our first step is to write a type to represent the types in our $\lambda$-calculus:
 \begin{code}
 data Ty = Unit | Ty :~> Ty
 infixr 0 :~>
@@ -68,7 +68,7 @@ infixr 0 :~>
 I choose |Unit| as our one and only base type, for simplicity. This calculus
 is clearly not suitable for computation, but it demonstrates the use of GADTs
 well. The model described here scales up to a more featureful
-lambda-calculus.\footnote{For example, see my work on \package{glambda} at
+$\lambda$-calculus.\footnote{For example, see my work on \package{glambda} at
   \url{https://github.com/goldfirere/glambda}.}
 The |infixr| declaration declares that the constructor |:~>| is right-associative,
 as usual.
@@ -77,8 +77,10 @@ We are then confronted quickly with the decision of how to encode bound
 variables. Let's choose de Bruijn indices~\cite{debruijn}, as these are well-known
 and conceptually simple. However, instead of using natural numbers to
 represent our variables, we'll use a custom |Elem| type:
+\rae{Make sure I use |Type| throughout the dissertation, and introduce it 
+in Chapter 2.}
 \begin{code}
-data Elem :: [a] -> a -> * ^^ where
+data Elem :: [a] -> a -> Type where
   EZ  ::               Elem  (x !: xs)  x
   ES  :: Elem xs x ->  Elem  (y !: xs)  x
 \end{code}
@@ -100,7 +102,7 @@ Like with |Elem list elt|, a value of type |Expr ctx ty| serves two purposes:
 it records the structure of our expression, \emph{and} it proves a property,
 namely that the expression is well-typed in context |ctx| with type |ty|.
 Indeed, with some practice, we can read off the typing rules for the simply
-typed lambda calculus direct from |Expr|'s definition. In this way, it is
+typed $\lambda$-calculus direct from |Expr|'s definition. In this way, it is
 impossible to create an ill-typed |Expr| (ignoring the possibility of
 |undefined|).
 
@@ -121,7 +123,7 @@ eval :: Expr ![] ty -> Val ty
 This type says that a well-typed, closed expression (that is, the context
 is empty) can evaluate to a well-typed, closed value, of the same type |ty|.
 Only a type-preserving evaluator will have that type, so GHC can check
-the type-soundness of our lambda calculus as it compiles our interpreter.
+the type-soundness of our $\lambda$-calculus as it compiles our interpreter.
 
 Of course, to implement |eval|, we'll need several auxiliary functions, each
 with intriguing types:
@@ -263,9 +265,18 @@ Instead, we want to ensure that the small-step semantics respects the big-step
 semantics. That is, after every step, we want the value---as given by the
 big-step semantics---to remain the same. We thus want the small-step stepper
 to return a custom datatype, marrying the result of stepping with evidence
-that the value of this result agrees with the value of the original expression:\footnote{This example fails because it contains data constructors with constraints
-occurring after visible parameters, something currently unsupported by GHC.
-If the $\Pi$-bound parameters were invisible, this would work.}
+that the value of this result agrees with the value of the original expression:\footnote{This example fails for two reasons:
+\begin{itemize}
+\item It contains data constructors with constraints
+occurring after visible parameters, something currently unsupported by GHC,
+as GHC imposes rigid requirements on the shape of data constructor types.
+These requirements will be relaxed as I implement dependent types.
+\item Writing a type-level version of |shift| (automatic promotion with |!|
+is not yet implemented) is not yet possible. The problem is that one of
+the helper function's arguments has a type that mentions the |++| function,
+something that is not yet accepted.
+\end{itemize}
+I do not expect either of these problems to be significant.}
 \begin{noway}
 \begin{spec}
 data StepResult :: Expr ![] ty -> * ^^ where

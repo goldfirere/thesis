@@ -703,7 +703,7 @@ Integrating dependent types with Haskell's \emph{role}
 mechanism~\cite{safe-coercions-jfp} is a challenge, as explored in some depth
 in my prior, unpublished work~\cite{overabundance-of-equalities}.
 Instead of addressing this issue head-on, I am deferring the resolution
-until we can find a better solution that what was proposed in that prior
+until we can find a better solution than what was proposed in that prior
 work. That approach, unworthy of being repeated here, is far too ornate
 and hard-to-predict. Instead, I make a simplifying assumption that all
 coercions used in types have a nominal role.\footnote{If you are unfamiliar
@@ -722,8 +722,8 @@ types than does the ornate approach in my prior work.
 \subsection{Impredicativity, or lack thereof}
 \label{sec:impredicativity}
 
-Despite a published paper~\cite{boxy-types} \rae{and some recent, ongoing
-  work---cite Alejandro if I can}, GHC lacks support for impredicativity.\footnote{There does exist an extension \ext{-XImpredicativeTypes}. However, it is
+Despite a published paper~\cite{boxy-types} and continued attempts at
+cracking this nut, GHC lacks support for impredicativity.\footnote{There does exist an extension \ext{-XImpredicativeTypes}. However, it is
 unmaintained and quite broken.}
 Here, I use the following definitions in my meaning of impredicativity:
 \begin{definition*}[Simple types]

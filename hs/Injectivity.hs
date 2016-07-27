@@ -1,3 +1,6 @@
+-- Attempt at using injectivity to prove false. It fails because
+-- GADT pattern matching in types is wobbly.
+
 {-# LANGUAGE TypeOperators, GADTs, UnicodeSyntax, TypeInType,
              TypeFamilies, ScopedTypeVariables, AllowAmbiguousTypes,
              TypeFamilyDependencies, NoImplicitPrelude,

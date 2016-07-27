@@ -1,6 +1,10 @@
+-- An attempt to write a Sigma type.
+-- Fails because we can't have a type family application to the
+-- left on a type family equation.
+
 {-# LANGUAGE TypeFamilies, DataKinds, PolyKinds, GADTs, TypeOperators,
              ScopedTypeVariables, TemplateHaskell, FlexibleInstances,
-             ConstraintKinds, UndecidableInstances #-}
+             ConstraintKinds, UndecidableInstances, TypeInType #-}
 {-# OPTIONS_GHC -fwarn-unticked-promoted-constructors #-}
 
 module Sigma where
@@ -8,6 +12,7 @@ module Sigma where
 import Data.Type.Equality
 import Data.Proxy
 import GHC.Exts
+import Data.Kind
 
 data family Sing (a :: k)
 
@@ -46,12 +51,17 @@ data instance Sing (x :: Maybe k) where
 
 $(return [])
 
-instance SingKind Nat where
-  type FromSing 'SZero = 'Zero
-  type FromSing ('SSucc x) = 'Succ (FromSing x)
+type family FromSingNat (n :: Sing (k :: Nat)) :: Nat where
+  FromSingNat 'SZero = 'Zero
+  FromSingNat ('SSucc x) = 'Succ (FromSingNat x)
 
-  type ToSing 'Zero = 'SZero
-  type ToSing ('Succ x) = 'SSucc (ToSing x)
+type family ToSingNat (n :: Nat) :: Sing n where
+  ToSingNat 'Zero = 'SZero
+  ToSingNat ('Succ x) = 'SSucc (ToSingNat x)
+
+instance SingKind Nat where
+  type FromSing n = FromSingNat n
+  type ToSing n = ToSingNat n
 
   fromSing SZero = Zero
   fromSing (SSucc x) = Succ (fromSing x)
@@ -60,12 +70,17 @@ instance SingKind Nat where
   fromSingCorrect (Sing (SSucc x)) = case fromSingCorrect (Sing x) of
     Refl -> Refl
 
-instance SingKind k => SingKind (Maybe k) where
-  type FromSing 'SNothing = 'Nothing
-  type FromSing ('SJust x) = 'Just (FromSing x)
+type family FromSingMaybe (n :: Sing (k :: Maybe k')) :: Maybe k' where
+  FromSingMaybe 'SNothing = 'Nothing
+  FromSingMaybe ('SJust x) = 'Just (FromSing x)
 
-  type ToSing 'Nothing = 'SNothing
-  type ToSing ('Just x) = 'SJust (ToSing x)
+type family ToSingMaybe (x :: Maybe k) :: Sing x where
+  ToSingMaybe 'Nothing = 'SNothing
+  ToSingMaybe ('Just x) = 'SJust (ToSing x)
+
+instance SingKind k => SingKind (Maybe k) where
+  type FromSing x = FromSingMaybe x
+  type ToSing x = ToSingMaybe x
 
   fromSing SNothing = Nothing
   fromSing (SJust x) = Just (fromSing x)

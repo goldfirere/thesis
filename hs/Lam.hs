@@ -1,11 +1,12 @@
 {-# LANGUAGE TypeOperators, EmptyCase, DataKinds, PolyKinds, TypeFamilies,
-             GADTs #-}
+             GADTs, TypeInType #-}
 {-# OPTIONS_GHC -fwarn-unticked-promoted-constructors #-}
 
 module Lam where
 
 import Prelude ()
 import Data.Proxy
+import Data.Kind
 
 data Ty :: * where
   Unit  :: Ty

@@ -1,3 +1,4 @@
+-- As used in motivation.
 
 {-# LANGUAGE DeriveDataTypeable, TypeFamilies, TemplateHaskell, DataKinds,
              PolyKinds, GADTs, RankNTypes, MultiParamTypeClasses,
@@ -7,7 +8,7 @@
              MonadComprehensions, DeriveGeneric, FlexibleContexts,
              GeneralizedNewtypeDeriving, ConstraintKinds,
              LambdaCase, ViewPatterns, AllowAmbiguousTypes,
-             DefaultSignatures, -- ImpredicativeTypes, 
+             DefaultSignatures, -- ImpredicativeTypes,
              ImplicitParams, MagicHash, UnboxedTuples,
              ExtendedDefaultRules, PatternSynonyms,
              DeriveFunctor, OverloadedLists -- , OverlappingInstances,

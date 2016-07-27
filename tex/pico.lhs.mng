@@ -3410,7 +3410,7 @@ of varying representations (like |Int# -> Bool|, where |Int#| has kind
 
 Because representation polymorphism simply amounts to adding more sorts
 to a language, it would seem not to run into trouble with type safety. And
-I indeed believe this is true, that representation polymorphism does threaten
+I indeed believe this is true, that representation polymorphism does not threaten
 the type safety proof. However, it is very syntactically painful to add to
 the formalism, essentially requiring annotating every $\Pi$ with the sort
 of its binder. This annotation becomes necessary for precisely the same
