@@ -19,6 +19,8 @@ import Data.Singletons
 import Util.If
 import Control.Catchable
 
+type Read = !Read
+
 \end{code}
 
 %endif
@@ -187,14 +189,13 @@ This function is used by |readFile|:
 \begin{code}
 readFile :: String -> Eff IO ![FILE_IO (), STDIO, EXCEPTION String] [String]
 readFile path 
-  = catch
-      (do   _ <- open path SRead
-            Test SHere (raise ("Cannot open file: " ++ path)) $
-              do  lines <- lift readLines
-                  close (at _) (at (!Read))
-                  return lines)
-      (\ err -> do  putStrLn ("Failed: " ++ err)
-                    return [])
+  = catch  (do  _ <- open path SRead
+                Test SHere (raise ("Cannot open file: " ++ path)) $
+                  do  lines <- lift readLines
+                      close (at _) (at Read)
+                      return lines)
+           (\ err -> do  putStrLn ("Failed: " ++ err)
+                         return [])
 \end{code}
 \end{working}
 %}
