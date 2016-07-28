@@ -37,7 +37,7 @@ eval' (Var x) = do vs <- get
                      Just val -> return val
 eval' (Add l r) = (+) <$> eval' l <*> eval' r
 eval' (Random upper) = do num <- rndNat 0 upper
-                          putStrLn ("Random value: " P.++ show num)
+                          putStrLn ("Random value: " ++ show num)
                           return num
 
 runEval :: Vars -> Expr -> Maybe Nat

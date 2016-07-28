@@ -9,7 +9,7 @@ import qualified Data.Set as Set
 import Data.Primitive.ByteArray ( ByteArray )
 import Data.Vector ( Vector )
 import Prelude hiding ( Maybe(..), Bool(..) )
-import GHC.Exts ( Constraint )
+import GHC.Exts ( Constraint, fromString )
 import Data.List ( intercalate )
 import Data.Kind ( type (*) )
 \end{code}

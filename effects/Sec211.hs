@@ -32,7 +32,7 @@ insert x (Node l x' r)
   | otherwise = Node l x' (insert x r)
 
 inserts :: Ord a => [a] -> Tree a -> Tree a
-inserts xs tree = foldl (flip insert) tree xs
+inserts xs t = foldl (flip insert) t xs
 
 tree :: Tree Nat
 tree = inserts [4, 3, 8, 0, 2, 6, 7] Leaf

@@ -4,7 +4,8 @@
 %include rae.fmt
 
 \begin{code}
-import Data.Kind ( type (*) )
+import Data.Kind ( type (*), Type )
+import Prelude
 \end{code}
 
 %endif
@@ -610,17 +611,9 @@ In today's Haskell, the lack of heterogeneous equality means that |dynApply|
 must rely critically on |unsafeCoerce|. With heterogeneous equality, we can
 see that |dynApply| can remain safely outside the trusted code base.
 
-\subsection{Inferred algebraic effects}
-
-\citet{idris-effects} describes an approach to the challenge of embedding
-side effects into a pure, functional language. His approach is to
-use composable algebraic effects, implemented as a domain-specific language
-embedded in Idris~\cite{idris}, a full spectrum dependently typed language. Brady's
-library is translatable directly into Dependent Haskell. With heavy
-use of singletons, all of the code described in the original paper
-is even implementable in GHC 8.\footnote{The code is
-available at 
-
+%if style == poly
+%include effects.lhs
+%endif
 
 \section{Why Haskell?}
 \label{sec:why-haskell}

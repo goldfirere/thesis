@@ -3,10 +3,10 @@
 {-# LANGUAGE TypeInType, RebindableSyntax, GADTs, FlexibleInstances,
              MultiParamTypeClasses, TypeFamilies, ScopedTypeVariables,
              TypeApplications, AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
 
 module Effect.Random where
 
-import qualified Prelude as P
 import Data.Kind
 import Data.Nat
 import Effects

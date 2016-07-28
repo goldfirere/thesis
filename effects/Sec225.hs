@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeInType, RebindableSyntax, FlexibleContexts,
              OverloadedStrings, ScopedTypeVariables, TypeApplications,
              AllowAmbiguousTypes, TypeFamilies #-}
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
 
 module Sec225 where
 
@@ -12,7 +13,7 @@ import Effect.StdIO
 import Effect.Exception
 import Control.Catchable
 import qualified Prelude as P
-import Prelude ( IO, not, reverse, (++), ($), Either(..), Bool(..), FilePath
+import Prelude ( IO, not, reverse, (++), ($), FilePath
                , mapM_, map, length )
 import Data.AChar
 import Data.Singletons
@@ -23,8 +24,8 @@ type Io = TyCon1 IO
 readLines_ :: Eff Io '[FILE_IO (OpenFile Read)] [String]
 readLines_ = readAcc []
   where
-    readAcc :: [String]
-            -> Eff Io '[FILE_IO (OpenFile Read)] [String]
+    -- readAcc :: [String] -> Eff Io '[FILE_IO (OpenFile Read)] [String]
+    -- Haskell doesn't need this signature. :)
     readAcc acc = do e <- eof
                      if (not e)
                         then do str <- readLine
@@ -39,7 +40,7 @@ readLines = lift @_ @_ @prf readLines_
 readFile :: String -> Eff Io '[FILE_IO (), STDIO, EXCEPTION String] [String]
 readFile path = catch @(TyCon1 (Eff Io '[FILE_IO (), STDIO, EXCEPTION String]))
                       @_ @[String]
-                      (do open path SRead
+                      (do _ <- open path SRead
                           Test SHere (raise ("Cannot open file: " ++ path)) $
                             do lines <- readLines
                                close @_ @Read

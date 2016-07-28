@@ -1,5 +1,7 @@
 -- One module to rule them all.
 
+{-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module All where
 
 import Sec211

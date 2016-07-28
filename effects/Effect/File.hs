@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeInType, GADTs, FlexibleInstances, MultiParamTypeClasses,
              TemplateHaskell, ScopedTypeVariables, TypeFamilies,
              FlexibleContexts, TypeApplications, AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
 
 module Effect.File where
 
@@ -13,7 +14,6 @@ import Data.Kind
 import Data.Singletons.Prelude
 import Data.Singletons.TH
 import Data.AChar
-import qualified Prelude as P
 import Prelude ( Either(..), Bool(..), IO )
 
 $(singletons [d| data Mode = Read | Write |])
@@ -82,53 +82,46 @@ instance Handler (TyCon3 FileIO) (TyCon1 IO) where
 type FILE_IO t = MkEff t (TyCon3 FileIO)
 type Fileio = TyCon3 FileIO
 
-open_ :: Handler Fileio e
-      => String -> Sing (m :: Mode)
+open_ :: String -> Sing (m :: Mode)
       -> EffM e '[FILE_IO ()] '[FILE_IO (Either () (OpenFile m))] Bool
 open_ f SRead = case toSing f of SomeSing f' -> effect SHere (SOpenRead f')
 open_ f SWrite = case toSing f of SomeSing f' -> effect SHere (SOpenWrite f')
 
 open :: forall xs prf m e.
-        (SingI (prf :: SubList '[FILE_IO ()] xs), Handler Fileio e)
+        (SingI (prf :: SubList '[FILE_IO ()] xs))
      => String -> Sing (m :: Mode)
      -> EffM e xs (UpdateWith '[FILE_IO (Either () (OpenFile m))] xs prf) Bool
 open s m = lift @_ @_ @prf (open_ s m)
 
-close_ :: Handler Fileio e
-       => EffM e '[FILE_IO (OpenFile m)] '[FILE_IO ()] ()
+close_ :: EffM e '[FILE_IO (OpenFile m)] '[FILE_IO ()] ()
 close_ = effect SHere SClose
 
 close :: forall xs m prf e.
-         (SingI (prf :: SubList '[FILE_IO (OpenFile m)] xs), Handler Fileio e)
+         SingI (prf :: SubList '[FILE_IO (OpenFile m)] xs)
       => EffM e xs (UpdateWith '[FILE_IO ()] xs prf) ()
 close = lift @_ @_ @prf close_
 
-readLine_ :: Handler Fileio e
-          => Eff e '[FILE_IO (OpenFile Read)] String
+readLine_ :: Eff e '[FILE_IO (OpenFile Read)] String
 readLine_ = effect SHere SReadLine
 
 readLine :: forall xs prf e.
-            (SingI (prf :: SubList '[FILE_IO (OpenFile Read)] xs), Handler Fileio e)
+            SingI (prf :: SubList '[FILE_IO (OpenFile Read)] xs)
          => EffM e xs (UpdateWith '[FILE_IO (OpenFile Read)] xs prf) String
 readLine = lift @_ @_ @prf readLine_
 
-writeLine_ :: Handler Fileio e
-           => String -> Eff e '[FILE_IO (OpenFile Write)] ()
+writeLine_ :: String -> Eff e '[FILE_IO (OpenFile Write)] ()
 writeLine_ s = case toSing s of SomeSing s' -> effect SHere (SWriteLine s')
 
 writeLine :: forall xs prf e.
-             ( SingI (prf :: SubList '[FILE_IO (OpenFile Write)] xs)
-             , Handler Fileio e )
+             SingI (prf :: SubList '[FILE_IO (OpenFile Write)] xs)
           => String
           -> EffM e xs (UpdateWith '[FILE_IO (OpenFile Write)] xs prf) ()
 writeLine s = lift @_ @_ @prf (writeLine_ s)
 
-eof_ :: Handler Fileio e
-     => Eff e '[FILE_IO (OpenFile Read)] Bool
+eof_ :: Eff e '[FILE_IO (OpenFile Read)] Bool
 eof_ = effect SHere SEOF
 
 eof :: forall xs prf e.
-       ( SingI (prf :: SubList '[FILE_IO (OpenFile Read)] xs)
-       , Handler Fileio e )
+       SingI (prf :: SubList '[FILE_IO (OpenFile Read)] xs)
     => EffM e xs (UpdateWith '[FILE_IO (OpenFile Read)] xs prf) Bool
 eof = lift @_ @_ @prf eof_

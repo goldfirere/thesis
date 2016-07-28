@@ -7,7 +7,8 @@
 import GHC.TypeLits ( type (-), TypeError, ErrorMessage(..) )
 import qualified Prelude as P
 import Prelude ( Num, Int, String, Either(..), (-), fromInteger, undefined,
-                 Bool(..), Maybe(..) )
+                 Bool(..), Maybe(..), (==) )
+import GHC.Exts ( fromString )
 import Unsafe.Coerce
 import Data.Kind ( Type )
 import Data.Singletons.Prelude
@@ -461,7 +462,7 @@ data constructors (as in |Just :: a -> Maybe a|) can still be written with
 an ordinary arrow, even though those arrows should properly be |!->|.
 Along similar lines, any arrow written in a stretch of Haskell that is
 lexically a kind (that is, in a type signature in a type) is interpreted as
-|!->| as long as the \ext{-XDependentTypes} extension is not enabled.
+|!->| as long as the \ext{DependentTypes} extension is not enabled.
 
 We can now say |!map :: (a -> b) -> [a] -> [b]|, with unmatchable |->|,
 and retain the flexibility we have in the expression |map|.
@@ -723,7 +724,7 @@ types than does the ornate approach in my prior work.
 \label{sec:impredicativity}
 
 Despite a published paper~\cite{boxy-types} and continued attempts at
-cracking this nut, GHC lacks support for impredicativity.\footnote{There does exist an extension \ext{-XImpredicativeTypes}. However, it is
+cracking this nut, GHC lacks support for impredicativity.\footnote{There does exist an extension \ext{ImpredicativeTypes}. However, it is
 unmaintained and quite broken.}
 Here, I use the following definitions in my meaning of impredicativity:
 \begin{definition*}[Simple types]

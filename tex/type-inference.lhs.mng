@@ -8,6 +8,7 @@
 import Data.Maybe ( isNothing )
 import Data.Kind
 import Data.Singletons hiding ( Proxy )
+import Prelude
 
 \end{code}
 

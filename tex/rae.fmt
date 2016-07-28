@@ -1,5 +1,7 @@
 %include polycode.fmt
 
+%format (at x) = "@" x
+
 %if style == poly
 %format !! = "\mathop{}\tick\tick"
 %format ! = "\mathop{}\tick"
@@ -47,7 +49,8 @@
 %format alpha = "\alpha"
 %format beta = "\beta"
 %format Type = "\ottkw{Type}"
-%format (at x) = "@" x
+%format <$> = "\mathop{{\langle}{\$}{\rangle}}"
+%format <*> = "\mathop{{\langle}{*}{\rangle}}"
 
 % suppress some built-in formatting of lhs2TeX:
 %format not = "\id{not}"
@@ -76,7 +79,8 @@
 	     StandaloneDeriving, ScopedTypeVariables,
 	     MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances,
 	     UndecidableInstances, TemplateHaskell, TypeInType,
-	     AllowAmbiguousTypes, TypeApplications #-}
+	     AllowAmbiguousTypes, TypeApplications, FlexibleContexts,
+	     RebindableSyntax, OverloadedStrings #-}
 {-# OPTIONS_GHC -Wall -Wno-unused-imports
                       -Wno-name-shadowing
 		      -Wno-redundant-constraints

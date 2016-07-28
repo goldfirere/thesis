@@ -3,6 +3,8 @@
 {-# LANGUAGE TypeInType, RebindableSyntax, TypeOperators,
              TemplateHaskell, ScopedTypeVariables, TypeFamilies,
              GADTs #-}
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors
+                -Wno-name-shadowing #-}
 
 module Sec212 where
 
@@ -10,8 +12,6 @@ import Sec211
 import Effects
 import Effect.State
 import Data.Nat
-import qualified Prelude as P
-import Data.Singletons.Prelude
 import Data.Singletons.TH
 
 $(singletons [d| data Vars = Count | Tag |])

@@ -5,6 +5,7 @@
              LambdaCase, OverloadedStrings, ScopedTypeVariables,
              InstanceSigs, FlexibleContexts, TypeApplications,
              AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
 
 module Effect.StdIO where
 
@@ -56,28 +57,28 @@ instance Handler (TyCon3 StdIO) (TyCon1 IOStream) where
 
 type STDIO = MkEff () (TyCon3 StdIO)
 
-putStr_ :: Handler (TyCon3 StdIO) e => String -> Eff e '[STDIO] ()
+putStr_ :: String -> Eff e '[STDIO] ()
 putStr_ s = case toSing s of SomeSing s' -> effect SHere (SPutStr s')
 
 putStr :: forall xs prf e.
-          (SingI (prf :: SubList '[STDIO] xs), Handler (TyCon3 StdIO) e)
+          SingI (prf :: SubList '[STDIO] xs)
        => String -> EffM e xs (UpdateWith '[STDIO] xs prf) ()
 putStr s = lift @_ @_ @prf (putStr_ s)
 
-putStrLn_ :: Handler (TyCon3 StdIO) e => String -> Eff e '[STDIO] ()
+putStrLn_ :: String -> Eff e '[STDIO] ()
 putStrLn_ s = case toSing (s P.++ [Cnewline]) of
                 SomeSing s' -> effect SHere (SPutStr s')
 
 putStrLn :: forall xs prf e.
-          (SingI (prf :: SubList '[STDIO] xs), Handler (TyCon3 StdIO) e)
-       => String -> EffM e xs (UpdateWith '[STDIO] xs prf) ()
+            SingI (prf :: SubList '[STDIO] xs)
+         => String -> EffM e xs (UpdateWith '[STDIO] xs prf) ()
 putStrLn s = lift @_ @_ @prf (putStrLn_ s)
 
-getStr_ :: Handler (TyCon3 StdIO) e => Eff e '[STDIO] String
+getStr_ :: Eff e '[STDIO] String
 getStr_ = effect SHere SGetStr
 
 getStr :: forall xs prf e.
-          (SingI (prf :: SubList '[STDIO] xs), Handler (TyCon3 StdIO) e)
+          SingI (prf :: SubList '[STDIO] xs)
        => EffM e xs (UpdateWith '[STDIO] xs prf) String
 getStr = lift @_ @_ @prf getStr_
 

@@ -4,6 +4,7 @@
              MultiParamTypeClasses, TypeFamilies, ScopedTypeVariables,
              InstanceSigs, TypeApplications, RebindableSyntax,
              AllowAmbiguousTypes, FlexibleContexts #-}
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
 
 module Effect.State where
 

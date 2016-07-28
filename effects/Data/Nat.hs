@@ -1,5 +1,6 @@
 {-# LANGUAGE TemplateHaskell, TypeInType, TypeFamilies, ScopedTypeVariables,
              GADTs, UndecidableInstances, InstanceSigs, TypeOperators #-}
+{-# OPTIONS_GHC -Wno-redundant-constraints -Wno-unticked-promoted-constructors #-}
 
 module Data.Nat where
 

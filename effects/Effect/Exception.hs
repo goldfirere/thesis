@@ -3,13 +3,13 @@
 {-# LANGUAGE TypeInType, GADTs, FlexibleInstances, MultiParamTypeClasses,
              TypeFamilies, ScopedTypeVariables, AllowAmbiguousTypes,
              TypeApplications, FlexibleContexts, UndecidableInstances #-}
-
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors
+                -Wno-orphans #-}
 module Effect.Exception where
 
 import Effects
 import Data.Kind
 import Data.Singletons
-import System.IO.Error
 import Control.Catchable
 
 data Exception :: Type -> Type -> Type -> Type -> Type where

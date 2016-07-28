@@ -3,6 +3,8 @@
 {-# LANGUAGE TypeInType, GADTs, TypeFamilies, FlexibleInstances,
              MultiParamTypeClasses, ScopedTypeVariables, TypeApplications,
              AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors
+                -Wno-name-shadowing #-}
 
 module Effect.Select where
 

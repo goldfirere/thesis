@@ -3,15 +3,14 @@
 {-# LANGUAGE TypeInType, RebindableSyntax, TypeFamilies, GADTs,
              TypeOperators, ScopedTypeVariables, UndecidableInstances,
              TypeFamilyDependencies, FlexibleContexts,
-             ConstraintKinds, PartialTypeSignatures,
-             TypeApplications #-}
-{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
+             ConstraintKinds, TypeApplications #-}
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors
+                -Wno-name-shadowing #-}
 
 module Sec4 where
 
 import Data.Kind
 import Data.Nat
-import qualified Prelude as P
 import Prelude ( Bool(..), (<$>), (<*>), IO, ($), (==) )
 import Effects
 import Effect.Random

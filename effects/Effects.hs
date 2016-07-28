@@ -5,16 +5,17 @@
              RebindableSyntax, MonadFailDesugaring, TypeApplications,
              FlexibleContexts, LambdaCase, EmptyCase, FlexibleInstances,
              ConstraintKinds, TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-unticked-promoted-constructors
+                -Wno-name-shadowing #-}
 
 module Effects where
 
 import Data.Kind
 import Data.Singletons.Prelude
-import Data.Singletons.TH
 import qualified Prelude as P
-import Prelude ( Either(..), error, undefined,
+import Prelude ( Either(..), error,
                  Applicative(..), Functor(..), (<$>), Bool(..),
-                 (==) )
+               )
 import Control.Catchable
 
 type Good x = (DemoteRep x ~ x, SingKind x)
@@ -366,6 +367,6 @@ mapE :: Applicative m => (a -> Eff (TyCon1 m) xs b) -> [a] -> Eff (TyCon1 m) xs 
 mapE _ [] = pure []
 mapE f (x : xs) = (:) <$> f x <*> mapE f xs
 
-when :: Applicative m => Bool -> Eff (TyCon1 m) xs () -> Eff (TyCon1 m) xs ()
+when :: Bool -> Eff (TyCon1 m) xs () -> Eff (TyCon1 m) xs ()
 when True e = e
 when False _ = pure ()
