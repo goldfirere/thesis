@@ -19,12 +19,10 @@ import Data.AChar
 import Data.Singletons
 import Util.If
 
-type Io = TyCon1 IO
-
-readLines_ :: Eff Io '[FILE_IO (OpenFile Read)] [String]
+readLines_ :: Eff IO '[FILE_IO (OpenFile Read)] [String]
 readLines_ = readAcc []
   where
-    -- readAcc :: [String] -> Eff Io '[FILE_IO (OpenFile Read)] [String]
+    -- readAcc :: [String] -> Eff IO '[FILE_IO (OpenFile Read)] [String]
     -- Haskell doesn't need this signature. :)
     readAcc acc = do e <- eof
                      if (not e)
@@ -34,13 +32,11 @@ readLines_ = readAcc []
 
 readLines :: forall xs prf.
              SingI (prf :: SubList '[FILE_IO (OpenFile Read)] xs)
-          => EffM Io xs (UpdateWith '[FILE_IO (OpenFile Read)] xs prf) [String]
+          => EffM IO xs (UpdateWith '[FILE_IO (OpenFile Read)] xs prf) [String]
 readLines = lift @_ @_ @prf readLines_
 
-readFile :: String -> Eff Io '[FILE_IO (), STDIO, EXCEPTION String] [String]
-readFile path = catch @(TyCon1 (Eff Io '[FILE_IO (), STDIO, EXCEPTION String]))
-                      @_ @[String]
-                      (do _ <- open path SRead
+readFile :: String -> Eff IO '[FILE_IO (), STDIO, EXCEPTION String] [String]
+readFile path = catch (do _ <- open path SRead
                           Test SHere (raise ("Cannot open file: " ++ path)) $
                             do lines <- readLines
                                close @_ @Read

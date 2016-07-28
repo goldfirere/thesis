@@ -10,9 +10,8 @@ module Effect.Select where
 
 import Effects
 import Data.Singletons
-import Data.Kind
 
-data Selection :: Type -> Type -> Type -> Type where
+data Selection :: Effect where
   Select :: [a] -> Selection () () a
 
 data instance Sing (x :: Selection a b c) where
@@ -25,20 +24,20 @@ instance (Good a, Good b, Good c) => SingKind (Selection a b c) where
 
   toSing (Select xs) = case toSing xs of SomeSing xs' -> SomeSing (SSelect xs')
 
-instance Handler (TyCon3 Selection) (TyCon1 Maybe) where
+instance Handler Selection Maybe where
   handle (Select xs) _ k = tryAll xs where
     tryAll [] = Nothing
     tryAll (x : xs) = case k () x of
                         Nothing -> tryAll xs
                         Just v  -> Just v
 
-instance Handler (TyCon3 Selection) (TyCon1 []) where
+instance Handler Selection [] where
   handle (Select xs) r k = concatMap (k r) xs
 
-type SELECT = MkEff () (TyCon3 Selection)
+type SELECT = MkEff () Selection
 
 select_ :: Good a => [a] -> Eff m '[SELECT] a
-select_ xs = case toSing xs of SomeSing xs' -> effect SHere (SSelect xs')
+select_ xs = case toSing xs of SomeSing xs' -> Effect SHere (SSelect xs')
 
 select :: forall xs prf a m.
           (SingI (prf :: SubList '[SELECT] xs), Good a)

@@ -89,8 +89,6 @@ data Imp :: forall n. Vect Ty n -> Ty -> Type where
   (:>>=) :: GoodTy a => Imp g a -> (InterpTy a -> Imp g b) -> Imp g b
   Return :: Expr g t -> Imp g t
 
-type Io = TyCon1 IO
-
 (>>>) :: GoodTy a => Imp g a -> Imp g b -> Imp g b
 p1 >>> p2 = p1 :>>= \_ -> p2
 
@@ -100,7 +98,7 @@ updateVar (HTS i) (a :^ vars) x = a :^ updateVar i vars x
 
 interp :: forall g t. (GoodCtx g, GoodTy t)
        => Imp g t
-       -> Eff Io '[STDIO, RND, STATE (Vars g)] (InterpTy t)
+       -> Eff IO '[STDIO, RND, STATE (Vars g)] (InterpTy t)
 interp (Let (e :: Expr g t') sc)
   = do e' <- lift (eval e)
        vars <- get @(Vars g)
@@ -143,7 +141,6 @@ prog = Let (Val 3) $
 
     isZero 0 = True
     isZero _ = False
-
 
 main :: IO ()
 main = run (() :> 31 :> VNil :> Empty) (interp prog)

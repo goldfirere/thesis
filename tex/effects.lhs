@@ -19,7 +19,6 @@ import Data.Singletons
 import Util.If
 import Control.Catchable
 
-type Io = TyCon1 IO
 \end{code}
 
 %endif
@@ -71,7 +70,7 @@ type Vars = [(String, Nat)]
 With all that in hand, here is the evaluator:
 \begin{working}
 \begin{code}
-eval  ::  Handler Stdio e
+eval  ::  Handler StdIO e
       =>  Expr -> Eff e ![EXCEPTION String, STDIO, RND, STATE Vars] Nat
 eval (Val x)         = return x
 eval (Var x)         = do  vs <- get
@@ -160,7 +159,6 @@ a |readLines| function that reads all of the lines in a file.
 This uses primitive operations |readLine| and |eof|.
 %{
 %if style == poly
-%format Io = IO
 %format SHere = Here
 %format SRead = Read
 %format FILE_IO = "\id{FILE\_IO}"
@@ -169,7 +167,7 @@ This uses primitive operations |readLine| and |eof|.
 %endif
 \begin{working}
 \begin{code}
-readLines  ::  Eff Io ![FILE_IO (OpenFile !Read)] [String]
+readLines  ::  Eff IO ![FILE_IO (OpenFile !Read)] [String]
 readLines  =   readAcc []
   where
     readAcc acc = do  e <- eof
@@ -187,10 +185,9 @@ The implementation is straightforward.
 This function is used by |readFile|:
 \begin{working}
 \begin{code}
-readFile :: String -> Eff Io ![FILE_IO (), STDIO, EXCEPTION String] [String]
+readFile :: String -> Eff IO ![FILE_IO (), STDIO, EXCEPTION String] [String]
 readFile path 
-  = catch  (at (TyCon1 (Eff Io ![FILE_IO (), STDIO, EXCEPTION String])))
-           (at _) (at [String])
+  = catch
       (do   _ <- open path SRead
             Test SHere (raise ("Cannot open file: " ++ path)) $
               do  lines <- lift readLines

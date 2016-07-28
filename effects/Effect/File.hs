@@ -66,7 +66,7 @@ handleOpen fname mode k = do e_h <- tryIOError (openFile fname (toIOMode (fromSi
                                Left _err -> k (Left ()) False
                                Right h   -> k (Right (FH h)) True
 
-instance Handler (TyCon3 FileIO) (TyCon1 IO) where
+instance Handler FileIO IO where
   handle (OpenRead s) () k = handleOpen (toString s) SRead k
   handle (OpenWrite s) () k = handleOpen (toString s) SWrite k
 
@@ -79,13 +79,12 @@ instance Handler (TyCon3 FileIO) (TyCon1 IO) where
   handle EOF (FH h) k = do b <- hIsEOF h
                            k (FH h) b
 
-type FILE_IO t = MkEff t (TyCon3 FileIO)
-type Fileio = TyCon3 FileIO
+type FILE_IO t = MkEff t FileIO
 
 open_ :: String -> Sing (m :: Mode)
       -> EffM e '[FILE_IO ()] '[FILE_IO (Either () (OpenFile m))] Bool
-open_ f SRead = case toSing f of SomeSing f' -> effect SHere (SOpenRead f')
-open_ f SWrite = case toSing f of SomeSing f' -> effect SHere (SOpenWrite f')
+open_ f SRead = case toSing f of SomeSing f' -> Effect SHere (SOpenRead f')
+open_ f SWrite = case toSing f of SomeSing f' -> Effect SHere (SOpenWrite f')
 
 open :: forall xs prf m e.
         (SingI (prf :: SubList '[FILE_IO ()] xs))
@@ -94,7 +93,7 @@ open :: forall xs prf m e.
 open s m = lift @_ @_ @prf (open_ s m)
 
 close_ :: EffM e '[FILE_IO (OpenFile m)] '[FILE_IO ()] ()
-close_ = effect SHere SClose
+close_ = Effect SHere SClose
 
 close :: forall xs m prf e.
          SingI (prf :: SubList '[FILE_IO (OpenFile m)] xs)
@@ -102,7 +101,7 @@ close :: forall xs m prf e.
 close = lift @_ @_ @prf close_
 
 readLine_ :: Eff e '[FILE_IO (OpenFile Read)] String
-readLine_ = effect SHere SReadLine
+readLine_ = Effect SHere SReadLine
 
 readLine :: forall xs prf e.
             SingI (prf :: SubList '[FILE_IO (OpenFile Read)] xs)
@@ -110,7 +109,7 @@ readLine :: forall xs prf e.
 readLine = lift @_ @_ @prf readLine_
 
 writeLine_ :: String -> Eff e '[FILE_IO (OpenFile Write)] ()
-writeLine_ s = case toSing s of SomeSing s' -> effect SHere (SWriteLine s')
+writeLine_ s = case toSing s of SomeSing s' -> Effect SHere (SWriteLine s')
 
 writeLine :: forall xs prf e.
              SingI (prf :: SubList '[FILE_IO (OpenFile Write)] xs)
@@ -119,7 +118,7 @@ writeLine :: forall xs prf e.
 writeLine s = lift @_ @_ @prf (writeLine_ s)
 
 eof_ :: Eff e '[FILE_IO (OpenFile Read)] Bool
-eof_ = effect SHere SEOF
+eof_ = Effect SHere SEOF
 
 eof :: forall xs prf e.
        SingI (prf :: SubList '[FILE_IO (OpenFile Read)] xs)

@@ -12,7 +12,7 @@ import Data.Kind
 import Data.Singletons
 import Control.Catchable
 
-data Exception :: Type -> Type -> Type -> Type -> Type where
+data Exception :: Type -> Effect where
   Raise :: a -> Exception a () () b
 
 data instance Sing (e :: Exception a b c d) where
@@ -25,19 +25,19 @@ instance (Good a, Good b, Good c, Good d) => SingKind (Exception a b c d) where
 
   toSing (Raise x) = case toSing x of SomeSing x' -> SomeSing (SRaise x')
 
-instance Handler (TyCon3 (Exception a)) (TyCon1 Maybe) where
+instance Handler (Exception a) Maybe where
   handle (Raise _) _ _ = Nothing
 
-instance Show a => Handler (TyCon3 (Exception a)) (TyCon1 IO) where
+instance Show a => Handler (Exception a) IO where
   handle (Raise e) _ _ = ioError (userError (show e))
 
-instance Handler (TyCon3 (Exception a)) (TyCon1 (Either a)) where
+instance Handler (Exception a) (Either a) where
   handle (Raise e) _ _ = Left e
 
-type EXCEPTION t = MkEff () (TyCon3 (Exception t))
+type EXCEPTION t = MkEff () (Exception t)
 
 raise_ :: (Good a, Good b) => a -> Eff m '[EXCEPTION a] b
-raise_ x = case toSing x of SomeSing x' -> effect SHere (SRaise x')
+raise_ x = case toSing x of SomeSing x' -> Effect SHere (SRaise x')
 
 raise :: forall a xs prf b m.
          (SingI (prf :: SubList '[EXCEPTION a] xs), Good a, Good b)
@@ -48,6 +48,6 @@ instance ( Good s
          , Catchable m s
          , SFindableSubList '[EXCEPTION s] xs
          , xs' ~ UpdateWith '[EXCEPTION s] xs (SubListProof :: SubList '[EXCEPTION s] xs))
-           => Catchable (TyCon1 (EffM m xs xs')) s where
+           => Catchable (EffM m xs xs') s where
   throw t = raise t
   catch e k = Catch e k

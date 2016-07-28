@@ -10,9 +10,8 @@ module Effect.State where
 
 import Effects
 import Data.Singletons
-import Data.Kind
 
-data State :: Type -> Type -> Type -> Type where
+data State :: Effect where
   Get :: State a a a
   Put :: b -> State a b ()
 
@@ -29,14 +28,14 @@ instance (Good a, Good b, Good c) => SingKind (State a b c) where
   toSing Get = SomeSing SGet
   toSing (Put x) = case toSing x of SomeSing x' -> SomeSing (SPut x')
 
-instance Handler (TyCon3 State) m where
+instance Handler State m where
   handle Get     st k = k st st
   handle (Put n) _  k = k n ()
 
-type STATE t = MkEff t (TyCon3 State)
+type STATE t = MkEff t State
 
 get_ :: forall m x. Good x => Eff m '[STATE x] x
-get_ = effect @(TyCon3 State) sElemProof SGet
+get_ = Effect SHere SGet
 
 get :: forall x xs prf m.
        (SingI (prf :: SubList '[STATE x] xs), Good x)
@@ -45,7 +44,7 @@ get = lift @_ @_ @prf get_
 
 put_ :: forall x m. Good x => x -> Eff m '[STATE x] ()
 put_ v = case toSing v of
-  SomeSing v' -> effect @(TyCon3 State) @x sElemProof (SPut v')
+  SomeSing v' -> Effect SHere (SPut v')
 
 put :: forall x xs prf m.
        (SingI (prf :: SubList '[STATE x] xs), Good x)
@@ -54,7 +53,7 @@ put v = lift @_ @_ @prf (put_ v)
 
 putM_ :: forall x y m. (Good x, Good y) => y -> EffM m '[STATE x] '[STATE y] ()
 putM_ val = case toSing val of
-  SomeSing val' -> effect SHere (SPut val')
+  SomeSing val' -> Effect SHere (SPut val')
 
 putM :: forall x xs prf y m.
         (SingI (prf :: SubList '[STATE x] xs), Good x, Good y)

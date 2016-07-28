@@ -7,12 +7,11 @@
 
 module Effect.Random where
 
-import Data.Kind
 import Data.Nat
 import Effects
 import Data.Singletons
 
-data Random :: Type -> Type -> Type -> Type where
+data Random :: Effect where
   GetRandom :: Random Nat Nat Nat
   SetSeed   :: Nat -> Random Nat Nat ()
 
@@ -29,16 +28,16 @@ instance (Good a, Good b, Good c) => SingKind (Random a b c) where
   toSing GetRandom = SomeSing SGetRandom
   toSing (SetSeed x) = case toSing x of SomeSing x' -> SomeSing (SSetSeed x')
 
-instance Handler (TyCon3 Random) m where
+instance Handler Random m where
   handle GetRandom seed k
     = let seed' = (3 * seed + 1) `mod` 213 in
       k seed' seed'
   handle (SetSeed n) _ k = k n ()
 
-type RND = MkEff Nat (TyCon3 Random)
+type RND = MkEff Nat Random
 
 rndNat_ :: Nat -> Nat -> Eff m '[RND] Nat
-rndNat_ lower upper = do v <- effect SHere SGetRandom
+rndNat_ lower upper = do v <- Effect SHere SGetRandom
                          return (v `mod` (upper - lower) + lower)
 
 rndNat :: forall xs prf m.
@@ -47,7 +46,7 @@ rndNat :: forall xs prf m.
 rndNat lower upper = lift @_ @_ @prf (rndNat_ lower upper)
 
 srand_ :: Nat -> Eff m '[RND] ()
-srand_ n = case toSing n of SomeSing n' -> effect SHere (SSetSeed n')
+srand_ n = case toSing n of SomeSing n' -> Effect SHere (SSetSeed n')
 
 srand :: forall xs prf m.
          SingI (prf :: SubList '[RND] xs)

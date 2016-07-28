@@ -28,7 +28,7 @@ eval (Var x) = do vs <- get
 eval (Add l r) = (+) <$> eval l <*> eval r
 eval (Random upper) = rndNat 0 upper
 
-eval' :: Handler Stdio e
+eval' :: Handler StdIO e
       => Expr -> Eff e '[EXCEPTION String, STDIO, RND, STATE Vars] Nat
 eval' (Val x) = return x
 eval' (Var x) = do vs <- get

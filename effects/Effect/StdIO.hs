@@ -10,12 +10,11 @@
 module Effect.StdIO where
 
 import Data.AChar
-import Data.Kind
 import qualified Prelude as P
 import Data.Singletons
 import Effects
 
-data StdIO :: Type -> Type -> Type -> Type where
+data StdIO :: Effect where
   PutStr :: String -> StdIO () () ()
   GetStr :: StdIO () () String
 
@@ -32,7 +31,7 @@ instance (Good a, Good b, Good c) => SingKind (StdIO a b c) where
   toSing (PutStr s) = case toSing s of SomeSing s' -> SomeSing (SPutStr s')
   toSing GetStr = SomeSing SGetStr
 
-instance Handler (TyCon3 StdIO) (TyCon1 P.IO) where
+instance Handler StdIO P.IO where
   handle (PutStr s) () k = P.putStr (toString s) P.>>
                            k () ()
   handle GetStr     () k = P.getLine P.>>= \ s ->
@@ -40,9 +39,7 @@ instance Handler (TyCon3 StdIO) (TyCon1 P.IO) where
 
 data IOStream a = MkStream ([String] -> (a, [String]))
 
-instance Handler (TyCon3 StdIO) (TyCon1 IOStream) where
-  handle :: forall a res res' t.
-            StdIO res res' t -> res -> (res' -> t -> IOStream a) -> IOStream a
+instance Handler StdIO IOStream where
   handle (PutStr s) () k
     = MkStream (\x -> case k () () of
                         MkStream f -> let (res, str) = f x in
@@ -51,14 +48,13 @@ instance Handler (TyCon3 StdIO) (TyCon1 IOStream) where
     = MkStream (\case []     -> cont "" []
                       t : ts -> cont t ts)
     where
-      cont :: String -> [String] -> (a, [String])
       cont t ts = case k () t of
         MkStream f -> f ts
 
-type STDIO = MkEff () (TyCon3 StdIO)
+type STDIO = MkEff () StdIO
 
 putStr_ :: String -> Eff e '[STDIO] ()
-putStr_ s = case toSing s of SomeSing s' -> effect SHere (SPutStr s')
+putStr_ s = case toSing s of SomeSing s' -> Effect SHere (SPutStr s')
 
 putStr :: forall xs prf e.
           SingI (prf :: SubList '[STDIO] xs)
@@ -67,7 +63,7 @@ putStr s = lift @_ @_ @prf (putStr_ s)
 
 putStrLn_ :: String -> Eff e '[STDIO] ()
 putStrLn_ s = case toSing (s P.++ [Cnewline]) of
-                SomeSing s' -> effect SHere (SPutStr s')
+                SomeSing s' -> Effect SHere (SPutStr s')
 
 putStrLn :: forall xs prf e.
             SingI (prf :: SubList '[STDIO] xs)
@@ -75,7 +71,7 @@ putStrLn :: forall xs prf e.
 putStrLn s = lift @_ @_ @prf (putStrLn_ s)
 
 getStr_ :: Eff e '[STDIO] String
-getStr_ = effect SHere SGetStr
+getStr_ = Effect SHere SGetStr
 
 getStr :: forall xs prf e.
           SingI (prf :: SubList '[STDIO] xs)
@@ -83,8 +79,8 @@ getStr :: forall xs prf e.
 getStr = lift @_ @_ @prf getStr_
 
 mkStrFn :: forall a xs.
-           Env (TyCon1 IOStream) xs
-        -> Eff (TyCon1 IOStream) xs a
+           Env IOStream xs
+        -> Eff IOStream xs a
         -> [String] -> (a, [String])
 mkStrFn env p input = case mkStrFn' of MkStream f -> f input
   where
@@ -93,5 +89,3 @@ mkStrFn env p input = case mkStrFn' of MkStream f -> f input
 
     mkStrFn' :: IOStream a
     mkStrFn' = runWith injStream env p
-
-type Stdio = TyCon3 StdIO
