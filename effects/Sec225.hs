@@ -39,7 +39,7 @@ readFile :: String -> Eff IO '[FILE_IO (), STDIO, EXCEPTION String] [String]
 readFile path = catch (do _ <- open path SRead
                           Test SHere (raise ("Cannot open file: " ++ path)) $
                             do lines <- readLines
-                               close @_ @Read
+                               close @Read
                                putStrLn (show (length lines))
                                return lines)
                       (\ err -> do putStrLn ("Failed: " ++ err)

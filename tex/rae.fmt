@@ -51,6 +51,7 @@
 %format Type = "\ottkw{Type}"
 %format <$> = "\mathop{{\langle}{\$}{\rangle}}"
 %format <*> = "\mathop{{\langle}{*}{\rangle}}"
+%format ^ = "\string^"
 
 % suppress some built-in formatting of lhs2TeX:
 %format not = "\id{not}"
@@ -80,7 +81,7 @@
 	     MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances,
 	     UndecidableInstances, TemplateHaskell, TypeInType,
 	     AllowAmbiguousTypes, TypeApplications, FlexibleContexts,
-	     RebindableSyntax, OverloadedStrings #-}
+	     RebindableSyntax, OverloadedStrings, PatternSynonyms #-}
 {-# OPTIONS_GHC -Wall -Wno-unused-imports
                       -Wno-name-shadowing
 		      -Wno-redundant-constraints

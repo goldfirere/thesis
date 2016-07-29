@@ -116,7 +116,6 @@ depending on the context.
 
 \end{itemize}
 
-
 \section{Applicability beyond Haskell}
 
 \begin{proposal}

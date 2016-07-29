@@ -95,6 +95,13 @@ Note that this ability does not eliminate all closed type families, as
 term-level function definitions cannot use non-linear patterns nor can
 they perform unsaturated matches (see \pref{sec:unsaturated-match-example}).
 
+\paragraph{Type names in terms}
+It is sometimes necessary to go the other way and mention a type when
+writing something that syntactically appears to be a term. For the same
+reasons we need |!| when using a term-level name in a type, we use
+|^| to use a type-level name in a term. A case in point is the code
+appearing in \pref{sec:type-in-term}.
+
 \paragraph{Pattern matching in types}
 It is now possible to use |case| directly in a type:
 \begin{notyet}

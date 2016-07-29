@@ -1,4 +1,4 @@
-C = effects
+C = motivation
 C_EXT = $(if $(wildcard tex/$(C).lhs*),$(C).lhs,$(C).tex)
 
 OTT_FILES_BASE = syn syn_hask syn_inf syn_oi syn_sb syn_suffix rules rules_inf
@@ -6,8 +6,8 @@ PAPER_BASE = thesis
 OTT_PICKY = false
 BIB_FILES_FULL = bib/rae.bib
 FMT_FILES_BASE = rae
-HS_FILES_BASE = ThesisPreamble # Pico/Ott Pico/Syn Pico/Util Pico/Rules
-GHC_OPTS = -Werror -Wall -fprint-explicit-kinds -ieffects
+HS_FILES_BASE = ThesisPreamble DB # Pico/Ott Pico/Syn Pico/Util Pico/Rules
+GHC_OPTS = -Werror -Wall -fprint-explicit-kinds -ieffects -dynamic-too
 GHC = ghc-8
 
 OTT_FILES_FULL = $(OTT_FILES_BASE:%=ott/%.ott)
@@ -86,7 +86,7 @@ aux/%.hs: aux/%.lhs.mng $(OTT_FILES_FULL) $(FMT_FILES_FULL:tex/%=aux/%)
 	perl -pi -e "s/\'\\[\\]/[]/g" $@
 
 # extra custom dependency
-aux/motivation.tex: aux/effects.lhs
+aux/motivation.lhs: aux/effects.lhs
 
 $(BUILD_WITH_LHS:%=aux/%.tex): aux/%.tex: aux/%.lhs $(FMT_FILES_FULL:tex/%=aux/%)
 	cd aux && lhs2TeX --poly -o $*.tex $*.lhs

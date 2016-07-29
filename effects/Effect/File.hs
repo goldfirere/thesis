@@ -95,7 +95,7 @@ open s m = lift @_ @_ @prf (open_ s m)
 close_ :: EffM e '[FILE_IO (OpenFile m)] '[FILE_IO ()] ()
 close_ = Effect SHere SClose
 
-close :: forall xs m prf e.
+close :: forall m xs prf e.
          SingI (prf :: SubList '[FILE_IO (OpenFile m)] xs)
       => EffM e xs (UpdateWith '[FILE_IO ()] xs prf) ()
 close = lift @_ @_ @prf close_

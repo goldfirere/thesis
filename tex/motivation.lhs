@@ -5,7 +5,13 @@
 
 \begin{code}
 import Data.Kind ( type (*), Type )
-import Prelude
+import Prelude hiding ( zipWith, concat, product, read )
+import DB hiding ( Expr, type (++), eval, (:~~:)(..), TyCon, TypeRep(..), 
+                   eqTyCon, eqT, tyCon )
+import GHC.Exts ( fromString )
+
+read = Read
+
 \end{code}
 
 %endif
@@ -26,9 +32,10 @@ dissertation, all the indented, typeset code
 is type-checked against my implementation
 every time the text is typeset.
 
-\rae{Revisit.}
 The code snippets throughout this dissertation are presented on a variety of
-background colors. A \colorbox{working}{\workingcolorname} background
+background colors. A white background indicates code that works in GHC 7.10
+and (perhaps) below.
+A \colorbox{working}{\workingcolorname} background
 highlights code that newly works in GHC~8.0 due to my implementations
 of previously published papers~\cite{nokinds,visible-type-application}.
 A \colorbox{notyet}{\notyetcolorname}
@@ -40,6 +47,11 @@ incompleteness in my implementation. To my knowledge, there is nothing more
 than engineering (and perhaps the use of singletons) to get these examples
 working.
 
+Beyond the examples presented here, the literature is accumulating a wide
+variety of examples of dependently typed programming. Particularly applicable
+are the examples in \citet{power-of-pi}, \citet{hasochism}, and
+\citet[Chapter 8]{gundry-thesis}.
+
 \section{Eliminating erroneous programs}
 
 \subsection{Simple example: Length-indexed vectors}
@@ -47,6 +59,7 @@ working.
 \rae{Make sure |replicate| is here. It's referenced later.}
 \rae{There will be overlap between this section and \pref{sec:pattern-matching}.
 Double-check it.}
+\rae{This must introduce promotion via |!| and |Type|.}
 
 \subsection{A strongly typed simply typed $\lambda$-calculus interpreter}
 \label{sec:stlc}
@@ -351,7 +364,7 @@ to be partial, but this is easy enough to fix with a well-placed
 to find proofs that |step| is correct in the |App| cases. (Using an \keyword{auto}
 variable, Idris is able to find the proofs automatically in the other |step|
 clauses.) Idris comes the closest to Haskell's brevity in this example, but
-it still requires two explicit, if short, places where equality proofs must
+it still requires two places where equality proofs must
 be explicitly manipulated.
 %}
 \end{itemize}
@@ -413,26 +426,576 @@ has an aggressive rewriting engine used to solve equality predicates.
 
 \subsection{Units-of-measure}
 
-\subsection{Machine-checked sorting algorithm}
+\subsection{Machine-checked sorting algorithms}
 
-\subsection{Type-safe database access}
+Using dependent types to check a sorting algorithm is well explored in the
+literature (e.g., \cite{why-dependent-types-matter,keeping-neighbours-in-order}).
+These algorithms can also be translated into Haskell, as shown in my prior
+work~\cite{singletons,nyc-hug-2014}. I will thus not go into great detail
+in the implementation here.
 
-See also other examples in the work of \citet{power-of-pi} and \citet{hasochism}.
+At the bottom of one implementation\footnote{\url{https://github.com/goldfirere/nyc-hug-oct2014/blob/master/OrdList.hs}} appears this function definition:
+|mergeSort :: [Integer] -> [Integer]|. Note that the type of the function
+is completely ordinary---there is no hint of the rich types that lurk beneath,
+in its implementation. It is this fact that makes machine-checked algorithms,
+such as sorting, interesting in the context of Haskell.
+
+A Haskell programming
+team may make a large application with little use for fancy types. Over time,
+the team notice bugs frequently appearing in a gnarly section of code
+(like a sorting algorithm, or more realistically, perhaps, an implementation
+of a cryptographic primitive), and they
+decide that they want extra assurances that the algorithm is correct.
+That one algorithm---and no other part of a large application---might be
+rewritten to use dependent types. Our team then gets the benefit of the
+extra checks that dependent types offer without the need to rewrite large
+parts of an application. Indeed any of the examples considered in this
+chapter can be hidden beneath simply typed interfaces and thus form
+just one component of a larger, simply typed application.
+\rae{This is a bit weak. Improve?}
+
+\subsection{Type-safe database access with an inferred schema}
+\label{sec:dependent-db-example}
+
+Many applications need to work in the context of some external database.
+Haskellers naturally want their interface to the database to be well-typed,
+and there already exist libraries that use (non-dependent) Haskell's fancy
+types to good effect for database access. (See \package{opaleye}\footnote{\url{https://github.com/tomjaguarpaw/haskell-opaleye}} for an advanced, actively
+developed and actively used example of such a library.) Dependent Haskell
+allows us to go one step further, though, and use type inference to infer
+a database schema from the database access code.
+
+This example is inspired by the third example by \citet{power-of-pi};
+the full code powering the example is available online.\footnote{\url{https://github.com/goldfirere/dependent-db}}
+
+\begin{table}
+\begin{center}
+The @students@ table: \\[1ex]
+\begin{tabular}{llcc}
+@last@ & @first@ & @id@ & @gradyear@ \\ \hline
+|"Matthews"| &
+|"Maya"| &
+1 &
+2018 \\ 
+|"Morley"| &
+|"Aimee"| &
+2 &
+2017 \\
+|"Barnett"| &
+|"William"| & 
+3 & 
+2020 \\ 
+|"Leonard"| &
+|"Sienna"| &
+4 & 
+2019 \\ 
+|"Oliveira"| &
+|"Pedro"| & 
+5 &
+2017 \\ 
+|"Peng"| & 
+|"Qi"| & 
+6 & 
+2020 \\ 
+|"Chakraborty"| & 
+|"Sangeeta"| & 
+7 &
+2018 \\ 
+|"Yang"| & 
+|"Rebecca"| & 
+8 &
+2019
+\end{tabular} \\[2ex]
+The @classes@ table: \\[1ex]
+\begin{tabular}{lll}
+@name@ & @students@ & @course@ \\ \hline
+|"Blank"| &
+[2,3,7,8] &
+|"Robotics"| \\
+|"Eisenberg"| &
+[1,2,5,8] &
+|"Programming Languages"| \\
+|"Kumar"| & 
+[3,6,7,8] & 
+|"Artificial Intelligence"| \\
+|"Xu"| &
+[1,3,4,5] &
+|"Graphics"| \\ 
+\end{tabular}
+\end{center}
+\caption{Tables used in \pref{sec:dependent-db-example}.}
+\label{tab:db-example}
+\end{table}
+
+Instead of starting with the library design, let's start with a concrete
+use case. Suppose we are writing an information system for a university.
+The current task is to write a function that, given the name of a professor,
+prints out the names of students in that professor's classes. There are
+two database tables of interest, as exemplified in \pref{tab:db-example}.
+Our program will retrieve a professor's record and then look up the students
+by their ID number.
+
+Our goal in this example is understanding the broad strokes of how the
+database library works and what it is capable of, not all the precise details.
+If you wish to understand more, please check out the full source code online.
+
+\subsubsection{Accessing the database}
+
+\begin{figure}
+\begin{working}
+\begin{code}
+type NameSchema = [ Col "first" String, Col "last" String ]
+
+printName :: Row NameSchema -> IO ()
+printName (first ::> last ::> _) = putStrLn (first ++ " " ++ last)
+
+readDB classes_sch students_sch = do
+  classes_tab   <- loadTable "classes.table"   classes_sch
+  students_tab  <- loadTable "students.table"  students_sch
+
+  putStr "Whose students do you want to see? "
+  prof <- getLine
+
+  let  joined 
+         =  project $
+            select (field (at "id") (at Int) `elementOf` field (at "students")) $
+            product  (select  (field (at "prof") === literal prof)
+                              (read classes_tab))
+                     (read students_tab)
+  rows <- query joined
+  mapM_ printName rows
+\end{code}
+\end{working}
+\caption{The |readDB| function}
+\label{fig:readDB}
+\end{figure}
+
+The main worker function that retrieves and processes the information of interest
+from the database is |readDB|, in \pref{fig:readDB}.
+Note that this function is not assigned a type
+signature; we'll return to this interesting point in
+\pref{sec:inferring-schema}. It takes in the schemas for the two tables
+it will retrieve the data from. Our function loads the tables that correspond
+to the schemas; the |loadTable| function makes sure that the table does
+indeed correspond to the schema. An I/O interaction with the user then
+ensues, resulting in a variable |prof| of type |String| containing the
+desired professor's name.
+
+\begin{figure}
+\begin{notyet}
+\begin{spec}
+data Column = Col String Type
+type Schema = [Column]
+
+data Table  ::  Schema -> Type  -- a table according to a schema
+data RA     ::  Schema -> Type  -- a |R|elational |A|lgebra
+data Expr   ::  Schema -> Type -> Type  -- an expression
+
+loadTable  ::  String -> pi (s :: Schema) -> IO (Table s)
+
+project    ::  Subset s' s => RA s -> RA s'
+select     ::  Expr s Bool -> RA s -> RA s
+field      ::  forall name ty s. In name ty s => Expr s ty
+elementOf  ::  Eq ty => Expr s ty -> Expr s [ty] -> Expr s Bool
+product    ::  !disjoint s s' ~ !True => RA s -> RA s -> RA (s !++ s')
+literal    ::  ty -> Expr s ty
+read       ::  Table s -> RA s
+\end{spec}
+\end{notyet}
+\caption{Types used in the example of \pref{sec:dependent-db-example}.}
+\label{fig:query-types}
+\end{figure}
+
+The |joined| variable then gets assigned to a large query against the database.
+This query:
+\begin{enumerate}
+\item reads in the @classes@ table,
+\item selects out any rows that mention the desired |prof|,
+\item computes the Cartesian product of these rows and all the rows in the @students@ table,
+\item selects out those rows where the @id@ field is in the @students@ list,
+\item and finally projects out the name of the student.
+\end{enumerate}
+The types of the components of this query are in \pref{fig:query-types}.
+There are a few points of interest in looking at this code:
+\begin{itemize}
+\item The query is well-typed by construction. Note the intricate types
+appearing in \pref{fig:query-types}. For example, |select| takes an expression
+used to select which rows of a table are preserved. This operation naturally
+requires an |Expr s Bool|, where |s| is the schema of interest and the
+|Bool| indicates that we have a Boolean expression (as opposed to one that
+results in a number, say). The |RA| type does not permit ill-typed queries,
+such as taking the Cartesian product of two tables with overlapping column
+names (see the type of |product|), as projections from such a combination
+would be ambiguous.
+\item Use of |field| requires the $\at$ invisibility override marker, as
+we wish to specify the name of the field.
+\item In the first |select| expression, we must specify the type of the
+field as well as the name, whereas in the second |select| expression, we
+can omit the type. In the second case, the type can be inferred by comparison
+with the literal |prof|. In the first, type inference tells us that @id@ is
+the element type of @students@, but we need to be more concrete than this---hence
+the |(at Int)| passed to |field|.
+\item The use of |project| at the top projects out the first and last name
+of the student, even though neither @first@ nor @last@ is mentioned there.
+Type inference does the work for us, as we pass the result of running the
+query to |printName|, which has a type signature that states it works over
+only names.
+\end{itemize}
+
+\subsubsection{Inferring a schema}
+\label{sec:inferring-schema}
+\label{sec:type-in-term}
+
+Type inference works to infer the type of |readDB|, assigning it this
+whopper:
+\begin{notyet}
+\begin{spec}
+ghci> :type readDB
+readDB
+  ::  pi (s :: Schema) (s' :: Schema)
+  ->  (  !disjoint s s' ~ !True, In "students" [Int] (s !++ s'),
+         In "prof" String s, In "last" [Char] (s !++ s'),
+         In "id" Int (s !++ s'), In "first" [Char] (s !++ s') )
+  =>  IO ()
+\end{spec}
+\end{notyet}
+The cavalcade of constraints are all inferred from the query above
+quite straightforwardly.\footnote{What may be more surprising to the
+incredulous reader is that a $\Pi$-type is inferred, especially if you
+have already read \pref{cha:type-inference}. However, I maintain that
+the \bake/ algorithm in \pref{cha:type-inference} would infer this type.
+The two parameters to |readDB| are clearly |Schema|s, and the body
+of |readDB| asserts constraints on these |Schema|s. Note that the
+type inference algorithm infers only relevant, visible parameters, but
+these arguments are indeed relevant and visible. The dependency comes
+in after solving, when the quantification telescope $\Delta$ output
+by the solver has constraints depend on a visible argument.
+
+As further justification for stating that \bake/ infers this type,
+GHC infers a type quite like this today, albeit using singletons. The
+appearance of singletons in the type inferred today is why this snippet
+is presented on a \notyetcolorname{} background.}
+But how can we call |readDB| satisfying all of these constraints?
+
+The call to |readDB| appears here:
+%if style == newcode
+\begin{code}
+$(return [])
+main  :: IO ()
+main  =  withSchema "classes.schema"   $ \ classes_sch ->
+         withSchema "students.schema"  $ \ students_sch ->
+         $(checkSchema !readDB [!classes_sch, !students_sch])
+\end{code}
+%endif
+\begin{notyet}
+\begin{spec}
+main  :: IO ()
+main  =  do  classes_sch   <- loadSchema "classes.schema"
+             students_sch  <- loadSchema "students.schema"
+             $(checkSchema !readDB [!classes_sch, !students_sch])
+\end{spec}
+\end{notyet}
+The two calls to |loadSchema| are uninteresting. The third line of |main|
+is a Template Haskell~\cite{template-haskell} splice. Template Haskell is
+GHC's metaprogramming facility. The quotes we see before the arguments to
+|checkSchema| are Template Haskell quotes, not the promotion |!| mark we
+have seen so much.
+
+The |checkSchema :: Name -> [Name] -> Q Exp| function takes the name of
+a function (|readDB|, in our case), names of schemas to be passed to
+the function (|classes_sch| and |students_sch|, in our case) and produces
+some Haskell code that arranges for an appropriate function call.
+(|Exp| is the Template Haskell type containing a Haskell expression, and
+|Q| is the name of the monad Template Haskell operates under.) In order
+to produce the right function call to |readDB|,
+|checkSchema| queries for the inferred type of |readDB|. It then examines
+this type and extracts out all of the constraints on the schemas.
+In the produced Haskell expression, |checkSchema| arranges for calls
+to several functions that establish the constraints before calling |readDB|.
+In order to be concrete, here is the result of the splice; the following
+code is spliced into the |main| function in place of the call to |checkSchema|:
+%
+\begin{notyet}
+\begin{spec}
+checkDisjoint classes_sch students_sch                          $
+checkIn "students" ^^  ^[^Int]   (classes_sch ++ students_sch)  $
+checkIn "prof" ^^      ^String   classes_sch                    $
+checkIn "last" ^^      ^[^Char]  (classes_sch ++ students_sch)  $
+checkIn "id" ^^        ^Int      (classes_sch ++ students_sch)  $
+checkIn "first" ^^     ^[^Char]  (classes_sch ++ students_sch)  $
+readDB classes_sch students_sch
+\end{spec}
+\end{notyet}
+Before discussing |checkDisjoint| and |checkIn|, I must explain a new
+piece of syntax: just as |!| allows us to use a term-level name in a type,
+the new syntax |^| allows us to use a type-level name in a term. That is
+all the syntax does. For example |^[^Int]| is the list type constructor
+applied to the type |Int|, not a one-element list (as it would otherwise
+appear).
+
+The |checkDisjoint| and |checkIn| functions establish the constraints
+necessary to call |readDB|. Here are their types:
+
+\begin{notyet}
+\begin{spec}
+checkDisjoint  ::  pi (sch1 :: Schema) (sch2 :: Schema)
+               ->  ((!disjoint sch1 sch2 ~ !True) => r)
+               ->  r
+checkIn        ::  pi (name :: String) (ty :: Type) (schema :: Schema)
+               ->  (In name ty schema => r)
+               ->  r
+\end{spec}
+\end{notyet}
+Both functions take input information to validate and a continuation
+to call if indeed the input is valid. In this implementation, both functions
+simply error (that is, return $\bot$) if the input is not valid, though
+it would not be hard to report an error in a suitable monad.
+
+\subsubsection{Checking inclusion in a schema}
+
+It is instructive to look at the implementation of |checkIn|:
+\begin{notyet}
+\begin{spec}
+checkIn  ::  pi (name :: String) (ty :: Type) (schema :: Schema)
+         ->  (In name ty schema => r)
+         ->  r
+checkIn name _  [] _
+  =  error ("Field " ++ show name ++ " not found.")
+checkIn name ty (Col name' ty' : rest) k
+  =  case (name `eq` name', ty `eq` ty') of
+      (Just Refl,  Just Refl)  -> k
+      (Just _,     _)          -> error (  "Found " ++ show name ++
+                                           " but it maps to " ++ show ty')
+      _                        -> checkIn name ty rest k
+\end{spec}
+\end{notyet}
+This function searches through the |Schema| (which, recall, is just a
+|[Column]|) for the desired name and type. If the search fails or the
+search find the column associated with the wrong type, |checkIn| fails.
+Otherwise, it will eventually call |k|, the continuation that can now
+assume |In name ty schema|. The constraint |In| is implemented as a class
+with instances that prove that the |(name, ty)| pair is indeed in |schema|
+whenever |In name ty schema| holds.
+
+The |checkIn| function makes critical use of a new function |eq|:\footnote{I present |eq| here as a member of the ubiquitous |Eq| class, as a definition for |eq|
+should be writable whenever a definition for |==| is. (Indeed, |==| could
+be implemented in terms of |eq|.) I do not, however, expect that |eq| will
+end up living direclty in the |Eq| class, as I doubt the Haskell community
+will permit Dependent Haskell to alter such a fundamental class. Nevertheless,
+the functionality sported by |eq| will be a common need in Dependent Haskell
+code, and we will need to find a suitable home for the function.}
+\begin{notyet}
+\begin{spec}
+class Eq a where
+  ...
+  eq :: pi (x :: a) (y :: a) -> Maybe (x :~: y)
+\end{spec}
+\end{notyet}
+This is just a more informative version of the standard equality operator
+|==|. When two values are |eq|, we can get a proof of their equality.
+This is necessary in |checkIn|, where assuming this equality is necessary
+in order to establish the |In| constraint before calling the
+constrained continuation |k|.
+
+\subsubsection{Conclusion}
+
+This example has highlighted several aspects of Dependent Haskell:
+
+\begin{itemize}
+\item Writing a well-typed database access is well within the reach of
+Dependent Haskell. Indeed, much of the work has already been done in
+released libraries.
+\item Inferring the type of |readDB| is a capability unique to Dependent
+Haskell among the dependently typed languages. Other dependently
+typed languages require type signatures on all top-level functions;
+this example makes critical use of Haskell's ability to infer a type.
+\item Having dependent types in a large language like Haskell sometimes
+shows synergies with other aspects of the language. In this example, we
+used Template Haskell to complement our dependent types to achieve something
+neither one could do alone.
+\end{itemize}
 
 \section{Encoding hard-to-type programs}
 
 \subsection{Variable-arity |zipWith|}
 
-\begin{proposal}
-This will be adapted from previous work~\cite{closed-type-families-extended}.
-\end{proposal}
+The |Data.List| Haskell standard library comes with the following functions:
+\begin{spec}
+map       ::  (a -> b) -> [a] -> [b]
+zipWith   ::  (a -> b -> c) -> [a] -> [b] -> [c]
+zipWith3  ::  (a -> b -> c -> d) -> [a] -> [b] -> [c] -> [d]
+zipWith4  ::  (a -> b -> c -> d -> e) -> [a] -> [b] -> [c] -> [d] -> [e]
+...
+\end{spec}
+Let's pretend renaming |map| to |zipWith1| and |zipWith| to |zipWith2|.
+This sequence continues up to |zipWith7|. The fact that these are different
+functions means that the user must choose which one to use, based on the
+arity of the function to be mapped over the lists. However, forcing the
+user to choose this is a bit silly: the type system should be able to
+discern which |zipWith| is correct based on the type of the function.
+Dependent Haskell gives us the power to write such a variable-arity
+|zipWith| function.\footnote{This example is adapted from my prior
+work~\cite{closed-type-families-extended}.}
+
+Let's build up our solution one step at a time. We'll first focus
+on building a |zipWith| that is told what arity to be; then we'll
+worry about inferring this arity.
+
+We first need a definition of the natural numbers:
+\begin{code}
+data Nat = Zero | Succ Nat
+\end{code}
+In the text, I will abbreviate these unary numbers with ordinary
+decimals.
+
+What will the type of our final |zipWith| be? It will first take a function
+and then several lists. The types of these lists are determined by the type
+of the function passed in. For example, suppose our function |f| has type
+|Int -> Bool -> Double|, then the type of |zipWith| should be
+|(Int -> Bool -> Double) -> [Int] -> [Bool] -> [Double]|. Thus, we wish
+to take the type of the function and apply the list type constructor |[]|
+to each component of it.
+
+Before we write the code for this operation, we pause to note an ambiguity
+in this definition. Both of the following are sensible concrete types for a |zipWith|
+over the function |f|:
+%
+\begin{spec}
+zipWith  :: (Int -> Bool -> Double)
+         -> [Int] -> [Bool -> Double]
+zipWith  :: (Int -> Bool -> Double)
+         -> [Int] -> [Bool] -> [Double]
+\end{spec}
+%
+The first of these is essentially |map|; the second is the classic function
+|zipWith| that expects two lists. Thus, we must pass in the desired number
+of parameters to apply the list type constructor to. 
+The function to apply these list constructors is named
+|Listify|:
+%
+\begin{code}
+type family Listify (n :: Nat) arrows where
+  Listify !Zero      a         = [a]
+  Listify (!Succ n)  (a -> b)  = [a] -> Listify n b
+\end{code}
+
+We now need to create some runtime evidence of our choice for the number
+of arguments.
+This will be used to control the runtime operation of |zipWith|---after
+all, our function must have both the correct behavior and the correct type.
+We use a GADT |NumArgs| that plays two roles: it controls the runtime behavior
+as just described, and it also is used as evidence to the type checker that
+the number argument to |Listify| is appropriate. After all, we do not want
+to call |Listify 2 (Int -> Bool)|, as that would be stuck. By pattern-matching
+on the |NumArgs| GADT, we get enough information to allow |Listify| to fully
+reduce.
+\begin{code}
+data NumArgs :: Nat -> Type -> Type where
+  NAZero  ::                 NumArgs  !Zero      a
+  NASucc  :: NumArgs n b ->  NumArgs  (!Succ n)  (a -> b)
+\end{code}
+
+We now write the runtime workhorse |listApply|, with the following type:
+\begin{code}
+listApply :: NumArgs n a -> [a] -> Listify n a
+\end{code}
+The first argument is the encoding of the number of arguments to the function.
+The second argument is a \emph{list} of functions to apply to corresponding
+elements of the lists passed in after the second argument. Why do we need 
+a list of functions? Consider evaluating |zipWith (+) [1,2] [3,4]|, where
+we recur not only on the elements in the list, but on the number of arguments.
+After processing the first list, we have to be able to apply different functions
+to each of the elements of the second list. To wit, we need to apply the functions
+|[(1 +), (2 +)]| to corresponding elements in the list |[3,4]|. (Here, we are
+using Haskell's ``section'' notation for partially-applied operators.)
+
+Here is the definition of |listApply|:
+\begin{code}
+listApply  NAZero       fs = fs
+listApply  (NASucc na)  fs =
+  \args -> listApply na (apply fs args)
+  where  apply :: [a -> b] -> [a] -> [b]
+         apply  (f:fs)  (x:xs)  = (f x : apply fs xs)
+         apply  _       _       = []
+\end{code}
+It first pattern-matches on its first argument. In the |NAZero| case, the list
+of functions passed in has 0 arguments, so we just return them. In the
+|NASucc| case, we process one more argument (|args|), apply the list of
+functions |fs| respectively to the elements of |args|, and then recur. Note
+how the GADT pattern-matching is essential for this to type-check---the type
+checker gets just enough information for |Listify| to reduce enough so that
+the second case can expect one more argument than the first case.
+
+\paragraph{Inferring arity}
+In order to infer the arity, we need to have a function that counts
+up the number of arrows there are in a function type:
+\begin{code}
+type family CountArgs (f :: Type) :: Nat where
+  CountArgs (a -> b)  = !Succ (CountArgs b)
+  CountArgs result    = !Zero
+\end{code}
+
+We still need to connect this type-level function with the term-level
+GADT |NumArgs|. We use Haskell's method for reflecting type-level
+decisions on the term-level, type classes. The following definition
+essentially repeats the definition of |NumArgs|, but because this
+is a definition for a class, the instance is inferred rather than
+given explicitly:
+\begin{code}
+class CNumArgs (numArgs :: Nat) (arrows :: Type) where
+  getNA :: NumArgs numArgs arrows
+instance CNumArgs !Zero a where
+  getNA = NAZero
+instance  CNumArgs n b =>
+          CNumArgs (!Succ n) (a -> b) where
+  getNA = NASucc getNA
+\end{code}
+Note that the instances do \emph{not} overlap; they are distinguished
+by their first parameter.
+
+It is now straightforward to give the final definition of |zipWith|,
+using the extension \ext{ScopedTypeVariables} to give the body
+of |zipWith| access to the type variable |f|:
+\begin{code}
+zipWith  ::  forall f. CNumArgs (CountArgs f) f
+         =>  f -> Listify (CountArgs f) f
+zipWith fun
+  = listApply (getNA :: NumArgs (CountArgs f) f) (repeat fun)
+\end{code}
+The standard Haskell function |repeat| creates an infinite list of its one
+argument.
+
+The following examples show that |zipWith| indeed infers the arity:
+%if style == poly
+%format example1
+%format example2
+%format example3
+%endif
+\begin{code}
+example1 = zipWith (&&) [False, True, False] [True, True, False]
+example2 = zipWith ((+) :: Int -> Int -> Int) [1,2,3] [4,5,6]
+
+concat :: Int -> Char -> Double -> String
+concat a b c = (show a) ++ (show b) ++ (show c)
+example3 = zipWith concat  [1,2,3] ['a','b','c']
+                           [3.14, 2.1728, 1.01001]
+\end{code}
+In |example2|, we must specify the concrete instantiation of |(+)|. In Haskell,
+built-in numerical operations are generalized over a type class |Num|. In this case,
+the operator |(+)| has the type |Num a => a -> a -> a|. Because it is theoretically
+possible (but deeply strange!) for |a| to be instantiated with a function type,
+using |(+)| without an explicit type will not work---there is no way to infer an
+unambiguous arity. Specifically, |CountArgs| gets stuck. |CountArgs (a -> a -> a)|
+simplifies to |Succ (Succ (CountArgs a))| but can go no further; |CountArgs a| will
+not simplify to |Zero|, because |a| is not apart from |b -> c|.
 
 \subsection{Typed reflection}
 
 \emph{Reflection} is the act of reasoning about a programming language from
 within programs written in that language.\footnote{Many passages in this
-  example come verbatim from a draft paper of mine~\cite{overabundance-of-equalities}.} In
-Haskell, we are naturally concerned with reflecting Haskell types. A
+  example come verbatim from a draft paper of mine~\cite{overabundance-of-equalities} and expanded upon in another, published piece of prior work~\cite{typerep}.} In
+Haskell, we are naturally concerned with reflecting the rich language
+of Haskell types. A
 reflection facility such as the one described here will be immediately
 applicable in the context of Cloud Haskell. Cloud Haskell~\cite{cloud-haskell}
 is an ongoing project, aiming to support writing a Haskell program that can
@@ -590,7 +1153,7 @@ the compiler-generated representation for |(->)|) and that the actual
 argument type matches the expected argument type. If everything is good so
 far, we succeed, applying the function in |fun arg|.
 
-\subsubsection{Discussion}
+\subsubsection{Conclusion}
 
 Heterogeneous equality is necessary throughout this example. It first is
 necessary in the definition of |eqT|. In the |TyApp| case, we compare |a1|
@@ -623,6 +1186,7 @@ another? This section presents several reasons why I believe the work
 described in this dissertation will have impact.
 
 \subsection{Increased reach}
+\label{sec:haskell-in-industry}
 
 Haskell currently has some level of adoption in industry.\footnote{At the
 time of writing, \url{https://wiki.haskell.org/Haskell_in_industry}
