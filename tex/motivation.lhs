@@ -424,36 +424,6 @@ has an aggressive rewriting engine used to solve equality predicates.
 
 %% This function is remarkably easy to implement:
 
-\subsection{Units-of-measure}
-
-\subsection{Machine-checked sorting algorithms}
-
-Using dependent types to check a sorting algorithm is well explored in the
-literature (e.g., \cite{why-dependent-types-matter,keeping-neighbours-in-order}).
-These algorithms can also be translated into Haskell, as shown in my prior
-work~\cite{singletons,nyc-hug-2014}. I will thus not go into great detail
-in the implementation here.
-
-At the bottom of one implementation\footnote{\url{https://github.com/goldfirere/nyc-hug-oct2014/blob/master/OrdList.hs}} appears this function definition:
-|mergeSort :: [Integer] -> [Integer]|. Note that the type of the function
-is completely ordinary---there is no hint of the rich types that lurk beneath,
-in its implementation. It is this fact that makes machine-checked algorithms,
-such as sorting, interesting in the context of Haskell.
-
-A Haskell programming
-team may make a large application with little use for fancy types. Over time,
-the team notice bugs frequently appearing in a gnarly section of code
-(like a sorting algorithm, or more realistically, perhaps, an implementation
-of a cryptographic primitive), and they
-decide that they want extra assurances that the algorithm is correct.
-That one algorithm---and no other part of a large application---might be
-rewritten to use dependent types. Our team then gets the benefit of the
-extra checks that dependent types offer without the need to rewrite large
-parts of an application. Indeed any of the examples considered in this
-chapter can be hidden beneath simply typed interfaces and thus form
-just one component of a larger, simply typed application.
-\rae{This is a bit weak. Improve?}
-
 \subsection{Type-safe database access with an inferred schema}
 \label{sec:dependent-db-example}
 
@@ -814,6 +784,52 @@ shows synergies with other aspects of the language. In this example, we
 used Template Haskell to complement our dependent types to achieve something
 neither one could do alone.
 \end{itemize}
+
+\subsection{Units-of-measure}
+
+Just as it is easy to make a type error when programming in an untyped
+language, it is also easy to make an error around dimensions or units
+when doing calculations over physical quantities. Accordingly, it is
+helpful when a type system is able to check for correct use of
+dimensions and units. I am far from the first to suggest or implement
+this idea, which dates back at least as far as \citet{kennedy-thesis}.
+Checking for units in code is integrated into F#'s type system,
+and several Haskell libraries exist (including my own) to check units.\footnote{The \package{dimensional} by Buckwalter and my \package{units} package~\cite{closed-type-families-extended,type-checking-units} are the leading examples.}
+Recent work by Gundry also adds to the field of work integrating unit-checking
+with Haskell~\cite{type-checker-plugins}~\cite[Chapter 3]{gundry-thesis}.
+
+What new light can Dependent Haskell shed on this well-studied area? 
+\rae{was here}. \rae{want to mention integration with type-checker plugins
+and opportunities for simplification. Also that HAskellers already like
+crazy type-y things.}
+
+\subsection{Machine-checked sorting algorithms}
+
+Using dependent types to check a sorting algorithm is well explored in the
+literature (e.g., \cite{why-dependent-types-matter,keeping-neighbours-in-order}).
+These algorithms can also be translated into Haskell, as shown in my prior
+work~\cite{singletons,nyc-hug-2014}. I will thus not go into great detail
+in the implementation here.
+
+At the bottom of one implementation\footnote{\url{https://github.com/goldfirere/nyc-hug-oct2014/blob/master/OrdList.hs}} appears this function definition:
+|mergeSort :: [Integer] -> [Integer]|. Note that the type of the function
+is completely ordinary---there is no hint of the rich types that lurk beneath,
+in its implementation. It is this fact that makes machine-checked algorithms,
+such as sorting, interesting in the context of Haskell.
+
+A Haskell programming
+team may make a large application with little use for fancy types. Over time,
+the team notice bugs frequently appearing in a gnarly section of code
+(like a sorting algorithm, or more realistically, perhaps, an implementation
+of a cryptographic primitive), and they
+decide that they want extra assurances that the algorithm is correct.
+That one algorithm---and no other part of a large application---might be
+rewritten to use dependent types. Our team then gets the benefit of the
+extra checks that dependent types offer without the need to rewrite large
+parts of an application. Indeed any of the examples considered in this
+chapter can be hidden beneath simply typed interfaces and thus form
+just one component of a larger, simply typed application.
+\rae{This is a bit weak. Improve?}
 
 \section{Encoding hard-to-type programs}
 
