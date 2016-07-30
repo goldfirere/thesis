@@ -251,12 +251,7 @@ is both relevant and dependent is the very reason for |pi|'s existence!
 
 A quantifiee may be either visible or invisible. The argument used to instantiate
 a visible quantifiee appears in the Haskell source; the argument used to
-instantiate an invisible quantifiee is elided. Some readers may prefer the
-terms \emph{explicit} and \emph{implicit} to describe visibility; however,
-these terms are sometimes used in the literature (e.g.,~\cite{miquel-icc})
-when talking about erasure
-properties. I will stick to \emph{visible} and \emph{invisible} throughout this
-dissertation.
+instantiate an invisible quantifiee is elided. 
 
 Today's Haskell uses |(->)| for visible quantification. That is, when we
 pass an ordinary function an argument, the argument is visible in the
@@ -321,7 +316,7 @@ over any constraint arguments.
 
 \paragraph{Omitting visible parameters}
 The function |replicate :: pi (n :: Nat) -> a -> Vec a n| from
-\pref{sec:length-indexed-vectors} creates a length-indexed vector of length
+\pref{sec:replicate-example} creates a length-indexed vector of length
 |n|, where |n| is passed in as the first visible argument. (The true
 first argument is |a|, which is invisible and elided from the type.)
 However, the choice for |n| can be inferred from the context. For example:

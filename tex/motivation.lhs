@@ -5,10 +5,13 @@
 
 \begin{code}
 import Data.Kind ( type (*), Type )
-import Prelude hiding ( zipWith, concat, product, read )
+import Prelude hiding ( zipWith, concat, product, read, replicate )
 import DB hiding ( Expr, type (++), eval, (:~~:)(..), TyCon, TypeRep(..), 
-                   eqTyCon, eqT, tyCon )
+                   eqTyCon, eqT, tyCon, Nil, (:>) )
 import GHC.Exts ( fromString )
+import qualified Data.Singletons.TH as SingTH
+import qualified GHC.TypeLits as TL
+import qualified Data.Singletons as Sing
 
 read = Read
 
@@ -56,10 +59,285 @@ are the examples in \citet{power-of-pi}, \citet{hasochism}, and
 
 \subsection{Simple example: Length-indexed vectors}
 \label{sec:length-indexed-vectors}
-\rae{Make sure |replicate| is here. It's referenced later.}
-\rae{There will be overlap between this section and \pref{sec:pattern-matching}.
-Double-check it.}
-\rae{This must introduce promotion via |!| and |Type|.}
+\label{sec:example-nats}
+
+We start by examining length-indexed vectors. This well-worn example is still
+useful, as it is easier to understand and still can show off many of the
+new features of Dependent Haskell.
+
+\subsubsection{|Vec| definition}
+
+Here is the definition of a length-indexed vector:
+\begin{working}
+\begin{code}
+data Nat = Zero | Succ Nat    -- first, some natural numbers
+data Vec :: Type -> Nat -> Type where
+  Nil   ::  Vec a !Zero
+  (:>)  ::  a -> Vec a n -> Vec a (!Succ n)
+infixr 5 :>
+\end{code}
+\end{working}
+I will use ordinary numerals as elements of |Nat| in this text.
+The |Vec| type is parameterized by both the type of the vector elements
+and the length of the vector. Thus |True :> Nil| has type |Vec Bool 1| and
+|'x' :> 'y' :> 'z' :> Nil| has type |Vec Char 3|.
+
+While |Vec| is a fairly ordinary GADT, we already see one feature newly
+introduced by my work: the use of |Type| in place of |*|. Using |*| to classify
+ordinary types is troublesome because |*| can also be a binary operator. 
+For example, should |F * Int| be a function |F| applied to |*| and |Int|
+or the function |*| applied to |F| and |Int|? In order to avoid getting caught
+on this detail, Dependent Haskell introduces |Type| to classify ordinary types.
+(\pref{sec:parsing-star} discusses a migration strategy from legacy Haskell
+code that uses |*|.)
+
+Another question that may come up right away is about my decision to use
+|Nat|s in the index. Why not |Integer|s? In Dependent Haskell, |Integer|s
+are indeed available in types. However, since we lack simple definitions for
+|Integer| operations (for example, what is the body of |Integer|'s
+|+| operation?), it is hard to reason about them in types. This point
+is addressed more fully in \pref{sec:promoting-base-types}. For now,
+however, it is best to stick to the simpler |Nat| type.
+
+\subsubsection{|append|}
+
+Let's first write an operation that appends two vectors. We already need
+to think carefully about types, because the types include information about
+the vectors' lengths. In this case, if we combine a |Vec a n| and a |Vec a m|,
+we had surely better get a |Vec a (n + m)|. Because we are working over
+our |Nat| type, we must first define addition:
+
+\begin{spec}
+(+) :: Nat -> Nat -> Nat
+Zero    + m = m
+Succ n  + m = Succ (n + m)
+\end{spec}
+%if style == newcode
+\begin{code}
+instance Num Nat where
+  Zero    + m = m
+  Succ n  + m = Succ (n + m)
+
+  (-) = undefined
+  (*) = undefined
+  negate = undefined
+  abs = undefined
+  signum = undefined
+
+  fromInteger 0 = Zero
+  fromInteger n = Succ (fromInteger (n-1))
+\end{code}
+%endif
+
+Now that we have worked out the hard bit in the type, appending the vectors
+themselves is easy:
+%format !+ = "\mathop{\tick{+}}"
+\begin{notyet}
+\begin{spec}
+append :: Vec a n -> Vec a m -> Vec a (n !+ m)
+append Nil       w = w
+append (a :> v)  w = a :> (append v w)
+\end{spec}
+\end{notyet}
+%if style == newcode
+\begin{code}
+type family (n :: Nat) + (m :: Nat) :: Nat where
+  !Zero + m = m
+  !Succ n + m = !Succ (n + m)
+
+append :: Vec a n -> Vec a m -> Vec a (n + m)
+append Nil       w = w
+append (a :> v)  w = a :> (append v w)
+\end{code}
+%endif
+There is a curiosity in the type of |append|: the addition between |n|
+and |m| is performed by the operation |!+|. Yet we have defined the
+addition operation |+|. What's going on here?
+
+Haskell maintains two separate namespaces, one for types and one for terms.
+Doing so allows declarations like |data X = X|, where the data constructor
+|X| has type |X|. With Dependent Haskell, however, terms may appear in types.
+(And types may, less frequently, appear in terms; see \pref{sec:type-in-term}.)
+We thus need a mechanism for telling the compiler which namespace we want.
+In a construct that is syntactically a type (that is, appearing after a |::|
+marker or in some other grammatical location that is ``obviously'' a type),
+the default namespace is the type namespace. If a user wishes to use a term-level
+definition, the term-level definition is prefixed with a |!|. Thus, |!+| simply
+uses the term-level |+| in a type. Note that the |!| mark has no semantic
+content---it is \emph{not} a promotion operator. It is simply a marker in the
+source code to denote that the following identifier lives in the term-level
+namespace.
+
+The fact that Dependent Haskell allows us to use our old, trusty, term-level
+|+| in a type is one of the two chief qualities that makes it a dependently
+typed language.
+
+\subsubsection{|replicate|}
+\label{sec:replicate-example}
+
+Let's now write function that can create a vector of a given length with
+all elements equal. Before looking at the function over vectors, we'll
+start by considering a version of this function over lists:
+\begin{code}
+listReplicate :: Nat -> a -> [a]
+listReplicate Zero      _ = []
+listReplicate (Succ n)  x = x : listReplicate n x
+\end{code}
+It all seems quite simple.
+
+With vectors, though, what will the return type be? It surely will mention
+the element type |a|, but it also has to mention the desired length of the
+list. This means that we must give a name to the |Nat| passed in. Here
+is how it is written in Dependent Haskell:
+\begin{notyet}
+\begin{spec}
+replicate :: pi (n :: Nat) -> a -> Vec a n
+replicate Zero      _ = Nil
+replicate (Succ n)  x = x :> replicate n x
+\end{spec}
+\end{notyet}
+%if style == newcode
+\begin{code}
+$(SingTH.genSingletons [''Nat])
+replicate :: SNat (n :: Nat) -> a -> Vec a n
+replicate SZero _ = Nil
+replicate (SSucc n) x = x :> replicate n x
+\end{code}
+%endif
+The first argument to |replicate| is bound by |pi (n :: Nat)|. Such an
+argument is available for pattern matching at runtime but is also available
+in the type. We see the value |n| used in the result |Vec a n|. This is
+an example of a dependent pattern match, and how this
+function is well-typed is considered is some depth in \pref{sec:dependent-pattern-match}.
+
+The ability to have an argument available for runtime pattern matching
+and compile time type checking is the other chief quality that makes
+Dependent Haskell dependently typed.
+
+\subsubsection{Invisibility in |replicate|}
+
+The first parameter to |replicate| above is actually redundant, as it can
+be inferred from the result type. We can thus write a version with this type:
+\begin{notyet}
+\begin{spec}
+replicateInvis :: pi (n :: Nat). a -> Vec a n
+\end{spec}
+\end{notyet}
+%if style == newcode
+\begin{code}
+type family U n where
+  U 0 = !Zero
+  U n = !Succ (U (n TL.- 1))
+replicateInvis :: forall n a. SingTH.SingI n => a -> Vec a n
+\end{code}
+%endif
+Note that the type begins with |pi (n :: Nat).| instead of
+|pi (n :: Nat) ->|. The use of the .~there recalls the existing Haskell
+syntax of |forall a.|, which denotes an invisible argument |a|. Invisible
+arguments are omitted at function calls.
+On the other hand, the |->| in |pi (n :: Nat) ->| means that the argument
+is visible and must be provided at every function invocation.
+This choice of syntax is due directly to \citet{gundry-thesis}.
+Some readers may prefer the
+terms \emph{explicit} and \emph{implicit} to describe visibility; however,
+these terms are sometimes used in the literature (e.g.,~\cite{miquel-icc})
+when talking about erasure
+properties. I will stick to \emph{visible} and \emph{invisible} throughout this
+dissertation.
+
+We can now use type inference to work out the value of |n| that should be
+used:
+%if style == poly
+%format (U x) = x
+%endif
+\begin{code}
+fourTrues :: Vec Bool (U 4)
+fourTrues = replicateInvis True
+\end{code}
+
+How should we implement |replicateInvis|, however? We need to use an
+\emph{invisibility override}. The implementation looks like this:
+\begin{notyet}
+\begin{spec}
+replicateInvis (at Zero)      _ = Nil
+replicateInvis (at (Succ _))  x = x :> replicateInvis x
+\end{spec}
+\end{notyet}
+%if style == newcode
+\begin{code}
+replicateInvis x = case (Sing.sing :: Sing.Sing n) of
+  SZero -> Nil
+  SSucc n -> Sing.withSingI n (replicateInvis x)
+\end{code}
+%endif
+The $\at$ in those patterns means that we are writing an ordinarily
+invisible argument visibly. This is necessary in the body of
+|replicateInvis| as we need to pattern match on the choice of |n|.
+An invisibility override can also be used at call sites:
+|replicateInvis (at 2) 'q'| produces the vector |'q' :> 'q' :> Nil| of
+type |Vec Char 2|. It is useful when we do not know the result type
+of a call to |replicateInvis|.\footnote{The use of $\at$ here is a
+generalization of its use in GHC 8 in visible type application~\cite{visible-type-application}.}
+
+\subsubsection{Computing the length of a vector}
+
+Given a vector, we would like to be able to compute its length. At first,
+such an idea might seem trivial---the length is right there in the type!
+However, we must be careful here. While the length is indeed in the type,
+types are erased in Haskell. That length is thus not automatically
+available at runtime
+for computation. We have two choices for our implementation of |length|:
+\begin{notyet}
+\begin{spec}
+lengthRel :: pi n. forall a. Vec a n -> Nat
+lengthRel (at n) _ = n
+\end{spec}
+\end{notyet}\vspace{-3ex}
+\begin{code}
+lengthIrrel :: forall n a. Vec a n -> Nat
+lengthIrrel Nil      = 0
+lengthIrrel (_ :> v) = 1 + lengthIrrel v
+\end{code}
+%if style == newcode
+\begin{code}
+lengthRel :: forall n a. Sing.SingI (n :: Nat) => Vec a n -> Nat
+lengthRel _ = Sing.fromSing (Sing.sing :: Sing.Sing n)
+\end{code}
+%endif 
+The difference between these two functions is whether or not they quantify
+|n| relevantly. A \emph{relevant} parameter is one available at runtime.\footnote{This is a slight simplification, as relevance still has meaning in types that
+are erased. See \pref{sec:relevance}.} In |lengthRel|, the type declares that
+the value of |n|, the length of the |Vec a n| is available at runtime.
+Accordingly, |lengthRel| can simply return this value. The one visible
+parameter, of type |Vec a n| is needed only so that type inference can infer
+the value of |n|. This value must be somehow known at runtime in the calling
+context, possibly because it is statically known (as in |lengthRel fourTrues|)
+or because |n| is avaiable relevantly in the calling function.
+
+On the other hand, |lengthIrrel| does not need runtime access to |n|; the
+length is computed by walking down the vector and counting the elements.
+When |lengthRel| is available to be called, both |lengthRel| and |lengthIrrel|
+should always return the same value. (In contrast, |lengthIrrel| is always available
+to be called.)
+
+The choice of relevant vs.~irrelevant parameter is denoted by the use of
+|pi| or |forall| in the type. Note that |lengthRel| says |pi n| while
+|lengthIrrel| says |forall n|. The programmer must choose between relevant
+and irrelevant quantification when writing or calling functions.
+(See \pref{sec:related-type-erasure} for a discussion of how this choice
+relates to decisions in other dependently typed languages.)
+
+As a smaller note, see also that |lengthRel| takes |n| before |a|. Both
+are invisible, but the order is important because we wish to bind the
+first one in the body of |lengthRel|. If I had written |lengthRel|'s type
+beginning with |forall a. pi n.|, then the body would have to be
+|lengthRel (at _) (at n) _ = n|.
+
+\subsubsection{Conclusion}
+
+These examples have warmed us up to examine more complex uses of dependent
+types in Haskell. We have seen the importance of discerning the relevance of
+a parameter, invisibility overrides, and dependent pattern matching.
 
 \subsection{A strongly typed simply typed $\lambda$-calculus interpreter}
 \label{sec:stlc}
@@ -91,8 +369,6 @@ We are then confronted quickly with the decision of how to encode bound
 variables. Let's choose de Bruijn indices~\cite{debruijn}, as these are well-known
 and conceptually simple. However, instead of using natural numbers to
 represent our variables, we'll use a custom |Elem| type:
-\rae{Make sure I use |Type| throughout the dissertation, and introduce it 
-in Chapter 2.}
 \begin{code}
 data Elem :: [a] -> a -> Type where
   EZ  ::               Elem  (x !: xs)  x
@@ -106,7 +382,7 @@ element in |x !: xs|. The second constructor |ES| says that, if we know
 
 We can now write our expression type:
 \begin{code}
-data Expr :: [Ty] -> Ty -> * ^^ where
+data Expr :: [Ty] -> Ty -> Type where
   Var  :: Elem ctx ty                              ->  Expr ctx ty
   Lam  :: Expr (arg !: ctx) res                    ->  Expr ctx (arg !:~> res)
   App  :: Expr ctx (arg !:~> res) -> Expr ctx arg  ->  Expr ctx res
@@ -125,7 +401,7 @@ impossible to create an ill-typed |Expr| (ignoring the possibility of
 We now wish to write both small-step and big-step operational semantics
 for our expressions. First, we'll need a way to denote values in our language:
 \begin{code}
-data Val :: Ty -> * ^^ where
+data Val :: Ty -> Type where
   LamVal  :: Expr ![arg] res ->  Val (arg !:~> res)
   TTVal   ::                     Val !Unit
 \end{code}
@@ -184,7 +460,7 @@ subst e = go []
 %
 %if style == newcode
 \begin{code}
-data Length :: [a] -> * where
+data Length :: [a] -> Type where
   LZ :: Length ![]
   LS :: Length t -> Length (h !: t)
 
@@ -293,7 +569,7 @@ something that is not yet accepted.
 I do not expect either of these problems to be significant.}
 \begin{noway}
 \begin{spec}
-data StepResult :: Expr ![] ty -> * ^^ where
+data StepResult :: Expr ![] ty -> Type where
   Stepped  :: pi (e'  :: Expr ![]  ty) -> (!eval e ~ !eval e')  => StepResult e
   Value    :: pi (v   :: Val       ty) -> (!eval e ~ v)         => StepResult e
 \end{spec}
@@ -387,7 +663,7 @@ has an aggressive rewriting engine used to solve equality predicates.
 %% %format :&: = "\mathop{{:}{\&}{:}}"
 %% \begin{notyet}
 %% \begin{spec}
-%% data Sigma (s :: *) (t :: s -> *) where
+%% data Sigma (s :: Type) (t :: s -> Type) where
 %%   (:&:) :: pi (fst :: s) -> t fst -> Sigma s t
 
 %% proj1 :: Sigma s t -> s
@@ -785,23 +1061,33 @@ used Template Haskell to complement our dependent types to achieve something
 neither one could do alone.
 \end{itemize}
 
-\subsection{Units-of-measure}
+%% \subsection{Units-of-measure}
 
-Just as it is easy to make a type error when programming in an untyped
-language, it is also easy to make an error around dimensions or units
-when doing calculations over physical quantities. Accordingly, it is
-helpful when a type system is able to check for correct use of
-dimensions and units. I am far from the first to suggest or implement
-this idea, which dates back at least as far as \citet{kennedy-thesis}.
-Checking for units in code is integrated into F#'s type system,
-and several Haskell libraries exist (including my own) to check units.\footnote{The \package{dimensional} by Buckwalter and my \package{units} package~\cite{closed-type-families-extended,type-checking-units} are the leading examples.}
-Recent work by Gundry also adds to the field of work integrating unit-checking
-with Haskell~\cite{type-checker-plugins}~\cite[Chapter 3]{gundry-thesis}.
+%% Just as it is easy to make a type error when programming in an untyped
+%% language, it is also easy to make an error around dimensions or units
+%% when doing calculations over physical quantities. Accordingly, it is
+%% helpful when a type system is able to check for correct use of
+%% dimensions and units. I am far from the first to suggest or implement
+%% this idea, which dates back at least as far as \citet{kennedy-thesis}.
+%% Checking for units in code is integrated into F#'s type system,
+%% and several Haskell libraries exist (including my own) to check units.\footnote{The \package{dimensional} by Buckwalter and my \package{units} package~\cite{closed-type-families-extended,type-checking-units} are the leading examples.}
+%% Recent work by Gundry also adds to the field of work integrating unit-checking
+%% with Haskell~\cite{type-checker-plugins}~\cite[Chapter 3]{gundry-thesis}.
 
-What new light can Dependent Haskell shed on this well-studied area? 
-\rae{was here}. \rae{want to mention integration with type-checker plugins
-and opportunities for simplification. Also that HAskellers already like
-crazy type-y things.}
+%% What new light can this well-studied area shed on our understanding of
+%% Dependent Haskell?
+
+%% \begin{itemize}
+%% \item Despite the lack of full-spectrum dependent types, Haskellers try to
+%% leverage their type system to do the sort of checking that generally requires
+%% either dependent types or a built-in facility (as in F#).
+%% \item While encoding
+%% some amount of unit checking in non-dependent Haskell is possible, it is
+%% painful and brittle. The \package{dimensional} approach is restricted to
+%% work only with multiples of the seven base SI units
+%% \rae{was here}. \rae{want to mention integration with type-checker plugins
+%% and opportunities for simplification. Also that HAskellers already like
+%% crazy type-y things.}
 
 \subsection{Machine-checked sorting algorithms}
 
@@ -829,7 +1115,6 @@ extra checks that dependent types offer without the need to rewrite large
 parts of an application. Indeed any of the examples considered in this
 chapter can be hidden beneath simply typed interfaces and thus form
 just one component of a larger, simply typed application.
-\rae{This is a bit weak. Improve?}
 
 \section{Encoding hard-to-type programs}
 
@@ -857,12 +1142,10 @@ Let's build up our solution one step at a time. We'll first focus
 on building a |zipWith| that is told what arity to be; then we'll
 worry about inferring this arity.
 
-We first need a definition of the natural numbers:
-\begin{code}
+Let's recall the definition of natural numbers from \pref{sec:example-nats}:
+\begin{spec}
 data Nat = Zero | Succ Nat
-\end{code}
-In the text, I will abbreviate these unary numbers with ordinary
-decimals.
+\end{spec}
 
 What will the type of our final |zipWith| be? It will first take a function
 and then several lists. The types of these lists are determined by the type
@@ -1082,7 +1365,7 @@ tyCon = undefined
 %
 It is critical that this function returns |(:~~:)|, not |(:~:)|. This is
 because |TyCon|s exist at many different kinds. For example, |Int| is at
-kind |*|, and |Maybe| is at kind |* -> *|. Thus, when comparing two
+kind |Type|, and |Maybe| is at kind |Type -> Type|. Thus, when comparing two
 |TyCon| representations for equality, we want to learn whether the types
 \emph{and the kinds} are equal. If we used |(:~:)| here, then the |eqTyCon|
 could be used only when we know, from some other source, that the kinds
@@ -1115,7 +1398,7 @@ dynamically typed package:
 %
 \begin{code}
 data Dyn where
-  Dyn :: forall (a :: *). TypeRep a -> a -> Dyn
+  Dyn :: forall (a :: Type). TypeRep a -> a -> Dyn
 \end{code}
 
 The |a| type variable there is an \emph{existential} type variable. We can
@@ -1177,14 +1460,14 @@ to |a2|. If we had only homogeneous equality, it would be necessary that
 the types represented by |a1| and |a2| be of the same kind. Yet, we can't
 know this here! Even if the types represented by |TyApp a1 b1| and
 |TyApp a2 b2| have the same kind, it is possible that |a1| and |a2| would
-not. (For example, maybe the type represented by |a1| has kind |* -> *|
-and the type represented by |a2| has kind |Bool -> *|.) With only
+not. (For example, maybe the type represented by |a1| has kind |Type -> Type|
+and the type represented by |a2| has kind |Bool -> Type|.) With only
 homogeneous equality, we cannot even write an equality function over
 this form of type representation. The problem repeats itself in the
 definition of |dynApply|, when calling |eqTyCon tarrow TArrow|. The
 call to |eqT| in |dynApply|, on the other hand, \emph{could} be homogeneous,
 as we would know at that point that the types represented by |targ| and
-|targ'| are both of kind |*|.
+|targ'| are both of kind |Type|.
 
 In today's Haskell, the lack of heterogeneous equality means that |dynApply|
 must rely critically on |unsafeCoerce|. With heterogeneous equality, we can
@@ -1281,12 +1564,12 @@ type family Any :: k  -- no instances
 \end{code}
 The type family |Any| can be used at any kind, and so inhabits all kinds.
 
-Furthermore, Dependent Haskell has the |* :: *| axiom, meaning that instead of
+Furthermore, Dependent Haskell has the |Type :: Type| axiom, meaning that instead of
 having an infinite hierarchy of universes characteristic of Coq, Agda, and
 Idris, Dependent Haskell has just one universe which contains itself. It is
 well-known that self-containment of this form leads to logical inconsistency
 by enabling the construction of a looping term~\cite{girard-thesis}, but we are
-unbothered by this. By allowing ourselves to have |* :: *|, the type system
+unbothered by this. By allowing ourselves to have |Type :: Type|, the type system
 is much simpler than in systems with a hierarchy of universes.
 
 There are two clear downsides of the lack of totality:

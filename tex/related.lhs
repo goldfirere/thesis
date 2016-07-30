@@ -156,7 +156,12 @@ correct! How do we retain runtime performance in the face of dependent types?
 
 \item Dependent types will allow for proper dependent pairs ($\Sigma$-types).
   Is it worth introducing new syntax to support these useful constructs directly?
+
+\item \rae{Pretty-printer plugin?}
 \end{itemize}
 \end{proposal}
+
+\section{Type erasure in other languages}
+\label{sec:related-type-erasure}
 
 %%  LocalWords:  gundry newtype SMT
