@@ -1,0 +1,699 @@
+%% -*- mode: LaTeX; compile-command: "cd ..; make compile" -*-
+
+%if style == newcode
+%include rae.fmt
+
+\begin{code}
+
+import Data.Kind
+import Prelude
+import DB hiding ( (:>) )
+import Control.Monad ( MonadPlus(..) )
+import Control.Applicative ( Alternative(..) )
+
+\end{code}
+
+%endif
+
+\chapter{Implementation}
+\label{cha:implementation}
+
+This chapter reviews a number of practical issues that arise in the course
+of implementing the theory presented in this dissertation. Perhaps the most
+interesting of these is that the function that computes equality in GHC
+does not simply check for $\alpha$-equivalence; see \pref{sec:picod}.
+
+\section{Current state of implementation}
+
+As of this writing (August 2016), a only portion of the improvements to Haskell
+described in this dissertation are implemented. This section descibes the current
+state of play and future plans.
+
+\subsection{Implemented in GHC 8}
+
+The language supported by GHC 8 is already a large step toward the language
+in this dissertation. The features beyond those available in GHC 7 are enabled
+by GHC's \ext{TypeInType} extension. I personally implemented essentially
+all aspects of this extension and merged my work in with the development stream.
+I have had feedback and bug reports from many users,\footnote{According to
+the GHC bug tracker, 19 users (excluding myself) have posted bugs against my
+implementation.} indicating that my new
+features are already gaining traction in the community.
+Here are its features:
+
+\begin{itemize}
+\item The core language is very closely as described in my prior work~\cite{nokinds}.
+\item The kind of types |*| is now treated as described in \pref{sec:parsing-star}.
+\item Types and kinds are indistinguishable and fully interchangable.
+\item Kind variables may be explicitly quantified:
+\begin{working}
+\begin{code}
+data Proxy :: forall k. k -> Type where
+  Proxy :: forall k (a :: k). Proxy a
+\end{code}
+\end{working}
+\item The same variable can be used in a type and in a kind:
+\begin{working}
+\begin{code}
+data T where
+  MkT :: forall k (a :: k). k -> Proxy a -> T
+\end{code}
+\end{working}
+\item Type families can be used in kinds.
+\item Kind-indexed GADTs:
+%{
+%if style == newcode
+%format :~~: = ":~~~:"
+%endif
+\begin{working}
+\begin{code}
+data G :: forall k. k -> Type where
+  GInt    :: G Int
+  GMaybe  :: G Maybe
+data (:~~:) :: forall k1 k2. k1 -> k2 -> Type where
+  HRefl :: a :~~: a
+\end{code}
+\end{working}
+%}
+\item Higher-rank kinds are now possible:
+\begin{working}
+\begin{code}
+class HTestEquality (f :: forall k. k -> Type) where
+  hTestEquality :: forall k1 k2 (a :: k1) (b :: k2). f a -> f b -> Maybe (a :~~: b)
+instance HTestEquality TypeRep where  -- from \pref{sec:example-reflection}
+  hTestEquality = eqT
+\end{code}
+\end{working}
+\item GADT data constructors can now be used in types.
+\item The type inference algorithm used in GHC over types directly corresponds
+to those rules in \bake/ that deal with the constructs that are available
+in types (that is, missing |case|, |let|, and $\lambda$). This algorithm
+in GHC
+is bidirectional, as is \bake/.
+\end{itemize}
+
+\subsection{Implemented in \package{singletons}}
+
+Alongside my work implementing dependent types in GHC, I have also continued
+the development of my \package{singletons} package~\cite{singletons,promoting-type-families}. This package has some
+enduring populariy: it has over 7,000 downloads, 31 separate users reporting
+bugs, is the primary subject of several blog posts\footnote{See
+\begin{itemize}
+\item  \url{https://www.schoolofhaskell.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell}
+\item \url{https://ocharles.org.uk/blog/posts/2014-02-25-dependent-types-and-plhaskell.html}
+\item \url{http://lambda.jstolarek.com/2014/09/promoting-functions-to-type-families-in-haskell/}
+\item \url{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html}
+\end{itemize}
+ all by different authors---not to mention my own posts.} and has even made its way
+into a textbook on Haskell~\cite[Chapter 13]{beginning-haskell}.
+The \package{singletons} package uses Template Haskell~\cite{template-haskell},
+GHC's metaprogramming facility, to transform normal term-level declarations
+into type-level equivalents.
+
+I use my work in \package{singletons} as a proof-of-concept for implementing
+dependent types. My goal with the dependent types work is to make this package
+fully obsolete. In the meantime, it is an invaluable playground of ideas both
+for me and other Haskellers who do not wish to wait for dependent types proper.
+
+Because of its function as a proof-of-concept, I include here a list of features
+supported by \package{singletons}. By their support in the library, we can
+be confident that these features can also be supported in GHC without terrible
+difficulty. The \package{singletons} currently supports code using the following
+features in types:
+
+\begin{itemize}
+\item All term-level constructs supported by Template Haskell except:
+view patterns, |do|, list comprehensions,
+arithmetic sequences. (Template Haskell does not support GHC's arrow-notation.)
+The library specifically \emph{does} support |case|,
+|let| (including recursive definitions) and $\lambda$-expressions. See
+my prior work for the details~\cite{promoting-type-families}.
+\item Unsaturated type families and the distinction between matchable
+and unmatchable arrows
+\item Type classes and instances
+\item Constrained types
+\item Pattern guards
+\item Overloaded numeric literals
+\item Deriving of |Eq|, |Ord|, |Bounded|, and |Enum|
+\item Record syntax, including record updates
+\item Scoped type variables
+\end{itemize}
+
+The latest major effort at improving \package{singletons} targeted GHC 7, though
+the library continues to work with GHC 8. I am confident more constructs could
+be supported with a thorough update to GHC 8---in particular, |do|-notation
+cannot be supported in GHC 7 because it would require a higher-kinded type variable. Such type variables are fully supported in GHC 8, and so I believe
+\package{singletons} could support |do|-notation and list/monad comprehensions
+relatively easily now. However, I wish to spend my implementation efforts on
+getting dependent types in Haskell for real instead of faking it with singletons,
+and so may not complete these upgrades.
+
+\subsection{Implementation to be completed}
+
+There is still a fair amount of work to be done before the implementation
+of dependent types in
+Haskell is complete. Here I provide a listing of the major tasks to be completed
+and my thoughts on each task:
+
+\begin{itemize}
+\item Implement \pico/ as written in this dissertation. The biggest change
+over the current implementation of GHC's intermediate language is that \pico/
+combines the grammar of types and of terms. The current intermediate language
+already supports, for example, heterogeneous equality and the asymmetric
+binding coercion forms (\pref{sec:binding-cong-forms}). While
+combining the internal datatypes for types and terms will be the furthest
+reaching change, I think the most challenging change will be the addition
+of the many different quantifier forms in \pico/ (with relevance markers,
+visibility markers, and matchability markers).
+\item Combine the algorithms that infer the types of terms and the kinds
+of types. Currently, GHC maintains two separate, but similar, algorithms:
+one that type-checks terms and one that kind-checks types. These would be
+combined, as prescribed by \bake/. I expect this to be a \emph{simplification}
+when it is all done, as one algorithm will serve where there is currently
+two---and both are quite complex.
+\item Interleave typechecking with desugaring. Currently, GHC maintains
+two separate phases when compiling terms: typechecking ensures that the
+source expression is well-typed and also produces information necessary
+for elaboration into its intermediate language. Afterwards, GHC then
+desugars the typechecked program, translating it to the intermediate language.
+Desugaring today is done only after the whole module is typechecked. However,
+if some declarations depend on evaluating other declarations (because the
+latter are used in the former's types), then desugaring and typechecking
+will have to be interleaved. I do not expect this to be a challenge, however,
+for two reasons:
+\begin{itemize}
+\item Typechecking and desugaring are \emph{already} interleaved, at least
+in types. Indeed, the kind-checker for types produces a type in the intermediate
+language today, effectively typechecking and desugaring all at once.
+\item Typechecking happens by going in order through a sequence of mutually
+recursive groups. One expression cannot depend on another within the same
+group, and so we can just process each group one at a time, typechecking
+and then desugaring.
+\end{itemize}
+\item The source language will have to be changed to accept the new features.
+To be honest, I am a little worried about this change, as it will require
+updating the parser. Currently, the parsers for types and expressions are
+separate, but this task would require combining them. Will this be possible?
+I already know of one conflict: the |!| used in Template Haskell quoting
+(which made a brief appearance in \pref{sec:th-quote}) and the |!| used
+in denoting a namespace change. Both of these elements of the syntax are
+pre-existing, and so I will have to find some way of merging them.
+\end{itemize}
+
+At this point, I do not foresee realistically beginning these implementation
+tasks before the summer of 2017. If that process goes swimmingly, then perhaps
+we will see Dependent Haskell released in early 2018. More likely, it will be
+delayed until 2019.
+
+During the process of writing this dissertation, I worked on merging my
+implementation of \ext{TypeInType} into the GHC main development stream.
+This process was \emph{much} harder than I anticipated, taking up two
+more nearly full-time months than expected. I am thus leery of overpromising
+about the rest of the implementation task embodied in this dissertation.
+However, my success in emulating so many of the features in Dependent Haskell
+in \package{singletons} gives me hope that the worst of the implementation
+burden is behind me.
+
+Despite not having fully implemented Dependent Haskell, I still have learned
+much by implementing one portion of the overall plan. The rest of this chapter
+shares this hard-won knowledge.
+
+\section{Type equality}
+\label{sec:picod}
+
+%format (refl (x)) = "\langle" x "\rangle"
+The notion of type equality used in the definition of \pico/ is quite
+restrictive: it is simple $\alpha$-equivalence. This equality relation
+is very hard to work with in practice, because it is \emph{not} proof-irrelevant.
+That is, $|Int ||> refl Type| \neq |Int|$. This is true despite the fact
+that the $\sim$ relation \emph{is} proof-irrelevant.
+
+The proof-relevant nature of $=$ poses a challenge in transforming \pico/
+expressions into other well-typed \pico/ expressions. This challenge
+comes to a head in the unifier (\pref{sec:unification}) where, given
+$[[t1]]$ and $[[t2]]$, we must
+find a substitution $[[theta]]$ such that $[[t1 = t2]]$. However,
+with proof-relevant equality, such a specification is a bit wrong---instead,
+we want $[[theta]]$ and $[[g]]$ such that $[[S;G |-co g : t1[theta] [k1[theta] ]~[k2[theta] ] t2[theta] ]]$
+(for an appropriate $[[S]]$ and $[[G]]$). Experience has shown that
+constructing the $[[g]]$ is a real challenge.\footnote{When I attempted
+this implementation, the coercion language was a bit different than
+presented in \pico/. In particular, I did not have the $[[~=]]$ coercion
+form, instead having the much more restricted version of coherence that appears
+in my prior work~\cite{nokinds}. The new form $[[~=]]$ is admissible
+given the older form, but it is not easy to derive. It is conceivable that,
+with $[[~=]]$ this implementation task would now be easier. This fact
+does not call into question, however, the results later on in this section.}
+
+\subsection{Properties of a new definitional equality $[[==]]$}
+
+The problem, as noted, is that the $=$ relation is too small. How can
+we enlarge this relation? Since the relation we seek deviates both from
+$\alpha$-equivalence and from $\sim$, we need a new name: let's call it
+$[[==]]$, as it will be the form of definitional equality in the
+implementation. (The relation is checked by the GHC function |eqType|, called
+whenever two types must be compared for equality.) We will define
+a new type system, \picod/, based on $[[==]]$. Here are several
+properties we require of $[[==]]$:
+
+\begin{property}
+\label{prop:de-equiv}
+The $[[==]]$ must be an equivalence relation. That is,
+it must be reflexive, symmetric, and transitive.
+\end{property}
+\begin{property}
+\label{prop:de-bigger-eq}
+ The $[[==]]$ relation must be a superset of $=$. That is,
+if $[[t1 = t2]]$, then $[[t1 == t2]]$.
+\end{property}
+\begin{property}
+\label{prop:de-smaller-twiddle}
+The $[[==]]$ relation must be a subset of $\sim$. That is, if
+$[[t1 == t2]]$, then there must be a proof of $[[t1]] \sim [[t2]]$
+(in appropriate contexts).
+\end{property}
+\begin{property}
+\label{prop:de-cong}
+The $[[==]]$ relation must be congruent. That is, if corresponding
+components of two types are $[[==]]$, then so are the two types.
+\end{property}
+\begin{property}
+\label{prop:de-proof-irrel}
+The $[[==]]$ must be proof-irrelevant. That is, $[[t == t |> g]]$
+for all $[[t]]$.
+\end{property}
+\begin{property}
+\label{prop:de-homo}
+The $[[==]]$ relation must be homogeneous. That is, it can
+relate two types of the same kind only.
+\end{property}
+\begin{property}
+\label{prop:de-efficient}
+Computing whether $[[t1 == t2]]$ must be quick.
+\end{property}
+
+We need Properties~\ref{prop:de-equiv}-\ref{prop:de-cong} for soundness.
+I will argue below
+that we can transform the typing rules for \pico/ to use $[[==]]$ where
+they currently use $=$. This argument relies on these first four properties.
+
+\pref{prop:de-proof-irrel} means that our new definition of $[[==]]$ indeed
+simplifies the implementation. After all, seeking a proof-irrelevant equality
+is what started this whole line of inquiry. However, despite \pref{prop:de-proof-irrel} masquerading as only a \emph{desired} property, it turns out that with
+my proof technique, this is a \emph{necessary} property. Indeed, it seems
+that once $[[==]]$ is any relation stricly larger than $=$, it must be
+proof irrelevant. This is because the translation from a derivation in
+\picod/ to one in \pico/ (see next subsection) will use coercions
+as obtained through \pref{prop:de-smaller-twiddle}. These coercions must
+not interfere with $[[==]]$-equivalence.
+
+\pref{prop:de-homo} arises from the use of $[[==]]$ (that is, |eqType|) in the
+implementation. There are many places where we compare two types for equality
+and, if they are equal, arbitrarily choose one or the other. Thus,
+$[[==]]$ must be substitutive and accordingly homogeneous.
+
+\pref{prop:de-efficient} arises because we use |eqType| very frequently. A slow computation
+or a search simply is not feasible.
+
+Beyond these requirements, a larger $[[==]]$ relation is better.
+Having a larger
+$[[==]]$ makes implementing \pico/ easier, as we will be able to replace
+one type with another type, as long as the two are $[[==]]$.
+Thus, having more types be related makes the system more flexible.
+
+\subsection{Replacing $=$ with $[[==]]$}
+
+We can take the typing rules of \pico/ and mechanically replace uses of $=$
+(over types) with $[[==]]$ to form the rules of \picod/.
+This is done by looking for every duplicated
+use of a type in the premises of a rule, and putting in a $[[==]]$ instead.
+
+For example, the application rule is transformed from
+\[
+\ottdruleTyXXAppRel{}
+\]
+to
+\[
+\ottdruleDTyXXAppRel{}
+\]
+This new rule allows $[[k1]]$ and $[[k1']]$ not to be $\alpha$-equivalent,
+as long as they are $[[==]]$. It also makes use of an \emph{extraction
+operator} $[[=>=]]$ that pulls out the component pieces of a type, respecting
+$[[==]]$-equivalence. The full set of rules that define \picod/ appear
+in \pref{app:picod-proofs}.
+
+Continuing the notational convention where $[[J]]$ can stand for any of the
+judgments $[[|-ty]]$, $[[|-co]]$, $[[|-alt]]$, $[[|-prop]]$, $[[|-ctx]]$,
+$[[|-vec]]$, or $[[|-s]]$, we have
+following lemmas, relating
+\picod/ to \pico/:
+
+\begin{lemma*}[\picod/ is an extension of \pico/] ~
+If $[[S;G |- J]]$ then $[[S;G ||- J]]$.
+\end{lemma*}
+
+\begin{proof}
+Corollary of \pref{prop:de-bigger-eq} of the definition of $[[==]]$.
+\end{proof}
+
+We also need a lemma where a result in \picod/ implies one in \pico/.
+This is a bit harder to state, as it requires an operation that translates
+a term $[[t]]$ that is well-typed in \picod/ into one well-typed in \pico/.
+We write the latter as $[[^t^]]$. The translation operation $[[^\cdot^]]$
+is actually a deterministic operation on the typing derivation in \picod/; the conversion
+is valid only when the original type is well-formed in \picod/.
+The full statement of the lemma relating \picod/ to \pico/ appears in
+\pref{app:picod-proofs}, but the following informal statement will serve
+us well here:
+
+\begin{lemma*}[\picod/ is sound {[\pref{lem:picod-sound}]}]
+If $[[S;G ||- J]]$, then $[[S;^G^ |- ^J^]]$.
+\end{lemma*}
+
+With both of these lemmas in hand, we can see that \pico/ and \picod/
+are equivalent systems and that all of the results from \pico/ carry
+over to \picod/.
+
+\subsection{Implementation of $[[==]]$}
+
+Having laid out the properties we require of $[[==]]$, my choice of
+implementation of $[[==]]$ is this:
+
+\begin{definition*}[Definitional equality $[[==]]$]
+We have $[[t1 == t2]]$ whenever $[[|k1| = |k2|]]$ and $[[|t1| = |t2|]]$,
+where $[[t1]] : [[k1]]$ and $[[t2]] : [[k2]]$.
+\end{definition*}
+The operation $[[|t|]]$ here is the coercion erasure operation from
+\pref{sec:coercion-erasure-intro}. It simply removes all casts
+and coercions from a
+type. In the implementation, we can easily go from a type to its kind,
+as all type variables in GHC store their kinds directly (as also
+described in \pref{sec:ghc-vars-have-kinds}), with no need for a separate
+typing context. The implementation actually optimizes this equality
+check a bit, by comparing the kinds only when the type contains a cast---this
+avoids the extra check in the common case of a simple type.
+
+This equality check easily satisfies the properties described above.
+It also supports the extraction operation, which simply looks through
+casts.
+
+\section{Unification}
+\label{sec:unification}
+
+It is often necessary to unify two types. This is done in
+rule \rul{Alt\_Match} in \pico/ but is also necessary in several places
+during type inference---for example, when matching up a class instance
+with a constraint that must be solved. With dependent types, however,
+how should such a unifier work? For example, should $[[(a b)]]$ unify
+with $[[(t s) |> g]]$? The top-level forms of these are different,
+and yet, intuitively, we would want them to unify. In other words,
+we want an algorithm that does unification up to $[[==]]$.
+
+I have thus implemented a novel unification algorithm in GHC that
+does indeed unify the forms above. To first order, this algorithm
+simply ignores casts and coercions. The problem if we ignore coercions
+altogether is that the resulting subsitution might not be well kinded.
+As a simple example, consider unifying $[[a]]$ with $[[t |> g]]$. If we just
+ignore casts, then we get the substitution $[[t/a]]$---but $[[t]]$ and
+$[[a]]$ might have different kinds. In the type application example,
+we similarly do not want the substitution $[[t/a,s/b]]$ but instead
+$[[(t |> g1)/a, (s |> g2)/b]]$ for approrpriate $[[g1]]$ and $[[g2]]$.
+
+My approach, then, is for the algorithm to take three inputs: the two types
+to unify and a coercion between their kinds. At the leaves (matching a variable
+against a type), we insert this coercion to make the substitution well-kinded.
+At interior nodes, we simply ensure that we have a new kind coercion to pass
+to recursive calls.
+
+%if style == poly
+%format tau1
+%format tau2
+%format tau1'
+%format tau2'
+%format gamma = "\gamma"
+%format gamma1
+%format gamma2
+%format eta = "\eta"
+%format <<>> = "\fatsemi"
+%format sym = "\ottkw{sym}"
+%format a = "[[a]]"
+%format b = "[[b]]"
+%format c = "[[c]]"
+%format TType = "\id{Type}"
+%format :@ = "\ "
+%format IA a b = a "\ \{" b "\}"
+%format CA a b = a "\ " b
+%format sigma1
+%format sigma2
+%format kappa = "\kappa"
+%format kappa1
+%format kappa1'
+%format kappa2
+%format kappa2'
+%format (H taus) = "{[[H]]}_{\{" taus "\}}"
+%format taus = "\overline{\tau}"
+%format taus1
+%format taus2
+%format rel = "{}_{[[rel]]}"
+%format : = "{:}"
+%format phi = "\phi"
+%format phi1
+%format phi2
+%format pie a k t = "\Pi" a "{:}_{[[rel]]}" k "." t
+%format pic c p t = "\Pi" c "{:}" p "." t
+%format lam a k t = "\lambda" a "{:}_{[[rel]]}" k "." t
+%format lcm a p t = "\lambda" a "{:}" p "." t
+%format PROP a b c d = a "\mathop{{}^{" b "}{\sim}^{" c "}}" d
+%format (TYVar a) = a
+%else
+%format |> = ":>"
+%format a  = "T"
+%format c  = "C"
+%format pie = "PIE"
+%format pic = "PIC"
+%format lam = "LAM"
+%format lcm = "LCM"
+%format refl = "Refl"
+%format sym = "Sym"
+\begin{code}
+data TType = TType :> Coercion
+           | TYVar TyVar
+           | H [TType]
+           | TType :@ TType
+           | IA TType TType
+           | CA TType Coercion
+           | PIE TyVar TType TType
+           | PIC CoVar Prop TType
+           | LAM TyVar TType TType
+           | LCM CoVar Prop TType
+           | Type
+data UM :: Type -> Type
+instance Functor UM where
+  fmap = undefined
+instance Applicative UM where
+  pure = undefined
+  (<*>) = undefined
+instance Monad UM where
+  (>>=) = undefined
+instance Alternative UM where
+  empty = undefined
+  (<|>) = undefined
+instance MonadPlus UM where
+data TyVar = T
+data CoVar = C
+data Coercion = Refl TType
+              | Sym Coercion
+substTyVar :: TyVar -> UM (Maybe TType)
+substTyVar = undefined
+bindTv :: TyVar -> TType -> UM ()
+bindTv = undefined
+typeKind :: TType -> TType
+typeKind = undefined
+data Prop = PROP TType TType TType TType
+(<<>>) :: Coercion -> Coercion -> Coercion
+_ <<>> _ = undefined
+\end{code}
+%endif
+\begin{figure}
+\begin{code}
+unify :: TType -> TType -> Coercion -> UM ()
+unify (tau1 |> gamma)      tau2                 eta  =  unify  tau1  tau2  (gamma <<>> eta)
+unify tau1                 (tau2 |> gamma)      eta  =  unify  tau1  tau2  (eta <<>> sym gamma)
+unify (TYVar a)            tau2                 eta  =  unifyVar   a     tau2  eta
+unify tau1                 (TYVar a)            eta  =  unifyVar   a     tau1  (sym eta)
+unify (H taus1)            (H taus2)            _    =  unifyTys taus1 taus2
+unify (tau1 :@ sigma1)     (tau2 :@ sigma2)     _    =  unifyTyApp tau1 sigma1 tau2 sigma2
+unify (IA tau1 sigma1)     (IA tau2 sigma2)     _    =  unifyTyApp tau1 sigma1 tau2 sigma2
+unify (CA tau1 _)          (CA tau2 _)          _    =  unifyApp tau1 tau2
+unify (pie a kappa1 tau1)  (pie a kappa2 tau2)  _    =  do  unify  kappa1  kappa2  (refl Type)
+                                                            unify  tau1    tau2    (refl Type)
+unify (pic c phi1 tau1)    (pic c phi2 tau2)    _    =  do  unifyProp phi1 phi2
+                                                            unify  tau1    tau2    (refl Type)
+unify (lam a kappa1 tau1)  (lam a kappa2 tau2)  _    =  do  unify  kappa1  kappa2  (refl Type)
+                                                            unify  tau1    tau2    (refl (typeKind tau1))
+unify (lcm c phi1 tau1)    (lcm c phi2 tau2)    _    =  do  unifyProp phi1 phi2
+                                                            unify  tau1    tau2    (refl (typeKind tau1))
+unify _                    _                    _    = mzero
+
+unifyVar :: TyVar -> TType -> Coercion -> UM ()
+unifyVar a tau2 eta = do  mt1 <- substTyVar a
+                          case mt1 of
+                            Nothing    -> bindTv a (tau2 |> sym eta)
+                            Just tau1  -> unify tau1 tau2 eta
+
+unifyTys :: [TType] -> [TType] -> UM ()
+unifyTys []              []              = return ()
+unifyTys (tau1 : taus1)  (tau2 : taus2)  = do    unify tau1 tau2 (refl (typeKind tau1))
+                                                 unifyTys taus1 taus2
+unifyTys _               _               = mzero
+
+unifyTyApp :: TType -> TType -> TType -> TType -> UM ()
+unifyTyApp tau1 sigma1 tau2 sigma2 = do             unifyApp tau1 tau2
+                                                    unify sigma1  sigma2  (refl (typeKind sigma1))
+
+unifyApp :: TType -> TType -> UM ()
+unifyApp tau1 tau2 = do     let  kappa1 = typeKind tau1
+                                 kappa2 = typeKind tau2
+                            unify kappa1  kappa2  (refl Type)
+                            unify tau1    tau2    (refl kappa1)
+
+unifyProp :: Prop -> Prop -> UM ()
+unifyProp (PROP tau1 kappa1 kappa1' tau1') (PROP tau2 kappa2 kappa2' tau2') = unifyTys [kappa1, kappa1', tau1, tau1'] [kappa2, kappa2', tau2, tau2']
+
+\end{code}
+\caption{A unification algorithm up to $[[==]]$}
+\label{fig:unification}
+\end{figure}
+
+The unification algorithm is in \pref{fig:unification}. It works in the context
+of a |UM| monad that can handle failure and stores the ambient substitution
+produced by unification. I will highlight
+a few interesting points in this algorithm:
+\begin{itemize}
+\item The |unify| function considers only those types which might be values.
+It specifically avoids treating \ottkw{case} or \ottkw{fix}. This is because
+non-values are \emph{flattened} away before the unification algorithm runs,
+as described in my prior work~\citet[Section 3.3]{closed-type-families}.
+\item Examine |unifyApp|. After unifying the types' kinds, it just passes
+a reflexive coercion when unifying the types themselves. This is correct
+because, by the time we are unifying the types, we know that the ambient
+substitution unifies the kinds. The coercion relating the types' kinds is
+thus now reflexive.
+\item In the $[[H{ts}]]$ case, the algorithm does not make a separate call
+to unify kinds. This is because the $[[ts]]$ are always well-typed under
+a \emph{closed} telescope. Since |unifyTys| works left-to-right, the kinds
+of any later arguments must be unified by the time those types are
+considered.
+\end{itemize}
+I claim, but do not prove, that this unification algorithm satisfies
+the properties necessary for type safety. See \pref{sec:match-properties}.
+For further discussion about the necessary properties of this algorithm,
+see |Note [Specification of Unification]| in |compiler/types/Unify.hs|
+in the GHC source code repository at \url{https://github.com/ghc/ghc}.
+
+\section{Parsing |*|}
+\label{sec:parsing-star}
+
+As described in \pref{sec:haskell98-kinds}, the kind of types in Haskell
+has long been denoted as |*|. This choice poses a parsing challenge in
+a language where types and kinds are intermixed. Types can include
+binary type operators (via the \ext{TypeOperators} extension), and
+Haskellers have been using |*| as a binary infix operator on types
+for some time. (For example, in the standard library |GHC.TypeLits|.)
+The parsing problem is thus: is |*| an infix operator, or is it the
+kind of types?
+
+GHC 8 offers two solutions to this problem, both already fully implemented.
+Firstly, forward-looking code should use the new constant |Type| to classify
+types. That is, we have |Int :: Type|. So as not to conflict with existing
+uses of datatypes named |Type|, this new |Type| is not always available
+but must be imported, from the new standard module |Data.Kind|. |Type| is
+available whether or not \ext{TypeInType} is specified.
+
+The other solution to this problem is to let the parsing of |*| depend
+on what |*| is in scope. This approach is to enable a smoother migration
+path for legacy code. Without \ext{TypeInType} specified, |*| is available
+under its traditional meaning in code that is syntactically obviously a kind
+(for example, after a |::| in a datatype declaration). When \ext{TypeInType}
+is turned on, |*| is no longer available but must be imported from |Data.Kind|.
+This way, a module can choose to import |Data.Kind|'s |*| or a different
+|*|, depending on its needs. Of course, the module could import these symbols
+qualified and use a module prefix at occurrence sites to choose which |*|
+is meant. Because |*| is treated as an ordinary imported symbol under
+\ext{TypeInType}, module authors can now use standard techniques for managing
+name conflicts and migration.
+
+In order to implement this second solution, the parser treats a space-separated
+sequence of type tokens as just that, without further interpretation. Only
+later, when we have a symbol table available, can we figure out how to
+deal with |*|. This extra step of converting a sequence of tokens to
+a structured type expression outside of the parser actually dovetails with
+the existing step of fixity resolution, which similarly must happen only
+after a symbol table is available.
+
+\section{Promoting base types}
+\label{sec:promoting-base-types}
+
+This dissertation has dwelt a great deal on using algebraic datatypes in types
+and kinds. What about non-algebraic types, like |Int|, |Double|, or |Char|?
+These can be used in types just as easily as other values. The problem is
+in reducing operations on these types. For example, if a type mentions
+|5 - 8|, the normal type reduction process in the typechecker can replace
+this with |(-3)|. However, what if we see |5 + x - x| for an unknown |x|?
+We would surely like to be able to discover that |(5 + x - x) ~ 5|. Proving
+such equalities is difficult however.
+
+It is here that a new innovation in GHC will come in quite handy: typechecker
+plugins. \citet{diatchki-smt-plugin} has already used the plugin interface
+(also described by \citet{type-checker-plugins}) to integrate an SMT solver
+into GHC's typechecker, in order to help with GHC's existing support for
+some type-level arithmetic. As more capabilities are added to types, the
+need for a powerful solver to deal with arithmetic equalities will grow.
+By having a plugin architecture, it is possible that individual users can
+use solvers tailored to their needs, and it will be easy for the community
+to increase the power of type-level reasoning in a distributed way.
+These plugins can easily be distributed with application code and so are
+appropriate for use even in deployment.
+
+%% \section{Efficiency of compilation}
+
+%% As types and coercions have become more complex, we GHC developers have
+%% observed that compilation times have slowed down. One of the causes of this
+%% slow-down is that coercions, in particular, have gotten much larger. However,
+%% this led to a key realization: coercions are unnecessary during compilation.
+
+%% Although coercions are vitally necessary for efficient, syntax-directed
+%% typechecking of \pico/, they are not needed at all to produce runtime
+%% code. Most of the time, GHC is invoked without \pico/'s typechecker engaged.
+%% The Haskell source is typechecked, the \pico/ is produced, but
+%% \pico/'s checker is never consulted. (Users must enable this extra check
+%% with \texttt{-dcore-lint}.) This is because a correctly implemented
+%% compiler should never produce invalid intermediate code---checking this
+%% code is just a check on the compiler implementation, not the user-written
+%% Haskell.
+
+%% We thus have a fantastic optimization opportunity: eliminate coercions.
+%% When \texttt{-dcore-lint} is not specified, GHC should just avoid making
+%% coercions altogether. No effort would then be spent on their creation, manipulation,
+%% or serialization. However, we still must be careful: we must make sure that
+%% any manipulation of a \pico/ program would still be possible even if we tracked coercions.
+%% The operation to be most concerned with is lifting operations out of |case|
+%% alternatives. Here is an example:
+%% \begin{code}
+%% data G a where
+%%   GBool :: G Bool
+
+%% f :: a -> G a -> Bool
+%% f x g = case g of
+%%   GBool -> x
+%% \end{code}
+%% The use of |x| at type |Bool| is valid only within the context of the match
+%% for |GBool|. Yet without writing the coercion, it would be easy for a transformation
+%% to lift the |x| out of the |case|-match and decide that the entire |case|-match can
+%% be dropped. The solution here is to continue to track coercion variables even
+%% when we are not tracking coercions. Specifically, we would note that the body
+%% of the match has a cast by some coercion---never mind \emph{what} coercion---that
+%% mentions the coercion variable bound by the GADT pattern match. In this way,
+%% it will be clear that the |x| cannot be lifted out.
+
+%% Another potential hazard of this optimization

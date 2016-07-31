@@ -891,6 +891,7 @@ only names.
 \subsubsection{Inferring a schema}
 \label{sec:inferring-schema}
 \label{sec:type-in-term}
+\label{sec:th-quote}
 
 Type inference works to infer the type of |readDB|, assigning it this
 whopper:
@@ -1289,6 +1290,7 @@ simplifies to |Succ (Succ (CountArgs a))| but can go no further; |CountArgs a| w
 not simplify to |Zero|, because |a| is not apart from |b -> c|.
 
 \subsection{Typed reflection}
+\label{sec:example-reflection}
 
 \emph{Reflection} is the act of reasoning about a programming language from
 within programs written in that language.\footnote{Many passages in this

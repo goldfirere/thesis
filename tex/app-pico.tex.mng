@@ -202,6 +202,7 @@ and \pref{lem:ctx-reg}.
 \end{proof}
 
 \section{Unification}
+\label{sec:match-properties}
 
 We assume the following properties of our unification algorithm.
 

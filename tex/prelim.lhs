@@ -197,6 +197,7 @@ Data families do not play a large role in this dissertation.
 \section{Rich kinds}
 
 \subsection{Kinds in Haskell98}
+\label{sec:haskell98-kinds}
 
 With type families, we can write type-level programs. But are our type-level
 programs correct? We can gain confidence in the correctness of the type-level

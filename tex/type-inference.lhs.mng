@@ -1947,6 +1947,7 @@ no trouble adapting \bake/'s bidirectional algorithm to GHC as previous
 bidirectional algorithms have been adapted.
 
 \subsection{Unification variables in GHC}
+\label{sec:ghc-vars-have-kinds}
 
 The GHC implementation takes a very different approach to unification variables
 and zonking than does \bake/. A GHC unification variable (called a metavariable

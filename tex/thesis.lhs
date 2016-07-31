@@ -47,7 +47,7 @@
 %include dep-haskell.lhs
 %include pico.lhs
 %include type-inference.lhs
-\include{implementation}
+%include implementation.lhs
 %include related.lhs
 %
 
@@ -62,6 +62,7 @@
 \include{app-pico}
 \include{app-inference-rules}
 \include{app-inference}
+\include{app-eqtype}
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

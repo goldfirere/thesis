@@ -1,0 +1,247 @@
+\chapter{Proofs about \picod/}
+\label{app:picod-proofs}
+
+The \picod/ system is introduced in \pref{sec:picod}; its rules, in full,
+are as follows:
+\ottdefnsJde{}\\
+\ottdefnsJDTy{}\\
+
+
+\pref{sec:picod} stated some properties of $[[==]]$ somewhat informally.
+Here are the more formal descriptions:
+\begin{property}[Formal statement of \pref{prop:de-smaller-twiddle}]
+\label{prop:dco}
+If $[[S;G |-ty t : k]]$, $[[S;G |-ty t' : k]]$, and $[[t == t']]$, then
+there exists $[[g]]$ such that $[[S;Rel(G) |-co g : t [k]~[k] t']]$.
+\end{property}
+
+\begin{property}[Formal statement of \pref{prop:de-cong}]
+\label{prop:dcong}
+If $[[ps == ps']]$, then $[[t[ps/zs] == t[ps'/zs] ]]$.
+\end{property}
+
+\begin{lemma}[Transporting coercions]
+\label{lem:dco-prop}
+If $[[S;Rel(G) |-co g : phi]]$, $[[S;Rel(G) |-prop phi']]$, and $[[phi == phi']]$,
+then there exists $[[g']]$ such that $[[S;Rel(G) |-co g' : phi']]$.
+\end{lemma}
+
+\begin{proof}
+\pref{lem:prop-reg} tells us that
+$[[S;Rel(G) |-prop phi]]$. Let $[[phi = t1 (k1)~(k2) t2]]$ and $[[phi' = t1' (k1')~(k2') t2']]$. We can conclude all of the following by inversion:
+\begin{itemize}
+\item $[[S;Rel(G) |-ty t1 : k1]]$
+\item $[[S;Rel(G) |-ty t2 : k2]]$
+\item $[[S;Rel(G) |-ty t1' : k1']]$
+\item $[[S;Rel(G) |-ty t2' : k2']]$
+\item $[[t1 == t1']]$
+\item $[[t2 == t2']]$
+\end{itemize}
+By \pref{prop:dco}, we can get $[[g1]]$ and $[[g2]]$ such that
+$[[S;Rel(G) |-co g1 : t1 [k1]~[k1'] t1']]$ and
+$[[S;Rel(G) |-co g2 : t2 [k2]~[k2'] t2']]$.
+Thus, $[[S;Rel(G) |-co sym g1 ;; g ;; g2 : phi']]$ as desired.
+\end{proof}
+
+We also regularly need to extract certain bits of a type or proposition,
+via an extraction operator $[[=>=]]$. Extraction has these properties:
+
+\begin{property}[Extraction respects $[[==]]$] ~
+\label{prop:ext-de}
+\begin{enumerate}
+\item If $[[t =>= t']]$ then $[[t == t']]$.
+\item If $[[phi =>= phi']]$ then $[[phi == phi']]$.
+\end{enumerate}
+\end{property}
+
+\begin{property}[Extraction can be chained with $[[==]]$] ~
+\label{prop:ext-chain}
+\begin{enumerate}
+\item If $[[t == t']]$ and $[[t' =>= t'']]$, then
+$[[t =>= t'']]$.
+\item If $[[phi == phi']]$ and $[[phi' =>= phi'']]$, then
+$[[phi =>= phi'']]$.
+\end{enumerate}
+\end{property}
+
+\begin{property}[Extraction is deterministic] ~
+\label{prop:ext-determ}
+\begin{enumerate}
+\item If $[[t =>= t1]]$ and $[[t =>= t2]]$, then $[[t1 = t2]]$.
+\item If $[[phi =>= phi1]]$ and $[[phi =>= phi2]]$, then $[[phi1 = phi2]]$.
+\end{enumerate}
+\end{property}
+
+\begin{property}[Extraction is well-typed] ~
+\label{prop:ext-ty}
+\begin{enumerate}
+\item If $[[S;G |-ty t : k]]$ and $[[t =>= t']]$, then $[[S;G |-ty t' : k']]$
+\item If $[[S;G |-prop phi]]$ and $[[phi =>= phi']]$, then $[[S;G |-prop phi']]$.
+\end{enumerate}
+\end{property}
+
+\begin{lemma}[Scoping]
+\label{lem:dscoping}
+(as \pref{lem:scoping}, but with reference to $[[||-]]$ judgments)
+\end{lemma}
+
+\begin{proof}
+Similar to the proof for \pref{lem:scoping}.
+\end{proof}
+
+\begin{lemma}[Context regularity]
+\label{lem:dctx-reg}
+If:
+\begin{enumerate}
+\item $[[S;G ||-ty t : k]]$, OR
+\item $[[S;G ||-co g : phi]]$, OR
+\item $[[S;G ||-prop phi]]$, OR
+\item $[[S;G;s0;t0 ||-alt alt : k]]$, OR
+\item $[[S;G ||-vec ps : D]]$, OR
+\item $[[S ||-ctx G]]$
+\end{enumerate}
+Then $[[S ||-ctx prefix(G)]]$ and $[[|-sig S]]$, where $[[prefix(G)]]$ is an
+arbitrary prefix of $[[G]]$. Furthermore, both resulting derivations are no
+larger than the input derivations.
+\end{lemma}
+
+\begin{proof}
+Straightforward mutual induction.
+\end{proof}
+
+The following lemma also defines the $[[^\cdot^]]$ operation. This deterministic
+operation is defined to be the existentially-quantified output of the clauses
+of the following lemma, as labeled. Note that making sense of $[[^\cdot^]]$ requires
+that the argument be well-formed (that is, the premises of the clause defining
+the operation must be satisfied). For example, $[[^t^]]$ is not just an operation
+over a type $[[t]]$, but it also requires $[[S;G ||-ty t : k]]$ as an input.
+
+\begin{lemma}[\picod/ is sound] ~
+\label{lem:picod-sound}
+The uses of $[[^G^]]$ below depend on \pref{lem:dctx-reg} above.
+\begin{enumerate}
+\item If $[[S ||-ctx G]]$, then $[[S |-ctx G']]$ where
+$[[G' == G]]$. Let $[[^G^ defeq G']]$. Furthermore, $[[Rel(^G^) = ^Rel(G)^]]$
+and if $[[G = G0,d]]$, then $[[^G^ = ^G0^,d']]$.
+\item If $[[S;G ||-ty t : k]]$,
+then $[[S;^G^ |-ty t' : k']]$ where
+$[[t' == t]]$ and $[[k' == k]]$. Let $[[^t^ defeq t']]$.
+\item If $[[S;G ||-co g : phi]]$,
+then $[[S;^G^ |-co g' : phi']]$ where
+$[[phi == phi']]$.
+\item If $[[S;G;s;t ||-alt alt : k]]$ and we have $[[t']]$ and $[[k']]$ such
+that $[[t' == t]]$ and $[[k' == k]]$, then
+$[[S;^G^;s;t' |-alt alt' : k']]$ where
+$[[alt' == alt]]$.
+Let $[[^alt^ defeq alt']]$.
+\item If $[[S;G ||-prop phi]]$, then
+$[[S;^G^ |-prop phi']]$ where $[[phi' == phi]]$. Let $[[^phi^ defeq phi']]$.
+\item If $[[S;G ||-vec ps : D]]$, then
+$[[S;^G^ |-vec ps' : D]]$ where $[[ps' == ps]]$. Let $[[^ps^ defeq ps']]$.
+\item If $[[S;G ||-s s --> t]]$, $[[S;G ||-ty s : k]]$, and $[[S;G ||-ty t : k]]$,
+then $[[S;^G^ |-s ^s^ --> ^t^]]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+By induction on the typing derivations. 
+
+\begin{description}
+\item[Case \rul{DCtx\_Nil}:] Immediate.
+\item[Case \rul{DCtx\_TyVar}:] 
+\[
+\ottdruleDCtxXXTyVar{}
+\]
+We must show $[[S |-ctx ^G^, a:rel k']]$ for some $[[k' == k]]$. Note that
+$[[^G^]]$ is well-formed by the induction hypothesis. The induction
+hypothesis gives us $[[^k^]]$ such that $[[S;Rel(^G^) |-ty ^k^ : t']]$ such that
+$[[t' == t]]$. By transitivity of $[[==]]$ (\pref{prop:de-equiv}),
+$[[t' == Type{}]]$. We have $[[S;Rel(^G^) |-ty t' : Type{}]]$
+(by \pref{lem:kind-reg}) and $[[S;Rel(^G^) |-ty Type{} : Type{}]]$
+(by \pref{lem:type-in-type} and \pref{lem:weakening}).
+ We then use \pref{prop:dco} to get
+$[[g]]$ such that $[[S;Rel(^G^) |-co g : t' [Type{}]~[Type{}] Type{}]]$.
+Choose $[[k' = ^k^ |> g]]$. We see that
+$[[S;Rel(^G^) |-ty ^k^ |> g : Type{}]]$ as desired. \pref{prop:de-proof-irrel}
+tells us that $[[k == ^k^ |> g]]$, and so we are done.
+\item[Case \rul{DCtx\_CoVar}:]
+By induction.
+\item[Case \rul{DTy\_Var}:]
+By induction.
+\item[Case \rul{DTy\_Con}:]
+By induction. Note that relating the result type (well-typed in \pico/)
+to the input type (well-typed in \picod/) by $[[==]]$ requires congruence,
+\pref{prop:dcong}. Congruence is similarly used in many other cases.
+\item[Case \rul{DTy\_AppRel}:]
+\[
+\ottdruleDTyXXAppRel{}
+\]
+The induction hypothesis tells us
+$[[S;^G^ |-ty ^t1^ : k0']]$ where $[[k0' == k0]]$,
+and $[[S;^G^ |-ty ^t2^ : k1'']]$ where $[[k1'' == k1']]$.
+By \pref{prop:ext-chain}, we get $[[k0' =>= PI a :Rel k1. k2]]$.
+By \pref{lem:kind-reg}, we have $[[S;Rel(^G^) |-ty k0' : Type{}]]$.
+Thus by \pref{prop:ext-ty}, we get $[[S;Rel(^G^) |-ty PI a:Rel k1. k2 : s]]$.
+Inversion tells us that $[[s = Type{}]]$.
+We can thus use \pref{prop:de-equiv} and \pref{prop:dco} to get $[[g1]]$ such that
+$[[S;Rel(^G^) |-co g1 : k0' [Type{}]~[Type{}] PI a:Rel k1.k2]]$.
+
+Now, inversion and \pref{lem:tyvar-reg} tells us
+$[[S;Rel(^G^) |-ty k1 : Type{}]]$ and \pref{lem:kind-reg} tells us
+$[[S;Rel(^G^) |-ty k1'' : Type{}]]$. Thus \pref{prop:de-equiv} and
+\pref{prop:dco} give us $[[g2]]$ such that $[[S;Rel(^G^) |-co g2 : k1'' [Type{}]~[Type{}] k1]]$.
+We now choose $[[^t1 t2^ defeq (^t1^ |> g1) (^t2^ |> g2)]]$ and we can
+see that $[[S;^G^ |-ty ^t1 t2^ : k2[^t2^ |> g2/a] ]]$ as desired.
+Relating this output kind to the input kind is achieved by
+\pref{prop:dcong} and \pref{prop:de-proof-irrel}.
+
+\item[Case \rul{DTy\_AppIrrel}:]
+Similar to previous case.
+\item[Case \rul{DTy\_CApp}:]
+Similar to previous cases, but appealing to \pref{lem:dco-prop}.
+\item[Case \rul{DTy\_Pi}:]
+\[
+\ottdruleDTyXXPi{}
+\]
+The induction hypothesis gives us $[[S;^G, Rel(d)^ |-ty ^k^ : t']]$
+where $[[t' == t]]$. \pref{lem:kind-reg} tells us
+$[[S;^Rel(G,d)^ |-ty t' : Type{}]]$. We know
+$[[S;^Rel(G,d)^ |-ty Type{} : Type{}]]$ by \pref{lem:type-in-type}
+and \pref{lem:weakening}. We can thus use
+\pref{prop:dco} to get $[[g]]$ such that
+$[[S;^Rel(G,d)^ |-co g : t' [Type{}]~[Type{}] Type{}]]$. We can conclude
+$[[S;^G, Rel(d)^ |-ty ^k^ |> g : Type{}]]$.
+By the extra condition in the induction hypothesis for contexts,
+we can rewrite this to
+$[[S;^G^,Rel(d') |-ty ^k^ |> g : Type{}]]$, where $[[d' == d]]$.
+We can now use \rul{Ty\_Pi} to conclude
+$[[S;^G^ |-ty PI d'.(^k^ |> g) : Type{}]]$ as desired. Here,
+$[[^PI d.k^ defeq PI d'.(^k^ |> g)]]$.
+\item[Case \rul{DTy\_Cast}:]
+\[
+\ottdruleDTyXXCast{}
+\]
+The induction hypothesis gives us:
+\begin{itemize}
+\item $[[S;Rel(^G^) |-co g' : k1'' [Type{}]~[Type{}] k2'']]$ with $[[k1'' == k1]]$ and $[[k2'' == k2]]$
+\item $[[S;^G^ |-ty ^t^ : k1''']]$ where $[[k1''' == k1']]$
+\item $[[S;Rel(^G^) |-ty ^k2^ : s']]$ where $[[s' == s]]$
+\end{itemize}
+\pref{lem:prop-reg}, \pref{lem:kind-reg}, \pref{prop:de-equiv}, and
+\pref{prop:dco} give us $[[g0]]$ such that
+$[[S;Rel(^G^) |-co g0 : k1''' [Type{}]~[Type{}] k1'']]$.
+We can thus use \rul{Ty\_Cast} to get
+$[[S;^G^ |-ty ^t^ |> g0 : k2'']]$ as desired.
+
+\item[Case \rul{DTy\_Case}:]
+Along the lines of similar cases. We need \pref{lem:dscoping} to
+establish that the result type of the scrutinee does not mention
+the bound telescope $[[D]]$.
+
+\item[Other cases:]
+Proceed as above. At this point, we have seen a variety of constructs
+and how to handle them. The remaining cases are similar, using the
+properties of $[[==]]$ and $[[=>=]]$ to get from a typing derivation
+in \picod/ to one in \pico/.
+\end{description}
+\end{proof}

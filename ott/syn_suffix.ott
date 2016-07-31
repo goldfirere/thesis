@@ -62,7 +62,7 @@ grammar
 terminals :: 'terminals_' ::=
 | \                                    ::   :: Lam     {{ tex \lambda }}
 | |->                                  ::   :: InfArr  {{ tex \varrow }}
-| ||=                                  ::   :: Vdash   {{ tex \VDash }}
+| ||=                                  ::   :: VDash   {{ tex \VDash }}
 | ->                                   ::   :: Arrow   {{ tex \to }}
 | ~>                                   ::   :: red     {{ tex \rightsquigarrow }}
 | ~>*                                  ::   :: redstar {{ tex \rightsquigarrow^* }}
@@ -142,6 +142,8 @@ terminals :: 'terminals_' ::=
 | encode                               ::   :: encode  {{ tex \mathsf{encode} }}
 | fuv                                  ::   :: fuv     {{ tex \mathsf{fuv} }}
 | empt                                 ::   :: empt    {{ tex \epsilon }}
+| ==                                   ::   :: defeq   {{ tex \equiv }}
+| =>=                                  ::   :: extract {{ tex \stackrel{\to}{\equiv} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -196,6 +198,16 @@ terminals :: 'terminals_' ::=
 
 | |-sb                                 ::   :: Sb_ent  {{ tex \vdashy{sb} }}
 | *|-sb                                ::   :: SbS_ent {{ tex \vdashy{sb}^{\!\!\!\raisebox{.2ex}{$\scriptstyle *$} } }}
+
+| ||-                                   ::   :: Vdash   {{ tex \Vdash }}
+| ||-ty                                 ::   :: Ty_dint  {{ tex \Vdashy{ty} }}
+| ||-co                                 ::   :: Co_dint  {{ tex \Vdashy{co} }}
+| ||-ctx                                ::   :: Ctx_dint {{ tex \Vdashy{ctx} }}
+| ||-alt                                ::   :: Alt_dint {{ tex \Vdashy{alt} }}
+| ||-vec                                ::   :: Vec_dint {{ tex \Vdashy{vec} }}
+| ||-prop                               ::   :: Prop_dint {{ tex \Vdashy{prop} }}
+| ||-s                                 ::   :: S_dint  {{ tex \Vdashy{s} }}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Formulae  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -252,6 +264,8 @@ $( [p| [[Blockname]] |] ) = [[user_syntax]] \end{code} }}
     {{ tex \neg ( [[formula]] ) }}
   | formula1 /\ formula2               ::   :: conjunction
     {{ tex [[formula1]] \wedge [[formula2]] }}
+  | t1 == t2                           ::   :: defeq
+  | picod                              ::   :: picod_judgment
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Parsing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -354,3 +368,5 @@ Type_Lams <= Type_Gen
 args_One <= args_Gen
 IUnifCtx_One <= IUnifCtx_Gen
 IUnifCtx_KsBind <= IUnifCtx_Gen
+
+args_Types <= args_Many

@@ -1,0 +1,43 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Pico with looser definitional equality  %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+
+picod :: 'picod_' ::=
+| S ; G ||- J                    ::   :: judg
+| t =>= t'                       ::   :: ext_ty
+| phi =>= phi'                   ::   :: ext_phi
+
+funs
+Picod ::=
+
+fun
+^ t ^ :: s :: ty
+  {{ tex \lceil [[t]] \rceil }}
+by
+
+fun
+^ G ^ :: D :: ctx
+  {{ tex \lceil [[G]] \rceil }}
+by
+
+fun
+^ alt' ^ :: alt :: alt
+  {{ tex \lceil [[alt']] \rceil }}
+by
+
+fun
+^ phi' ^ :: phi :: prop
+  {{ tex \lceil [[phi']] \rceil }}
+by
+
+fun
+^ ps' ^ :: ps :: vec
+  {{ tex \lceil [[ps']] \rceil }}
+by
+
+fun
+^ J' ^ :: J :: J
+  {{ tex \lceil [[J']] \rceil }}
+by

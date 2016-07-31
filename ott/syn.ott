@@ -7,6 +7,7 @@
 embed {{ tex-preamble
 \newcommand{\vdashy}[1]{\vdash_{\!\!\!\mathsf{#1} } }
 \newcommand{\vDashy}[1]{\vDash_{\!\!\!\mathsf{#1} } }
+\newcommand{\Vdashy}[1]{\Vdash_{\!\!\!\mathsf{#1} } }
 \newcommand{\gobble}[1]{}
 \let\supp\gobble
 \newcommand{\nosupp}[1]{\begingroup\let\supp\relax#1\endgroup}
@@ -557,6 +558,8 @@ eq :: 'Eq_' ::=
   {{ tex &= }}
 | /=                        ::   :: NotEqual
   {{ tex \neq }}
+| defeq                     ::   :: Defeq
+  {{ tex \triangleq }}
 
 nil :: 'Nil_' ::=
 | empty                     ::   :: Empty
