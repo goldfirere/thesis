@@ -1,21 +1,21 @@
 Differences from Gundry's thesis.
 
-- Two arrows
-- I support Case analysis on *
-- Gundry has lambdas (only at term level) and first-order, always-applied functions
+- DONE Two arrows
+- DONE I support Case analysis on *
+- DONE Gundry has lambdas (only at term level) and first-order, always-applied functions
   (shared).
-- Gundry includes axioms, but they are only for magical things like commutativity.
+- DONE Gundry includes axioms, but they are only for magical things like commutativity.
   Not for type families.
-- Gundry's "Good" is not straightforward to establish. It is *not* syntactic.
+- DONE Gundry's "Good" is not straightforward to establish. It is *not* syntactic.
 - OLD No roles, closed type families
-- I have unsaturated functions in types.
+- DONE I have unsaturated functions in types.
 
-- My type erasure property is stronger: his doesn't erase type-lambdas.
+- DONE My type erasure property is stronger: his doesn't erase type-lambdas.
 - He has a more intricate consistency relation. And his proof is wrong.
   (See email to Adam on May 13.) Of course, his theorem may well be correct,
   but his proof certainly seems wrong.
 
-- Gundry's chapter 8 (p. 185) has many nice examples.
+- DONE Gundry's chapter 8 (p. 185) has many nice examples.
 
 DONE/OMIT:
 - DONE I think I'm going to skip non-deterministic elaboration, but instead have

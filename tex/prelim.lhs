@@ -346,6 +346,7 @@ deriving instance Show Bool
 
 \section{Generalized algebraic datatypes}
 \label{sec:prop-equality}
+\label{sec:gadts}
 
 Generalized algebraic datatypes (or GADTs) are a powerful feature that allows
 term-level pattern matches to refine information about types. They undergird much

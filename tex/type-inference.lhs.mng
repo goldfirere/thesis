@@ -2154,6 +2154,7 @@ their elaborated types. I thus conclude that type erasure is valid, with
 no possibility of having evaluation be stuck on a coercion abstraction.
 
 \subsection{Comparison to \citet{gundry-thesis}}
+\label{sec:gundry-type-inference}
 
 The \bake/ algorithm presented here is very similar to the type inference
 algorithm presented by \citet[Chapter 7]{gundry-thesis}. Here I review

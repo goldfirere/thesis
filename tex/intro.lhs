@@ -108,6 +108,7 @@ Haskell.
   semantics of \pico/ to that of a simple $\lambda$-calculus with datatypes
   and \ottkw{fix}. In this way, I show that all the fancy types really can
   be erased at runtime.
+\rae{mention \ottkw{left} and \ottkw{right}?}
 
 \item \pref{cha:type-inference} contains a technical presentation of the
   Dependent Haskell surface language, providing typing rules and an

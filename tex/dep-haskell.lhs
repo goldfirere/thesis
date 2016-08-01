@@ -820,6 +820,11 @@ import/export list also includes |pred|'s implementation. This echoes the curren
 syntax of using, say, |Bool| to export only the |Bool| symbol while |Bool(..)|
 exports |Bool| with all of its constructors.
 
+\subsection{Type checking is undecidable}
+\label{sec:type-checking-undec}
+
+\rae{WRITE ME}
+
 \section{Conclusion}
 
 This chapter has offered a concrete description of Dependent Haskell. Other

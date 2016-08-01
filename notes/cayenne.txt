@@ -1,0 +1,24 @@
+DONE Cayenne requires lambdas to be annotated
+Cayenne is abandon-ware
+Cayenne has no type classes
+DONE Cayenne has a module system
+DONE Stratified kind system
+DONE No pattern matching on Type
+Use # instead of * for the kind of types, due to parsing challenges
+
+"The type part of case expression is only necessary
+if the type of the right hand sides depend on the scrutinized
+expression."  <-- I'm baffled. Core Cayenne requires an annotation on the
+result of every case. EDIT: Oh. No dependent pattern matching.
+
+DONE No specification of where type signatures are necessary.
+
+DONE No proven metatheory.
+
+DONE No coercion assumptions. This means no GADTs or dependent pattern matches.
+
+DONE Makes argument that partial correctness is better than none at all.
+Just like my argument.
+
+DONE Cayenne erases all things of type Type. But that's not all that can be
+erased sometimes.

@@ -2332,6 +2332,7 @@ is vital in the \rul{S\_KPush} rule and thus remains part of the
 language.
 
 \subsubsection{Matchable types are generative and injective}
+\label{sec:matchable-pico}
 
 \begin{figure}
 \begin{gather*}
@@ -3047,6 +3048,7 @@ must be threaded through their proofs. My one-variable version, with no
 bound coercion variable, avoids this complication.
 
 \subsubsection{The proof of consistency by \citet{gundry-thesis} is wrong}
+\label{sec:gundry-consistency-wrong}
 
 Gundry, in his thesis, takes a very different approach to proving consistency
 of his \emph{evidence} language, also closely related to \pico/. He sets up,

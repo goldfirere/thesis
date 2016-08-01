@@ -5,6 +5,8 @@
 
 \begin{code}
 
+import Data.Kind
+
 \end{code}
 
 %endif
@@ -26,7 +28,7 @@ I have tried to compare my work to his as this has been topical throughout
 this work. Here I summarize some of the key points of difference and explain
 how my work expands upon what he has done.
 
-\subsection{\pico/ allows unsaturated functions in types}
+\subsection{Unsaturated functions in types}
 
 Gundry's intermediate language uses one element of the grammar to represent
 both terms and types. But he offers separate typing judgments, as controlled
@@ -51,38 +53,180 @@ unsaturated functions, Gundry's system must carefully track where unsaturated
 functions appear and prevent any expression containing one from being used
 in a type or a dependent context.
 
-I avoid Gundry's restriction quite simply: I have
-omitted Gundry's \ottkw{left} and \ottkw{right} operators. Gundry has
-the following two rules (paraphrased into \pico/ for familiarity):
-\begin{gather*}
-\ottdrule{\ottpremise{[[S;G |-co g : t1 s1 [k1]~[k2] t2 s2]]}}{[[S]];[[G]] [[|-co]] \ottkw{left}\ [[g]] : [[t1 [k1']~[k2'] t2]]}{\rul{Gundry\_Left}}\\[1ex]
-\ottdrule{\ottpremise{[[S;G |-co g : t1 s1 [k1]~[k2] t2 s2]]}}{[[S]];[[G]] [[|-co]] \ottkw{right}\ [[g]] : [[s1 [k1']~[k2'] s2]]}{\rul{Gundry\_Right}}\\
-\end{gather*}
-These operators allow us to decompose an arbitrary type application.
-\Pico/ has a similar rule in its \rul{Co\_Nth}, but \pico/'s rule requires that
-the head of the application be a type constructor. No such restriction
-exists for \ottkw{left} and \ottkw{right}. In a language with unsaturated
-functions, however, \ottkw{left} and \ottkw{right} do not fit: these effectively
-assert generativity and injectivity, respectively, properties which arbitrary
-functions do not have.
+I avoid Gundry's restriction by tracking matchable functions separate
+from unmatchable ones (Sections~\ref{sec:matchability} and~\ref{matchable-pico}).
+This innovation permits me to allow unsaturated functions while
+retaining the useful \ottkw{left} and \ottkw{right} coercions.
+As a part of this aspect of my work, I also lift the matchable/unmatchable
+distinction into surface Dependent Haskell, giving the user access to the
+|!->|, |!pi|, and |!forall| quantifiers.
 
-I claim that \pico/ has lost nothing of value in dropping \ottkw{left}
-and \ottkw{right}, while it has gained unsaturated functions---quite a
-powerful feature in a functional programming language. My claim is
-backed up by an experiment GHC unintentionally ran on its user base.
+\subsection{Support for type families}
+
+Both Gundry's and my treatments favor $\lambda$-abstractions and \ottkw{case}
+expressions over type families. In my case, I would support type families
+via compilation into those more primitive forms. Gundry's work, however,
+explicitly does not support type families (Gundry's Section 6.7.4).
+This lack of support is revealed
+in two missing features:
+\paragraph{Matching on |Type|} 
+Through the way I have constructed my \ottkw{case} expressions---specifically,
+treating |Type| as just another type constant---I allow
+pattern-matching on elements of |Type|. Gundry's treatment requires a
+scrutinee to be a member of a closed algebraic datatype.
+\paragraph{Unsaturated matching}
+Haskell type families can match on unsaturated uses of data and type
+constructors, something not supported in Gundry's work but is supported
+in \pico/.
+
+
+\subsection{Axioms}
+
+Gundry's \emph{evidence} language includes support for axioms. While the
+notion of type-level axioms has been used in much prior work to represent
+type families, Gundry uses them to represent notions beyond those possible
+in type families, such as the commutativity of some primitive addition
+operation. In order to set up his consistency proof, he needs to establish
+that the axioms are \emph{good}, as defined in Gundry's Definition 6.4 of
+his Section 6.5.1. Gundry does not provide an algorithm for determining
+whether a set of axioms are \emph{good}, however.
+
+\Pico/, in contrast, has no built-in support for axioms. One could try
+adding axioms as global coercion variables available in every context, but
+that would interfere with the current consistency proof (\pref{sec:consistency})
+which severely limits the use of coercion variables. It is conceivable
+that adding axioms to \pico/ is possible by establishing some condition,
+like Gundry's \emph{good}, that claims that the axioms do not interfere
+with consistency. This remains as future work, however.
+
+
+\subsection{Type erasure}
+
+Gundry proves a type erasure property similar to mine. However, there is
+one key difference: my type erasure erases irrelevant abstractions (as does
+today's implementation of System FC in GHC), while
+Gundry's does not. It is not clear, however, that this change is significant,
+in that it might easily be possible to tweak Gundry's system to allow erasure
+of irrelevant abstractions, too.
+
+\paragraph{}
+See also \pref{sec:gundry-consistency-wrong} and \pref{sec:gundry-type-inference}
+for further comments comparing my work to Gundry's.
 
 \section{Comparison to Idris}
 
+\subsection{Legacy support}
+\subsection{Erasure}
+\subsection{Type inference}
+\subsection{Totality / reduction of non-terminating programs in types}
+\subsection{Editor integration}
+
 \section{Comparison to Cayenne}
 \label{sec:cayenne}
-\rae{TODO: Write me.}
 
-\begin{proposal}
-Although I compare Dependent Haskell against Coq, Agda, and Idris throughout
-this proposal, I plan on writing a more detailed comparison against just Idris
-in this section, as my work is closest to what has been done in Idris, and I
-think this comparison will be the most illuminating.
-\end{proposal}
+Beyond Idris, there are many other languages one might want a comparison
+against. The most frequent comparison I have been asked for, however,
+is to compare against Cayenne~\cite{cayenne}, which I shall do here.
+
+Cayenne is a language introduced in 1998 by Augustsson essentially as a
+dependently typed variant of Haskell. Of particular interest,
+it shares Dependent Haskell's
+cavalier attitude toward termination: Cayenne supports general recursion
+and all types are thus inhabited by $\bot$. As such, Augustsson admits
+that Cayenne is not useful as a proof assistant. However, he also argues
+that this admission does not mean it is useless as a programming language.
+My argument in support of allowing general recursion in a dependently typed
+language (\pref{sec:running-proofs}) broadly echoes Augustsson's Section 5,
+claiming that a verification of partial correctness is better than no
+verification at all.
+
+Despite the similarities between my work here and Augustsson's, there are
+a number of key differences:
+
+\subsection{Type erasure}
+Augustsson's approach to type erasure is much simpler than mine. Cayenne
+erases all expressions of type |Type|---that's the full description
+of type erasure in Cayenne. This simplistic view has two shortcomings,
+however:
+\begin{description}
+\item[Cayenne erases too much] Because every expression of type |Type|
+is lost, Cayenne must restrict its pattern-match facility not to work
+over scrutinees of type |Type|. Dependent Haskell allows matching on |Type|,
+in contrast.
+\item[Cayenne erases too little] Sometimes expressions of a type other
+than |Type| can be erased. For example, consider this function over length-indexed
+vectors (\pref{sec:length-indexed-vectors}):
+%if style == newcode
+\begin{code}
+data Nat = Zero | Succ Nat
+data Vec :: Type -> Nat -> Type where
+  Nil :: Vec a !Zero
+  (:>) :: a -> Vec a n -> Vec a (!Succ n)
+infixr 5 :>
+\end{code}
+%endif
+\begin{code}
+safeHead :: Vec a (!Succ n) -> a
+safeHead (x :> _) = x
+\end{code}
+The |n| parameter to |safeHead| has type |Nat| and yet it can be erased in
+the call to |safeHead|. Cayenne would have no way of erasing this parameter.
+\end{description}
+
+\subsection{Coercion assumptions}
+
+Cayenne has no support for equality assumptions. This means that it does
+not support GADTs (\pref{sec:gadts} or dependent pattern matching (\pref{sec:dependent-pattern-match}). Lacking these features significantly simplifies the
+design of the language and implementation, meaning that many of the 
+type inference issues (specifically, untouchability of type variables)
+described by \citet{outsidein} are avoided. The lack of equality assumptions
+also severely weakens Cayenne's ability to support intrinsic proofs---that
+is, types whose structure ensure that all values of those types are valid
+(like |Vec|, which ensures that the vector is of the given length). Cayenne
+thus truly supports only extrinsic proofs: proofs written separately from
+the functions and data structures they reason about. These proofs must be
+written explicitly (intrinsic proofs are often encoded into the structure
+of a function) and offer more opportunity to accidentally use a non-terminating
+proof.
+
+\subsection{A hierarchy of sorts}
+
+Cayenne uses an infinite hierarchy of sorts, similar to many other
+dependently typed languages, but in contrast to Dependent Haskell, with
+its |Type : Type| axiom. Augustsson describes this design decision as
+working in support of Cayenne's treatment as logical framework (if the
+user takes on the burden of termination checking) as well as to support
+Cayenne's implementation of type erasure.
+
+\subsection{Metatheory}
+
+While Augustsson presents typing rules for Cayenne, he offers no metatheory
+analysis for Cayenne beyond proving that the evaluation of a type-erased
+program simulates the evaluation of the original. Similarly, Augustsson
+does not describe any type inference properties in detail. The language
+requires top-level type annotations on all definitions, but inference is
+still necessary to check a dependently typed expression. Instead, Augustsson
+claims that ``Type signatures can be omitted in many places'' but does
+not elaborate~\cite[fourth-to-last bullet in Section 3.2]{cayenne}.
+Cayenne does syntactically require all function arguments to be annotated,
+however.
+
+\subsection{Modules}
+
+Cayenne as a robust module system, more advanced than Haskell's. As such,
+its module system is more advanced also than Dependent Haskell's. Cayenne
+uses dependent records as its modules, as a dependent record can store
+types as easily as other expressions. It remains as future work to see
+whether or not Dependent Haskell can incorporate these ideas and use
+records as modules.
+
+\subsection{Conclusion}
+
+As an early attempt to bring dependent types to Haskell, Cayenne deserves
+much credit. Despite being declared dead in 2005\footnote{\url{http://lambda-the-ultimate.org/node/802}}, Haskellers still discuss this language. It may
+have been the first thought-out vision of what a Haskell-like dependently
+typed language would look like and thus serves as an inspiration for both
+Agda and Idris.
 
 \section{Comparison to Liquid Haskell}
 
