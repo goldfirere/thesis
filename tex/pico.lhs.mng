@@ -147,8 +147,48 @@ As they are also erased, coercions are considered fully irrelevant as well.
 My treatment of resetting the context is precisely like what is done
 by \citet{erasure-pure-type-systems}.
 
-\subsubsection{Matching on partially-applied constants}
+\subsubsection{Tracking matchable vs.~unmatchable functions}
 \label{sec:unsaturated-match-example}
+\label{sec:two-pis}
+
+Dependent Haskell supports both matchable abstractions and unmatchable
+ones (\pref{sec:matchability}). Though at first it might appear that
+separating out these two modalities is necessary only to support type
+inference, \pico/ maintains this distinction. Every $\Pi$-type in \pico/
+is labeled as either matchable or unmatchable: $[[MPI]]$ denotes a matchable
+$\Pi$-type and $[[UPI]]$ denotes an unmatchable one. An unadorned $[[PI]]$,
+is metavariable which
+might be instantiated either to $[[MPI]]$ or $[[UPI]]$.
+We do not have to label
+$\lambda$-abstractions, however, because all $\lambda$-abstractions
+are always unmatchable---only partially applied type constants (or
+functions returning them) are matchable.
+
+\pico/ maintains the matchable/unmatchable distinction for two reasons:
+
+\paragraph{Decomposing coercions over function applications}
+Since at least the invention of System FC~\cite{systemfc}, GHC has supported
+application decomposition. That is, from a proof that $[[t1 s1]]$ equals
+$[[t2 s2]]$, we can derive proofs of $[[t1 [k1]~[k2] t2]]$ and
+$[[s1 [k1]~[k2] s2]]$. I would like to retain this ability in \pico/
+in order to support the claim that Dependent Haskell is a conservative
+extension over today's Haskell. However, decomposing an application as above
+in the
+presence of unsaturated $\lambda$-abstractions is clearly bogus.
+
+The solution here is to keep matchable applications separate from unmatchable
+ones, and we allow decomposition only of matchable applications. This is a
+backward-compatible treatment, as today's Haskell has only matchable
+applications. In turn, keeping the application forms separate requires
+tracking the matchability of the abstractions themselves.
+
+\Pico/'s support of the application decomposition while allowing
+unsaturated $\lambda$-abstractions is one of the key improvements \pico/
+makes over Gundry's \emph{evidence} language~\cite{gundry-thesis}.
+See \pref{sec:gundry} for more discussion of the comparison of my
+work to Gundry's.
+
+\paragraph{Matching on partially-applied constants}
 
 \Pico/ does not contain type families. Instead, it uses $\lambda$-abstractions
 and \ottkw{case} expressions, as are more familiar to functional programmers.
@@ -165,19 +205,11 @@ The type family |IsLeft| is inferred to have kind
 and |Right| constructors, even though these are not applied to arguments.
 While it may seem that |IsLeft| is matching on a \emph{function}---after all,
 the type of |IsLeft|'s argument appears to be an arrow type---it is not.
-It is matching only on constructors, because the kind-level |->| classifies
-only type constants. \rae{Flesh this out once I know how I'm dealing with the
-two arrows in Haskell.}
+It is matching only on constructors, because today's kind-level |->| classifies
+only type constants. That is, it really should be spelled |!->|.
 
-\rae{Also perhaps update this paragraph once I figure out the two arrows.}
-To get this partially-applied matching to work in \pico/, it is necessary
-to have two different $[[PI]]$-quantifiers: $[[MPI]]$ and $[[UPI]]$. The
-former is called a \emph{matchable} $[[PI]]$, the latter is \emph{unmatchable}.
-Type constants are classified by $[[MPI]]$, whereas $\lambda$-abstractions
-are classified by $[[UPI]]$.
-Only matchable $[[MPI]]$-types are allowed as \ottkw{case} scrutinees.
-When I write the unadorned $[[PI]]$, I actually mean a metavariable which
-might be instantiated either to $[[MPI]]$ or $[[UPI]]$.
+To support functions such as |IsLeft|, \pico/ allows \ottkw{case} scrutinees 
+to have matchable $[[MPI]]$-types, instead of just fully applied datatypes.
 
 \subsubsection{Matching on $[[Type]]$}
 
@@ -377,7 +409,7 @@ Metavariables:
 [[rel]] &\bnfeq& [[Rel]] \bnfor [[Irrel]] & \text{relevance annotation} \\
 [[d]] &\bnfeq& [[a :rel k]] \bnfor [[c : phi]] & \text{binder} \\
 [[phi]] &\bnfeq& [[t1 (k1)~(k2) t2]] & \text{heterogeneous equality} \\
-[[t]], [[s]], [[k]] &\bnfeq& [[a]] \bnfor [[t p]] \bnfor [[PI d.t]] \bnfor [[\d.t]] 
+[[t]], [[s]], [[k]] &\bnfeq& [[a]] \bnfor [[t @_ p]] \bnfor [[t @~ p]] \bnfor [[PI d.t]] \bnfor [[\d.t]] 
                    & \text{dependent types} \\
 &\bnfor& [[H{ts}]] & \text{constant applied to universals} \\
 &\bnfor& [[t |> g]] & \text{kind cast} \\
@@ -395,7 +427,7 @@ Metavariables:
 \bnfor [[absurd (h1,h2) g]]} \\
 &\bnfor& [[t1 ~={h} t2]] & \text{coherence} \\
 &\bnfor& [[argk g]] \bnfor [[argk n g]] \bnfor [[res^n g]] \bnfor [[g@w]] & \text{$[[PI]]$-type decomposition} \\
-&\bnfor& [[nth n g]] & \text{injectivity} \\
+&\bnfor& [[nth n g]] \bnfor [[left_h g]] \bnfor [[right_h g]] & \text{generativity \& injectivity} \\
 &\bnfor& [[kind g]] & \text{``John Major'' equality} \\
 &\bnfor& [[step t]] & \text{$\beta$-equivalence} \\
 [[calt]] &\bnfeq& [[pat -> g]] & \text{case alternative in coercion} \\
@@ -421,6 +453,7 @@ Metavariables:
 [[prefix]](\cdot) &\defeq& \text{a prefix of a list; length specified elsewhere} \\
 [[fv]](\cdot) &\defeq& \text{extract all free variables, as a set} \\
 [[H]] &\defeq& [[H{blank}]] \text{ (when appearing in a type)} \\
+[[t p]] &\defeq& [[t @_ p]] \text{ or } [[t @~ p]] \text{, dependeing on $[[t]]$'s kind} \\
 [[PI D. t]] &\defeq& \text{nested $[[PI]]$s} \\
 [[MUPI D. t]] &\defeq& \text{nested $[[PI]]$s, where the individual $[[PI]]$s used might differ} \\
 [[\D.t]] &\defeq& \text{nested $[[\ ]]$s} \\
@@ -436,7 +469,7 @@ Metavariables:
 \label{fig:pico-notation}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[t!]
 \[\def\arraystretch{1.5}
 \begin{array}{cl}
 [[S |-tc H : D1;D2;H']] & \text{\parbox{.7\textwidth}{Constant $[[H]]$ has universals $[[D1]]$,
@@ -489,6 +522,20 @@ have been removed. These expressions are used only in the type erasure theorem
 a program written in \pico/ intended to be run will technically be a type,
 and types in \pico/ have an operational semantics
 (\pref{sec:operational-semantics}).
+
+As previewed in \pref{sec:two-pis}, \pico/ supports two different forms
+of $\Pi$-type: the matchable $[[MPI]]$ and the unmatchable $[[UPI]]$. It
+also supports two forms of application: $[[t @_ p]]$ is a matchable application
+and $[[t @~ p]]$ is an unmatchable one. However, labeling all applications
+would grossly clutter this presentation, and so I just write $[[t p]]$ for
+both kinds of applications, where we can discern between them by looking at
+$[[t]]$'s kind. Indeed, the only reason that the grammar has to distinguish
+between the two applications at all is in the consistency proof
+(\pref{sec:consistency}), a portion of which works in an untyped setting.
+(See, in particular, the end of \pref{sec:parallel-rewrite-relation}
+for the one place where labeling the applications is used.) It is not
+expected that an implementation of \pico/ would need to mark the applications,
+as this mark is redundant with the typing information.
 
 Note also the definition for arguments $[[p]]$: the application form $[[t p]]$
 applies a type to an argument, which can be a type, an irrelevant type,
@@ -1688,6 +1735,13 @@ existential arguments to $[[H{ts}]]$ and a reflexive coercion. This
 follows directly from my design of having \ottkw{case} alternatives
 avoid a special binding form and use the existing forms in the language.
 
+The \rul{Beta} rules above make explicit that the application is an
+unmatchable application $[[t @~ p]]$. This is actually redundant,
+as all $\lambda$-abstractions
+are unmatchable. I have included the notation here to make it clearer
+how these rules line up with the rules in the parallel rewrite relation
+used to prove consistency (\pref{sec:parallel-rewrite-relation}).
+
 \subsection{Congruence forms}
 \label{sec:step-congruence}
 
@@ -2277,6 +2331,60 @@ absurdity does not weaken any property of the language. Injectivity
 is vital in the \rul{S\_KPush} rule and thus remains part of the
 language.
 
+\subsubsection{Matchable types are generative and injective}
+
+\begin{figure}
+\begin{gather*}
+\ottdruleCoXXLeft{}\rulesep
+\ottdruleCoXXRightRel{}\rulesep
+\ottdruleCoXXRightIrrel{}
+\end{gather*}
+\caption{Function application decomposition coercions}
+\label{fig:left-right-cos}
+\end{figure}
+
+In \pref{sec:matchability}, I define \emph{matchable} as the conjunction
+of generative and injective. \Pico/ includes two coercion forms that
+witness the generativity ($[[left]]$) and injectivity ($[[right]]$)
+of matchable function types, as shown in \pref{fig:left-right-cos}.
+Note that the applications in the proposition proved by $[[g]]$ are
+matchable applications $[[t @_ p]]$, distinct from unmatchable
+applications $[[t @~ p]]$.
+
+Interestingly, these coercions require the extra coercion $[[h]]$
+that proves that the kinds of the output types are equal. This kind
+coercion is necessary to prove the consistency of the \ottkw{kind}
+coercion (\pref{sec:pico-kind-coercion}). It is curiously absent
+from my prior work on kind equalities~\cite{nokinds}, but I now
+believe that this coercion is necessary---though I have yet to
+find a counterexample to consistency by omitting it, I am unable
+to prove consistency without it.
+
+Does adding this extra argument to $[[left]]$ and $[[right]]$ now
+weaken \pico/'s expressiveness, compared to its predecessors? Yes and no:
+\begin{description}
+\item[Yes, fewer coercions are available,] when comparing against the
+system in my prior work \cite{nokinds}. However, I argue in
+\pref{sec:down-with-nokinds} that the proof in that prior work is broken,
+precisely around its \ottkw{kind} coercion. If \pico/ reduces expressiveness
+compared to an unsound system, this may be an improvement.
+\item[No fewer coercions are available,] when comparing against the System FC
+  before kind equalities (that is, the System FC in GHC 7). Prior to GHC 8,
+  the \ottkw{left} and \ottkw{right} coercions required the kinds of the
+  output types to be identical. In those cases, the $[[h]]$ coercion in
+  \pico/'s \ottkw{left} and \ottkw{right} would just be reflexive. Though this
+  restriction on the kinds was overlooked in the original publication on
+  System FC~\cite{systemfc}, it appears in later
+  treatments~\cite{closed-type-families,safe-coercions-jfp}.\footnote{The
+    \ottkw{left} and \ottkw{right} coercions were omitted entirely from
+\citet{promotion}. Correspondingly, they were dropped from the implementation
+in GHC 7.4. However, users found that this omission prevented some programs
+from being accepted. See GHC ticket \href{https://ghc.haskell.org/trac/ghc/ticket/7205}{\#7205}.}
+\end{description}
+I thus conclude that adding these extra kind coercions is appropriate,
+considering that their omission in GHC 8.0 may be unsafe and that including
+them is conservative with respect to GHC 7.
+
 \subsection{Equality includes $\beta$-reduction}
 
 The last rule to consider in the $[[|-co]]$ judgment is the one that
@@ -2676,6 +2784,7 @@ wish to invoke the consistency lemma, the flexibility around non-values
 does not get in our way.
 
 \subsection{The parallel rewrite relation}
+\label{sec:parallel-rewrite-relation}
 
 To prove consistency, I (following prior work) define a parallel rewrite
 relation, written $[[t1 ~> t2]]$, and show that this relation includes pairs
@@ -2732,6 +2841,11 @@ and \pref{fig:rewrite-rel-aux}. Following
 conventions in the rewriting literature, I write $[[t1 ~> t3 <~ t2]]$ to
 mean that $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$, and I write $[[t1 ~>* t2]]$ to
 mean the transitive closure of $[[~>]]$.
+
+Note the \rul{Beta} rules, which work over only unmatchable applications
+$[[t @~ p]]$. This fact allows us to conclude that an matchable applications
+$[[t @_ p]]$ never undergo $\beta$-reduction, in turn allowing us to prove
+that the $[[left]]$ and $[[right]]$ coercions are sound.
 
 \subsubsection{Substitution}
 
@@ -2883,6 +2997,7 @@ it as future work to reconcile the approach here with the recent result
 cited above.
 
 \subsubsection{The proof of consistency by \citet{nokinds} is wrong}
+\label{sec:down-with-nokinds}
 
 The type system presented by \citet{nokinds} is very similar to \pico/, although
 without dependency. Its treatment of \rul{Co\_PiCo} is subtly different,

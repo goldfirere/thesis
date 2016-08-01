@@ -144,6 +144,8 @@ terminals :: 'terminals_' ::=
 | empt                                 ::   :: empt    {{ tex \epsilon }}
 | ==                                   ::   :: defeq   {{ tex \equiv }}
 | =>=                                  ::   :: extract {{ tex \stackrel{\to}{\equiv} }}
+| 'left'                               ::   :: lft     {{ tex \ottkw{left} }}
+| 'right'                              ::   :: rght    {{ tex \ottkw{right} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
@@ -288,7 +290,7 @@ types_One <= types_Subst
 types_One <= formula_many_red
 alts_One <= Fact_alts_red
 
-args_One <= Substs_Telescope
+% args_One <= Substs_Telescope
 
 types_One <= args_Types
 cos_One <= args_Cos

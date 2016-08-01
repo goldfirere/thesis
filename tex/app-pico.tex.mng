@@ -932,6 +932,17 @@ $[[S;Rel(G) |-ty t1 : k1]]$.
 \item[Case \rul{Co\_CInstLam}:] Similar to previous case.
 \item[Case \rul{Co\_NthRel}:] Immediate.
 \item[Case \rul{Co\_NthIrrel}:] Immediate.
+\item[Case \rul{Co\_Left}:] Immediate.
+\item[Case \rul{Co\_RightRel}:]
+We adopt the metavariable names from the statement of the rule:
+\[
+\nosupp{\ottdruleCoXXRightRel{}}
+\]
+The induction hypothesis tells us $[[S;Rel(G) |-prop t1 s1 (k3[s1/a])~(k4[s2/a]) t2 s2]]$, and thus inversion gives us $[[S;Rel(G) |-ty t1 s1 : k3[s1/a] ]]$.
+We know $[[S;G |-ty t1 : MPI a:Rel k1. k3]]$, and thus we can invert the
+type application to get $[[S;Rel(G) |-ty s1 : k1]]$ as desired. We can
+similarly derive the type for $[[s2]]$, and we are thus done.
+\item[Case \rul{Co\_RightIrrel}:] Similar to previous case.
 \item[Case \rul{Co\_Kind}:] By \pref{lem:kind-reg}.
 \item[Case \rul{Co\_Step}:] Immediate.
 \end{description}
@@ -1585,6 +1596,17 @@ such that $[[s = \d'.t']]$, $[[d ~> d']]$, and $[[t ~> t']]$.
 Case anlysis on $[[\d.t ~> s]]$.
 \end{proof}
 
+\begin{lemma}[Matchable application reduction]
+\label{lem:matchable-red}
+If $[[t @_ p ~> s]]$,
+then there exist $[[t']]$ and $[[p']]$ such that
+$[[s = t' @_ p']]$, $[[t ~> t']]$, and $[[p ~> p']]$.
+\end{lemma}
+
+\begin{proof}
+Case analysis on $[[t @_ p ~> s]]$.
+\end{proof}
+
 \begin{lemma}[Coercion substitution/erasure]
 \label{lem:co-subst-erase}
 $[[|t[g/c]| = |t|]]$
@@ -1723,6 +1745,12 @@ Like case \rul{Co\_CInst}, but appealing to \pref{lem:lam-red}.
 By induction and \pref{lem:app-red}.
 \item[Case \rul{Co\_NthIrrel}:]
 By induction and \pref{lem:app-red}.
+\item[Case \rul{Co\_Left}:]
+By induction and \pref{lem:matchable-red}.
+\item[Case \rul{Co\_RightRel}:]
+By induction and \pref{lem:matchable-red}.
+\item[Case \rul{Co\_RightIrrel}:]
+By induction and \pref{lem:matchable-red}.
 \item[Case \rul{Co\_Kind}:]
 By induction.
 \item[Case \rul{Co\_Step}:]
@@ -1912,6 +1940,9 @@ $[[S;Rel(G) |-ty t : k1]]$ and $[[S;Rel(G) |-ty s : k2]]$. By
 $[[s3]]$ and $[[s4]]$ imply the joinability of
 $[[k1]]$ and $[[k2]]$, as desired.
 \item[Case \rul{Co\_NthIrrel}:] Similar to previous case.
+\item[Case \rul{Co\_Left}:] By induction.
+\item[Case \rul{Co\_RightRel}:] By induction.
+\item[Case \rul{Co\_RightIrrel}:] By induction.
 \item[Case \rul{Co\_Kind}:] Immediate, as both kinds are $[[Type{}]]$.
 \item[Case \rul{Co\_Step}:] With kinds shown, the rule is as follows:
 \[

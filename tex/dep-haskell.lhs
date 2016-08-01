@@ -382,6 +382,8 @@ this override of the underscore symbol may be hidden behind a language extension
 or other compiler flag.
 
 \subsection{Matchability}
+\label{sec:matchability}
+
 Suppose we know that |f a| equals |g b|. What relationship can we conclude
 about the individual pieces? In general, nothing: there is no way to reduce
 |f a ~ g b| for arbitrary |f| and |g|. Yet Haskell type inference must

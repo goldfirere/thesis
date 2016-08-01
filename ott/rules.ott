@@ -310,6 +310,22 @@ S;Rel(G) |-ty t : k1  //  S;Rel(G) |-ty s : k2
 -------------------------------- :: NthIrrel
 S;G |-co nth i g : t [k1]~[k2] s
 
+S;G |-co g : t1 @_ p1 [k1[p1/dom(d1)] ]~[k2[p2/dom(d2)] ] t2 @_ p2
+S;G |-ty t1 : MPI d1. k1  // S;G |-ty t2 : MPI d2. k2
+S;G |-co h : MPI d1. k1 [Type{}]~[Type{}] MPI d2. k2
+----------------------------- :: Left
+S;G |-co left_h g : t1 [MPI d1.k1]~[MPI d2.k2] t2
+
+S;G |-co g : t1 @_ s1 [k3[s1/a] ]~[k4[s2/a] ] t2 @_ s2
+S;G |-ty s1 : k1 // S;G |-ty s2 : k2 // S;G |-co h : k1 [Type{}]~[Type{}] k2
+---------------------------- :: RightRel
+S;G |-co right_h g : s1 [k1]~[k2] s2
+
+S;G |-co g : t1 @_ {s1} [k3[s1/a] ]~[k4[s2/a] ] t2 @_ {s2}
+S;G |-ty s1 : k1 // S;G |-ty s2 : k2 // S;G |-co h : k1 [Type{}]~[Type{}] k2
+---------------------------- :: RightIrrel
+S;G |-co right_h g : s1 [k1]~[k2] s2
+
 S;G |-co g : t1 (k1)~(k2) t2
 ------------------------- :: Kind
 S;G |-co kind g : k1 [Type{}]~[Type{}] k2
@@ -451,13 +467,13 @@ S ; G |-s s --> s' :: :: Step :: 'S_'
 by
 
 ------------------------- :: BetaRel
-S;G |-s (\a:Rel k.s1) s2 --> s1[s2/a]
+S;G |-s (\a:Rel k.s1) @~ s2 --> s1[s2/a]
 
 ---------------------------------------- :: BetaIrrel
-S;G |-s (\a:Irrel k.v1) {s2} --> v1[s2/a]
+S;G |-s (\a:Irrel k.v1) @~ {s2} --> v1[s2/a]
 
 ------------------------------- :: CBeta
-S;G |-s (\c:phi.s) g --> s[g/c]
+S;G |-s (\c:phi.s) @~ g --> s[g/c]
 
 alti = H -> t0 
 ---------------------------- :: Match
@@ -602,15 +618,15 @@ absurd o t ~> absurd o t'
 
 t1 ~> t1'  // t2 ~> t2'
 ------------------------------ :: BetaRel
-(\a :Rel k. t1) t2 ~> t1'[t2'/a]
+(\a :Rel k. t1) @~ t2 ~> t1'[t2'/a]
 
 t1 ~> t1'  // t2 ~> t2'
 ------------------------------ :: BetaIrrel
-(\a :Irrel k. t1) {t2} ~> t1'[t2'/a]
+(\a :Irrel k. t1) @~ {t2} ~> t1'[t2'/a]
 
 t ~> t'
 ------------------ :: CBeta
-(\o:phi.t) o ~> t'
+(\o:phi.t) @~ o ~> t'
 
 alti = H -> t0  // ps ~> ps' // t0 ~> t0'
 ----------------------------------- :: Match

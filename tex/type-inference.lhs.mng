@@ -1987,7 +1987,7 @@ ordinary types. For this reason, \pico/ makes no distinction between
 |Constraint| and |Type|. This choice follows GHC's current practice, where
 |Constraint| and |Type| are distinct in the source language but indistinguishable
 in the intermediate language. This design has some unfortunate consequences;
-see GHC ticket \#11715\footnote{\url{https://ghc.haskell.org/trac/ghc/ticket/11715}} for a considerable
+see GHC ticket \href{https://ghc.haskell.org/trac/ghc/ticket/11715}{\#11715} for a considerable
 amount of discussion.
 
 Extending the language with dependent types is orthogonal to the problems

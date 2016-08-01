@@ -222,6 +222,10 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
 | fix t                        ::   :: Fix
 | absurd g t                   ::   :: Absurd
 
+| t @~ p                       :: M :: UApp
+  {{ tex [[t]]\undertilde{\;}[[p]] }}
+| t @_ p                       :: M :: MApp
+  {{ tex [[t]]\underline{\;}[[p]] }}
 | t ps                         :: M :: Apps
   {{ coq (foldl Type_App ([[t]]) ([[ps]])) }}
 | H {}                         :: M :: HEmpty
@@ -347,6 +351,10 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | g @\ w                       ::   :: InstLam
 | nth I g                      ::   :: Nth
   {{ tex {[[nth]]}_{[[I]]}\,[[g]] }}
+| left _ h g                   ::   :: Left
+  {{ tex {[[left]]}_{[[h]]}\,[[g]] }}
+| right _ h g                  ::   :: Right
+  {{ tex {[[right]]}_{[[h]]}\,[[g]] }}
 | kind g                       ::   :: Kind
 | step t                       ::   :: Step
 
@@ -564,12 +572,6 @@ eq :: 'Eq_' ::=
 nil :: 'Nil_' ::=
 | empty                     ::   :: Empty
 | blank                     ::   :: Omitted
-
-lr :: 'LR_' ::=
-| left                      ::   :: Left
-  {{ tex \mathrm{L} }}
-| right                     ::   :: Right
-  {{ tex \mathrm{R} }}
 
 nat, I {{ tex \ottnt{i} }}, NN {{ tex \ottnt{n} }}  :: 'Nat_' ::=
 | i                         ::   :: Index
