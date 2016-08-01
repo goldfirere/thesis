@@ -29,6 +29,7 @@ test = Test
 \def\effects/{\package{Effects}}
 
 \subsection{Algebraic effects}
+\label{sec:algebraic-effects}
 
 \citet{algebraic-effects} describes an approach to the challenge of embedding
 side effects into a pure, functional language. His approach is to

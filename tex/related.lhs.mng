@@ -115,11 +115,128 @@ for further comments comparing my work to Gundry's.
 
 \section{Comparison to Idris}
 
-\subsection{Legacy support}
-\subsection{Erasure}
+Of the available dependently typed language implementations, Idris is the most
+like Dependent Haskell. Idris was designed explicitly to answer the question
+``What if Haskell had \emph{full} dependent
+types?''~\cite[Introduction]{idris} 
+The Idris implementation is available\footnote{\url{http://www.idris-lang.org/}}
+and is actively developed. So, how does Idris compare with Dependent Haskell?
+I review the main points of difference, below.
+
+\subsection{Backward compatibility}
+
+From a practical standpoint, the biggest difference between Dependent Haskell
+and Idris is that the former joins an already existing ecosystem of Haskell
+libraries and developers. Dependent Haskell is a conservative extension over
+existing implementations of Haskell, and all legacy programs will continue
+to work under Dependent Haskell. Although Idris is certainly Haskell-like
+(and has a foreign-function interface available to call Haskell code
+from Idris and vice versa) it is still not Haskell.
+
+Pushing on this idea a bit more, for a project to be started in Idris,
+the programmers must decide, at the outset, that they wish to use dependent
+types, as its type system is Idris's most distinctive feature. With
+Dependent Haskell, on the other hand, developers can choose to take a part of
+larger Haskell application and rewrite just that part with dependent types.
+This allows for gradual adoption, something that is much easier for the
+general public to swallow.
+
+\subsection{Type erasure}
+
+Dependent Haskell and Idris take different approaches to type erasure.
+Idris's approach is explained by \citet{practical-erasure} as a whole-program
+analysis, seeking out places where an expression is needed and ensuring
+that all such expressions are available at runtime. Naturally, such an
+approach hinders separate compilation, which the authors admit is important
+future work (Teji\v{s}\v{c}\'{a}k and Brady's Section 8.1).
+
+By contrast, Dependent Haskell depends on user-written choices---specifically,
+whether to use |pi| or |forall| when writing a type.
+
+Which approach is better? It is hard to say at this point. The Idris approach
+has the advantage of automation. It may be hard for a user to know what
+expressions (especially those stored in datatypes) will be necessary at
+runtime. The choice between |pi| and |forall| may also motivate library-writers
+to duplicate their data structures providing both options. This is much
+like the fact that many current libraries provide both strict and lazy
+implementations of core data structures, as the better choice depends
+on a client's usage. Perhaps the option for library-writers to provide
+multiple versions of a datatype is an advantage, however: in Idris,
+a datatype's parameter may be marked as relevant even if it is used only
+once. In that case, the Idris programmer is perhaps better served by using
+one data structure (with the field irrelevant) in most places and the other
+data structure (with the field relevant) just where necesary. Time will
+tell whether the Dependent Haskell approach or the Idris approach is
+better.
+
 \subsection{Type inference}
-\subsection{Totality / reduction of non-terminating programs in types}
+
+All Idris top-level definitions must be accompanied with type annotations.
+Even local definitions must have type annotations, sometimes requiring 
+scoped type variables to provide. One might say, then, that Idris does
+no type inference, only type checking. For this reason, studying the
+type inference properties of the language might be less compelling.
+Indeed, Brady claims~\cite[Section 6]{idris} that Idris ``avoid[s] such
+difficulties since, in general, type inference is undecidable for
+full dependent types. Indeed, it is not clear that type inference is even
+desirable in many cases...''
+
+While I admit that considering a principal-types property is much less
+compelling when all bindings are annotated, I still believe that writing
+a type inference algorithm or specification is helpful. I am unaware
+of a description in the literature of Idris's algorithm beyond
+\citet[Section 4]{idris}, describing the elaboration of an Idris program
+in terms of the tactics that generate code in Idris's intermediate language,
+\textsf{TT}. Accordingly, it is hard to predict when an Idris program
+will be accepted. I tested the following program against the latest version
+of Idris (0.12.1):
+\begin{spec}
+ty : Bool -> Type
+ty x = case x of True => Integer; False => Char
+
+f : (x : Bool) -> ty x
+f x = case x of True => 5; False => 'x'
+
+g : (x : Bool) -> ty x
+g x = the  (ty x)
+           (case x of True => 5; False => 'x')
+
+h : (x : Bool) -> ty x
+h x = the  (case x of True => Integer; False => Char)
+           (case x of True => 5; False => 'x')
+\end{spec}
+Idris's |the| is its form of type annotation, with |the : (a : Type) -> a -> a|.
+Both |f| and |g| are accepted, while |h| is rejected. Note that
+the only difference between |g| and |h| is that the body of |ty| is expanded
+in |h|. Is this a bug or the correct behavior? It is hard to know.
+
+In contrast, \pref{cha:type-inference} describes a bidirectional inference
+algorithm that details how to treat such expressions. (All of |f|, |g|,
+and |h| are accepted in Dependent Haskell and today's approximation thereof
+using \package{singletons}.) 
+
+Beyond just having a specification, Dependent Haskell also retains
+Hindley-Milner |let|-generalization for top-level expressions (as implemented
+by the \rul{IDecl\_Synthesize} rule of \bake/). This means that simply typed
+functions and local declarations need not have type ascriptions. Indeed, in
+translating Idris's \package{Effects} library to Dependent Haskell
+(\pref{sec:algebraic-effects}), I was able to eliminate several type
+annotations, needed in Idris but redundant in Haskell. Having
+|let|-generalization also powers examples like inferring the schema from the
+use of a dependently typed database access library
+(\pref{sec:dependent-db-example}), the equivalent of which would be impossible
+in Idris.
+
 \subsection{Editor integration}
+
+One arena where Idris is clearly out ahead is in its user interface. Indeed,
+despite the fact that Idris is considerably younger, GHC has been clamoring
+to catch up to Idris's user interface for some time now. Its emacs
+integration means that users can interactively peruse error messages,
+expanding out the parts of interest and easily ignoring the unhelpful
+parts~\cite{idris-pretty-printer}. Dependent Haskell and GHC have much
+to learn from Idris in this respect; dependently typed programming in Haskell
+will demand improvement.
 
 \section{Comparison to Cayenne}
 \label{sec:cayenne}
