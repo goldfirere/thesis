@@ -7,7 +7,7 @@ Differences from Gundry's thesis.
 - Gundry includes axioms, but they are only for magical things like commutativity.
   Not for type families.
 - Gundry's "Good" is not straightforward to establish. It is *not* syntactic.
-- No roles, closed type families
+- OLD No roles, closed type families
 - I have unsaturated functions in types.
 
 - My type erasure property is stronger: his doesn't erase type-lambdas.

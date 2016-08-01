@@ -1234,6 +1234,8 @@ type family CountArgs (f :: Type) :: Nat where
   CountArgs (a -> b)  = !Succ (CountArgs b)
   CountArgs result    = !Zero
 \end{code}
+Note that the ability to write this function is unique to Haskell,
+where pattern-matching on proper types (of kind |Type|) is allowed.
 
 We still need to connect this type-level function with the term-level
 GADT |NumArgs|. We use Haskell's method for reflecting type-level

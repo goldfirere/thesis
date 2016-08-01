@@ -12,7 +12,64 @@
 \chapter{Related work}
 \label{cha:related}
 
+There is a great deal of work related to this dissertation, looking at
+designs of similar surface languages, designs of similar
+intermediate languages, and similar type inference algorithms. This chapter
+reviews this related work, starting with a thorough comparison with
+the work of \citet{gundry-thesis}, which covers all of the areas above.
+
 \section{Comparison to \citet{gundry-thesis}}
+
+The most apt comparison of my work is to that of Gundry. His dissertation
+is devoted to much the same goal as mine: adding dependent types to Haskell.
+I have tried to compare my work to his as this has been topical throughout
+this work. Here I summarize some of the key points of difference and explain
+how my work expands upon what he has done.
+
+\subsection{\pico/ allows unsaturated functions in types}
+
+Gundry's intermediate language uses one element of the grammar to represent
+both terms and types. But he offers separate typing judgments, as controlled
+by his use of a phase modality. In Gundry's type system, every typing judgment
+holds at one of three \emph{phases}:\footnote{Actually, one of four, but both
+Gundry and I keep coercion typing so separate from other typing judgments
+that I am excluding it here.} runtime, compile time, or shared (Gundry's 
+Section 6.2). Gundry
+describes an \emph{access policy} (Gundry's Section 6.2.1) whereby an
+expression well-typed at the shared phase can also be used in either the
+runtime or compile-time phases. Gundry's use of phases is not unlike my
+use of relevance, where an expression well-typed at
+Gundry's compile-time phase would be irrelevant in my formulation.
+
+The big difference between my treatment and Gundry's is that I essentially
+combine the shared and runtime phases. That is, anything that is allowed
+at runtime is also allowed in types. Gundry prevents
+$\lambda$-expressions and unsaturated functions from being used in types.
+These constructs can be typed only at the runtime phase, never the shared
+or compile-time phases. Because of this restriction around
+unsaturated functions, Gundry's system must carefully track where unsaturated
+functions appear and prevent any expression containing one from being used
+in a type or a dependent context.
+
+I avoid Gundry's restriction quite simply: I have
+omitted Gundry's \ottkw{left} and \ottkw{right} operators. Gundry has
+the following two rules (paraphrased into \pico/ for familiarity):
+\begin{gather*}
+\ottdrule{\ottpremise{[[S;G |-co g : t1 s1 [k1]~[k2] t2 s2]]}}{[[S]];[[G]] [[|-co]] \ottkw{left}\ [[g]] : [[t1 [k1']~[k2'] t2]]}{\rul{Gundry\_Left}}\\[1ex]
+\ottdrule{\ottpremise{[[S;G |-co g : t1 s1 [k1]~[k2] t2 s2]]}}{[[S]];[[G]] [[|-co]] \ottkw{right}\ [[g]] : [[s1 [k1']~[k2'] s2]]}{\rul{Gundry\_Right}}\\
+\end{gather*}
+These operators allow us to decompose an arbitrary type application.
+\Pico/ has a similar rule in its \rul{Co\_Nth}, but \pico/'s rule requires that
+the head of the application be a type constructor. No such restriction
+exists for \ottkw{left} and \ottkw{right}. In a language with unsaturated
+functions, however, \ottkw{left} and \ottkw{right} do not fit: these effectively
+assert generativity and injectivity, respectively, properties which arbitrary
+functions do not have.
+
+I claim that \pico/ has lost nothing of value in dropping \ottkw{left}
+and \ottkw{right}, while it has gained unsaturated functions---quite a
+powerful feature in a functional programming language. My claim is
+backed up by an experiment GHC unintentionally ran on its user base.
 
 \section{Comparison to Idris}
 
