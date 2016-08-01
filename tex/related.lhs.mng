@@ -347,6 +347,62 @@ Agda and Idris.
 
 \section{Comparison to Liquid Haskell}
 
+Liquid Haskell~\cite{bounded-refinement-types,liquid-haskell-experience,liquid-haskell} is an ongoing project seeking to add \emph{refinement types}
+to Haskell. A refinement type specifies a head type and a condition; any
+value of that type is asserted to meet the condition. For example, we might
+write the type of the |length| function thus:
+\begin{spec}
+length :: [a] -> { n : Int | n >= 0 }
+\end{spec}
+The return type tells us that the return value will always be non-negative.
+
+The Liquid Haskell implementation works by reading in such annotations
+with a Haskell file and checking that the refinements are satisfied. The
+check is done via an SMT solver. No user intervention---other than writing
+the refinements in the first place---is required.
+
+Liquid Haskell and Dependent Haskell are, in some ways, two different solutions
+to (nearly) the same problem: the desire to rule out erroneous programs.
+By specifying tight refinements on our function types, we can have Liquid
+Haskell check the correctness of our programs. And doing so is easy, thanks
+to the power of the SMT solver working in the background.
+
+However, the refinement types of Liquid Haskell exist outside of the type system
+proper: it is not possible to write a type-level program that can manipulate
+refinements, and it is also not possible to write refinements that can
+reason about Haskell's type classes or other advanced type-level features.
+Along similar lines, it is not possible to use refinement types to write
+a program inadmissible in regular Haskell; for example, refinement types
+are not powerful enough to encode something like Idris's algebraic effects
+library (\pref{sec:algebraic-effects}).
+
+The beauty of Liquid Haskell is in its user interface. Proving that a program
+matches its specification is fully automatic---something very much not
+true of Dependent Haskell programs. The project has shown without a doubt
+that using an SMT solver to help typechecking will lessen users' proof
+burden. (Liquid Haskell is hardly the only tool that uses an SMT solver
+for typechecking. See also, for example, \citet{dafny,dependent-f-star},
+among others.) 
+
+It is my hope that, someday, Dependent Haskell can aspire to be the
+backend for Liquid Haskell. The merged language would have the type
+refinement syntax much like Liquid Haskell's current syntax, but it would
+desugar to proper dependent types under the hood. An SMT solver would remain
+as part of the system, possibly as a typechecker plugin.
+For function arguments, supporting refinement types
+is already possible: a type like |{n : Int | n >= 0}| can be encoded
+as a dependent parameter |n| and a Haskell constraint. Much more problematic
+is a refined return type. For that same refinement, we would need a
+existential package, saying that a function returns \emph{some} |n| with
+|n >= 0|. While Dependent Haskell support existentials, naturally, packing
+and unpacking these must be done manually. In practice, this packing
+and unpacking clutters the code considerably and makes the refinement
+approach distasteful. Perhaps worse, the packing and unpacking would be
+performed at runtime, making end users pay a cost for this compile-time
+checking. Overcoming these barriers---coming up with a lightweight syntax
+for existentials as well as zero runtime overhead---is important future work,
+perhaps my highest priority new research direction.
+
 \section{Invisibility in other languages}
 \label{sec:vis-other-lang}
 
@@ -481,5 +537,7 @@ correct! How do we retain runtime performance in the face of dependent types?
 
 \section{Type erasure in other languages}
 \label{sec:related-type-erasure}
+
+\rae{Make sure I have Xi's work and Trellys}
 
 %%  LocalWords:  gundry newtype SMT
