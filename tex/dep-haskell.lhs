@@ -150,9 +150,9 @@ is now available in types (for example, |do|-notation, |let| bindings,
 even arrows~\cite{arrows}). From a compilation standpoint, supporting
 these features is actually not a great challenge (once we have
 Chapters~\ref{cha:pico} and \ref{cha:type-inference} implemented);
-it requires only interleaving typechecking with desugaring.\footnote{GHC
-currently typechecks the Haskell source directly, allowing it to produce
-better error messages. Only after typechecking and type inference does
+it requires only interleaving type-checking with desugaring.\footnote{GHC
+currently type-checks the Haskell source directly, allowing it to produce
+better error messages. Only after type-checking and type inference does
 it convert Haskell source into its internal language, the process
 called \emph{desugaring}.} When a type-level use of elaborate expression-level
 syntax is encountered, we will need to work with the desugared version,
@@ -168,7 +168,8 @@ the new quantifiers of Dependent Haskell, it is helpful to understand the
 several axes along which quantifiers can vary in the context of today's
 Haskell.
 
-A \emph{quantifier} is a type-level operator that introduces the type of an
+In Haskell,
+a \emph{quantifier} is a type-level operator that introduces the type of an
 abstraction, or function. In Dependent Haskell, there are four essential
 properties of quantifiers, each of which can vary independently of the others.
 To understand the range of quantifiers that the language offers, we must
@@ -278,7 +279,7 @@ for instantiation.
 Dependent Haskell offers both visible and invisible forms of |forall| and
 |pi|; the invisible forms instantiate only via unification. Dependent Haskell
 retains, of course, the invisible quantifier |(=>)|, which is instantiated
-via instanced lookup and solving.
+via instance lookup and solving.
 Finally, note that visibility is a quality only of source Haskell.
 All arguments are always ``visible'' in \pico/.
 
@@ -473,7 +474,7 @@ and retain the flexibility we have in the expression |map|.
 
 \subsection{The twelve quantifiers of Dependent Haskell}
 
-\begin{table}
+\begin{figure}
 \begin{center}
 \begin{tabular}{rcccc}
 % & \multicolumn{2}{l}{Dependency} & \multicolumn{2}{l}{Visibility} \\
@@ -493,12 +494,12 @@ and retain the flexibility we have in the expression |map|.
 \end{tabular}
 \end{center}
 \caption{The twelve quantifiers of Dependent Haskell}
-\label{tab:quantifiers}
-\end{table}
+\label{fig:quantifiers}
+\end{figure}
 
 Now that we have enumerated the quantifier properties, we are ready to
 describe the twelve quantifiers that exist in Dependent Haskell. They
-appear in \pref{tab:quantifiers}. The first one (|forall (a :: t). ...|)
+appear in \pref{fig:quantifiers}. The first one (|forall (a :: t). ...|)
 and two near the bottom (|=>| and |->|)
 exist in today's Haskell and are completely
 unchanged. Dependent Haskell adds a visible |forall|, the |pi|
@@ -592,7 +593,7 @@ safeTail (_ :> t) = Right t
 \end{code}
 %endif
 In this example, we must use type information learned through the pattern
-match in order for the body of the pattern match to typecheck. (Here,
+match in order for the body of the pattern match to type-check. (Here,
 and in the last example, I use the more typical syntax of defining a function
 via pattern matching. The reasoning is the same as if I had used an 
 explicit |case|.) Let's examine the two pattern match bodies individually:
@@ -667,7 +668,7 @@ of Haskell98 programs.
 
 \section{Discussion}
 
-The larger user-facing changes to Haskell as it becomes Dependent Haskell
+The larger syntactic changes to Haskell as it becomes Dependent Haskell
 are sketched above. In addition to these changes, Haskell's typing rules
 naturally become much more involved. Though a declarative specification
 remains out of reach, \pref{cha:type-inference} describes
@@ -789,7 +790,7 @@ dependently typed Haskell programs.
 
 Despite not have an easy, sound workaround, GHC already comes with an easy, unsound
 workaround: rewrite rules~\cite{rules}. A rewrite rule (written with a
-|{-# RULES ... #-}| pragma in GHC) instructs GHC to exchange one fragment of a program
+|RULES| pragma in GHC) instructs GHC to exchange one fragment of a program
 in its intermediate language with another, by pattern matching on the program structure.
 For example, a user can write a rule to change |map id| to |id|. To the case in point,
 a user could write a rule that changes |pf ...| to |unsafeCoerce Refl|. Such a rule would
@@ -820,10 +821,24 @@ import/export list also includes |pred|'s implementation. This echoes the curren
 syntax of using, say, |Bool| to export only the |Bool| symbol while |Bool(..)|
 exports |Bool| with all of its constructors.
 
-\subsection{Type checking is undecidable}
+\subsection{Type-checking is undecidable}
 \label{sec:type-checking-undec}
 
-\rae{WRITE ME}
+In order to type-check a Dependent Haskell program, it is sometimes necesary
+to evaluate expression used in typed. Of course, these expressions might
+be non-terminating in Haskell. Accordingly, type-checking Dependent Haskell
+is undecidable.
+
+This fact, however, is not worrisome. Indeed, GHC's type-checker has
+had the potential to loop for some time. Assuming that the solver's own
+algorithm terminates, type-checking will loop only when the user has
+written a type-level program that loops. Programmers are unsurprised when
+they write an ordinary term-level program that loops at runtime; they
+should be similarly unsurprised when they write a type-level program
+that loops at compile time. In order to provide a better user experience,
+GHC counts reduction steps and halts with an error message if the
+count gets too high; users can disable this check or increase the limit
+via a compiler flag.
 
 \section{Conclusion}
 
@@ -843,5 +858,5 @@ needs.
 %%  LocalWords:  newcode rae fmt TypeLits endif quantifiee pred outsidein FCD
 %%  LocalWords:  mytrue bool Vec theSimons FromNat Succ infixr SNat SZero Num
 %%  LocalWords:  SSucc fromInteger unsafeCoerce abs signum MkAge newtype frob
-%%  LocalWords:  gundry TypeError ErrorMessage Refl HList HNil tailOrNil
+%%  LocalWords:  gundry TypeError ErrorMessage Refl HList HNil tailOrNil Exts
 %%  LocalWords:  PredOrZero eitherize

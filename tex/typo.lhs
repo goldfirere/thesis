@@ -14,7 +14,7 @@ code to be rendered more stylistically than a simple @verbatim@ environment
 would allow. The table below maps Haskell source to glyphs appearing in this
 dissertation:
 
-\begin{table}[h]
+\begin{figure}[h]
 \begin{center}
 \begin{tabular}{c||c||l}
 \textbf{Haskell} & \textbf{Typeset} & \textbf{Description} \\ \hline
@@ -30,7 +30,7 @@ dissertation:
 \end{tabular}
 \end{center}
 \caption{Typesetting of Haskell constructs}
-\end{table}
+\end{figure}
 
 In addition to the special formatting above, I assume a liberal overloading
 of number literals, including in types. For example, I write |2| where I

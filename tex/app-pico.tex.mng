@@ -1,8 +1,6 @@
 \chapter{Proofs about \pico/}
 \label{app:pico-proofs}
 
-\rae{Are all ott-defined functions listed in the text somewhere?}
-
 You may find the full grammar for \pico/ in \pref{fig:pico-grammar}
 and its notation conventions in \pref{fig:pico-notation}.
 The definition for values is in \pref{sec:value-defn} and of
@@ -563,9 +561,10 @@ The induction hypothesis gives us:
 \item $[[S;G,G'[s/b],a:Rel k1[s/b] |-co g[s/b] : s1[s/b] [Type{}]~[Type{}] s2[s/b] ]]$
 \end{itemize}
 By \rul{Co\_PiTy}, we get
-\[
-[[S;G,G'[s/b] |-co PI a:rel h[s/b]. g[s/b] : (PI a:rel k1[s/b]. s1[s/b]) [Type{}]~[Type{}] (PI a:rel k2[s/b]. (s2[s/b][a |> sym h[s/b]/a])) ]]
-\]
+\begin{multline*}
+[[S]];[[G,G'[s/b] ]] [[|-co]] [[PI a:rel h[s/b]. g[s/b] ]] : \\
+[[ (PI a:rel k1[s/b]. s1[s/b]) [Type{}]~[Type{}] (PI a:rel k2[s/b]. (s2[s/b][a |> sym h[s/b]/a])) ]]
+\end{multline*}
 All that remains to show is that
 $[[s2[s/b][a |> sym h[s/b]/a] = s2[a |> sym h/a][s/b] ]]$, but this
 follows from the fact that $[[a # s]]$, guaranteed by the Barendregt
@@ -974,7 +973,10 @@ In this case, we have $[[ps = ps0, t0]]$ and $[[D = D0, b :Rel k]]$
 with $[[S;G |-cev ps0 : D0[ts/as] ]]$ and $[[S;G |-ty t0 : k[ts/as][ps0/dom(D0)] ]]$.
 We can see that $[[build_kpush_co(h; ps0, t0) = let c := build_kpush_co(h; ps0) in c@(t0 ~={argk c} t0 |> argk c) ]]$.
 The induction hypothesis tells us that
-$[[S;Rel(G) |-co c : (MPI b :Rel k.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (MPI b:Rel k.s)[ts'/as][ps0'/dom(D0)] ]]$. We can thus deduce the following:
+\[
+[[S;Rel(G) |-co c : (MPI b :Rel k.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (MPI b:Rel k.s)[ts'/as][ps0'/dom(D0)] ]].
+\]
+ We can thus deduce the following:
 \begin{itemize}
 \item $[[S;Rel(G) |-co argk c : k[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] k[ts'/as][ps0'/dom(D0)] ]]$
 \item $[[S;Rel(G) |-ty t0 |> argk c : k[ts'/as][ps0'/dom(D0)] ]]$
@@ -995,7 +997,9 @@ In this case, we have $[[ps = ps0, g0]]$ and $[[D = D0, c0 : phi0]]$
 with $[[S;G |-cev ps0 : D0[ts/as] ]]$ and $[[S;Rel(G) |-co g0 : phi0[ts/as][ps0/dom(D0)] ]]$.
 We can see that $[[build_kpush_co(h; ps0, g0) = let c := build_kpush_co(h; ps0) in c@(g0, sym (argk 1 c) ;; g0 ;; argk 2 c)]]$.
 The induction hypothesis tells us that
-$[[S;Rel(G) |-co c : (MPI c0:phi0.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (MPI c0:phi0.s)[ts'/as][ps0'/dom(D0)] ]]$. Let $[[phi0 = s1 [k1]~[k2] s2]]$. We can thus deduce the following:
+\[
+[[S;Rel(G) |-co c : (MPI c0:phi0.s)[ts/as][ps0/dom(D0)] [Type{}]~[Type{}] (MPI c0:phi0.s)[ts'/as][ps0'/dom(D0)] ]].
+\] Let $[[phi0 = s1 [k1]~[k2] s2]]$. We can thus deduce the following:
 \begin{itemize}
 \item $[[S;Rel(G) |-co sym (argk 1 c) : s1[ts'/as][ps0'/dom(D0)] [k1[ts'/as][ps0'/dom(D0)] ]~[k1[ts/as][ps0/dom(D0)] ] s1[ts/as][ps0/dom(D0)] ]]$
 \item $[[S;Rel(G) |-co argk 2 c : s2[ts/as][ps0/dom(D0)] [k2[ts/as][ps0/dom(D0)] ]~[k2[ts'/as][ps0'/dom(D0)] ] s2[ts'/as][ps0'/dom(D0)] ]]$
@@ -1389,7 +1393,9 @@ and $[[k1[ps/zs] ~> k3]]$.
 We must show that
 $[[t5[fix (\a:Rel k3.t5)/a] = t4[fix (\a:Rel k2.t4)/a][ps'/zs] ]]$.
 Reorder substitutions on the right to get
-$[[t4[fix (\a:Rel k2.t4)/a][ps'/zs] = t4[ps'/zs][fix (\a:Rel k2[ps'/zs].t4[ps'/zs])/a] ]]$, where $[[a # ps']]$ by the Barendregt convention.
+\[
+[[t4[fix (\a:Rel k2.t4)/a][ps'/zs] = t4[ps'/zs][fix (\a:Rel k2[ps'/zs].t4[ps'/zs])/a] ]],
+\] where $[[a # ps']]$ by the Barendregt convention.
 Choose $[[t5 = t4[ps'/zs] ]]$ and $[[k3 = k2[ps'/zs] ]]$.
 It remains only to show that $[[t3[ps/zs] ~> t4[ps'/zs] ]]$
 and $[[k1[ps/zs] ~> k2[ps'/zs] ]]$, both of which follow from the

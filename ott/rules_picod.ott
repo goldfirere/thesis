@@ -272,7 +272,8 @@ S;G ||-co argk 2 g : t1' [k20]~[k60] t2'
 
 S;G ||-co g : phi //  length D1 = length D2 = n
 phi =>= MUPI D1.t1 [Type{}]~[Type{}] MUPI D2.t2
-S;G ||-ty t1 : s1 // s1 == Type{}  //  S;G ||-ty t2 : s2 // s2 == Type{}
+S;G ||-ty t1 : s1 // s1 == Type{}
+S;G ||-ty t2 : s2 // s2 == Type{}
 --------------------------- :: Res
 S;G ||-co res^n g : t1 [Type{}]~[Type{}] t2
 
@@ -316,7 +317,8 @@ S;G ||-co g@\{h} : t1[s1/a] [k3[s1/a] ]~[k4[s2/a] ] t2[s2/a]
 
 S;G ||-co g : phi3
 phi3 =>= \c:phi1. s1 [UPI c:phi1.k1]~[UPI c:phi2.k2] \c:phi2.s2
-S;G ||-co h1 : phi1' // phi1 == phi1' // S;G ||-co h2 : phi2' // phi2 == phi2'
+S;G ||-co h1 : phi1' // phi1 == phi1'
+S;G ||-co h2 : phi2' // phi2 == phi2'
 ---------------------------- :: CInstLam
 S;G ||-co g@\(h1,h2) : s1[h1/c] [k1[h1/c] ]~[k2[h2/c] ] s2[h2/c]
 
@@ -331,6 +333,29 @@ pi = {t} // pi' = {s}
 S;Rel(G) ||-ty t : k1  //  S;Rel(G) ||-ty s : k2
 -------------------------------- :: NthIrrel
 S;G ||-co nth i g : t [k1]~[k2] s
+
+S;G ||-co g : phi
+phi =>= t1 @_ p1 [k1[p1/dom(d1)] ]~[k2[p2/dom(d2)] ] t2 @_ p2
+S;G ||-ty t1 : k0 // k0 =>= MPI d1. k1
+S;G ||-ty t2 : k0' // k0' =>= MPI d2. k2
+S;G ||-co h : phi' //
+phi' == MPI d1. k1 [Type{}]~[Type{}] MPI d2. k2
+----------------------------- :: Left
+S;G ||-co left_h g : t1 [MPI d1.k1]~[MPI d2.k2] t2
+
+S;G ||-co g : phi
+phi =>= t1 @_ s1 [k3[s1/a] ]~[k4[s2/a] ] t2 @_ s2
+S;G ||-ty s1 : k1 // S;G ||-ty s2 : k2
+S;G ||-co h : phi' // phi' == k1 [Type{}]~[Type{}] k2
+---------------------------- :: RightRel
+S;G ||-co right_h g : s1 [k1]~[k2] s2
+
+S;G ||-co g : phi
+phi =>= t1 @_ {s1} [k3[s1/a] ]~[k4[s2/a] ] t2 @_ {s2}
+S;G ||-ty s1 : k1 // S;G ||-ty s2 : k2
+S;G ||-co h : phi' // phi' == k1 [Type{}]~[Type{}] k2
+---------------------------- :: RightIrrel
+S;G ||-co right_h g : s1 [k1]~[k2] s2
 
 S;G ||-co g : t1 (k1)~(k2) t2
 ------------------------- :: Kind

@@ -1,6 +1,6 @@
 %% -*- mode: LaTeX -*-
 
-\documentclass[12pt,oneside]{book}
+\documentclass[12pt,oneside,draft]{book}
 
 %include rae.fmt
 
@@ -23,6 +23,7 @@
 
 \include{titlepage}
 \include{copyright}
+\include{dedication}
 \include{acks}
 \include{abstract}
 
@@ -32,7 +33,7 @@
 
 \newpage
 
-\listoftables
+% \listoftables
 
 \listoffigures
 
@@ -40,6 +41,7 @@
 \setcounter{page}{1}
 \pagenumbering{arabic}
 \hypersetup{pageanchor=true}
+% \pagestyle{headings}
 
 %include intro.lhs
 %include prelim.lhs

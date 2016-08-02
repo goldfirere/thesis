@@ -1,10 +1,13 @@
 % LaTeX preamble
-\newif \ifdraft \drafttrue
+\newif \ifdraft \draftfalse
 
 \newcommand{\Title}{DEPENDENT TYPES IN HASKELL: THEORY AND PRACTICE}
 \newcommand{\Author}{Richard A.~Eisenberg}
 \newcommand{\Advisor}{Stephanie Weirich}
 \newcommand{\Year}{2016}
+
+\usepackage{chngcntr}
+\counterwithout{footnote}{chapter}
 
 \usepackage[top=1in, bottom=1in, left=1.5in, right=1in,includefoot,paperwidth=8.5in,paperheight=11in]{geometry}
 
@@ -92,10 +95,6 @@
 % drop chapter numbers from equations
 \renewcommand{\theequation}{\arabic{equation}}
 
-% write proposal-only stuff in blue
-\definecolor{proposal}{rgb}{0,0,0.5}
-\newenvironment{proposal}{\color{proposal}}{}
-
 % that trailing / prevents the macro from gobbling up a space
 \def\outsidein/{\textmd{\textsc{OutsideIn}}}
 \def\pico/{\textmd{\textsc{Pico}}}
@@ -127,7 +126,7 @@
 \setcounter{secnumdepth}{3}
 
 % hyphenation customization
-\hyphenation{Has-kell}
+\hyphenation{Has-kell in-ter-change-able}
 
 % separate out ott rules
 \newcommand{\rulesep}{\\[1ex]}

@@ -239,7 +239,7 @@ The body of this function, however, deserves scrutiny, as the type
 system is working hard on our behalf throughout this function.
 The first line calls the \effects/ library function |open|, which
 uses the |FILE_IO| capability. Here is a simplified version of its
-type, where the automatic lifting mechansim (\pref{sec:effects-automatic-lifting})
+type, where the automatic lifting mechanism (\pref{sec:effects-automatic-lifting})
 is left out:
 \begin{notyet}
 \begin{spec}
@@ -295,7 +295,7 @@ we seek is first in the list.) If the |Either| is |Left|, |raise| an
 exception. Otherwise, we know that the |open| succeeded, and the
 inner |do| block can work with a capability |FILE_IO (OpenFile !Read)|.
 
-The inner |do| block runs |readLines|, remembering to |lift| because
+The inner |do| block runs |readLines|, using |lift| because
 the type of |readLines| assumes only the one |FILE_IO| capability,
 and |readFile| has more than just that. The same automatic proof search
 facility described earlier works with explicit |lift|s.
@@ -319,7 +319,7 @@ parameter to |close|. This is necessary to support the automatic lifting
 mechanism. Without knowing that it is searching for |FILE_IO (OpenFile Read)|,
 it gets quite confused; looking for |FILE_IO (OpenFile m)| is just not
 specific enough. It is conceivable that this restriction could be lifted
-with a cleverer automatic lifting mechanism or a typechecker plugin~\cite{type-checker-plugins,diatchki-smt-plugin}.
+with a cleverer automatic lifting mechanism or a type-checker plugin~\cite{type-checker-plugins,diatchki-smt-plugin}.
 
 All of the code described above is wrapped in a |catch| in order to deal
 with any possible exception; |catch| is not intricately typed and does
@@ -412,7 +412,7 @@ I will skip over most of the details here, making only these points:
 \item It is necessary to use the $\at$ invisibility override (\pref{sec:visible-type-pat}) several times so that the automatic lifting mechanism knows what to
 look for. An alternatives to the approach seen here include using explicit labels
 on capabilities (see \citet[Section 2.1.2]{algebraic-effects}), writing down
-the index of the capability desired, or implementing a typechecker plugin to
+the index of the capability desired, or implementing a type-checker plugin to
 help do automatic lifting.
 \item The |putM| function (an operation on |STATE|) changes the type of
 the stored state. In this case, the stored state is a vector that is
@@ -436,3 +436,8 @@ of the power of dependent types for practical programming. I have shown
 here that this library can be ported to Dependent Haskell, where it remains
 just as useful. Perhaps as Dependent Haskell is adopted, more users will
 prefer to use this approach over monad transformers.
+
+%%  LocalWords:  newcode rae fmt StdIO AChar Util endif AST Expr Val Var Vars
+%%  LocalWords:  eval Eff RND var val poly SHere SRead readLines putStrLn prf
+%%  LocalWords:  readFile EffM OpenFile EffElem UpdateResTyImm printFile mapM
+%%  LocalWords:  filepath RebindableSyntax Ty interpTy Vec interp putM

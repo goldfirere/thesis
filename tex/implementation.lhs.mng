@@ -26,7 +26,7 @@ does not simply check for $\alpha$-equivalence; see \pref{sec:picod}.
 \section{Current state of implementation}
 
 As of this writing (August 2016), a only portion of the improvements to Haskell
-described in this dissertation are implemented. This section descibes the current
+described in this dissertation are implemented. This section describes the current
 state of play and future plans.
 
 \subsection{Implemented in GHC 8}
@@ -44,7 +44,7 @@ Here are its features:
 \begin{itemize}
 \item The core language is very closely as described in my prior work~\cite{nokinds}.
 \item The kind of types |*| is now treated as described in \pref{sec:parsing-star}.
-\item Types and kinds are indistinguishable and fully interchangable.
+\item Types and kinds are indistinguishable and fully interchangeable.
 \item Kind variables may be explicitly quantified:
 \begin{working}
 \begin{code}
@@ -96,10 +96,10 @@ is bidirectional, as is \bake/.
 
 Alongside my work implementing dependent types in GHC, I have also continued
 the development of my \package{singletons} package~\cite{singletons,promoting-type-families}. This package has some
-enduring populariy: it has over 7,000 downloads, 31 separate users reporting
+enduring popularity: it has over 7,000 downloads, 31 separate users reporting
 bugs, is the primary subject of several blog posts\footnote{See
 \begin{itemize}
-\item  \url{https://www.schoolofhaskell.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell}
+\item \scriptsize \url{https://www.schoolofhaskell.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell}
 \item \url{https://ocharles.org.uk/blog/posts/2014-02-25-dependent-types-and-plhaskell.html}
 \item \url{http://lambda.jstolarek.com/2014/09/promoting-functions-to-type-families-in-haskell/}
 \item \url{https://blog.jle.im/entry/practical-dependent-types-in-haskell-1.html}
@@ -107,7 +107,7 @@ bugs, is the primary subject of several blog posts\footnote{See
  all by different authors---not to mention my own posts.} and has even made its way
 into a textbook on Haskell~\cite[Chapter 13]{beginning-haskell}.
 The \package{singletons} package uses Template Haskell~\cite{template-haskell},
-GHC's metaprogramming facility, to transform normal term-level declarations
+GHC's meta-programming facility, to transform normal term-level declarations
 into type-level equivalents.
 
 I use my work in \package{singletons} as a proof-of-concept for implementing
@@ -149,6 +149,7 @@ getting dependent types in Haskell for real instead of faking it with singletons
 and so may not complete these upgrades.
 
 \subsection{Implementation to be completed}
+\label{sec:impl-todo}
 
 There is still a fair amount of work to be done before the implementation
 of dependent types in
@@ -171,23 +172,23 @@ one that type-checks terms and one that kind-checks types. These would be
 combined, as prescribed by \bake/. I expect this to be a \emph{simplification}
 when it is all done, as one algorithm will serve where there is currently
 two---and both are quite complex.
-\item Interleave typechecking with desugaring. Currently, GHC maintains
-two separate phases when compiling terms: typechecking ensures that the
+\item Interleave type-checking with desugaring. Currently, GHC maintains
+two separate phases when compiling terms: type-checking ensures that the
 source expression is well-typed and also produces information necessary
 for elaboration into its intermediate language. Afterwards, GHC then
-desugars the typechecked program, translating it to the intermediate language.
-Desugaring today is done only after the whole module is typechecked. However,
+desugars the type-checked program, translating it to the intermediate language.
+Desugaring today is done only after the whole module is type-checked. However,
 if some declarations depend on evaluating other declarations (because the
-latter are used in the former's types), then desugaring and typechecking
+latter are used in the former's types), then desugaring and type-checking
 will have to be interleaved. I do not expect this to be a challenge, however,
 for two reasons:
 \begin{itemize}
-\item Typechecking and desugaring are \emph{already} interleaved, at least
+\item Type-Checking and desugaring are \emph{already} interleaved, at least
 in types. Indeed, the kind-checker for types produces a type in the intermediate
-language today, effectively typechecking and desugaring all at once.
-\item Typechecking happens by going in order through a sequence of mutually
+language today, effectively type-checking and desugaring all at once.
+\item Type-Checking happens by going in order through a sequence of mutually
 recursive groups. One expression cannot depend on another within the same
-group, and so we can just process each group one at a time, typechecking
+group, and so we can just process each group one at a time, type-checking
 and then desugaring.
 \end{itemize}
 \item The source language will have to be changed to accept the new features.
@@ -208,7 +209,7 @@ delayed until 2019.
 During the process of writing this dissertation, I worked on merging my
 implementation of \ext{TypeInType} into the GHC main development stream.
 This process was \emph{much} harder than I anticipated, taking up two
-more nearly full-time months than expected. I am thus leery of overpromising
+more nearly full-time months than expected. I am thus leery of over-promising
 about the rest of the implementation task embodied in this dissertation.
 However, my success in emulating so many of the features in Dependent Haskell
 in \package{singletons} gives me hope that the worst of the implementation
@@ -301,7 +302,7 @@ they currently use $=$. This argument relies on these first four properties.
 simplifies the implementation. After all, seeking a proof-irrelevant equality
 is what started this whole line of inquiry. However, despite \pref{prop:de-proof-irrel} masquerading as only a \emph{desired} property, it turns out that with
 my proof technique, this is a \emph{necessary} property. Indeed, it seems
-that once $[[==]]$ is any relation stricly larger than $=$, it must be
+that once $[[==]]$ is any relation strictly larger than $=$, it must be
 proof irrelevant. This is because the translation from a derivation in
 \picod/ to one in \pico/ (see next subsection) will use coercions
 as obtained through \pref{prop:de-smaller-twiddle}. These coercions must
@@ -412,12 +413,12 @@ we want an algorithm that does unification up to $[[==]]$.
 I have thus implemented a novel unification algorithm in GHC that
 does indeed unify the forms above. To first order, this algorithm
 simply ignores casts and coercions. The problem if we ignore coercions
-altogether is that the resulting subsitution might not be well kinded.
+altogether is that the resulting substitution might not be well kinded.
 As a simple example, consider unifying $[[a]]$ with $[[t |> g]]$. If we just
 ignore casts, then we get the substitution $[[t/a]]$---but $[[t]]$ and
 $[[a]]$ might have different kinds. In the type application example,
 we similarly do not want the substitution $[[t/a,s/b]]$ but instead
-$[[(t |> g1)/a, (s |> g2)/b]]$ for approrpriate $[[g1]]$ and $[[g2]]$.
+$[[(t |> g1)/a, (s |> g2)/b]]$ for appropriate $[[g1]]$ and $[[g2]]$.
 
 My approach, then, is for the algorithm to take three inputs: the two types
 to unify and a coercion between their kinds. At the leaves (matching a variable
@@ -638,15 +639,15 @@ This dissertation has dwelt a great deal on using algebraic datatypes in types
 and kinds. What about non-algebraic types, like |Int|, |Double|, or |Char|?
 These can be used in types just as easily as other values. The problem is
 in reducing operations on these types. For example, if a type mentions
-|5 - 8|, the normal type reduction process in the typechecker can replace
+|5 - 8|, the normal type reduction process in the type-checker can replace
 this with |(-3)|. However, what if we see |5 + x - x| for an unknown |x|?
 We would surely like to be able to discover that |(5 + x - x) ~ 5|. Proving
 such equalities is difficult however.
 
-It is here that a new innovation in GHC will come in quite handy: typechecker
+It is here that a new innovation in GHC will come in quite handy: type-checker
 plugins. \citet{diatchki-smt-plugin} has already used the plugin interface
 (also described by \citet{type-checker-plugins}) to integrate an SMT solver
-into GHC's typechecker, in order to help with GHC's existing support for
+into GHC's type-checker, in order to help with GHC's existing support for
 some type-level arithmetic. As more capabilities are added to types, the
 need for a powerful solver to deal with arithmetic equalities will grow.
 By having a plugin architecture, it is possible that individual users can
@@ -663,9 +664,9 @@ appropriate for use even in deployment.
 %% this led to a key realization: coercions are unnecessary during compilation.
 
 %% Although coercions are vitally necessary for efficient, syntax-directed
-%% typechecking of \pico/, they are not needed at all to produce runtime
-%% code. Most of the time, GHC is invoked without \pico/'s typechecker engaged.
-%% The Haskell source is typechecked, the \pico/ is produced, but
+%% type-checking of \pico/, they are not needed at all to produce runtime
+%% code. Most of the time, GHC is invoked without \pico/'s type-checker engaged.
+%% The Haskell source is type-checked, the \pico/ is produced, but
 %% \pico/'s checker is never consulted. (Users must enable this extra check
 %% with \texttt{-dcore-lint}.) This is because a correctly implemented
 %% compiler should never produce invalid intermediate code---checking this
@@ -697,3 +698,10 @@ appropriate for use even in deployment.
 %% it will be clear that the |x| cannot be lifted out.
 
 %% Another potential hazard of this optimization
+
+%%  LocalWords:  newcode rae fmt MonadPlus endif TypeInType MkT GInt GMaybe
+%%  LocalWords:  HRefl HTestEquality hTestEquality TypeRep eqT Eq Ord Enum IA
+%%  LocalWords:  matchability refl eqType poly sym TType CA taus TYVar TyVar
+%%  LocalWords:  PIC CoVar LAM LCM UM fmap substTyVar bindTv typeKind pic lam
+%%  LocalWords:  unifyVar unifyTys unifyTyApp unifyApp unifyProp lcm mzero
+%%  LocalWords:  TypeOperators TypeLits dcore GBool

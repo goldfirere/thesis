@@ -272,8 +272,6 @@ above for \rul{Ty\_UVar}. Other cases are as before.
 
 \section{Zonking}
 
-\rae{Move this out from the appendix. May need to reduplicate at-signs.}
-
 \begin{definition}[Zonker]
 \label{defn:zonking}
 A \emph{zonker} $[[Z]]$
@@ -612,8 +610,6 @@ Similar to previous case, referring to \pref{lem:co-subst}.
 
 \section{Generalization}
 
-\rae{Perhaps move from appendix. Think about reduplicating at-signs.}
-
 \begin{definition}[Generalizer]
 \label{defn:generalizer}
 A \emph{generalizer} $[[X]]$
@@ -664,7 +660,9 @@ However, we can see (\pref{lem:iscoping}) that $[[D'[X] = D]]$.
 Then, \pref{lem:vec-ext} tells us
 $[[S;P,au :rel forall D,D'.k, D, P'[X] |=vec dom(D),ps[X] : D,D']]$
 as desired. Rule \rul{Ty\_UVar} gives us
-$[[S;P,au :rel forall D,D'.k, D, P'[X] |=ty au_{{dom(D),ps[X]}} : k[dom(D),ps/dom(D,D')] ]]$. Indeed we can rewrite the kind as
+\[
+[[S;P,au :rel forall D,D'.k, D, P'[X] |=ty au_{{dom(D),ps[X]}} : k[dom(D),ps/dom(D,D')] ]].
+\] Indeed we can rewrite the kind as
 $[[k[ps/dom(D')] ]]$ and we are done.
 \item[Case $[[au]] \neq [[bu]]$:]
 As with other substitution properties, we must break into cases depending
@@ -980,7 +978,10 @@ $[[S;P,O1,b:Rel k3,O2 |=ty t2 : UPI x2:Rel k2[t1 b/a]. k4]]$.
 \pref{lem:igen} tells us now that
 $[[S;P,O1,O2',b:Rel k3 |=ty t2[X] : (UPI x2:Rel k2[t1 b/a]. k4)[X] ]]$,
 but \pref{lem:gen-scope} tells us the $[[ [X] ]]$ in the kind has no effect.
-Let $[[P' = P,O1,O2',x:Rel (PI a:Rel k1.k2),b:Rel k3]]$.
+Let 
+\[
+[[P' = P,O1,O2',x:Rel (PI a:Rel k1.k2),b:Rel k3]].
+\]
 To show $[[S |=ctx P']]$, we need only show that
 $[[S;Rel(P,O1),O2' |=ty PI a:Rel k1.k2 : Type{}]]$ (noting that
 \pref{lem:igen} and \pref{lem:ictx-reg} imply $[[S |=ctx P,O1,O2']]$), but this

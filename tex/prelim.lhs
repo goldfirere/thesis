@@ -87,9 +87,9 @@ showDictBool :: ShowDict Bool
 showDictBool = MkShowDict showBool
 \end{code}
 Then, whenever a constraint |MyShow Bool| must be satisfied, GHC produces
-the |showDictBool| dictionary. This dictionary actually becomes a runtime
+the dictionary for |showDictBool|. This dictionary actually becomes a runtime
 argument to functions with a |MyShow| constraint. Thus, in a running program,
-the |smooshList| function actually takes 2 arguments: the dictionary
+the |smooshList| function actually takes two arguments: the dictionary
 corresponding to |MyShow a| and the list |[a]|.
 %}
 
@@ -114,7 +114,7 @@ useF1 True   = 1.0
 useF1 False  = (-1.0)
 \end{code}
 We see that GHC simplifies |F1 Int| to |Bool| and |F1 Char| to |Double|
-in order to typecheck |useF1|.
+in order to type-check |useF1|.
 
 |F1| is a \emph{closed} type family, in that all of its defining equations
 are given in one place. This most closely corresponds to what functional
@@ -162,7 +162,7 @@ open type families.
 
 \paragraph{Partiality in type families}
 A type family may be \emph{partial}, in that it is not defined over
-all possible inputs. This poses no direct problems in the theory or
+all possible inputs. This poses no problems in the theory or
 practice of type families. If a type family is used at a type for
 which it is not defined, the type family application is considered
 to be \emph{stuck}. For example:
@@ -189,7 +189,7 @@ data instance Array Bool  = MkArrayBool  ByteArray
 data instance Array Int   = MkArrayInt   (Vector Int)
 \end{code}
 With such a definition, we can have a different runtime representation
-for an |Array Bool| as we do for an |Array Int|, something not possible
+for |Array Bool| than we do for |Array Int|, something not possible
 with more traditional parameterized types.
 
 Data families do not play a large role in this dissertation.
@@ -296,7 +296,7 @@ Dependent Haskell.
 
 \subsection{Constraint kinds}
 
-\citet{promotion} introduces one final extension to Haskell: constraint kinds.
+\citet{promotion} introduce one final extension to Haskell: constraint kinds.
 Haskell allows constraints to be given on types. For example, the type
 |Show a => a -> String| classifies a function that takes one argument, of type
 |a|. The |Show a =>| constraint means that |a| is required to be a member
@@ -321,8 +321,8 @@ Note that there is no |Show a| constraint in the function signature---we get
 the constraint from pattern-matching on |Some|, instead.
 
 The type |Some| is useful if, say, we want a heterogeneous list such that every
-element of the list satisfies some constraint. That is, |[Some Show]| can have elements
-of any type |a|, as long as |Show a| holds:
+element of the list satisfies some constraint. That is, each element
+of |[Some Show]| can be a different type |a|, as long as |Show a| holds:
 \begin{code}
 heteroList :: [Some Show]
 heteroList = [Some True, Some (5 :: Int), Some (Just ())]
@@ -364,7 +364,7 @@ data (a :: k) ^^ :~: ^^ (b :: k) where
 %
 The idea here is that a value of type |tau :~: sigma| (for some |tau| and
 |sigma|) represents evidence that the type |tau| is in fact equal to the
-type |sigma|. Here is a (trivial) use of this type, also from |Data.Type.Equality|:
+type |sigma|. Here is a use of this type, also from |Data.Type.Equality|:
 %
 \begin{code}
 castWith :: (a :~: b) -> a -> b
@@ -437,15 +437,15 @@ On the other hand, today's GHC allows types of arbitrary rank. Though a full
 example of the usefulness of this ability would take us too far afield,
 \citet{syb} and \citet{boxes-go-bananas} (among others) make critical use of
 this ability. The cost, however, is that higher-rank types cannot be inferred.
-For this reason, the following code
+For this reason, this definition of |higherRank|
 %
 \begin{code}
-higherRank x = (x True, x (5 :: Int))
+higherRank f = (f True, f 'x')
 \end{code}
 will not compile without a type signature. Without the signature, GHC tries
-to unify the types |Int| and |Bool|, failing. However, providing a signature
+to unify the types |Char| and |Bool|, failing. However, providing a signature
 \begin{code}
-higherRank :: (forall a. a -> a) -> (Bool, Int)
+higherRank :: (forall a. a -> a) -> (Bool, Char)
 \end{code}
 does the trick nicely.
 
@@ -523,7 +523,7 @@ instance                Plus  !Zero      b  b
 instance Plus a b r =>  Plus  (!Succ a)  b  (!Succ r)
 \end{code}
 The functional dependencies for |Plus| are more expressive than what we can do
-for type families. (However, see the work of\citet{injective-type-families},
+for type families. (However, see the work of \citet{injective-type-families},
 which attempts to close this gap.) They say that |a| and |b| determine |r|,
 just like the arguments to a type family determine the result, but also that
 |r| and |a| determine |b|. Using this second declared functional dependency,

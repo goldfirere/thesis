@@ -1,11 +1,14 @@
 \chapter{Proofs about \picod/}
 \label{app:picod-proofs}
 
+\section{The \picod/ type system}
+
 The \picod/ system is introduced in \pref{sec:picod}; its rules, in full,
 are as follows:
 \ottdefnsJde{}\\
 \ottdefnsJDTy{}\\
 
+\section{Properties of $[[==]]$}
 
 \pref{sec:picod} stated some properties of $[[==]]$ somewhat informally.
 Here are the more formal descriptions:
@@ -80,6 +83,8 @@ $[[phi =>= phi'']]$.
 \end{enumerate}
 \end{property}
 
+\section{Lemmas adapted from \pref{app:pico-proofs}}
+
 \begin{lemma}[Scoping]
 \label{lem:dscoping}
 (as \pref{lem:scoping}, but with reference to $[[||-]]$ judgments)
@@ -108,6 +113,8 @@ larger than the input derivations.
 \begin{proof}
 Straightforward mutual induction.
 \end{proof}
+
+\section{Soundness of \picod/}
 
 The following lemma also defines the $[[^\cdot^]]$ operation. This deterministic
 operation is defined to be the existentially-quantified output of the clauses

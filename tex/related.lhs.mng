@@ -11,7 +11,7 @@ import Data.Kind
 
 %endif
 
-\chapter{Related work}
+\chapter{Related and future work}
 \label{cha:related}
 
 There is a great deal of work related to this dissertation, looking at
@@ -20,9 +20,11 @@ intermediate languages, and similar type inference algorithms. This chapter
 reviews this related work, starting with a thorough comparison with
 the work of \citet{gundry-thesis}, which covers all of the areas above.
 
-\section{Comparison to \citet{gundry-thesis}}
+\section{Comparison to Gundry's thesis}
+\label{sec:gundry}
 
-The most apt comparison of my work is to that of Gundry. His dissertation
+The most apt comparison of my work is to that of \citet{gundry-thesis}.
+His dissertation
 is devoted to much the same goal as mine: adding dependent types to Haskell.
 I have tried to compare my work to his as this has been topical throughout
 this work. Here I summarize some of the key points of difference and explain
@@ -54,7 +56,7 @@ functions appear and prevent any expression containing one from being used
 in a type or a dependent context.
 
 I avoid Gundry's restriction by tracking matchable functions separate
-from unmatchable ones (Sections~\ref{sec:matchability} and~\ref{matchable-pico}).
+from unmatchable ones (Sections~\ref{sec:matchability} and~\ref{sec:matchable-pico}).
 This innovation permits me to allow unsaturated functions while
 retaining the useful \ottkw{left} and \ottkw{right} coercions.
 As a part of this aspect of my work, I also lift the matchable/unmatchable
@@ -101,6 +103,7 @@ with consistency. This remains as future work, however.
 
 
 \subsection{Type erasure}
+\label{sec:gundry-type-erasure}
 
 Gundry proves a type erasure property similar to mine. However, there is
 one key difference: my type erasure erases irrelevant abstractions (as does
@@ -142,6 +145,7 @@ This allows for gradual adoption, something that is much easier for the
 general public to swallow.
 
 \subsection{Type erasure}
+\label{sec:idris-type-erasure}
 
 Dependent Haskell and Idris take different approaches to type erasure.
 Idris's approach is explained by \citet{practical-erasure} as a whole-program
@@ -165,7 +169,7 @@ multiple versions of a datatype is an advantage, however: in Idris,
 a datatype's parameter may be marked as relevant even if it is used only
 once. In that case, the Idris programmer is perhaps better served by using
 one data structure (with the field irrelevant) in most places and the other
-data structure (with the field relevant) just where necesary. Time will
+data structure (with the field relevant) just where necessary. Time will
 tell whether the Dependent Haskell approach or the Idris approach is
 better.
 
@@ -217,7 +221,7 @@ using \package{singletons}.)
 
 Beyond just having a specification, Dependent Haskell also retains
 Hindley-Milner |let|-generalization for top-level expressions (as implemented
-by the \rul{IDecl\_Synthesize} rule of \bake/). This means that simply typed
+by the \rul{IDecl\_Syn\-the\-size} rule of \bake/). This means that simply typed
 functions and local declarations need not have type ascriptions. Indeed, in
 translating Idris's \package{Effects} library to Dependent Haskell
 (\pref{sec:algebraic-effects}), I was able to eliminate several type
@@ -228,6 +232,7 @@ use of a dependently typed database access library
 in Idris.
 
 \subsection{Editor integration}
+\label{sec:idris-error-msgs}
 
 One arena where Idris is clearly out ahead is in its user interface. Indeed,
 despite the fact that Idris is considerably younger, GHC has been clamoring
@@ -261,6 +266,7 @@ Despite the similarities between my work here and Augustsson's, there are
 a number of key differences:
 
 \subsection{Type erasure}
+\label{sec:cayenne-type-erasure}
 Augustsson's approach to type erasure is much simpler than mine. Cayenne
 erases all expressions of type |Type|---that's the full description
 of type erasure in Cayenne. This simplistic view has two shortcomings,
@@ -346,6 +352,7 @@ typed language would look like and thus serves as an inspiration for both
 Agda and Idris.
 
 \section{Comparison to Liquid Haskell}
+\label{sec:liquid-haskell}
 
 Liquid Haskell~\cite{bounded-refinement-types,liquid-haskell-experience,liquid-haskell} is an ongoing project seeking to add \emph{refinement types}
 to Haskell. A refinement type specifies a head type and a condition; any
@@ -379,18 +386,18 @@ library (\pref{sec:algebraic-effects}).
 The beauty of Liquid Haskell is in its user interface. Proving that a program
 matches its specification is fully automatic---something very much not
 true of Dependent Haskell programs. The project has shown without a doubt
-that using an SMT solver to help typechecking will lessen users' proof
+that using an SMT solver to help type-checking will lessen users' proof
 burden. (Liquid Haskell is hardly the only tool that uses an SMT solver
-for typechecking. See also, for example, \citet{dafny,dependent-f-star},
+for type-checking. See also, for example, \citet{dafny,dependent-f-star},
 among others.) 
 
 It is my hope that, someday, Dependent Haskell can aspire to be the
 backend for Liquid Haskell. The merged language would have the type
 refinement syntax much like Liquid Haskell's current syntax, but it would
 desugar to proper dependent types under the hood. An SMT solver would remain
-as part of the system, possibly as a typechecker plugin.
+as part of the system, possibly as a type-checker plugin.
 For function arguments, supporting refinement types
-is already possible: a type like |{n : Int | n >= 0}| can be encoded
+is already possible: a type like |{n : Int || n >= 0}| can be encoded
 as a dependent parameter |n| and a Haskell constraint. Much more problematic
 is a refined return type. For that same refinement, we would need a
 existential package, saying that a function returns \emph{some} |n| with
@@ -403,14 +410,35 @@ checking. Overcoming these barriers---coming up with a lightweight syntax
 for existentials as well as zero runtime overhead---is important future work,
 perhaps my highest priority new research direction.
 
+\section{Comparison to Trellys}
+
+The Trellys project~\cite{trellys,programming-up-to-congruence,combining-proofs-and-programs} aims toward a similar goal to my work here: including
+dependent types in a language with non-termination. However, the Trellys
+approach is quite different to what I have done here, in that the language
+is formed of two fragments: a logical fragment and a programmatic fragment.
+The two halves share a syntax, but some constructs (such as general recursion)
+are allowed only in the programmatic fragment. Proofs in the logical fragment
+can be trusted (and never have to be run) but can still mention definitions
+in the programmatic fragment in limited ways.
+
+The Zombie language~\cite{programming-up-to-congruence}, one of the languages
+of the Trellys project, allows potentially non-terminating functions in
+types but retains decidable type-checking by forcing the user to indicate
+how much to $\beta$-reduce the types. This stands in contract to Dependent
+Haskell, where type-checking is undecidable and might not terminate.
+
 \section{Invisibility in other languages}
 \label{sec:vis-other-lang}
 
-\begin{itemize}
+\pref{sec:visibility} describes how Dependent Haskell deals with
+both visible and invisible function arguments. Here, I review how
+this feature is handled in several other dependently typed languages.
+
+\paragraph{Agda}
 %{
 %format dbo = "\{\!\{"
 %format dbc = "\}\!\}"
-\item In Agda, an argument in single braces |{ ... }| is invisible and is
+In Agda, an argument in single braces |{ ... }| is invisible and is
 instantiated via unification. An argument in double braces |dbo ... dbc| is
 invisible and is instantiated by looking for an in-scope variable of the
 right type. One Agda encoding of, say, the |Show| class and its |Show Bool|
@@ -426,7 +454,8 @@ String|.
 %format proof = "\keyword{proof}"
 %format trivial = "\keyword{trivial}"
 %format auto = "\keyword{auto}"
-\item Idris supports type classes in much the same way as Haskell. A constraint
+\paragraph{Idris}
+ Idris supports type classes in much the same way as Haskell. A constraint
 listed before a |(=>)| is solved just like a Haskell type class is. However,
 other invisible arguments can also have custom solving tactics. An Idris
 argument in single braces |{ ... }| is solved via unification, just like in
@@ -439,7 +468,7 @@ parameter |pf|, of type |tau|. When |func| is called, Idris will run the
 be inserted in for |pf|. Because a default proof script of |trivial| is so
 common, Idris offers an abbreviation |auto| which means |default proof { trivial }|.
 %}
-\item
+\paragraph{Coq}
 Coq has quite a different view of invisible arguments than do Dependent Haskell,
 Agda, or Idris. In all three of those languages, the visibility of an argument
 is part of a type. In Coq, top-level directives allow the programmer to change
@@ -488,56 +517,177 @@ effectively ensures that the correct number of invisible parameters are provided
 depending on the context.
 %}
 
-\end{itemize}
+\section{Type erasure and relevance in other languages}
+\label{sec:related-type-erasure}
 
-\section{Applicability beyond Haskell}
+\Pico/'s approach to relevance and type erasure is distinctive and
+pervasive in its definition. Here I review several other approaches
+to type erasure in other languages and calculi.
 
-\begin{proposal}
-The knowledge gained in adding dependent types to Haskell will translate
-to other environments as well. A key example will be the thought of adding
-dependent types to a variant of ML. Going the other way, I will examine
-adding more programmatic features to existing dependently typed languages
-(in particular, Haskell's \keyword{newtype} construct).
-\end{proposal}
+\paragraph{Gundry's \emph{evidence} language, Idris, and Cayenne}
+See Sections \ref{sec:gundry-type-erasure}, \ref{sec:idris-type-erasure},
+and \ref{sec:cayenne-type-erasure}, respectively.
 
-\section{Future work}
+\paragraph{Agda}
+The Agda wiki contains a comprehensive page on Agda's support for irrelevance
+annotations.\footnote{\url{http://wiki.portal.chalmers.se/agda/pmwiki.php?n=ReferenceManual.Irrelevance}} The user can annotate certain definitions
+and parameters as irrelevant, by preceding them with a |.| prefix. Irrelevant
+values can be used in irrelevant contexts only, much like how \pico/ treats
+irrelevantly-bound variables. Irrelevant fields to a data constructor are
+ignored in an equality check, a feature that \pico/ does not currently support.
+For example, consider the following Agda program:
+%format AgdaNat = "\mathbb{N}"
+%format dot = ".\!\!"
+\begin{spec}
+data T : Set where
+  mkT : dot (n : AgdaNat) -> T
+data S : T -> Set where
+  mkS : dot (n : AgdaNat) -> S (mkT n)
 
-\begin{proposal}
-Though this dissertation will deliver $\Pi$, that's not the end of the story.
-Here are some questions I have that I do not expect will be answered in the
-course of writing this work.
+x : S (mkT 3)
+x = mkS 3
+
+y : S (mkT 4)
+y = x
+\end{spec}
+This program is accepted despite the fact that |x| and |y| have manifestly
+different types. Yet because the parameter to |mkT| is denoted as irrelevant,
+the types are considered equal. Note that, due to the restrictions around
+irrelevant contexts, if we remove the |.| prefix to the parameter to
+|mkT|, the constructor type for |mkS| would fail to type-check, because it
+uses its irrelevant argument |n| in a relevant context (as the argument
+to the now-relevant |mkT| constructor). Conversely, dropping the |.| in
+the type of |mkS| would not affect type-checking.
+
+It would be interesting future work to see how using relevance in this way
+might affect Dependent Haskell.
+
+Despite having support for these irrelevance annotations, it seems that Agda
+does not have any principles behind its type erasure, instead depending on
+the extraction mechanism used to run Agda code.
+
+\paragraph{Coq}
+%{
+%format Set = "\ottkw{Set}"
+%format Prop = "\ottkw{Prop}"
+Coq uses an altogether different approach to relevance and erasure. Coq
+has two primary sorts, |Prop| and |Set|. (I am ignoring the infinite
+hierarchy of |Type|s that exist above |Prop| and |Set|.) All inhabitants
+of |Prop| are considered irrelevant and are erased during extraction.
+Coq thus enforces restrictions on the use of elements of types in |Prop|:
+chiefly,
+in the definition of an element of a type in |Set|, a program may not
+pattern-match on an element of a type in |Prop| unless that type has exactly
+0 or 1 constructors. In other words, the choice of a value of a
+type in |Set| may not depend on any information from a type in |Prop|.
+This is sensible, because that information will disappear during extraction.
+
+Because of Coq's separation between |Set| and |Prop|, it is sometimes necessary
+to have duplicate data structures, some with |Set| types and some with
+|Prop| types. (For example, the Coq standard library has three different
+variants of an existential package---|ex|, |sig| and |sigT|---depending on
+which parts are in |Prop| vs.~|Set|.) Such duplication might also appear
+in Dependent Haskell, as I argue in \pref{sec:idris-type-erasure}.
+%}
+
+\def\iccstar/{ICC${}^*$}
+\paragraph{\iccstar/}
+\citet{icc-star} introduce \iccstar/ as a variant of Miquel's Implicit Calculus of
+Constructions~\cite{miquel-icc}. \iccstar/ contains two forms of $\Pi$-type
+as well as two forms of $\lambda$-extraction, in much the same way as
+\pico/. The ICC literature uses ``implicit'' and ``explicit'' to refer
+to the concepts I call ``irrelevant'' and ``relevant'', respectively; I will
+continue to use my own terminology here. (Further muddying these waters, the
+original ICC also makes irrelevant arguments invisible. I have endeavored
+to keep visibility and relevance quite separate in this dissertation.)
+\iccstar/ includes an erasure operation that converts \iccstar/ expressions
+to ICC expressions by erasing irrelevant arguments. In order to enforce
+appropriate use of irrelevant arguments,
+irrelevantly bound variables are forbidden from appearing in the erased, ICC-form
+of body of an abstraction. This restriction is enforced by a simple
+check for free variables in the typing rule of the irrelevant
+$\lambda$-abstraction, in contrast to \pico/'s approach of tracking
+relevance in contexts. The \pico/ equivalent to \iccstar/'s approach would
+resemble this rule:
+\[
+\ottdrule{\ottpremise{[[S;G,a:NOREL s |-ty t : k  // a \notin fv(||t||)]]}}%
+{[[S;G |-ty \ a:Irrel s. t : UPI a:Irrel s. k]]}{\rul{Ty\_Lam'}}
+\]
+It is possible that such a rule would simplify the statement of \pico/,
+but I imagine it would complicate the proofs---especially of type erasure---as
+there would have to be
+a way of propagating the information about where irrelevant variables can
+appear.
+
+\section{Future directions}
+
+With the design for Dependent Haskell laid out here, what work is left
+to do? First and foremost, I must tackle the remainder of the implementation
+as sketched in \pref{sec:impl-todo}. However, beyond that, there are many
+more research questions left unanswered:
+
 \begin{itemize}
-\item How to improve error messages? While my work will strive hard not to
-degrade error messages for non-dependently-typed programs, I offer no
-guarantee about the quality of error messages in programs with lots of
-dependent types. How can these be improved? More generally, how can error
-messages be customized by programmers to fit their domain?
+\item With the added complexity of dependent types, type error messages
+will surely become even harder to read and act on. How can these be improved?
+Idris's technique of displaying interactive error messages (\pref{sec:idris-error-msgs}) may be a step
+in the right direction, but it would be even better to have some theory
+of error messages to use as a guiding principle in solving this problem.
+
+\item Relatedly, dependent types work wonders for authors who wish to
+write an embedded domain-specific language. Programs might be written
+in such an EDSL by practitioners who do not know much type theory or Haskell.
+How can we expose a way for the DSL writer to customize the type error
+messages?
 
 \item What editor support is necessary to make dependent types in Haskell
-practical?
+practical? Leading dependently typed languages (specifically, Coq, Agda,
+and Idris) all have quite advanced editor integration in order to make
+development more interactive. Haskell has some integration, but likely
+not enough to make dependently typed programming comfortable. What is missing
+here?
 
-\item Are there constructs that I have been unable to promote? How can these
-be made to work in types?
+\item Some dependently typed languages have found \emph{tactics} a useful
+way of constructing proofs. Would such a technique be feasible in Dependent
+Haskell? What would such a facility look like?
 
-\item How do we optimize a dependently typed program? Ideally, a program should
-be optimized to the same level whether an argument is dependent or not. However,
-optimizing $\Pi$-quantified arguments will amount to proving the optimizations
-correct! How do we retain runtime performance in the face of dependent types?
+\item One of GHC's chief strengths is its optimizer. Once we have dependent
+types, can type-level information inform optimization in any meaningful way?
+In particular, using dependent types, an author might be able to write
+down ``proofs'' that a |Monad| instance is lawful. Can the optimizer take
+advantage of these proofs? Will we have to trust that they terminate to do so?
 
 \item How will dependent types interact with type-checker
-  plugins~\cite{type-checker-plugins}? Can we use an SMT solver to make working
+  plugins? How can we use an SMT solver to make working
   with dependent types easier?
 
 \item Dependent types will allow for proper dependent pairs ($\Sigma$-types).
   Is it worth introducing new syntax to support these useful constructs directly?
+Would this new syntax also pave the way for better integration with
+Liquid Haskell (\pref{sec:liquid-haskell})?
 
-\item \rae{Pretty-printer plugin?}
+\item This dissertation has proved that the output of the \bake/ algorithm
+is a type-correct \pico/ program. It has not rigorously established, however,
+a principal types property or conservativity over today's Haskell. What
+steps are missing before we can prove these?
+
+\item One might reasonably ask whether all the fancy type-level bells and
+whistles affect parametricity. I do not believe they do, but it would be
+informative to try to prove this directly.
 \end{itemize}
-\end{proposal}
 
-\section{Type erasure in other languages}
-\label{sec:related-type-erasure}
+\section{Conclusion}
 
-\rae{Make sure I have Xi's work and Trellys}
+This chapter has really only scraped the surface of related work. There
+are simply too many dependently typed languages and calculi available
+to compare against all of them. In this crowd, however, Dependent Haskell
+stands out chiefly for its unapologetic embrace of non-termination and
+partial correctness. Dependent Haskell is, first and foremost, a programming
+language, and many valuable programs are indeed non-terminating or hard
+to prove to be total. These programs are welcome as first-class citizens
+in Dependent Haskell.
 
-%%  LocalWords:  gundry newtype SMT
+%%  LocalWords:  gundry newtype SMT newcode rae fmt endif FC datatype's Succ
+
+%%  LocalWords:  Augustsson Augustsson's Vec infixr safeHead untouchability
+%%  LocalWords:  Cayenne's Trellys dbo dbc func mytrue bool AgdaNat mkT mkS
+%%  LocalWords:  sig sigT Miquel's EDSL DSL

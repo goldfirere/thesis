@@ -534,7 +534,8 @@ The implementation of these functions is fiddly and uninteresting, and is
 omitted from this text. However, writing this implementation is made much
 easier by the precise types. If I were to make a mistake in the delicate
 de Bruijn shifting operation, I would learn of my mistake immediately, without
-any testing. In such a delicate operation, this is wonderful, indeed.
+any testing. In an algorithm so easy to get wrong, this 
+feedback is wonderful, indeed.
 
 With all of these supporting functions written, the evaluator itself is
 dead simple:
@@ -544,6 +545,8 @@ eval (Lam body)   = LamVal body
 eval (App e1 e2)  = eval (apply (eval e1) e2)
 eval TT           = TTVal
 \end{code}
+The only curiosity here is the empty |case| expression in the |Var| case,
+which eliminates |v| of the uninhabited type |Elem ![] ty|.
 
 \subsubsection{Small-step stepper}
 We now turn to writing the small-step semantics. We could proceed in
@@ -581,7 +584,7 @@ a new expression |e'| whose value equals |e|'s value, or it contains the value
 An interesting detail about these constructors is that they feature an equality
 constraint \emph{after} a runtime argument. Currently, GHC requires that all
 data constructors take a sequence of type arguments, followed by constraints,
-followed by regular arguments. Generalizing this form does not provide any
+followed by regular arguments. Generalizing this form poses no
 real difficulty, however.
 
 With this in hand, the |step| function is remarkably easy to write:
@@ -596,7 +599,7 @@ step (App e1 e2)  = case step e1 of
 step TT           = Value TTVal
 \end{spec}
 \end{noway}
-Due to GHC's ability to freely use assumed equality assumptions, |step|
+Due to GHC's ability to freely use equality assumptions, |step|
 requires no explicit manipulation of equality proofs. Let's look at the |App|
 case above. We first check whether or not |e1| can take a step. If it can,
 we get the result of the step |e1'|, \emph{and} a proof that |!eval e1 ~ !eval e1'|.
@@ -604,7 +607,10 @@ This proof enters into the type-checking context and is invisible in the program
 text. On the right-hand side of the match, we conclude that |App e1 e2| steps to
 |App e1' e2|. This requires a proof that |!eval (App e1 e2) ~ !eval (App e1' e2)|.
 Reducing |!eval| on both sides of that equality gives us
-|!eval (!apply (!eval e1) e2) ~ !eval (!apply (!eval e1') e2)|. Since we know
+\[
+|!eval (!apply (!eval e1) e2) ~ !eval (!apply (!eval e1') e2)|.
+\]
+ Since we know
 |!eval e1 ~ !eval e1'|, however, this equality is easily solvable; GHC does the
 heavy lifting for us. Similar reasoning proves the equality in the second branch
 of the |case|, and the other clauses of |step| are straightforward.
@@ -617,7 +623,11 @@ to stem from Coq's weak support for dependent pattern matching. For example, if 
 inspect a |ctx| to discover that it is empty, Coq, by default, forgets the
 equality |ctx = []|. It then, naturally, fails to use the equality to rewrite
 the types of the right-hand sides of the pattern match. This can be overcome through
-various tricks, but it is far from easy. Furthermore, even once these challenges
+various tricks, but it is far from easy. Alternatively,
+Coq's relatively new \keyword{Program} construct helps with this burden
+somewhat but still does not always work as smoothly as GADT pattern 
+matching in Haskell.
+Furthermore, even once the challenges around indexed types
 are surmounted, it is necessary to prove that |eval| terminates---a non-trivial
 task---for Coq to
 accept the function.
@@ -628,8 +638,10 @@ pattern-matching on a |StepResult| reveals an equality proof to the type-checker
 and this proof is then used to rewrite types in the body of the pattern match. This
 all happens without any direction from the programmer. In Agda, on the other hand,
 the equality proofs must be unpacked and used with Agda's \keyword{rewrite} tactic.
-In Agda, disabling the termination checker for |eval| is easy: simply use the
-@{-# NO_TERMINATION_CHECK #-}@ directive.
+
+Like Coq, Agda also requires that functions terminate. However, we can
+easily disable the termination checker: just use
+@{-# NO_TERMINATION_CHECK #-}@.
 
 %{
 %format assert_total = "\keyword{assert\_total}"
@@ -714,7 +726,7 @@ a database schema from the database access code.
 This example is inspired by the third example by \citet{power-of-pi};
 the full code powering the example is available online.\footnote{\url{https://github.com/goldfirere/dependent-db}}
 
-\begin{table}
+\begin{figure}
 \begin{center}
 The @students@ table: \\[1ex]
 \begin{tabular}{llcc}
@@ -769,15 +781,15 @@ The @classes@ table: \\[1ex]
 |"Graphics"| \\ 
 \end{tabular}
 \end{center}
-\caption{Tables used in \pref{sec:dependent-db-example}.}
-\label{tab:db-example}
-\end{table}
+\caption{Database tables used in \pref{sec:dependent-db-example}.}
+\label{fig:db-example}
+\end{figure}
 
 Instead of starting with the library design, let's start with a concrete
 use case. Suppose we are writing an information system for a university.
 The current task is to write a function that, given the name of a professor,
 prints out the names of students in that professor's classes. There are
-two database tables of interest, as exemplified in \pref{tab:db-example}.
+two database tables of interest, as exemplified in \pref{fig:db-example}.
 Our program will retrieve a professor's record and then look up the students
 by their ID number.
 
@@ -1086,9 +1098,6 @@ neither one could do alone.
 %% some amount of unit checking in non-dependent Haskell is possible, it is
 %% painful and brittle. The \package{dimensional} approach is restricted to
 %% work only with multiples of the seven base SI units
-%% \rae{was here}. \rae{want to mention integration with type-checker plugins
-%% and opportunities for simplification. Also that HAskellers already like
-%% crazy type-y things.}
 
 \subsection{Machine-checked sorting algorithms}
 
@@ -1099,7 +1108,10 @@ work~\cite{singletons,nyc-hug-2014}. I will thus not go into great detail
 in the implementation here.
 
 At the bottom of one implementation\footnote{\url{https://github.com/goldfirere/nyc-hug-oct2014/blob/master/OrdList.hs}} appears this function definition:
-|mergeSort :: [Integer] -> [Integer]|. Note that the type of the function
+\[
+|mergeSort :: [Integer] -> [Integer]|.
+\]
+ Note that the type of the function
 is completely ordinary---there is no hint of the rich types that lurk beneath,
 in its implementation. It is this fact that makes machine-checked algorithms,
 such as sorting, interesting in the context of Haskell.
@@ -1237,7 +1249,7 @@ type family CountArgs (f :: Type) :: Nat where
 Note that the ability to write this function is unique to Haskell,
 where pattern-matching on proper types (of kind |Type|) is allowed.
 
-We still need to connect this type-level function with the term-level
+We need to connect this type-level function with the term-level
 GADT |NumArgs|. We use Haskell's method for reflecting type-level
 decisions on the term-level, type classes. The following definition
 essentially repeats the definition of |NumArgs|, but because this
@@ -1338,11 +1350,14 @@ facility we want.
 
 \subsubsection{Type representation}
 
-Here is our desired representation:
+Here is our desired representation:\footnote{This representation works well
+  with an open world assumption, where users may introduce new type constants
+  in any module. See my prior work~\cite[Section 4]{typerep} for more
+  discussion on this point.}
 %
 \begin{code}
 data TyCon (a :: k)
-  -- abstract; |Int| is represented by a |TyCon Int|
+  -- abstract; the type |Int| is represented by the one value of type |TyCon Int|
 data TypeRep (a :: k) where
   TyCon  :: TyCon a -> TypeRep a
   TyApp  :: TypeRep a -> TypeRep b -> TypeRep (a b)
@@ -1390,8 +1405,8 @@ eqT _              _              = Nothing
 \end{working}
 
 Note the extra power we get by returning |Maybe (a :~~: b)| instead of just
-a |Bool|. When the types indeed equal, we get evidence that GHC can use to
-be away of this type equality during type-checking. A simple return type of
+a |Bool|. When the types are indeed equal, we get evidence that GHC can use to
+be aware of this type equality during type-checking. A simple return type of
 |Bool| would not give the type-checker any information.
 
 \subsubsection{Dynamic typing}
@@ -1545,10 +1560,8 @@ the literature. This dissertation continues this tradition in
 \label{sec:no-termination-check}
 \label{sec:no-proofs}
 
-Existing dependently typed languages strive to be proof systems as well
-as programming languages. (A notable exception is Cayenne~\cite{cayenne},
-which also omits termination checking,
-but that language seems to have faded into history.) They care deeply about
+Many dependently typed languages of today strive to be proof systems as well
+as programming languages. These care deeply about
 totality: that all pattern matches consider all possibilities and that
 every function can be proved to terminate. Coq does not accept a function
 until it is proved to terminate. Agda behaves likewise, although the
@@ -1583,7 +1596,8 @@ that type |tau| equals type |sigma| in order to type-check a program.
 We can always use $|undefined :: tau :~~: sigma|$ to prove this equality,
 and then the program will type-check. The problem will be discovered only
 at runtime. Another way to see this problem is that equality proofs must
-be run, having an impact on performance.
+be run, having an impact on performance. However, note that we cannot
+use the bogus equality without evaluating it; there is no soundness issue.
 
 This drawback is indeed serious, and important future work includes
 designing and implementing a totality checker for Haskell. (See
@@ -1604,9 +1618,8 @@ flag, increase the limit or disable the check.
 \end{itemize}
 
 The advantages to the lack of totality checking are that Dependent Haskell
-is simpler for not worrying about totality, and also that by using
-Dependent Haskell, we will learn more about dependent types in the presence
-of partiality.
+is simpler for not worrying about totality. It is also more expressive,
+treating partial functions as first-class citizens.
 
 \subsection{GHC is an industrial-strength compiler}
 
@@ -1637,6 +1650,24 @@ It is possible that, with practice, this ability will become burdensome, in
 that the user has to figure out what to keep and what to discard. Idris's
 progress toward type erasure analysis~\cite{erasing-indices,practical-erasure} may benefit Dependent Haskell as well.
 
+\subsection{Type-checker plugin support}
+
+Recent versions of GHC allow \emph{type-checker plugins},
+a feature that allows end users to write a custom
+solver for some domain of interest. For example, \citet{type-checker-plugins}
+uses a plugin to solve constraints arising from using Haskell's type system
+to check that a physical computation respects units-of-measure. As
+another example, \citet{diatchki-smt-plugin} has written a plugin that
+uses an SMT solver to work out certain numerical constraints that can
+arise using GHC's type-level numbers feature.
+
+Equipped with dependent types, the need for these plugins will only
+increase. However, because GHC already has this accessible interface,
+the work of developing the best solvers for Dependent Haskell can be
+distributed over the Haskell community. This democratizes the development
+of dependently typed programs and spurs innovation in a way a centralized
+development process cannot.
+
 \subsection{Haskellers want dependent types}
 
 The design of Haskell has slowly been marching toward having dependent types.
@@ -1653,4 +1684,12 @@ to go to full dependency.
 %%  LocalWords:  Val LamVal TTVal eval de subst poly LZ LS ys len StepResult
 %%  LocalWords:  SameValue hasochism zipWith Typeable HRefl TyCon TypeRep eqT
 %%  LocalWords:  TyApp eqTyCon tyCon Dyn dynApply TArrow unsafeCoerce Foo cha
-%%  LocalWords:  editable DependentTypes MonoLocalBinds outsidein
+%%  LocalWords:  editable DependentTypes MonoLocalBinds outsidein concat Exts
+%%  LocalWords:  SingTH TypeLits TL Vec Succ Num abs signum fromInteger fst
+%%  LocalWords:  listReplicate proj sig gradyear Morley Aimee Barnett Peng Qi
+%%  LocalWords:  Oliveira Chakraborty Sangeeta Kumar Xu NameSchema Col readDB
+%%  LocalWords:  printName putStrLn sch loadTable putStr getLine mapM RA Eq
+%%  LocalWords:  elementOf ghci withSchema checkSchema loadSchema checkIn SI
+%%  LocalWords:  Buckwalter Listify NumArgs NAZero NASucc listApply args targ
+%%  LocalWords:  CountArgs CNumArgs numArgs getNA ScopedTypeVariables tarrow
+%%  LocalWords:  tres

@@ -318,6 +318,7 @@ In terms, an expression introduced by $\lambda$ is a relevant abstraction;
 one introduced by $\Lambda$ is an irrelevant one.
 
 \subsection{|let| should not be generalized}
+\label{sec:let-should-not-be-generalized}
 
 Though the formalized Haskell grammar includes |let|, I will take the
 advice of \citet{let-should-not-be-generalised} that |let| should not
@@ -472,7 +473,7 @@ is defined by these equations:
 \]
 \end{definition*}
 
-In our example, we would say that |a| has the type $[[au_&&kx]]$, where
+Continuing the example from above, we would say that |a| has the type $[[au_&&kx]]$, where we have
 $[[au :Irrel forall &&kx :Irrel Type{}. Type{}]]$. The solver will create
 a zonker with the mapping $[[forall &&jx. &&jx/au]]$ (where I have
 changed the variable name for demonstration). This will zonk
@@ -480,7 +481,7 @@ $[[au_&&kx]]$ to become $[[&&jx[&&kx/&&jx] ]]$ which is, of course
 $[[&&kx]]$ as desired.
 
 Note that the quantification we see here is very different from normal
-$\Pi$-quantification in \pico/. These quantifications are fully second-class
+$\Pi$-quan\-ti\-fi\-ca\-tion in \pico/. These quantifications are fully second-class
 and may be viewed almost as suspended substitutions.
 
 \subsection{Additions to \pico/ judgments}
@@ -668,18 +669,18 @@ in an implication constraint. In our example, the ability to set $[[bu1]]$
 means that we get only one type error reported, not two.
 %}
 
-\section{Bidirectional typechecking}
+\section{Bidirectional type-checking}
 \label{sec:bidirectional}
 \label{sec:bidir-dependent-pattern-match}
 
 Like previous algorithms for
 GHC/Haskell~\cite{practical-type-inference,visible-type-application,gundry-thesis}, \bake/
 takes a bidirectional approach~\cite{local-type-inference}. The fundamental
-idea to bidirectional typechecking is that, sometimes, the type inference
+idea to bidirectional type-checking is that, sometimes, the type inference
 algorithm knows what type to look for. When this happens, the algorithm
 should take advantage of this knowledge.
 
-Bidirectional typechecking works by defining two separate algorithms: a type
+Bidirectional type-checking works by defining two separate algorithms: a type
 synthesis algorithm and a type checking algorithm. The former is used when
 we have no information about the type of an expression, and the latter is
 used when we do indeed know an expression's expected type. The algorithms
@@ -690,12 +691,12 @@ but once we know the function's type, we know the type of its arguments
 (allowing the synthesis algorithm to use the more informative checking
 algorithm).
 
-Historically, bidirectional typechecking in Haskell has been most useful when
+Historically, bidirectional type-checking in Haskell has been most useful when
 considering higher-rank polymorphism---for example, in a type
 like |(forall a. a -> a) -> Int|. Motivating higher-rank types would bring
 us too far afield, but the literature has helpful examples~\cite{practical-type-inference,visible-type-application} and there is a brief introduction in
 \pref{sec:higher-rank-types}. Naturally, Dependent Haskell continues to
-use bidirectional typechecking to allow for higher-rank types, but there
+use bidirectional type-checking to allow for higher-rank types, but there
 is now even more motivation for bidirectionality.
 
 As discussed above (\pref{sec:untouchability}), bringing equality constraints
@@ -707,7 +708,7 @@ In a dependently-typed language, however, \emph{any} pattern match might
 bring equality constraints into scope, where the equality relates the scrutinee
 with the pattern. For example, if I say something as simple as
 |case b of { True -> x ; False -> y }|, I may want to use the fact that
-|b ~ True| when typechecking |x| or |b ~ False| when typechecking |y|. This
+|b ~ True| when type-checking |x| or |b ~ False| when type-checking |y|. This
 is, of course, dependent pattern matching (\pref{sec:dependent-pattern-match}).
 Our problem now is that it seems that \emph{every} pattern match introduces
 an equality constraint, meaning that the basic type inference of Haskell might
@@ -718,7 +719,7 @@ pattern matching only when the result type of the |case| expression is
 being propagated downwards---that is, when the inference algorithm is
 in checking mode. If we do not know a |case| expression's overall type,
 then the pattern match is treated as a traditional, non-dependent pattern
-match. Without bidirectional typechecking, the user might have to annotate
+match. Without bidirectional type-checking, the user might have to annotate
 which kind of match is intended.\footnote{The Dependent Haskell described
 by \citet{gundry-thesis} indeed has the user annotate this choice for
 |case| expressions. Due to Gundry's restrictions on the availability of
@@ -1609,7 +1610,7 @@ here, instead referring readers to the original~\cite{outsidein}. I will
 briefly explain judgments, etc., as they appear and refer readers to Figure
 numbers from the original text.
 
-\begin{table}
+\begin{figure}
 \begin{center}
 \begin{tabular}{@@{}lccl@@{}}
 \multicolumn{2}{c}{\outsidein/ construct} & \pico/ form & Notes \\ \hline
@@ -1624,8 +1625,8 @@ Wanted constraint & $[[Qw]]$ & $[[O]]$ & we must separate wanteds \& givens
 \end{tabular}
 \end{center}
 \caption{Translation from \outsidein/ to \pico/}
-\label{tab:oi-encode}
-\end{table}
+\label{fig:oi-encode}
+\end{figure}
 
 There are several mismatches between concepts in \outsidein/ and in
 \pico/. Chief among these is that
@@ -1639,7 +1640,7 @@ given to tracking the unification variables.
 
 To partly bridge the gap between \outsidein/ and \bake/,
 I define $[[encode]]$ which does the translation,
-according to \pref{tab:oi-encode}. $[[encode]]$ing a construct from the left
+according to \pref{fig:oi-encode}. $[[encode]]$ing a construct from the left
 column results in a member of the syntactic class
 depicted in the middle column.
 
@@ -1650,7 +1651,7 @@ these classes, considering implication constraints simply as functions.
 I will use $Q$ metavariables in place of \outsidein/'s $C$.\footnote{This
 conflation of $Q$ and $C$ does not mean that Dependent Haskell is now
 required to implement implication constraints; it would be easy to add
-a post-typechecking pass (a ``validity'' check, in the vocabulary of the
+a post-type-checking pass (a ``validity'' check, in the vocabulary of the
 GHC implementation) that ensures that no constraints have implications.}
 
 A further difference between \outsidein/ and \bake/ is that the latter
@@ -1662,7 +1663,7 @@ pretend that \bake/'s checking judgments do the same.
 The fact that I must change my judgments does not imperil the practical
 impact of the conservativity result---namely, programs that GHC accepts
 today will still be accepted tomorrow. GHC already uses bidirectional
-typechecking and so has already obviated the unidirectional aspect of
+type-checking and so has already obviated the unidirectional aspect of
 \outsidein/. However, in order to make a formal comparisons between that
 published algorithm, it is helpful to restrict ourselves to a
 unidirectional viewpoint.
@@ -1695,7 +1696,10 @@ in \pref{sec:app-oi-expr}.
 \begin{property*}[Solver]
 If $[[QQ; Qg; aus1 oi|->solv Qw ~> Qr; Z]]$ where $[[S]]$ and $[[G]]$ capture
 the signature and typing context for the elements of that judgment,
-then $[[S;G, encode(QQ), encode(Qg) |->solv aus1 :Irrel forall{}.Type{}, encode(Qw) ~> as2:Irrel Type{}, encode(Qr)[as2/aus2]; as2/aus2, Z]]$,
+then 
+\begin{multline*}
+[[S]];[[G, encode(QQ), encode(Qg)]] [[|->solv]] [[aus1 :Irrel forall{}.Type{}, encode(Qw)]] [[~>]] \\  [[as2:Irrel Type{}, encode(Qr)[as2/aus2] ]]; [[as2/aus2, Z]],
+\end{multline*}
 where the $[[as2]]$ are fresh replacements for the $[[aus2]]$ which are free
 in $[[Qr]]$ or unconstrained variables in $[[aus1]]$.
 \end{property*}
@@ -1724,7 +1728,7 @@ $[[S;G, encode(QQ) |->decl x := _t ~> x : UPI_Inf as :Irrel Type{}. (UPI_Inf enc
 \end{claim*}
 
 This claim relates \outsidein/'s \rul{Bind} rule (Figure 12) to \bake/'s
-\rul{IDecl\_Synthesize} rule. It is a consequence of the claim on expressions
+\rul{IDecl\_Syn\-the\-size} rule. It is a consequence of the claim on expressions
 and the property above of the solver.
 
 %% \begin{proof}
@@ -1915,7 +1919,7 @@ preprocessor should not be a challenge.
 
 \subsection{Correspondence between \bake/ and GHC}
 
-\begin{table}
+\begin{figure}
 \begin{center}
 \begin{tabular}{cl}
 \bake/ judgment & GHC function \\ \hline
@@ -1929,14 +1933,14 @@ $[[|->prog]]$ & |tcPolyBinds|
 \end{tabular}
 \end{center}
 \caption{GHC functions that already implement \bake/ judgments}
-\label{tab:bake-ghc}
-\end{table}
+\label{fig:bake-ghc}
+\end{figure}
 
 The design of \bake/ is already quite close to that of GHC's constraint-generation
-algorithm. \pref{tab:bake-ghc} lists correspondences between \bake/ judgments
+algorithm. \pref{fig:bake-ghc} lists correspondences between \bake/ judgments
 and functions already existent in GHC.
 
-Notably absent for \pref{tab:bake-ghc} are the main judgments such as
+Notably absent for \pref{fig:bake-ghc} are the main judgments such as
 $[[|->ty]]$. These are implemented in GHC via its |tcExpr| function,
 which handles both directions of the bidirectional type system at the same
 time through its use of \emph{expected types}, a mechanism there the
@@ -2020,7 +2024,7 @@ and no dependency.
 \label{prop:solver-no-co-abs}
 If $[[S;P |->solv O ~> D; Z]]$, then $[[D]]$ binds no coercion variables.
 \end{property}
-\caption{Addition solver properties}
+\caption{Additional solver properties}
 \label{fig:extra-solver-properties}
 \end{figure}
 
@@ -2034,7 +2038,7 @@ in \pref{fig:extra-solver-properties}.
 
 \subsubsection{Entailment}
 
-\begin{table}
+\begin{figure}
 \setlength{\mathindent}{0pt}
 \newcommand{\secondline}[1]{\multicolumn{1}{r}{#1}}
 \begin{center}
@@ -2054,9 +2058,9 @@ Substitutivity & $[[S;P ||= _: t1 [k0]~[k0] t2]] \wedge [[S;P,a :Rel k0 |=ty t :
 & \secondline{$ \implies [[S;P ||= _: t[t1/a] [k]~[k] t[t2/a] ]]$}
 \end{tabular}
 \end{center}
-\caption{Required properties of entailment, following \citet[Figure 3]{outsidein}}
-\label{tab:entailment}
-\end{table}
+\caption{Required properties of entailment, following \cite[Figure 3]{outsidein}}
+\label{fig:entailment}
+\end{figure}
 
 These properties are stated with respect to an entailment relation, defined
 as follows:
@@ -2068,7 +2072,7 @@ $[[S;P |=vec ps : D]]$.
 As this section expands upon the ideas from \citet{outsidein}, it is necessary
 to check whether this definition of entailment satisfies the entailment
 requirements from that work. These requirements are presented in
-\pref{tab:entailment}.
+\pref{fig:entailment}.
 
 All of this properties are easily satisfied, except for property (R8) (both
 components) which requires congruence. As explored in some depth
@@ -2146,7 +2150,7 @@ must be brought into scope by a coercion abstraction.
 However, when a |case| expression is evaluated
 (by evaluation rule \rul{S\_Match}), these coercion abstractions will be
 applied to arguments and thus cannot be the final value of evaluating the
-overall \pico/ expression. (Rules affected: \rul{IAlt\_Con}, \rul{IAltC\_Con})
+outer \pico/ expression. (Rules affected: \rul{IAlt\_Con}, \rul{IAltC\_Con})
 \end{description}
 
 These are the only \bake/ rules that can include a coercion abstraction in
@@ -2226,6 +2230,6 @@ in GHC in the near future.
 %%  LocalWords:  applySing matchability letrec AbsBinds Zonking zonking zonk
 %%  LocalWords:  Zonkers touchability Bool GADT zonkers Gundry's Hindley FC
 %%  LocalWords:  isShorterThan Milner parameterisation wanteds higherRank ttt
-%%  LocalWords:  matchExpectedFunTys matchExpectedTyConApp topInstantiate
+%%  LocalWords:  matchExpectedFunTys matchExpectedTyConApp topInstantiate bu
 %%  LocalWords:  tcDeepSplitSigmaTy tcSubTypeDS tcSubType tcPolyBinds tcExpr
-%%  LocalWords:  Gundry
+%%  LocalWords:  Gundry mathrms poly fprint foralls invis alt synth

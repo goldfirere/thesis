@@ -153,6 +153,8 @@ fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
   {{ tex [[fv]] ( [[phi]] ) }}
 | fv ( theta )                       :: M :: fv_theta
   {{ tex [[fv]] ( [[theta]] ) }}
+| fv ( e )                           :: M :: fv_expr
+  {{ tex [[fv]] ( [[e]] ) }}
 | ( fvset )                          :: M :: Parens
 | fvset1 \union fvset2               :: M :: Union
 | fvset1 \inter fvset2               :: M :: Inter
@@ -169,6 +171,8 @@ fvset, V {{ tex \mathcal{V} }} :: 'FVs_' ::=
 relevance, rel {{ tex \rho }} :: 'Rel_' ::=
 | Rel              ::   :: Rel
 | Irrel            ::   :: Irrel
+| NOREL            :: M :: NOREL
+  {{ tex }}
 
 vis {{ tex \nu }} :: 'Vis_' ::=
 | Req              ::   :: Req

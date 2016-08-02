@@ -45,7 +45,7 @@ in a future version of GHC.
 \section{Overview}
 \label{sec:conv-rule}
 
-\Pico/ (pronounced like ``$\Pi$-co'', never ``peek-o'')
+\Pico/ (pronounced ``$\Pi$-co'', never ``peek-o'')
 descends directly from the long line of work on System FC~\cite{systemfc}.
 It is most closely related to the version of System FC presented in my prior
 work~\cite{nokinds} and in Gundry's thesis~\cite{gundry-thesis}.
@@ -65,7 +65,7 @@ to use the word ``kind'' when referring to the classification of a type. However
 in the languages considered in this dissertation, kinds and types come from the
 same grammar; the terms ``type'' and ``kind'' are technically equivalent.
 Nevertheless, I find that discerning between these two words can aid intuition
-and will continue to do so throughout the dissertation. \rae{Do I discuss elsewhere??}}
+and will continue to do so throughout the dissertation.}
 This rule is flexible and helps a language to be succinct. It has a major
 drawback, however: it is not syntax directed. In general, determining
 whether $\kappa_1 \equiv \kappa_2$ might not be easy. Indeed, type equivalence
@@ -453,7 +453,7 @@ Metavariables:
 [[prefix]](\cdot) &\defeq& \text{a prefix of a list; length specified elsewhere} \\
 [[fv]](\cdot) &\defeq& \text{extract all free variables, as a set} \\
 [[H]] &\defeq& [[H{blank}]] \text{ (when appearing in a type)} \\
-[[t p]] &\defeq& [[t @_ p]] \text{ or } [[t @~ p]] \text{, dependeing on $[[t]]$'s kind} \\
+[[t p]] &\defeq& [[t @_ p]] \text{ or } [[t @~ p]] \text{, depending on $[[t]]$'s kind} \\
 [[PI D. t]] &\defeq& \text{nested $[[PI]]$s} \\
 [[MUPI D. t]] &\defeq& \text{nested $[[PI]]$s, where the individual $[[PI]]$s used might differ} \\
 [[\D.t]] &\defeq& \text{nested $[[\ ]]$s} \\
@@ -562,16 +562,19 @@ of an equality proposition even when I intend for them to be elided in the
 rendered output, as a check to make sure these parameters can indeed be written
 with the information to hand.
 
-\rae{Is this outline still accurate?}
 This chapter proceeds by explaining all of the various typing judgments
 individually. \pref{sec:contexts-rel-annots} explains contexts $[[G]]$,
 along with relevance annotations. \pref{sec:signatures} explains
 signatures $[[S]]$, which contain specifications for constants $[[H]]$.
 Having explained the more unexpected aspects of the syntax, I then
 present examples of \pico/ programs in \pref{sec:pico-examples}.
-Types come next, in \pref{sec:pico-types}, followed by coercions
+Types come next, in \pref{sec:pico-types}, followed by the operational
+semantics in \pref{sec:operational-semantics}.
+Now having an thorough understanding of the rest of \pico/,
+we are prepared to tackle coercions, the thorniest part,
 in \pref{sec:pico-coercions}. The metatheory is discussed in
 Sections~\ref{sec:metatheory-one} and~\ref{sec:metatheory-two}.
+I describe certain, perhaps unexpected design decisions in \pref{sec:pico-design-decisions}.
 The chapter concludes in \pref{sec:pico-extensions}
 by considering a variety of extensions to \pico/ that are needed for
 full, backward-compatible support for Haskell as embodied in GHC~8.
@@ -993,13 +996,15 @@ the latter of which does dependent matching.}
 
 \subsection{|replicate|}
 Let's now look at |replicate|, one of the simplest functions that requires
-a proper $[[PI]]$-type. First, in Haskell: \rae{Should this be colored?}
+a proper $[[PI]]$-type. First, in Haskell:
 %
+\begin{notyet}
 \begin{spec}
 replicate :: pi n -> a -> Vec a n
 replicate Zero      _ = VNil
 replicate (Succ m)  x = VCons x (replicate m x)
 \end{spec}
+\end{notyet}
 
 %if style == newcode
 \begin{code}
@@ -1050,8 +1055,9 @@ singletons or some other technique.}
 
 We'll now examine how to append two vectors. This operation will also
 require the use of an addition operation, defined using prefix notation
-so as not to provide a parsing challenge: \rae{color?}
+so as not to provide a parsing challenge:
 %
+\begin{notyet}
 \begin{spec}
 plus :: Nat -> Nat -> Nat
 plus Zero      n = n
@@ -1061,6 +1067,7 @@ append :: Vec a m -> Vec a n -> Vec a (!plus m n)
 append VNil          ys = ys
 append (VCons x xs)  ys = VCons x (append xs ys)
 \end{spec}
+\end{notyet}
 
 %if style == newcode
 \begin{code}
@@ -1314,13 +1321,20 @@ the progress theorem (\pref{sec:progress-thm-statement}) would not hold.
 \subsection{\ottkw{case}}
 \label{sec:pico-case}
 
-Unsurprisingly, the typing rules to support pattern matching are the most
-involved, presented here with the rules to type-check \ottkw{case}
-branches:
+\begin{figure}[t!]
 \[
 \ottdruleTyXXCase{}
 \]
-\ottdefnAlt{}
+\ottdefnAlt{}\\
+\framebox{$[[types(D) = ts]]$} \quad Extract the types from a telescope
+\ottfundefntypes{}\vspace{-7ex}
+\caption{Rule and auxiliary definitions for |case| expressions}
+\label{fig:case-rules}
+\end{figure}
+
+Unsurprisingly, the typing rules to support pattern matching are the most
+involved, presented in \pref{fig:case-rules} with the rules to type-check \ottkw{case}
+branches.
 
 Most of the premises of \rul{Ty\_Case} are easy enough to explain:
 \begin{itemize}
@@ -1384,7 +1398,8 @@ $[[D4 = D']] = [[empty]]$ and $[[D3 = D2[ss/dom(D1)] ]]$.
 
 The next premise uses a unification algorithm to make sure that the bound
 telescope in the scrutinee's type, $[[D']]$, matches the expected shape
-$[[D4]]$. We will return to this in \pref{sec:alt-match-matching}, below.
+$[[D4]]$. (The $[[types]]$ operation appears in \pref{fig:case-rules}.)
+ We will return to this in \pref{sec:alt-match-matching}, below.
 In the common case of $[[D' = empty]]$ (that is, full saturation of
 the scrutinee), this premise is trivially satisfied. Also note that we do
 not use the output of this premise, $[[theta]]$, anywhere in the rule, so
@@ -1872,7 +1887,7 @@ that coercion form is never needed in the metatheory. Omitting it would weaken
 \pico/'s equational theory, however, and so I have decided to include it.
 
 \paragraph{Flexible homogeneous equality}
-Another possible meaning of heterogeneous equality is that $[[k1]]$ and $[[k2]]$
+Another potential meaning of heterogeneous equality is that $[[k1]]$ and $[[k2]]$
 might not be definitionally equal, but they are provably equal.\footnote{I
 am distinguishing here between \emph{definitional} equality and \emph{propositional} equality. The former, in \pico/, refers to $\alpha$-equivalence. Definitional
 equality is the equality used implicitly in typing rules when we use the
@@ -1945,7 +1960,7 @@ relate any two types that are the same, ignoring the coercions. This
 is precisely what we mean by coherence.
 
 The coherence rule implies that any two proofs of equality are considered
-interchangeable---in other words, \pico/ assumes the uniqueness of identity
+interchangeable. In other words, \pico/ assumes the uniqueness of identity
 proofs (UIP)~\cite{hofmann-streicher}. This choice makes \pico/ ``anti-HoTT'',
 that is, incompatible with homotopy type theory~\cite{hott}, which takes
 as a key premise that there is more than one way to prove the identity
@@ -2096,7 +2111,7 @@ to use the one-variable version formalized here, the code became simpler.
 \label{sec:almost-devoid}
 
 The congruence forms over types that bind coercion variables 
-(\rul{Co\_PiCo} and \rul{Co\_CLam}) have yet two
+(rules \rul{Co\_PiCo} and \rul{Co\_CLam}) have yet two
 more wrinkles. The first is that there is no equivalent of
 \rul{Co\_PiTy}'s $[[h]]$ coercion that relates two propositions; we must
 settle for the pair of coercions $([[h1]],[[h2]])$ that appear in
@@ -2198,7 +2213,7 @@ the $[[c ~# g]]$ premises removed from rules \rul{Co\_PiCo} and
 
 Now, the proof for the following theorem is straightforward:
 \begin{theorem*}[(Almost) Congruence {[\pref{thm:almost-congruence}]}]
-Equality is congruent, when checked with $[[|-co*]]$.
+Equality is congruent with the judgment $[[|-co*]]$.
 \end{theorem*}
 
 What this means, in practice, is that we can often think of equality as
@@ -2415,8 +2430,8 @@ just to add this extra, redundant premise.
 \subsection{Discussion}
 
 The coercion language in \pico/ is quite extensive, boasting (or suffering
-from, depending on your viewpoint) 34 separate typing rules. \rae{Has that
-number changed since June 16?} I consider here, briefly, why this is so.
+from, depending on your viewpoint) 37 separate typing rules.
+I consider here, briefly, why this is so.
 
 There are several coercion forms that are absolutely essential for \pico/ to
 be proven type-safe and yet remain meaningful. These include the equivalence
@@ -2462,12 +2477,12 @@ may prove to be a
 measurable optimization
 in practice.
 
-A few examples can demonstrate the general idea. First off, note that in
+A few examples can demonstrate the general idea. Firstly, note that in
 \rul{S\_KPush}, only the scrutinee matters; the alternatives remain
 the same before and after the reduction. With that in mind, we can see
-scrutinees before and after pushing in \pref{tab:kpush-examples}.
+scrutinees before and after pushing in \pref{fig:kpush-examples}.
 
-\begin{table}
+\begin{figure}
 \newcommand{\pushrow}[1]{\multicolumn{3}{l}{#1}}
 \begin{center}
 \rowcolors{1}{white}{gray!25}
@@ -2550,8 +2565,8 @@ And in \pico/:
 \end{array}
 \]
 \caption{Examples of \rul{S\_KPush}}
-\label{tab:kpush-examples}
-\end{table}
+\label{fig:kpush-examples}
+\end{figure}
 
 \paragraph{Example (1)}
 In this example, there are no universals of the type in question (|Bool|), and
@@ -2596,8 +2611,8 @@ In this work, I instantiate the type using the $[[@]]$ operator
 the helper metatheory functions $[[build_kpush_co]]$ and $[[cast_kpush_arg]]$,
 presented in \pref{fig:kpush-func}.
 
-In our case---pushing a coercion into |Just|---we take |Just|'s type
-($[[MPI &&ax :Irrel Type{}, &&xx :Rel &&ax. &Maybe{} &&ax]]$) and instantiate
+In our case---pushing a coercion into $|Just| : [[MPI &&ax :Irrel Type{}, &&xx :Rel &&ax. &Maybe{} &&ax]]$---we take |Just|'s type
+and instantiate
 |a| by the coercion $[[nth 1 g]]$, which proves |Int ~ b|.
 We are thus left with a coercion that proves
 \[
@@ -2667,7 +2682,7 @@ the full complexity of \rul{S\_KPush}, including dependent existential
 arguments and an unsaturated scrutinee. We'll take these complications one
 at a time.
 
-Having dependent existential arguments is what motivates the intricacies
+Having dependent existentials motivates the intricacies
 of $[[build_kpush_co]]$. Since the pushed-in cast changes universal arguments
 (unless it's reflexive), we need to cast existential arguments that may be
 dependent on the universals. However, if a later existential argument is
@@ -2683,6 +2698,7 @@ coherence to alter the types of later existentials depending on earlier ones.
 Here is the critical correctness property of $[[build_kpush_co]]$:
 
 \begin{lemma*}[Correctness of $[[build_kpush_co]]$ {[\pref{lem:build-kpush-co}]}]
+~ \\
 Assume $[[S;G |-cev ps : D[ts/as] ]]$, and let $[[gi = build_kpush_co(h; ps_{1..i-1})]]$
 and $[[pi' = cast_kpush_arg(pi;gi)]]$.
 If $[[S;Rel(G) |-co h : (MPI D.s)[ts/as] [Type{}]~[Type{}] (MPI D.s)[ts'/as] ]]$, then:
@@ -3362,7 +3378,7 @@ type family Split x where
   Split other  =  !Nothing
 \end{code}
 
-The |Split| function, correctly inferred to have Haskell kind
+The |Split| function, inferred to have Haskell kind
 |forall k1 k2. k2 -> Maybe (k1 -> k2, k1)|, can detect a type application.
 It will return |Just| if it sees |IO Int| but |Nothing| if it sees
 |Bool|. This function cannot be encoded into \pico/ as it stands.\footnote{Other type families, as long as their left-hand sides do not repeat variables, can be desugared into \pico/, by adapting work by \citet{augustsson-compiling-pattern-matching}.} We instead must add a new primitive, \ottkw{split}.
@@ -3488,7 +3504,7 @@ but I have yet to formally connect my work to theirs.
 
 \subsection{Representation polymorphism}
 
-In version 8, GHC supports \emph{representation polymorphism}~\cite{overabundance-of-equalities}.\footnote{Representation polymorphism is also known as levity polymorphism; the name was changed as the concept became more general.} The idea is all wrapped up in the following mutually recursive definitions:
+In version 8, GHC supports \emph{representation polymorphism}~\cite{overabundance-of-equalities}.\footnote{Representation polymorphism is also known as levity polymorphism; the name was changed as the concept became more general.} The idea is embodied in the following mutually recursive definitions:
 
 %{
 %if style == newcode
@@ -3576,7 +3592,7 @@ instance Monad ((->) x) where
 %}
 
 Unfortunately, \pico/ cannot, as written, easily accommodate |(->)|.
-A non-dependent arrow is rightly seen as a degenerate form of $\Pi$:
+A non-de\-pen\-dent arrow is rightly seen as a degenerate form of $\Pi$:
 |a -> b| is the same as $[[UPI _:Rel &&ax. &&bx]]$. Without introducing
 yet a new function type (on top of the six we already have) and argument
 syntax, it seems hard to abstract over this degenerate form of $\Pi$.
@@ -3642,4 +3658,5 @@ work in that regard.
 %%  LocalWords:  MPI dep overbar ADT ADTs MkTuple MkEx NB lhs TypeRep cf poly
 %%  LocalWords:  isEmpty ys xs safeHead MkX UnX unX formedness Trellys UIP
 %%  LocalWords:  HoTT MkG MkP unboxed VoidRep RuntimeRep PtrRepLifted IntRep
-%%  LocalWords:  PtrRepUnlifted thunked circ
+%%  LocalWords:  PtrRepUnlifted thunked circ Succ matchability Erasability
+%%  LocalWords:  Vec VNil VCons fixpoints
