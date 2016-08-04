@@ -514,7 +514,8 @@ function types. However, there is no reason to \emph{prevent} users from
 writing these, so I have included them in the user-facing design.
 
 The visible |forall| is useful in situations where a type parameter might
-otherwise be ambiguous. For example, suppose |F| is a type family and
+otherwise be ambiguous. For example, suppose |F| is a non-injective~\cite{injective-type-families}
+type family and
 consider this:
 \begin{spec}
 frob :: forall a. F a -> F [a]
