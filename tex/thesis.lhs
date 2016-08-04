@@ -1,6 +1,6 @@
 %% -*- mode: LaTeX -*-
 
-\documentclass[12pt,oneside,draft]{book}
+\documentclass[12pt,oneside]{book}
 
 %include rae.fmt
 
