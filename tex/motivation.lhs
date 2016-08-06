@@ -154,7 +154,7 @@ There is a curiosity in the type of |append|: the addition between |n|
 and |m| is performed by the operation |!+|. Yet we have defined the
 addition operation |+|. What's going on here?
 
-Haskell maintains two separate namespaces, one for types and one for terms.
+Haskell maintains two separate namespaces: one for types and one for terms.
 Doing so allows declarations like |data X = X|, where the data constructor
 |X| has type |X|. With Dependent Haskell, however, terms may appear in types.
 (And types may, less frequently, appear in terms; see \pref{sec:type-in-term}.)
