@@ -138,7 +138,7 @@ Haskell.
   I prove that the elaborated program is always
   well-typed in \pico/.
 
-\item \pref{cha:implementation} discusses implementation details,including
+\item \pref{cha:implementation} discusses implementation details, including
 the current state of the implementation. It focuses
 on the released implementation of the system from \citet{nokinds}, which
 is part of GHC~8.0. Considerations about implementing full Dependent Haskell
