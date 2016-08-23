@@ -183,10 +183,10 @@ latter are used in the former's types), then desugaring and type-checking
 will have to be interleaved. I do not expect this to be a challenge, however,
 for two reasons:
 \begin{itemize}
-\item Type-Checking and desugaring are \emph{already} interleaved, at least
+\item Type-checking and desugaring are \emph{already} interleaved, at least
 in types. Indeed, the kind-checker for types produces a type in the intermediate
 language today, effectively type-checking and desugaring all at once.
-\item Type-Checking happens by going in order through a sequence of mutually
+\item Type-checking happens by going in order through a sequence of mutually
 recursive groups. One expression cannot depend on another within the same
 group, and so we can just process each group one at a time, type-checking
 and then desugaring.
