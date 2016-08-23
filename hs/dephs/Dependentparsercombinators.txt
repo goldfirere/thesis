@@ -1,0 +1,15 @@
+(from DV)
+
+
+Hey guys, so lots of people are using parser combinators for writing parsers for their programming langauges these days.
+(I am one, and I am using Text.Parsec).
+ 
+One bug that many people must be facing is that with parser combinators – unlike parser generators – you don’t get to know if your grammar has conflicts is ambiguous etc. So here’s the challenge problem: can we use advanced types (and an SMT backend) to do that? I don’t think it’s impossible actually – we’d probably need some reflection of tokens in the type-level.
+ 
+Anyway, maybe it’s been done maybe not, it’s just a thought that intrigued me because of all the bugs in my code and the many many hours I’ve spent debugging recently.
+ 
+Iavor you have any relevant experiences with Cryptol?
+ 
+Thanks!
+d-
+ 

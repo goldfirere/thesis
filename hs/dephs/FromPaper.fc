@@ -1,0 +1,239 @@
+
+module FromPaper where
+
+-- k-i GADT option 1 (heterogeneous equalities with implied kind equalities):
+TyRep :: forall (k::*). k -> *
+TyInt   :: forall (k::*) (r::k). forall (c :: r ~# Int).   TyRep k r
+TyMaybe :: forall (k::*) (r::k). forall (c :: r ~# Maybe). TyRep k r
+TyApp   :: forall (k::*) (r::k). forall (k1::*) (k2::*) (a::k1->k2) (b::k1)
+                                        (c :: r ~# a b).
+					TyRep (k1->k2) a -> TyRep k1 b -> TyRep k r
+
+-- k-i GADT option 2 (heterogeneous equalities with explicit kind equalities):
+TyRep :: forall (k::*). k -> *
+TyInt   :: forall (k::*) (r::k). forall (c1 :: k ~# *) (c2 :: r ~# Int). TyRep k r
+TyMaybe :: forall (k::*) (r::k). forall (c1 :: k ~# (* -> *))
+                                        (c2 :: r ~# Maybe). TyRep k r
+TyApp   :: forall (k::*) (r::k). forall (k1::*) (k2::*) (a::k1->k2) (b::k1)
+                                        (c1 :: k ~# k2) (c2 :: r ~# a b).
+					TyRep (k1->k2) a -> TyRep k1 b -> TyRep k r
+
+-- k-i GADT option 3 (homogeneous equalities with explicit kind equalities):
+TyRep :: forall (k::*). k -> *
+TyInt   :: forall (k::*) (r::k). forall (c1 :: k ~# *) (c2 :: r ~# (Int |> sym c1)).
+  	   	  	 	 	TyRep k r
+
+TyMaybe :: forall (k::*) (r::k). forall (c1 :: k ~# (* -> *))
+                                        (c2 :: r ~# (Maybe |> sym c1)).
+					TyRep k r
+
+TyApp   :: forall (k::*) (r::k). forall (k1::*) (k2::*) (a::k1->k2) (b::k2)
+                                        (c1 :: k ~# k2) (c2 :: r ~# (a b |> sym c1)).
+					TyRep (k1->k2) a -> TyRep k1 b -> TyRep k r
+
+-- henceforth assuming option #3, because it is substitutive
+
+zero :: forall (r :: *). TyRep * r -> r
+zero = /\r::*. \t :: TyRep * r.
+       case t return r of
+         TyInt (c1 :: * ~# *) (c2 :: r ~# (Int |> sym c1)) ->
+	   0 |> (sym (<Int> |> sym c1) ; sym c2 :: Int ~# r)
+         TyApp (k1::*) (k2::*) (a::k1->k2) (b::k2)
+	       (c1 :: * ~# k2) (c2 :: r ~# (a b |> sym c1))
+               (ta :: TyRep (k1->k2) a) (_ :: TyRep k1 b) ->
+           case ta return r of
+             TyMaybe (c1' :: (k1 -> k2) ~# (* -> *)) (c2' :: a ~# (Maybe |> sym c1)) ->
+	       Nothing (b |> nth:1 c1') |> (sym ((c2' ; <Maybe> |> sym c1)
+                                                 (sym (<b> |> nth:1 c1')) |> sym c1) ;
+				            sym c2 :: Maybe ?2 ~# r)
+
+? :: Maybe ?2 ~# r
+? = ?3 ; sym c2
+
+?2 :: *
+?2 = b |> ?8
+
+?3 :: Maybe ?2 ~# (a b |> sym c1)
+?3 = sym ?4
+
+?4 :: (a b |> sym c1) ~# Maybe ?2
+?4 = ?5 |> sym c1
+
+?5 :: a b ~# Maybe (b |> nth:1 c1')
+?5 = ?6 ?7
+
+?6 :: a ~# Maybe
+?6 = c2' ; ?9
+
+?7 :: b ~# (b |> nth:1 c1')
+?7 = sym (<b> |> nth:1 c1')
+
+?8 :: k2 ~# *
+?8 = nth:1 c1'
+
+?9 :: (Maybe |> sym c1) ~# Maybe
+?9 = <Maybe> |> sym c1
+
+--------------------------------------
+
+Kind :: *
+Star :: Kind
+Arr :: Kind -> Kind -> Kind
+
+Ty :: Kind -> *
+TInt :: forall (k::Kind). forall (c :: k ~# Star). Ty k
+TMaybe :: forall (k::Kind). forall (c :: k ~# Arr Star Star). Ty k
+TApp :: forall (k::Kind). forall (k1::Kind) (k2::Kind) (c :: k ~# k2).
+          Ty (Arr k1 k2) -> Ty k1 -> Ty k
+
+TyRep :: forall (k::Kind). Ty k -> *
+TyInt :: forall (k::Kind) (t :: Ty k).
+         forall (c1 :: k ~# Star) (c2 :: t ~# (TInt Star <Star> |> Ty (sym c1))).
+         TyRep k t
+
+TyMaybe :: forall (k::Kind) (t :: Ty k).
+           forall (c1 :: k ~# Arr Star Star)
+                  (c2 :: t ~# (TMaybe (Arr Star Star) <Arr Star Star> |> Ty (sym c1))).
+           TyRep k t
+
+TyApp :: forall (k::Kind) (t :: Ty k).
+         forall (k1::Kind) (k2::Kind) (a :: Ty (Arr k1 k2)) (b :: Ty k1)
+                (c1 :: k ~# k2)
+		(c2 :: t ~# (TApp k2 k1 k2 <k2> a b |> Ty (sym c1))).
+         TyRep (Arr k1 k2) a -> TyRep k1 b -> TyRep k t
+
+IK :: Kind -> *
+axIK :: IK Star ~# *  ;
+        {k1::Kind, k2::Kind}. IK (Arr k1 k2) ~# IK k1 -> IK k2
+
+I :: forall (k::Kind). Ty k -> IK k
+axI :: I Star (TInt Star <Star>) ~# (Int |> sym axIK[0])  ;
+       I (Arr Star Star) (TMaybe (Arr Star Star) <Arr Star Star>) ~#
+           (Maybe |> sym (axIK[1] Star Star ; axIK[0] -> axIK[0]))   ;
+       {k1::Kind, k2::Kind, a::Ty (Arr k1 k2), b::Ty k1}.
+         I k2 (TApp k2 k1 k2 <k2> a b) ~#
+           ((I (Arr k1 k2) a) |> axIK[1] k1 k2) (I k1 b)
+
+? :: * -> * ~# IK (Arr Star Star)
+? = sym ?2
+
+?2 :: IK (Arr Star Star) ~# * -> *
+?2 = axIK[1] Star Star ; ?3
+
+?3 :: IK Star -> IK Star ~# * -> *
+?3 = ?4 -> ?4
+
+?4 :: IK Star ~# *
+?4 = axIK[0]
+
+?5 :: IK (Arr k1 k2) ~# IK k1 -> IK k2
+?5 = axIK[1] k1 k2
+
+zero :: forall (r :: Ty Star). TyRep Star r -> (I Star r |> axIK[0])
+zero = /\r :: Ty Star. \t :: TyRep Star r.
+       case t return (I Star r |> axIK[0]) of
+         TyInt (c1 :: Star ~# Star) (c2 :: r ~# (TInt Star <Star> |> Ty (sym c1))) ->
+	   0 |> ? = ( sym (( I <Star> (<TInt Star <Star>> |> Ty (sym c1)) ;
+	     	           axI[0] ; <Int> |> sym axIK[0] ) |> axIK[0]) ;
+                    sym ((sym (I <Star> (sym c2) |> axIK[0])) |> axIK[0]) ::
+                    Int ~# I Star r |> axIK[0] )
+
+         TyApp (k1::Kind) (k2::Kind) (a :: Ty (Arr k1 k2)) (b :: Ty k1)
+               (c1 :: Star ~# k2)
+	       (c2 :: r ~# (TApp k2 k1 k2 <k2> a b |> Ty (sym c1)))
+               (p :: TyRep (Arr k1 k2) a)
+	       (q :: TyRep k1 b) ->
+           case p return (I Star r |> axIK[0]) of
+             TyMaybe (c1 :: Arr k1 k2 ~# Arr Star Star)
+	     	     (c2 :: a ~# (TMaybe (Arr Star Star) <Arr Star Star> |> Ty (sym c1))) ->
+	       Nothing ?10 |> (?11 :: Maybe ?10 ~# I Star r |> axIK[0])
+
+? :: Int ~# I Star r |> axIK[0]
+? = ?2 ; ?3
+
+?2 :: Int ~# I Star (TInt Star <Star> |> Ty (sym c1)) |> axIK[0]
+?2 = sym (?5 |> axIK[0])
+
+?3 :: I Star (TInt Star <Star> |> Ty (sym c1)) |> axIK[0] ~# I Star r |> axIK[0]
+?3 = sym ((sym (?4 |> axIK[0])) |> axIK[0])
+
+?4 :: I Star (TInt Star <Star> |> Ty (sym c1)) ~# I Star r
+?4 = I <Star> (sym c2)
+
+?5 :: I Star (TInt Star <Star> |> Ty (sym c1)) ~# Int
+?5 = ?6 ; ?7
+
+?6 :: I Star (TInt Star <Star> |> Ty (sym c1)) ~# I Star (TInt Star <Star>)
+?6 = I <Star> ?9
+
+?7 :: I Star (TInt Star <Star>) ~# Int
+?7 = axI[0] ; ?8
+
+?8 :: Int |> sym axIK[0] ~# Int
+?8 = <Int> |> sym axIK[0]
+
+?9 :: TInt Star <Star> |> Ty (sym c1) ~# TInt Star <Star>
+?9 = <TInt Star <Star>> |> Ty (sym c1)
+
+?10 :: *
+?10 = I k1 b |> ?29
+
+?11 :: Maybe ?10 ~# I Star r |> axIK[0]
+?11 = sym (?12 |> axIK[0])
+
+?12 :: I Star r ~# Maybe ?10
+?12 = ?13 ; ?14
+
+?13 :: I Star r ~# I Star (TApp k2 k1 k2 <k2> a b |> Ty (sym c1))
+?13 = I <Star> c2
+
+?14 :: I Star (TApp k2 k1 k2 <k2> a b |> Ty (sym c1)) ~# Maybe ?10
+?14 = ?15 ; ?16
+
+?15 :: I Star (TApp k2 k1 k2 <k2> a b |> Ty (sym c1)) ~# I Star (TApp k2 k1 k2 <k2> a b)
+?15 = I <Star> ?17
+
+?16 :: I Star (TApp k2 k1 k2 <k2> a b) ~# Maybe ?10
+?16 = ?18 ; ?19
+
+?17 :: TApp k2 k1 k2 <k2> a b |> Ty (sym c1) ~# TApp k2 k1 k2 <k2> a b
+?17 = <TApp k2 k1 k2 <k2> a b> |> Ty (sym c1)
+
+?18 :: I Star (TApp k2 k1 k2 <k2> a b) ~# ((I (Arr k1 k2) a) |> axIK[1] k1 k2) (I k1 b)
+?18 = axI[2] k1 k2 a b
+
+?19 :: ((I (Arr k1 k2) a) |> axIK[1] k1 k2) (I k1 b) ~# Maybe ?10
+?19 = ?20 ?21
+
+?20 :: (I (Arr k1 k2) a) |> axIK[1] k1 k2 ~# Maybe
+?20 = ?22 ; ?23
+
+?21 :: I k1 b ~# ?10
+?21 = sym (<I k1 b> |> ?29)
+
+?22 :: (I (Arr k1 k2) a) |> axIK[1] k1 k2 ~# I (Arr k1 k2) a
+?22 = <I (Arr k1 k2) a> |> axIK[1] k1 k2
+
+?23 :: I (Arr k1 k2) a ~# Maybe
+?23 = I c1 <a> ; ?24
+
+?24 :: I (Arr Star Star) a ~# Maybe
+?24 = I <Arr Star Star> c2 ; ?25
+
+?25 :: I (Arr Star Star) (TMaybe (Arr Star Star) <Arr Star Star> |> Ty (sym c1)) ~# Maybe
+?25 = I <Arr Star Star> ?26 ; ?27
+
+?26 :: TMaybe (Arr Star Star) <Arr Star Star> |> Ty (sym c1) ~# TMaybe (Arr Star Star) <Arr Star Star>
+?26 = <TMaybe (Arr Star Star) <Arr Star Star>> |> Ty (sym c1)
+
+?27 :: I (Arr Star Star) (TMaybe (Arr Star Star) <Arr Star Star>) ~# Maybe
+?27 = axI[1] ; ?28
+
+?28 :: Maybe |> sym (axIK[1] Star Star ; axIK[0] -> axIK[0]) ~# Maybe
+?28 = <Maybe> |> sym (axIK[1] Star Star ; axIK[0] -> axIK[0])
+
+?29 :: IK k1 ~# *
+?29 = IK (nth:1 c1) ; ?30
+
+?30 :: IK Star ~# *
+?30 = axIK[0]

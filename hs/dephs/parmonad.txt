@@ -1,0 +1,1 @@
+Dominic Orchard's "Embedding Effect Systems in Haskell" (Haskell '14) could be much simplified with proper dependent types

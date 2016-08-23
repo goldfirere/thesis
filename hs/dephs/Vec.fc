@@ -1,0 +1,44 @@
+
+module Vec where
+
+Nat :: *
+Zero :: Nat
+Succ :: Nat -> Nat
+
+Vec :: * -> Nat -> *
+VNil :: forall (t::*) (n::Nat). forall (c :: n ~# Zero). Vec t n
+VCons :: forall (t::*) (n::Nat). forall (m::Nat) (c :: n ~# Succ m).
+         t -> Vec t m -> Vec t n
+
+Plus :: Nat -> Nat -> Nat
+axPlus :: {a::Nat}. Plus Zero a ~# a   ;;
+          {a::Nat, b::Nat}. Plus (Succ a) b ~# Succ (Plus a b)
+
+VecAppend :: forall (a::*) (m::Nat) (n::Nat). Vec a m -> Vec a n -> Vec a (Plus m n)
+axVecAppend :: {a::*, n::Nat, v2::Vec a n}.
+	         VecAppend a Zero n (VNil a Zero <Zero>) v2 ~# v2 |> ?1   ;;
+               {a::*, m::Nat, n::Nat, h::a, t::Vec a m, v2::Vec a n}.
+                 VecAppend a (Succ m) n (VCons a (Succ m) m <Succ m> h t) v2 ~#
+                 VCons a (Plus (Succ m) n) (Plus m n) ?2 h (VecAppend a m n t v2)
+
+?1 :: Vec a n ~# Vec a (Plus Zero n)
+?1 = Vec <a> (sym (axPlus[0] n))
+
+?2 :: Plus (Succ m) n ~# Succ (Plus m n)
+?2 = axPlus[1] m n
+
+SafeHead :: forall (a::*) (n::Nat). Vec a (Succ n) -> a
+axSafeHead :: {a::*, n::Nat, h::a, t::Vec a n}.
+                SafeHead a n (VCons a (Succ n) n <Succ n> h t) ~# h
+
+Pred :: Nat -> Nat
+axPred :: Pred Zero ~# Zero ;;
+          {n::Nat}. Pred (Succ n) ~# n
+
+Tail :: forall (a::*) (n::Nat). Vec a n -> Pred n
+axTail :: {a::*}. Tail a Zero (VNil a Zero <Zero>) ~# VNil a (Pred Zero) axPred[0] ;;
+          {a::*, n::Nat, h::a, t::Vec a n}.
+            Tail a (Succ n) (VCons a (Succ n) n <Succ n> h t) ~# t |> ?3
+
+?3 :: Vec a n ~# Vec a (Pred (Succ n))
+?3 = Vec <a> (sym (axPred[1] n))
