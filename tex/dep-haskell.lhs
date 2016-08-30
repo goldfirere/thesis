@@ -789,7 +789,7 @@ proof of type equality, or divergence. There seems to be no easy, sound way arou
 restriction, which will unfortunately have a real effect on the runtimes of
 dependently typed Haskell programs.
 
-Despite not have an easy, sound workaround, GHC already comes with an easy, unsound
+Despite not having an easy, sound workaround, GHC already comes with an easy, unsound
 workaround: rewrite rules~\cite{rules}. A rewrite rule (written with a
 |RULES| pragma in GHC) instructs GHC to exchange one fragment of a program
 in its intermediate language with another, by pattern matching on the program structure.
