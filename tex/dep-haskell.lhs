@@ -434,7 +434,7 @@ Note that if |f| and |g| are matchable, then |f a ~ g b| implies
 On the other hand, ordinary Haskell functions are not, in general,
 matchable. The inability to reduce |f a ~ g b| to |f ~ g| and |a ~ b|
 for arbitrary functions is precisely why type families must be saturated
-in today's Haskell. If the were allowed to appear unsaturated, then
+in today's Haskell. If they were allowed to appear unsaturated, then
 the type inference algorithm could no longer assume that higher-kinded types
 are always matchable, and inference would grind to a halt.
 
