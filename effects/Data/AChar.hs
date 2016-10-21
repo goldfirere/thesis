@@ -74,7 +74,12 @@ $(singletons [d|
             | Cspace
             | Cnewline
             | Ccolon
-            | Cperiod |])
+            | Cperiod
+            | Ccomma
+            | Cbang
+            | Cquestion
+            | Cbracko
+            | Cbrackc |])
 
 deriving instance P.Eq Char
 
@@ -146,6 +151,11 @@ toChar Cspace = ' '
 toChar Cnewline = '\n'
 toChar Ccolon = ':'
 toChar Cperiod = '.'
+toChar Ccomma = ','
+toChar Cbang = '!'
+toChar Cquestion = '?'
+toChar Cbracko = '['
+toChar Cbrackc = ']'
 
 fromChar :: P.Char -> Char
 fromChar 'A' = CA
@@ -215,6 +225,11 @@ fromChar ' ' = Cspace
 fromChar '\n' = Cnewline
 fromChar ':' = Ccolon
 fromChar '.' = Cperiod
+fromChar ',' = Ccomma
+fromChar '!' = Cbang
+fromChar '?' = Cquestion
+fromChar '[' = Cbracko
+fromChar ']' = Cbrackc
 fromChar c   = P.error ("character not supported: " P.++ [c])
 
 type String = [Char]
@@ -227,6 +242,9 @@ toString = P.map toChar
 
 show :: P.Show a => a -> String
 show = fromString P.. P.show
+
+read :: P.Read a => String -> a
+read = P.read P.. toString
 
 instance P.Show Char where
   show x = [toChar x]

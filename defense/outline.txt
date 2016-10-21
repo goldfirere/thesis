@@ -1,0 +1,15 @@
+I. Motivation
+  - Happy talk about dependent types
+  - Happy talk about Haskell
+  - Database example
+  - Effects example (die-roll simulator?)
+
+II. Relevance
+
+III. Matchability
+  - needed to preserve `left` and `right`
+  - can be used to simulate type families
+
+IV. Consistency
+
+

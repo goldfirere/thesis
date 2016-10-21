@@ -323,7 +323,7 @@ eff env (l :- prog) k
   = let env' = unlabel env in
     eff env' prog (\ envk p' -> k (relabel l envk) p')
 
-run :: Applicative m => Env m xs -> EffM m xs xs' a -> m a
+run :: forall xs xs' m a. Applicative m => Env m xs -> EffM m xs xs' a -> m a
 run env prog = eff env prog (\ _env r -> P.pure r)
 
 runEnv :: Applicative m

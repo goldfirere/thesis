@@ -5,10 +5,12 @@
 module Data.Nat where
 
 import qualified Prelude as P
-import Prelude ( (.) )
+import Prelude ( (.), ($) )
 import Data.Singletons.TH
 import Data.Singletons.Prelude
 import qualified GHC.TypeLits as TL
+import Control.Arrow ( first, second )
+import qualified System.Random as R
 
 $(singletons [d| data Nat = Z | S Nat deriving (P.Eq, P.Ord) |])
 
@@ -41,6 +43,9 @@ toInteger (S n) = 1 P.+ toInteger n
 instance P.Show Nat where
   show = P.show . toInteger
 
+instance P.Read Nat where
+  readsPrec p = P.map (first fromInteger) . P.readsPrec p
+
 instance P.Enum Nat where
   toEnum = fromInteger . P.fromIntegral
   fromEnum = P.fromInteger . toInteger
@@ -48,3 +53,25 @@ instance P.Enum Nat where
 type family U n where
   U 0 = Z
   U n = S (U (n TL.- 1))
+
+instance P.Num Nat where
+  -- These are not as silly as they look, due to scoping rules around
+  -- method definitions for a qualified-imported class. Oh, Haskell.
+  (+) = (+)
+  (-) = (-)
+  (*) = (*)
+  abs n = n
+  signum n = n
+  fromInteger = fromInteger
+
+instance P.Real Nat where
+  toRational = P.toRational . toInteger
+
+instance P.Integral Nat where
+  a `quotRem` b = first fromInteger $ second fromInteger $
+                  toInteger a `P.quotRem` toInteger b
+  toInteger = toInteger
+
+instance R.Random Nat where
+  randomR (a, b) = first fromInteger . R.randomR (toInteger a, toInteger b)
+  random = first fromInteger . R.random

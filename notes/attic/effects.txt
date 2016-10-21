@@ -1,0 +1,9 @@
+- Sometimes need to change argument order because of left to right GADT pattern matching
+    Biggest example: handler
+
+- Matchable vs unmatchable arrows
+
+- Searching through the list of effects for a state is troublesome if we
+  don't know what type to look for.
+
+- need to manually lift because we don't have implicits (but maybe we should)

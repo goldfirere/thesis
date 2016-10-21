@@ -7,9 +7,11 @@
 
 module Effect.Random where
 
+import qualified Prelude as P
 import Data.Nat
 import Effects
 import Data.Singletons
+import qualified System.Random as R
 
 data Random :: Effect where
   GetRandom :: Random Nat Nat Nat
@@ -28,9 +30,15 @@ instance (Good a, Good b, Good c) => SingKind (Random a b c) where
   toSing GetRandom = SomeSing SGetRandom
   toSing (SetSeed x) = case toSing x of SomeSing x' -> SomeSing (SSetSeed x')
 
+-- top-level definition so that it is computed only once
+modulus :: P.Int
+modulus = P.fromIntegral 1007
+
 instance Handler Random m where
   handle GetRandom seed k
-    = let seed' = (3 * seed + 1) `mod` 213 in
+    = let gen = R.mkStdGen (P.fromIntegral seed)
+          (n, _) = R.random @P.Int gen
+          seed' = fromInteger (P.fromIntegral (n `P.mod` modulus)) in
       k seed' seed'
   handle (SetSeed n) _ k = k n ()
 
