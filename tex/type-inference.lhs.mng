@@ -54,7 +54,8 @@ that the \pico/ program produced by \bake/ is well-typed. It also relates
 from \citet{visible-type-application}, arguing that \bake/ is a conservative
 extension of both.
 
-Full statements of all theorems and definitions, with proofs, appear
+Full statements of all judgments appear in \pref{app:inference-rules},
+while theorems and definitions, with proofs, appear
 in \pref{app:inference}.
 
 \section{Overview}
@@ -80,7 +81,7 @@ the solver as implemented does indeed do dependency tracking and should
 support all of the innovations described in this chapter.
 
 Constraints in \bake/ are represented by \emph{unification telescopes}, which
-are a list of possibly-dependent unification variables,\footnote{Depending on
+are lists of possibly-dependent unification variables,\footnote{Depending on
   the source, various works in the literature refer to unification variables
   as existential variables (e.g., \cite{simple-bidirectional}) or
   metavariables (e.g., \cite{gundry-thesis} and the GHC source code). I prefer
@@ -94,7 +95,7 @@ constraints, a key innovation of \citet{outsidein}, are handled by classifying
 unification variables by quantified kinds and propositions. See
 \pref{sec:quantified-kinds-and-props}.
 
-The algorithm is stated as several judgments of the following general form:
+The algorithm is stated as several judgments of the following general form:\footnote{The definitions for $[[P]]$ and $[[O]]$ appear in \pref{fig:bake-grammar}.}
 \[
 [[S]];[[P]] [[|->]] \mathit{inputs} [[~>]] \mathit{outputs} [[-|]] [[O]]
 \]
@@ -339,7 +340,8 @@ type constants must be saturated with respect to universals in \pico/,
 whereas we do not need this restriction in Haskell. Accordingly, type
 constants are considered variables that expand to type constants
 that have been $\eta$-expanded to take their universal arguments in
-a curried fashion.
+a curried fashion. For example, |Just| in Haskell, which can appear
+fully unsaturated, becomes $[[\ a:Irrel Type{}. &&Justx{a}]]$ in \pico/.
 
 \paragraph{Recursive |let|}
 Following the decision not to include a \keyword{letrec} construct in
@@ -428,7 +430,9 @@ This means that unification variable bindings are quantified over a
 telescope $[[D]]$. (You can see this in the definition for $[[u]]$
 in \pref{fig:bake-grammar}.) In the vocabulary of \outsidein/, the
 bindings in $[[D]]$ are the \emph{givens} under which a unification
-variable should be solved for.
+variable should be solved for and a unification variable binding
+$[[au :rel forall D.k]]$ or $[[cu : forall D.phi]]$ with a non-empty
+$[[D]]$ is an implication constraint.
 
 \subsection{Zonking}
 \label{sec:zonking}
@@ -578,9 +582,9 @@ Pulling this all together, we get the following unification telescope:
 [[bu0 :Irrel forall{}. Type{}]],\\
 [[au1 :Irrel forall{}. Type{}]],\\
 [[cu0 : forall{}. au0_{} [Type{}]~[Type{}] &&Tx{} au1_{}]],\\
-[[bu1 :Irrel forall c : &Bool{} [Type{}]~[Type{}] au1_{}. Type{}]], \\
-[[cu1 : forall c : &Bool{} [Type{}]~[Type{}] au1_{}. (&Maybe{} bu1_c [Type{}]~[Type{}] &Maybe{} &Int{})]], \\
-[[cu2 : forall c : &Bool{} [Type{}]~[Type{}] au1_{}. (bu0_{} [Type{}]~[Type{}] &Bool{})]]
+[[bu1 :Irrel forall (c : &Bool{} [Type{}]~[Type{}] au1_{}). Type{}]], \\
+[[cu1 : forall (c : &Bool{} [Type{}]~[Type{}] au1_{}). (&Maybe{} bu1_c [Type{}]~[Type{}] &Maybe{} &Int{})]], \\
+[[cu2 : forall (c : &Bool{} [Type{}]~[Type{}] au1_{}). (bu0_{} [Type{}]~[Type{}] &Bool{})]]
 \end{array}
 \]
 
@@ -767,7 +771,7 @@ explicitly. All coercion abstractions are inferred.
 Note that these three levels of visibility are not a consequence of dependent
 types, but of having an invisibility override mechanism; these three levels
 of visibility are fully present in GHC 8. In the judgments that form \bake/,
-I often write a subscript $[[Req]]$, $[[Spec]]$, or $[[Inf]]$to $\Pi$ symbols indicating the visibility of the
+I often write a subscript $[[Req]]$, $[[Spec]]$, or $[[Inf]]$ to $\Pi$ symbols indicating the visibility of the
 binders quantified over. These subscripts have no effect on well-formedness
 of types and are completely absent from pure \pico/.
 
@@ -802,8 +806,8 @@ above, if we are checking an expression |f x| against a type |tau|, we have
 no way of usefully propagating information about |tau| into |f| or |x|.
 Instead, we use the synthesis judgment for |f| and then check |x|'s type
 against the argument type found for |f|. After all of this, we will get
-a type |tau'| for |f x|. We then must check |tau'| against |tau|---but
-they do not have to match exactly. For example, if |tau'| is |forall a. a -> a|
+a type $[[t']]$ for |f x|. We then must check $[[t']]$ against |tau|---but
+they do not have to match exactly. For example, if $[[t']]$ is |forall a. a -> a|
 and |tau| is |Int -> Int|, then we're fine, as any expression of the former
 type can be used at the latter.
 
@@ -1459,7 +1463,7 @@ theorem means that the variable values stored in $[[theta]]$ actually
 have the types as given in $[[G']]$.
 
 Naturally, proving this theorem requires proving the soundness of all
-the individual judgments that form \bake/. This proofs all appear
+the individual judgments that form \bake/. These proofs all appear
 in \pref{sec:app-inference-soundness}.
 
 \subsubsection{Adapting lemmas on $[[|-]]$ to $[[|=]]$}
@@ -1957,9 +1961,13 @@ The GHC implementation takes a very different approach to unification variables
 and zonking than does \bake/. A GHC unification variable (called a metavariable
 in the source code) is a mutable cell. The solver fills in the mutable cells.
 Though the implementation details differ a bit, the same is currently true
-to unification coercion variables (called coercion holes in GHC)---they are still
+for unification coercion variables (called coercion holes in GHC)---they are still
 mutable cells. The \emph{zonking} operation walks through a type (or coercion
 or expression) and replaces pointers to mutable cells with the cells' contents.
+On the other hand, \bake/'s treatment of filling in unification variables
+requires building up an explicit zonker $[[Z]]$; in effect, the implicit
+substitution GHC builds in the heap using mutable cells is made explicit
+in \bake/.
 
 Another key difference between GHC and my formalization (and every other) is
 that GHC variables track their own kinds. The implementation does track a

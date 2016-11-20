@@ -24,8 +24,8 @@ read = Read
 \label{cha:motivation}
 
 Functional programmers use dependent types in two primary ways, broadly
-speaking: in order to eliminate erroneous programs from being accepted, and in
-order to write intricate programs that a simply-typed language cannot accept.
+speaking: in order to prevent erroneous programs from being accepted, and in
+order to write programs that a simply-typed language cannot accept.
 In this chapter, I will motivate the use of dependent types from both of
 these angles. The chapter concludes with a section motivating why Haskell, in
 particular, is ripe for dependent types.
@@ -42,11 +42,11 @@ A \colorbox{working}{\workingcolorname} background
 highlights code that newly works in GHC~8.0 due to my implementations
 of previously published papers~\cite{nokinds,visible-type-application}.
 A \colorbox{notyet}{\notyetcolorname}
-background indicates code that does not work verbatim,
+background indicates code that does not work verbatim in GHC~8.0,
 but could still be implemented via the use of singletons~\cite{singletons} and
 similar workarounds. A \colorbox{noway}{\nowaycolorname} background marks code
-that does not currently work in my implementation due to bugs and
-incompleteness in my implementation. To my knowledge, there is nothing more
+that does not currently work in due to bugs.
+To my knowledge, there is nothing more
 than engineering (and perhaps the use of singletons) to get these examples
 working.
 
@@ -62,7 +62,7 @@ are the examples in \citet{power-of-pi}, \citet{hasochism}, and
 \label{sec:example-nats}
 
 We start by examining length-indexed vectors. This well-worn example is still
-useful, as it is easier to understand and still can show off many of the
+useful, as it is easy to understand and still can show off many of the
 new features of Dependent Haskell.
 
 \subsubsection{|Vec| definition}
@@ -77,7 +77,9 @@ data Vec :: Type -> Nat -> Type where
 infixr 5 :>
 \end{code}
 \end{working}
-I will use ordinary numerals as elements of |Nat| in this text.
+I will use ordinary numerals as elements of |Nat| in this text.\footnote{In
+constrast, numerals used in types in GHC are elements of a built-in type |Nat| that uses
+a more efficient binary representation. It cannot be pattern-matched against.}
 The |Vec| type is parameterized by both the type of the vector elements
 and the length of the vector. Thus |True :> Nil| has type |Vec Bool 1| and
 |'x' :> 'y' :> 'z' :> Nil| has type |Vec Char 3|.
@@ -100,6 +102,7 @@ is addressed more fully in \pref{sec:promoting-base-types}. For now,
 however, it is best to stick to the simpler |Nat| type.
 
 \subsubsection{|append|}
+\label{sec:tick-promotes-functions}
 
 Let's first write an operation that appends two vectors. We already need
 to think carefully about types, because the types include information about
@@ -175,7 +178,7 @@ typed language.
 \subsubsection{|replicate|}
 \label{sec:replicate-example}
 
-Let's now write function that can create a vector of a given length with
+Let's now write a function that can create a vector of a given length with
 all elements equal. Before looking at the function over vectors, we'll
 start by considering a version of this function over lists:
 \begin{code}
@@ -191,7 +194,7 @@ list. This means that we must give a name to the |Nat| passed in. Here
 is how it is written in Dependent Haskell:
 \begin{notyet}
 \begin{spec}
-replicate :: pi (n :: Nat) -> a -> Vec a n
+replicate :: forall a. pi (n :: Nat) -> a -> Vec a n
 replicate Zero      _ = Nil
 replicate (Succ n)  x = x :> replicate n x
 \end{spec}
@@ -220,7 +223,7 @@ The first parameter to |replicate| above is actually redundant, as it can
 be inferred from the result type. We can thus write a version with this type:
 \begin{notyet}
 \begin{spec}
-replicateInvis :: pi (n :: Nat). a -> Vec a n
+replicateInvis :: pi (n :: Nat). forall a. a -> Vec a n
 \end{spec}
 \end{notyet}
 %if style == newcode
@@ -234,9 +237,10 @@ replicateInvis :: forall n a. SingTH.SingI n => a -> Vec a n
 Note that the type begins with |pi (n :: Nat).| instead of
 |pi (n :: Nat) ->|. The use of the .~there recalls the existing Haskell
 syntax of |forall a.|, which denotes an invisible argument |a|. Invisible
-arguments are omitted at function calls.
+arguments are omitted at function calls and definitions.
 On the other hand, the |->| in |pi (n :: Nat) ->| means that the argument
-is visible and must be provided at every function invocation.
+is visible and must be provided at every function invocation and defining
+equation.
 This choice of syntax is due directly to \citet{gundry-thesis}.
 Some readers may prefer the
 terms \emph{explicit} and \emph{implicit} to describe visibility; however,
@@ -295,8 +299,8 @@ lengthRel (at n) _ = n
 \end{notyet}\vspace{-3ex}
 \begin{code}
 lengthIrrel :: forall n a. Vec a n -> Nat
-lengthIrrel Nil      = 0
-lengthIrrel (_ :> v) = 1 + lengthIrrel v
+lengthIrrel Nil       = 0
+lengthIrrel (_ :> v)  = 1 + lengthIrrel v
 \end{code}
 %if style == newcode
 \begin{code}
@@ -305,7 +309,7 @@ lengthRel _ = Sing.fromSing (Sing.sing :: Sing.Sing n)
 \end{code}
 %endif 
 The difference between these two functions is whether or not they quantify
-|n| relevantly. A \emph{relevant} parameter is one available at runtime.\footnote{This is a slight simplification, as relevance still has meaning in types that
+|n| relevantly. A \emph{relevant} parameter, bound by |pi|, is one available at runtime.\footnote{This is a slight simplification, as relevance still has meaning in types that
 are erased. See \pref{sec:relevance}.} In |lengthRel|, the type declares that
 the value of |n|, the length of the |Vec a n| is available at runtime.
 Accordingly, |lengthRel| can simply return this value. The one visible
@@ -516,7 +520,8 @@ too. The |go| helper functions have types generalized over a possibly non-empty
 context prefix, |ctx0|. This context prefix is appended to the existing
 context using |!++|, the promoted form of the existing |++| list-append operator.
 (Using |!| for promoting functions is a natural extension of the existing
-convention of using |!| to promote constructors from terms to types.)
+convention of using |!| to promote constructors from terms to types; see also
+\pref{sec:tick-promotes-functions}.)
 The |go| functions also $\Pi$-quantify over |ctx0|, meaning that the value
 of this context prefix is available in types (as we can see) and also at
 runtime. This is necessary because the functions need the length of |ctx0|
@@ -1005,7 +1010,17 @@ checkIn        ::  pi (name :: String) (ty :: Type) (schema :: Schema)
                ->  r
 \end{spec}
 \end{notyet}
-Both functions take input information to validate and a continuation
+Both functions take input information\footnote{Readers might be alarmed
+to see here a |Type| being passed at runtime. After all, a key feature
+of Dependent Haskell is type erasure! However, passing types at runtime
+is sometimes necessary, and using the type |Type| to do so is a natural
+extension of what is done today. Indeed, today's |TypeRep| (explored in
+detail by \citet{typerep}) is essentially a singleton for |Type|. As
+Dependent Haskell removes other singletons, so too will it remove |TypeRep|
+in favor of dependent pattern matching on |Type|. As with other aspects
+of type erasure, users will choose which types to erase by the choice
+between |pi|-quantification and a |forall|-quantification.}
+to validate and a continuation
 to call if indeed the input is valid. In this implementation, both functions
 simply error (that is, return $\bot$) if the input is not valid, though
 it would not be hard to report an error in a suitable monad.
@@ -1039,7 +1054,7 @@ whenever |In name ty schema| holds.
 The |checkIn| function makes critical use of a new function |eq|:\footnote{I present |eq| here as a member of the ubiquitous |Eq| class, as a definition for |eq|
 should be writable whenever a definition for |==| is. (Indeed, |==| could
 be implemented in terms of |eq|.) I do not, however, expect that |eq| will
-end up living direclty in the |Eq| class, as I doubt the Haskell community
+end up living directly in the |Eq| class, as I doubt the Haskell community
 will permit Dependent Haskell to alter such a fundamental class. Nevertheless,
 the functionality sported by |eq| will be a common need in Dependent Haskell
 code, and we will need to find a suitable home for the function.}
@@ -1104,7 +1119,7 @@ neither one could do alone.
 Using dependent types to check a sorting algorithm is well explored in the
 literature (e.g., \cite{why-dependent-types-matter,keeping-neighbours-in-order}).
 These algorithms can also be translated into Haskell, as shown in my prior
-work~\cite{singletons,nyc-hug-2014}. I will thus not go into great detail
+work~\cite{singletons,nyc-hug-2014}. I will thus not go into any detail
 in the implementation here.
 
 At the bottom of one implementation\footnote{\url{https://github.com/goldfirere/nyc-hug-oct2014/blob/master/OrdList.hs}} appears this function definition:
@@ -1246,7 +1261,7 @@ type family CountArgs (f :: Type) :: Nat where
   CountArgs (a -> b)  = !Succ (CountArgs b)
   CountArgs result    = !Zero
 \end{code}
-Note that the ability to write this function is unique to Haskell,
+The ability to write this function is unique to Haskell,
 where pattern-matching on proper types (of kind |Type|) is allowed.
 
 We need to connect this type-level function with the term-level
@@ -1585,8 +1600,10 @@ Furthermore, Dependent Haskell has the |Type :: Type| axiom, meaning that instea
 having an infinite hierarchy of universes characteristic of Coq, Agda, and
 Idris, Dependent Haskell has just one universe which contains itself. It is
 well-known that self-containment of this form leads to logical inconsistency
-by enabling the construction of a looping term~\cite{girard-thesis}, but we are
-unbothered by this. By allowing ourselves to have |Type :: Type|, the type system
+by enabling the construction of a looping term~\cite{girard-thesis}, but I am
+unbothered by this---Haskell has many other looping terms, too! (See
+\pref{sec:type-in-type} for more discussion on this point.)
+By allowing ourselves to have |Type :: Type|, the type system
 is much simpler than in systems with a hierarchy of universes.
 
 There are two clear downsides of the lack of totality:

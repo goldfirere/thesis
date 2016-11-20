@@ -336,7 +336,7 @@ however.
 
 \subsection{Modules}
 
-Cayenne as a robust module system, more advanced than Haskell's. As such,
+Cayenne has a robust module system, more advanced than Haskell's. As such,
 its module system is more advanced also than Dependent Haskell's. Cayenne
 uses dependent records as its modules, as a dependent record can store
 types as easily as other expressions. It remains as future work to see
@@ -540,9 +540,9 @@ For example, consider the following Agda program:
 %format dot = ".\!\!"
 \begin{spec}
 data T : Set where
-  mkT : dot (n : AgdaNat) -> T
+  mkT : ^^ dot (n : AgdaNat) -> T
 data S : T -> Set where
-  mkS : dot (n : AgdaNat) -> S (mkT n)
+  mkS : ^^ dot (n : AgdaNat) -> S (mkT n)
 
 x : S (mkT 3)
 x = mkS 3

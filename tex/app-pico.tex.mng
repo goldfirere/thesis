@@ -2342,6 +2342,9 @@ requires $[[H1 = H2]]$, which is a contradiction. This case cannot happen.
 
 \section{Type erasure}
 
+The type erasure operation $[[e = ||t||]]$ is defined in
+\pref{fig:erased-calculus}.
+
 \begin{definition}[Expression values]
 Let values $[[ev]]$ be defined by the following subgrammar of $[[e]]$:
 \[

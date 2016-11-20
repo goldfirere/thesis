@@ -206,7 +206,8 @@ For example, if we try to say |Element Maybe|, we get a type error saying
 that the argument to |Element| should have kind |*|, but |Maybe| has kind
 |* -> *|.
 
-Kinds in Haskell are not a new invention; they are mentioned in the Haskell98
+Kinds in Haskell are not a new invention; they are precisely
+defined in the Haskell98
 report~\cite{haskell98}. Because type constructors in Haskell may appear without
 their arguments, Haskell needs a kinding system to keep all the types in line.
 For example, consider the library definition of |Maybe|:
@@ -255,7 +256,7 @@ type to |!Succ (!Succ (!Succ !Zero))|. We can also see here that GHC does
 kind inference on the definition for the type-level |+|. We could also specify
 the kinds ourselves like this:
 \begin{spec}
-data family (a :: Nat) + (b :: Nat) :: Nat where ...
+type family (a :: Nat) + (b :: Nat) :: Nat where ...
 \end{spec}
 
 \citet{promotion} detail certain restrictions in what datatypes can be promoted.
@@ -355,7 +356,7 @@ I defer most of the discussion of GADTs to that chapter.
 
 Here, I introduce one particularly important GADT: propositional equality.
 The following definition appears now as part of the standard library shipped
-with GHC, in the |Data.Type.Equality| module:
+with GHC, in the \id{Data.Type.Equality} module:
 %
 \begin{code}
 data (a :: k) ^^ :~: ^^ (b :: k) where
@@ -386,8 +387,8 @@ equivalent way of defining
 %format Refl = "Refll"
 %endif
 \begin{code}
-data (a :: k) ^^ :~: ^^ (b :: k) =
-  (a ~ b) => Refl
+data (a :: k) ^^ :~: ^^ (b :: k) where
+  Refl :: (a ~ b) => a :~: b
 \end{code}
 %}
 In this variant, I define the type using the Haskell98-style syntax for
@@ -409,6 +410,7 @@ Haskell is a lazy language, it is possible to pass around equality evidence
 that is |undefined|. Matching evaluates the argument, making sure that the
 evidence is real. The fact that type equality evidence must exist and be
 executed at runtime is somewhat unfortunate. See \pref{sec:no-termination-check}
+and \pref{sec:running-proofs}
 for some discussion.
 
 \section{Higher-rank types}

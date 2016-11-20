@@ -537,7 +537,10 @@ A |pi|-quantified parameter is both dependent (it can be used in types)
 and relevant (it can be used in terms). Critically, pattern-matching (in a term)
 on
 a |pi|-quantified parameter informs our knowledge about that parameter as
-it is used in types, a subject we explore next.
+it is used in types, a subject we explore in the next section.
+
+Lastly, Dependent Haskell omits the non-dependent, irrelevant quantifiers, as
+a non-dependent, irrelevant quantifiee would not be able to be used anywhere.
 
 \section{Pattern matching}
 \label{sec:pattern-matching}
@@ -661,7 +664,11 @@ as we can always feel free to ignore the extra, unused equality if we do not
 need it. However, this would not work in practice---with an equality assumption
 in scope, we cannot accurately infer the return type of a pattern match.
 Yet this last problem delivers us the solution: use dependent pattern matching
-only when we know a match's result type. If we know a result type and do not
+only when we know a match's result type, as propagated down via a bidirectional
+type system. (This is much the same way that today's Haskell allows inference
+in the presence of higher-rank types~\cite{practical-type-inference}. See
+\pref{sec:bidir-dependent-pattern-match} for the details.)
+ If we know a result type and do not
 need the dependent pattern match equality, no harm is done. On the other hand,
 if we do not know the result type, this design decision means that
 dependent pattern matching does not get in the way of inferring the types
@@ -677,8 +684,26 @@ remains out of reach, \pref{cha:type-inference} describes
 used to detect type-correct Dependent Haskell programs. It is important
 future work to develop a more declarative specification of Dependent Haskell.
 
-This section comments on several smaller topics that affect the design
+This section comments on several topics that affect the design
 of Dependent Haskell.
+
+\subsection{$\ottkw{Type} :\ottkw{Type}$}
+\label{sec:type-in-type}
+
+Dependent Haskell includes the $\ottkw{Type} : \ottkw{Type}$ axiom, avoiding
+the infinite hierarchy of sorts~\cite{russell-universes,luo-ecc} that appear
+in other dependently-typed languages. This choice is made solely to
+simplify the language. Other languages avoid the $\ottkw{Type} : \ottkw{Type}$
+axiom in order to remain consistent as a logic. However, to have logical
+consistency, a language must be total. Haskell already has many sources
+of partiality, so there is little risk in adding one more.
+
+Despite the questionable reputation of the $\ottkw{Type} : \ottkw{Type}$ axiom,
+languages with this feature have been proved type-safe for some time.
+\citet{cardelli-type-in-type} gives a thorough early history of the axiom
+and presents a type-safe language with $\ottkw{Type} : \ottkw{Type}$.
+Given the inherent partiality of Haskell, the inclusion of this axiom
+has little effect on the theory.
 
 \subsection{Inferring |pi|}
 
@@ -780,23 +805,29 @@ of multiple, different proofs of equality~\cite{hott}.) By the totality of
 that language, you are assured that |pf| will always terminate, and thus running
 |pf| yields no information.
 
-On the other hand, in a partial language like Haskell, it is always possible that
-|pf| diverges or errors. We are thus required to run |pf|, every time, to make sure
-that it terminates. This is disappointing, as the only point of running |pf| is
-to prove a type equality, and types are supposed to be erased. However, the
-Haskell function |pf| has two possible outcomes: an uninformative (at runtime)
-proof of type equality, or divergence. There seems to be no easy, sound way around this
-restriction, which will unfortunately have a real effect on the runtimes of
-dependently typed Haskell programs.
+On the other hand, in a partial language like Haskell, it is always possible
+that |pf| diverges or errors. We are thus required to run |pf|, every time, to
+make sure that it terminates. This is disappointing, as the only point of
+running |pf| is to prove a type equality, and types are supposed to be erased.
+However, the Haskell function |pf| has two possible outcomes: an uninformative
+(at runtime) proof of type equality, or divergence. There seems to be no easy,
+sound way around this restriction, which will unfortunately have a real effect
+on the runtimes of dependently typed Haskell programs.\footnote{Note that
+running a term like |pf| is the \emph{only} negative consequence of Haskell's
+partiality. If, say, Agda always ran its proofs, it could be partial, too!
+This loses logical consistency---and may surprise users expecting something
+that looks like a proof to actually be a proof---but the language would
+remain type safe.}
 
-Despite not having an easy, sound workaround, GHC already comes with an easy, unsound
-workaround: rewrite rules~\cite{rules}. A rewrite rule (written with a
-|RULES| pragma in GHC) instructs GHC to exchange one fragment of a program
-in its intermediate language with another, by pattern matching on the program structure.
-For example, a user can write a rule to change |map id| to |id|. To the case in point,
-a user could write a rule that changes |pf ...| to |unsafeCoerce Refl|. Such a rule would
-eliminate the possibility of a runtime cost to the proof. By writing this rule,
-the user is effectively asserting that the proof always terminates.
+Despite not having an easy, sound workaround, GHC already comes with an easy,
+unsound workaround: rewrite rules~\cite{rules}. A rewrite rule (written with a
+|RULES| pragma in GHC) instructs GHC to exchange one fragment of a program in
+its intermediate language with another, by pattern matching on the program
+structure. For example, a user can write a rule to change |map id| to |id|. To
+the case in point, a user could write a rule that changes |pf ...| to
+|unsafeCoerce Refl|. Such a rule would eliminate the possibility of a runtime
+cost to the proof. By writing this rule, the user is effectively asserting
+that the proof always terminates.
 
 \subsection{Import and export lists}
 
@@ -814,13 +845,17 @@ Another way of examining this problem is to recognize that the definition of |pr
 encompasses two distinct pieces of information: |pred|'s type and |pred|'s body.
 A module author should have the option of exporting the type without the body.
 
+%{
+%format !! = " "   
+% the above squelches the space between an id and the (..)
 This finer control is done by a small generalization of the syntax in import and
 export lists. If a user includes |pred| in an import/export list, only the name
-|pred| and its type are involved. On the other hand, writing |pred(..)| (with a
+|pred| and its type are involved. On the other hand, writing |pred !! (..)| (with a
 literal |(..)| in the source code) in the
 import/export list also includes |pred|'s implementation. This echoes the current
-syntax of using, say, |Bool| to export only the |Bool| symbol while |Bool(..)|
+syntax of using, say, |Bool| to export only the |Bool| symbol while |Bool !! (..)|
 exports |Bool| with all of its constructors.
+%}
 
 \subsection{Type-checking is undecidable}
 \label{sec:type-checking-undec}

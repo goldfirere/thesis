@@ -102,9 +102,9 @@ var, a, b, x :: 'Var_' ::= {{ com Variables }}
 | && xcd                :: M :: Lit2
   {{ tex [[xcd]] }}
 | $ a                   :: M :: Hidden
-  {{ tex \$ [[a]] }}
+  {{ tex \$\hspace{-.2ex} [[a]] }}
 | dollar a              :: M :: TexHidden
-  {{ tex \$ [[a]] }}
+  {{ tex \$\hspace{-.2ex} [[a]] }}
 | dom ( _decl )         :: M :: dom_decl
   {{ tex [[dom]]([[_decl]]) }}
 
@@ -119,7 +119,7 @@ vars, as {{ tex \overline{\ottnt{a} } }}, bs {{ tex \overline{\ottnt{b} } }},
 | prefix ( as )         :: M :: Prefix
   {{ tex [[prefix]]([[as]]) }}
 | dollar as             :: M :: Dollar
-  {{ tex \$ [[as]] }}
+  {{ tex \$\hspace{-.2ex} [[as]] }}
 
 tycovar, z :: 'TyCoVar_' ::=
 | a                     ::   :: Ty  {{ coq [[a]] }}

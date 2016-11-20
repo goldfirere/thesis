@@ -12,7 +12,7 @@ old~\cite{history-of-haskell}---type theorists still turn to
 Haskell as a place to build new type system ideas and see how they work in a
 practical setting~\cite{fundeps, chak1, chak2, arrows, syb,
   closed-type-families, generics-with-closed-type-families, safe-coercions-jfp,
-  gadts-meet-their-match, helium, pattern-synonyms, typerep}. As a result, Haskell's type system has
+  gadts-meet-their-match, helium, pattern-synonyms, typerep, instance-chains}. As a result, Haskell's type system has
 grown ever more expressive over the years. As the power of types in Haskell has
 increased, Haskellers have started to integrate dependent types into their
 programs~\cite{singletons, hasochism, she, clash}, despite the fact that
@@ -57,6 +57,10 @@ I offer the following contributions:
 
 Although no new results, as such, are presented in \pref{cha:motivation},
 these examples are a true contribution of this dissertation.
+Dependently-typed programs are still something of a rarity, as evidenced
+by the success at publishing novel dependently-typed programs~\cite{power-of-pi,keeping-neighbours-in-order,lookup-update-infir,algebraic-effects}. This chapter
+extends our knowledge of dependently-typed programming by showing how certain
+programs might look in Haskell.
 The two most elaborate examples are:
 \begin{itemize}
 \item a dependently typed database
@@ -67,7 +71,7 @@ into Dependent Haskell (though runnable today) that allows for an easy-to-use
 alternative to monad transformer stacks.
 \end{itemize}
 
-\item \pref{cha:dep-haskell} presents Dependent Haskell, the surface language
+\item Dependent Haskell (\pref{cha:dep-haskell}) is the surface language
 I have designed in this dissertation. This chapter is written to be useful
 to practitioners, being a user manual of sorts of the new features. In
 combination with \pref{cha:motivation}, this chapter could serve to educate
@@ -79,7 +83,7 @@ rich specifications in types. However, it
 differs in several key ways from existing approaches to dependent types:
 \begin{enumerate}
 \item Dependent Haskell has the $\ottkw{Type} : \ottkw{Type}$ axiom, avoiding
-the need for an infinite hierarchy of sorts~\cite{russell-universes,luo-ecc} used in other languages.
+the need for an infinite hierarchy of sorts~\cite{russell-universes,luo-ecc} used in other languages. (\pref{sec:type-in-type})
 
 \item A key issue when writing dependently typed programs is in figuring out
 what information is needed at runtime. Dependent Haskell's approach is to
@@ -101,10 +105,11 @@ type signatures---are also valid in Dependent
 Haskell.
 \end{enumerate}
 
-\item \pref{cha:pico} presents \pico/ (pronounced ``$\Pi$-co'', never ``peek-o''),
+\item \pico/ (pronounced ``$\Pi$-co'', never ``peek-o'') is
  a new dependently-typed
   $\lambda$-calculus, intended as an internal language suitable as a target
-  for compiling Dependent Haskell. \Pico/ allows full dependent types, has
+  for compiling Dependent Haskell. (\pref{cha:pico})
+\Pico/ allows full dependent types, has
   the $\ottkw{Type} : \ottkw{Type}$ axiom, and yet has no computation in types.
   Instead of allowing type equality to include, say, $\beta\eta$-equivalence
   (as in Coq), type equality in \pico/ is just $\alpha$-equivalence. A richer
@@ -112,14 +117,17 @@ Haskell.
   equivalence between two types. In this way, \pico/ is a direct descendent
   of System FC~\cite{systemfc,promotion,nokinds,closed-type-families,safe-coercions-jfp} and of the \emph{evidence} language of \citet{gundry-thesis}.
 
-  One of the innovations in \pico/ is separating the function spaces of
+  \pico/ supports unsaturated functions in types, while still allowing
+function application decomposition in its equivalence relation.\footnote{I am referring to the \ottkw{left}
+    and \ottkw{right} coercions of System FC here.}
+  This is achieved by my novel separation of the function spaces of
   type constants, which are generative and injective, from the ordinary,
-  unrestricted function space. Doing this allows \pico/ to support unsaturated
-  functions in types as well as to keep function application decomposition
-  in its equivalence relation.\footnote{I am referring to the \ottkw{left}
-    and \ottkw{right} coercions of System FC here.} Allowing unsaturated
+  unrestricted function space
+Allowing unsaturated
   functions in types is a key step forward \pico/ makes over Gundry's
-  \emph{evidence} language~\cite{gundry-thesis}.
+  \emph{evidence} language~\cite{gundry-thesis}; it means that \emph{all}
+expressions can be promoted to types, in contrast to Gundry's subset of terms
+shared with the language of types.
 
   In \pref{app:pico-proofs}, I prove the usual preservation and progress theorems
   for \pico/ as well as a type erasure theorem that relates the operational
@@ -127,9 +135,12 @@ Haskell.
   and \ottkw{fix}. In this way, I show that all the fancy types really can
   be erased at runtime.
 
-\item \pref{cha:type-inference} contains a technical presentation of the
+\item The novel algorithm \bake/ (\pref{cha:type-inference})
+performs type inference on the 
   Dependent Haskell surface language, providing typing rules and an
-  elaboration into \pico/ via a novel algorithm \bake/.
+  elaboration into \pico/.
+I am unaware of a similarly careful
+study of type inference in the context of dependent types.
   These typing rules contain an algorithmic
   specification of Dependent Haskell, detailing which programs should
   be accepted and which should be rejected. The type system is bidirectional
@@ -138,10 +149,12 @@ Haskell.
   I prove that the elaborated program is always
   well-typed in \pico/.
 
-\item \pref{cha:implementation} discusses implementation details, including
+\item A partial implementation of the type system in this dissertation
+is available in GHC~8.0. \pref{cha:implementation}
+discusses implementation details, including
 the current state of the implementation. It focuses
-on the released implementation of the system from \citet{nokinds}, which
-is part of GHC~8.0. Considerations about implementing full Dependent Haskell
+on the released implementation of the system from \citet{nokinds}.
+Considerations about implementing full Dependent Haskell
 are also included here.
 
 \item \pref{cha:related} puts this work in context by comparing it to
@@ -163,10 +176,11 @@ dependent types within the context of Haskell. What good is this work
 to someone uninterested in Haskell? I offer a few answers:
 \begin{itemize}
 \item In my experience, many people both in the academic community and beyond
-believe that a dependently typed language must be total in
-order to be type-safe. Though Dependent Haskell is not the first
-counterexample to this mistaken notion, the existence of this type-safe,
-dependently-typed, non-total language may help to dispel this myth.
+  believe that a dependently typed language must be total in order to be
+  type-safe. Though Dependent Haskell is not the first counterexample to this
+  mistaken notion (e.g., \cite{cardelli-type-in-type,cayenne}), the existence
+  of this type-safe, dependently-typed, non-total language may help to dispel
+  this myth.
 \item This is the first work, to my knowledge, to address type inference
 with |let|-generalization (of top-level constructs only,
 see \pref{sec:let-should-not-be-generalized}) and dependent types. With
@@ -174,8 +188,9 @@ the caveat that non-top-level |let| declarations are not generalized,
 I claim that the \bake/ algorithm I present in \pref{cha:type-inference}
 is conservative over today's Haskell and thus over Hindley-Milner.
 See \pref{sec:oi}.
-\item Even disregarding |let|-generalization, I am unaware of a careful
-study of type inference in the context of dependent types. My
+\item Even disregarding |let|-generalization, \bake/ is the first
+(to my knowledge)
+thorough treatment of type inference for dependent types. My
 bidirectional type inference algorithm infers whether or not a pattern
 match should be treated as a dependent or a traditional match, a feature
 that may wish to be ported to other languages.

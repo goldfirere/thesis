@@ -97,7 +97,7 @@ is bidirectional, as is \bake/.
 Alongside my work implementing dependent types in GHC, I have also continued
 the development of my \package{singletons} package~\cite{singletons,promoting-type-families}. This package has some
 enduring popularity: it has over 7,000 downloads, 31 separate users reporting
-bugs, is the primary subject of several blog posts\footnote{See
+bugs, is the primary subject of several blog posts\footnote{Here are a sampling:
 \begin{itemize}
 \item \scriptsize \url{https://www.schoolofhaskell.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell}
 \item \url{https://ocharles.org.uk/blog/posts/2014-02-25-dependent-types-and-plhaskell.html}
@@ -233,8 +233,12 @@ The proof-relevant nature of $=$ poses a challenge in transforming \pico/
 expressions into other well-typed \pico/ expressions. This challenge
 comes to a head in the unifier (\pref{sec:unification}) where, given
 $[[t1]]$ and $[[t2]]$, we must
-find a substitution $[[theta]]$ such that $[[t1 = t2]]$. However,
-with proof-relevant equality, such a specification is a bit wrong---instead,
+find a substitution $[[theta]]$ such that $[[t1 = t2]]$. Unification is
+used, for example, when matching class instances. However,
+with proof-relevant equality, such a specification is wrong; it would
+fail to find an instance |C (Maybe a)| when we seek an instance
+for |C (Maybe Int ||> refl Type)|.
+Instead,
 we want $[[theta]]$ and $[[g]]$ such that $[[S;G |-co g : t1[theta] [k1[theta] ]~[k2[theta] ] t2[theta] ]]$
 (for an appropriate $[[S]]$ and $[[G]]$). Experience has shown that
 constructing the $[[g]]$ is a real challenge.\footnote{When I attempted
@@ -255,11 +259,12 @@ $[[==]]$, as it will be the form of definitional equality in the
 implementation. (The relation is checked by the GHC function |eqType|, called
 whenever two types must be compared for equality.) We will define
 a new type system, \picod/, based on $[[==]]$. Here are several
-properties we require of $[[==]]$:
+properties we require of $[[==]]$, if we are to adapt the existing
+metatheory for \pico/:
 
 \begin{property}
 \label{prop:de-equiv}
-The $[[==]]$ must be an equivalence relation. That is,
+The $[[==]]$ relation must be an equivalence. That is,
 it must be reflexive, symmetric, and transitive.
 \end{property}
 \begin{property}
@@ -280,7 +285,7 @@ components of two types are $[[==]]$, then so are the two types.
 \end{property}
 \begin{property}
 \label{prop:de-proof-irrel}
-The $[[==]]$ must be proof-irrelevant. That is, $[[t == t |> g]]$
+The $[[==]]$ relation must be proof-irrelevant. That is, $[[t == t |> g]]$
 for all $[[t]]$.
 \end{property}
 \begin{property}
@@ -358,7 +363,7 @@ Corollary of \pref{prop:de-bigger-eq} of the definition of $[[==]]$.
 \end{proof}
 
 We also need a lemma where a result in \picod/ implies one in \pico/.
-This is a bit harder to state, as it requires an operation that translates
+This is harder to state, as it requires an operation that translates
 a term $[[t]]$ that is well-typed in \picod/ into one well-typed in \pico/.
 We write the latter as $[[^t^]]$. The translation operation $[[^\cdot^]]$
 is actually a deterministic operation on the typing derivation in \picod/; the conversion
@@ -589,7 +594,8 @@ considered.
 I claim, but do not prove, that this unification algorithm satisfies
 the properties necessary for type safety. See \pref{sec:match-properties}.
 For further discussion about the necessary properties of this algorithm,
-see |Note [Specification of Unification]| in |compiler/types/Unify.hs|
+see \texttt{Note [Specification of Unification]} in
+\texttt{compiler/types/Unify.hs}
 in the GHC source code repository at \url{https://github.com/ghc/ghc}.
 
 \section{Parsing |*|}
