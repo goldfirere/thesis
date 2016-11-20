@@ -1,6 +1,6 @@
 %% -*- mode: LaTeX -*-
 
-\documentclass[12pt,oneside]{book}
+\documentclass[12pt,oneside,draft]{book}
 
 %include rae.fmt
 
@@ -54,6 +54,8 @@
 %
 
 \appendix
+\tolerance 9999
+\emergencystretch 3em
 
 \setlist[enumerate]{itemsep=0pt}
 \setlist[itemize]{itemsep=0pt}

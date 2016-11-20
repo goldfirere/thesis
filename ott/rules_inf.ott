@@ -123,8 +123,9 @@ S;P |->ty \ (a :: _s). _t : k ~> t0 -| O,O2'
 S;P |->aq _aqvar : k1 ~> b:k1'; x.t1 -| O1
 S;P,O0,O1,b:Rel k1' *|->ty _t : k2 ~> t -| O2
 O2 +> b:Rel k1' ~> O2';X
+O' = O0,O1,O2'
 ---------------------------------- :: Lam
-S;P |->ty \ _aqvar . _t : k ~> (\ a:Rel k1. t[X][t1[a/x]/b]) |> sym g -| O0,O1,O2'
+S;P |->ty \ _aqvar . _t : k ~> (\ a:Rel k1. t[X][t1[a/x]/b]) |> sym g -| O'
 
 |->fun k; Irrel ~> g; UPI; a; Irrel; k1; k2 -| O0
 a /# k2
@@ -395,8 +396,9 @@ S;P |->scrut _alts; MPI D. H{} ts ~> <MPI D. H{} ts>; D; H; ts -| empty
 
 S |-tc H : as :Irrel ks; D2; H'
 fresh aus // fresh cu
+O = aus :Irrel forall{}.ks[aus_{}/as], cu : forall{}. k [Type{}]~[Type{}] H'{} aus_{}
 ------------------------------ :: Cast
-S;P |->scrut (H xs -> _t; _alts); k ~> cu_{}; empty; H'; aus_{} -| aus :Irrel forall{}.ks[aus_{}/as], cu : forall{}. k [Type{}]~[Type{}] H'{} aus_{}
+S;P |->scrut (H xs -> _t; _alts); k ~> cu_{}; empty; H'; aus_{} -| O
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  topInstantiate  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

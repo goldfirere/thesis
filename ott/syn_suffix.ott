@@ -372,3 +372,5 @@ IUnifCtx_One <= IUnifCtx_Gen
 IUnifCtx_KsBind <= IUnifCtx_Gen
 
 args_Types <= args_Many
+
+ICtx_UnifBinders <= ICtx_Subst

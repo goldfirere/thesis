@@ -107,7 +107,7 @@ Haskell.
 
 \item \pico/ (pronounced ``$\Pi$-co'', never ``peek-o'') is
  a new dependently-typed
-  $\lambda$-calculus, intended as an internal language suitable as a target
+  $\lambda$-cal\-cu\-lus, intended as an internal language suitable as a target
   for compiling Dependent Haskell. (\pref{cha:pico})
 \Pico/ allows full dependent types, has
   the $\ottkw{Type} : \ottkw{Type}$ axiom, and yet has no computation in types.
