@@ -2320,7 +2320,14 @@ $[[t = \ (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &&xx |> c']]$.
 We know $[[S;G |-co c : #3{} [&Int{}]~[&Int{}] &&yx]]$ and
 $[[S;G,&&xx:Rel &Int{} |-ty t : UPI (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &Bool{}]]$.
 Yet there seems to be no way to construct a proof of
-$[[t[#3{}/&&xx] [UPI (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &Bool{}]~[UPI (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &Bool{}] t[&&yx/&&xx] ]]$.
+$[[t[#3{}/&&xx] [UPI (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &Bool{}]~[UPI (c' : &Int{} [Type{}]~[Type{}] &Bool{}). &Bool{}] t[&&yx/&&xx] ]]$.\footnote{It
+is tempting to try to prove this by using the \rul{Co\_CLam} form and then
+coherence forms stitched together with transitivity; after all, the
+$[[c ~# g]]$ restriction in \rul{Co\_CLam} does not affect the types
+in a coherence coercion. However, the $[[h]]$ coercion in the coherence
+coercion ($[[h]]$ relates the kinds of the types mentioned in the coherence
+coercion)
+must still be devoid of $[[c]]$, and that is where this plan falls apart.}
 
 Instead of proving congruence, I am left proving almost-congruence, as follows:
 
@@ -2352,7 +2359,6 @@ such a property and then proving this claim seems not to pay its way.}
 to get out a smaller one---in some sense, these are the inverses of the
 congruence forms. We will approach these in batches.
 
-\pagebreak %% TODO: RAE: Check me.
 \subsubsection{The \ottkw{argk} forms}
 \label{sec:pico-argk-coercion}
 
@@ -2863,7 +2869,9 @@ with \rul{S\_KPush}. The tricky bit is all in proving the correctness of
 $[[build_kpush_co]]$; see \pref{sec:pico-kpush}. Otherwise, the proof of preservation
 is as expected.
 
-On the other hand, progress is a challenge. We proceed by proving consistency
+On the other hand, progress is a challenge, as it has been
+in previous proofs of type safety of System FC.
+We proceed, as before, by proving consistency
 and then using that to prove progress.
 
 \begin{lemma*}[Consistency {[\pref{lem:consistency}]}]
@@ -3139,14 +3147,15 @@ cited above.
 \subsubsection{The proof of consistency by \citet{nokinds} is wrong}
 \label{sec:down-with-nokinds}
 
-The type system presented by \citet{nokinds} is very similar to \pico/, although
+The type system presented in my prior work~\cite{nokinds}
+is very similar to \pico/, although
 without dependency. Its treatment of \rul{Co\_PiCo} is subtly different,
-however. Although there are numerous changes in how their syntax is structured,
-Weirich et al.~effectively loosen the definition of $[[c ~# g]]$ to allow
+however. Although there are numerous changes in how the syntax is structured,
+that work effectively loosens the definition of $[[c ~# g]]$ to allow
 $[[c]]$ anywhere in a coherence coercion ($[[t1 ~={h} t2]]$). In contrast,
 \pico/ allows $[[c]]$ only in $[[t1]]$ or $[[t2]]$, but not in $[[h]]$.
 When armed with the \ottkw{kind} coercion (identical in \pico/ to the version
-by Weirich et al.), this allows us to violate a key lemma used to prove
+in the previous work), this allows us to violate a key lemma used to prove
 consistency. Here is the counterexample coercion, translated into \pico/:
 
 \[
@@ -3163,12 +3172,12 @@ it all together yields this fact:
 [[S;empty |-co g : (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{}) [Type{}]~[Type{}] (UPI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})]]
 \]
 The problem is that we can see that no rewrite relation will join the two
-types related by $[[g]]$. Because Weirich et al.'s system permits $[[g]]$,
+types related by $[[g]]$. Because the prior work's type system permits $[[g]]$,
 its consistency proof must be wrong. (\Pico/ rules out $[[g]]$ for using
 $[[c]]$ in an illegal spot---the kind coercion in the subscript for $[[~=]]$.)
-Note that the language by Weirich et al.~might indeed be consistent (I have
-no counterexample to consistency), but this
-fact is surely not proved via the use of a rewrite relation in the way presented
+Note that the language in that work might indeed be consistent (I have
+no counterexample to consistency), but its consistency
+is surely not proved via the use of a rewrite relation in the way presented
 in that paper.
 
 \subsubsection{A one-variable version of \rul{Co\_PiTy} simplifies the consistency proof}
@@ -3494,51 +3503,6 @@ techniques to implement recursion.
 Given that \pico/ incorporates general recursion via \ottkw{fix}, adding
 such constructs should not imperil type safety.
 
-\subsection{Splitting type applications}
-
-Haskell type families permit an unusual operation I will call splitting:
-
-\begin{code}
-type family Split x where
-  Split (a b)  =  !Just !(a, b)
-  Split other  =  !Nothing
-\end{code}
-
-The |Split| function, inferred to have Haskell kind
-|forall k1 k2. k2 -> Maybe (k1 -> k2, k1)|, can detect a type application.
-It will return |Just| if it sees |IO Int| but |Nothing| if it sees
-|Bool|. This function cannot be encoded into \pico/ as it stands.\footnote{Other type families, as long as their left-hand sides do not repeat variables, can be desugared into \pico/, by adapting work by \citet{augustsson-compiling-pattern-matching}.} We instead must add a new primitive, \ottkw{split}.
-
-At its most basic, a \ottkw{split} expression would look like this:
-$\ottkw{split}\,[[t]]\,\ottkw{into}\,[[s1]]\,\ottkw{or}\,[[s2]]$.
-The idea is that if $[[t]]$ is a type application $[[t1 t2]]$, then the
- \ottkw{split} expression reduces to $[[s1]]$ (applied to some details of $[[t]]$);
-otherwise, the expression reduces to $[[s2]]$. The result kind of $[[t1]]$
-is known: it is the type of $[[t]]$. However, the argument kind of $[[t1]]$
-is not apparent and thus must be passed to $[[s1]]$.
-The type $[[s1]]$ would thus be 
-\[
-[[UPI a1 :Irrel Type{}, b1 :Rel (MPI x :Rel a1. k), b2 :Rel a1, c : t [k]~[k] b1 b2. k2]]
-\] where $[[k]]$ is the kind of the scrutinee $[[t]]$ and $[[k2]]$ is
-the result kind. Note the $[[MPI]]$ in the type of $[[b1]]$, meaning that
-we can break apart only matchable applications. This is a good thing, because
-we would not want to be able to separate arbitrary functions from their
-arguments to inspect one of the other.
-In this formulation, the kind of $[[s2]]$ would just be $[[k2]]$.
-
-
-Unfortunately, this ``most basic'' version does not quite cut it. The problem
-is that the scrutinee $[[t]]$ might also be $[[t1 {t2}]]$ or $[[t1 g2]]$,
-and thus the \ottkw{split} form would really need four branches (including
-one for the default, atomic case). Each case would need its own rule in the
-operational semantics. We would also need a push rule in case a coercion
-is in the way of examining a type application. The parallel rewrite relation
-would need to be extended as well, with analogues to all the new rules
-in the operational semantics. In the end, it seems \ottkw{split} is not
-paying its way, and so I have kept it out of this presentation. Despite
-this omission, I do believe it would not be a technical challenge to add,
-should this feature prove necessary.
-
 \subsection{A primitive equality check}
 \label{sec:equals-ctf}
 
@@ -3628,9 +3592,56 @@ assumes termination in order to get the consistency proof to go through.
 As mentioned above, it is possible that recent work in this area by \citet{kahrs-trss-are-un} gives us a way to include $[[equals]]$ without losing consistency,
 but I have yet to formally connect my work to theirs.
 
-\subsection{Representation polymorphism}
+\subsection{Splitting type applications}
 
-In version 8, GHC supports \emph{representation polymorphism}~\cite{overabundance-of-equalities}.\footnote{Representation polymorphism is also known as levity polymorphism; the name was changed as the concept became more general.} The idea is embodied in the following mutually recursive definitions:
+Haskell type families permit an unusual operation I will call splitting:
+
+\begin{code}
+type family Split x where
+  Split (a b)  =  !Just !(a, b)
+  Split other  =  !Nothing
+\end{code}
+
+The |Split| function, inferred to have Haskell kind
+|forall k1 k2. k2 -> Maybe (k1 -> k2, k1)|, can detect a type application.
+It will return |Just| if it sees |IO Int| but |Nothing| if it sees
+|Bool|. This function cannot be encoded into \pico/ as it stands.\footnote{Other type families, as long as their left-hand sides do not repeat variables, can be desugared into \pico/, by adapting work by \citet{augustsson-compiling-pattern-matching}.} We instead must add a new primitive, \ottkw{split}.
+
+At its most basic, a \ottkw{split} expression would look like this:
+$\ottkw{split}\,[[t]]\,\ottkw{into}\,[[s1]]\,\ottkw{or}\,[[s2]]$.
+The idea is that if $[[t]]$ is a type application $[[t1 t2]]$, then the
+ \ottkw{split} expression reduces to $[[s1]]$ (applied to some details of $[[t]]$);
+otherwise, the expression reduces to $[[s2]]$. The result kind of $[[t1]]$
+is known: it is the type of $[[t]]$. However, the argument kind of $[[t1]]$
+is not apparent and thus must be passed to $[[s1]]$.
+The type $[[s1]]$ would thus be 
+\[
+[[UPI a1 :Irrel Type{}, b1 :Rel (MPI x :Rel a1. k), b2 :Rel a1, c : t [k]~[k] b1 b2. k2]]
+\] where $[[k]]$ is the kind of the scrutinee $[[t]]$ and $[[k2]]$ is
+the result kind. Note the $[[MPI]]$ in the type of $[[b1]]$, meaning that
+we can break apart only matchable applications. This is a good thing, because
+we would not want to be able to separate arbitrary functions from their
+arguments to inspect one of the other.
+In this formulation, the kind of $[[s2]]$ would just be $[[k2]]$.
+
+
+Unfortunately, this ``most basic'' version does not quite cut it. The problem
+is that the scrutinee $[[t]]$ might also be $[[t1 {t2}]]$ or $[[t1 g2]]$,
+and thus the \ottkw{split} form would really need four branches (including
+one for the default, atomic case). Each case would need its own rule in the
+operational semantics. We would also need a push rule in case a coercion
+is in the way of examining a type application. The parallel rewrite relation
+would need to be extended as well, with analogues to all the new rules
+in the operational semantics. In the end, it seems \ottkw{split} is not
+paying its way, and so I have kept it out of this presentation. Despite
+this omission, I do believe it would not be a technical challenge to add,
+should this feature prove necessary.
+
+\subsection{Levity polymorphism}
+
+In version 8, GHC supports \emph{levity
+  polymorphism}~\cite{levity-polymorphism}. The idea is embodied in the
+following mutually recursive definitions:
 
 %{
 %if style == newcode
@@ -3641,41 +3652,45 @@ In version 8, GHC supports \emph{representation polymorphism}~\cite{overabundanc
 %format Type0 = Type
 %endif
 \begin{code}
-data RuntimeRep = PtrRepLifted | PtrRepUnlifted | IntRep | ...
+data UnaryRep = PtrRep | IntRep | ...
+type RuntimeRep = [UnaryRep]
 constant TYPE :: RuntimeRep -> Type  -- primitive constant
-type Type0 = TYPE !PtrRepLifted
+type Type0 = TYPE !PtrRep
 \end{code}
 %}
 
 The idea here is that instead of having one sort, |Type|, the language
 would have a family of sorts, all headed by |TYPE| and indexed by an element
 of type |RuntimeRep|. At runtime, each sort corresponds to a different
-representation: values of a type of kind |TYPE !PtrRepLifted| are represented
+representation: values of a type of kind |TYPE ![PtrRep]| are represented
 by pointers to potentially-thunked data, whereas values of a type of kind
-|TYPE !IntRep| are represented directly as machine integers.
+|TYPE ![IntRep]| are represented directly as machine integers.
+The use of a list to index |TYPE| is to support GHC's \emph{unboxed tuples},
+which group together values that would be passed in several registers;
+see a more detailed description in my concurrent work~\cite{levity-polymorphism}.
 
-As described in my prior work (and too much of a diversion here to repeat in
+As described in my concurrent work (and too much of a diversion here to repeat in
 detail),
-abstracting over runtime representations is quite restricted~\cite{overabundance-of-equalities}, lest the
+abstracting over runtime representations is quite restricted, lest the
 code generator be hamstrung when trying to compile code involving an unknown
 runtime representation.
 
-Representation polymorphism is useful in Haskell because a number of constructs
+Levity polymorphism is useful in Haskell because a number of constructs
 are truly flexible in which representation they work over. Two telling examples
 are |error| and |(->)|. Regardless of the representation of the result of a
 function, |error| is always well-typed, and |(->)| works to connect types
 of varying representations (like |Int# -> Bool|, where |Int#| has kind
-|TYPE !IntRep| and |Bool| has kind |Type|---that is, |TYPE !PtrRepLifted|.)
+|TYPE ![IntRep]| and |Bool| has kind |Type|---that is, |TYPE ![PtrRep]|.)
 
-Because representation polymorphism simply amounts to adding more sorts
+Because levity polymorphism simply amounts to adding more sorts
 to a language, it would seem not to run into trouble with type safety. And
-I indeed believe this is true, that representation polymorphism does not threaten
+I indeed believe this is true, that levity polymorphism does not threaten
 the type safety proof. However, it is very syntactically painful to add to
 the formalism, essentially requiring annotating every $\Pi$ with the sort
 of its binder. This annotation becomes necessary for precisely the same
 reasons that we must include kinds in the types of a proposition (\pref{sec:kinds-in-props}): we cannot prove completeness of the rewrite relation (\pref{sec:completeness-rewrite}) without it.
 
-I thus leave adding representation polymorphism as an exercise to the reader;
+I thus leave adding levity polymorphism as an exercise to the reader;
 in my attempt to add this feature, I encountered no real challenge other than
 fiddliness and lots of syntactic noise.
 

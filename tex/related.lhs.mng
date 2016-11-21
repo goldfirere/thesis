@@ -177,7 +177,7 @@ better.
 
 All Idris top-level definitions must be accompanied with type annotations.
 Even local definitions must have type annotations, sometimes requiring 
-scoped type variables to provide. One might say, then, that Idris does
+scoped type variables. One might say, then, that Idris does
 no type inference, only type checking. For this reason, studying the
 type inference properties of the language might be less compelling.
 Indeed, Brady claims~\cite[Section 6]{idris} that Idris ``avoid[s] such
@@ -299,7 +299,7 @@ the call to |safeHead|. Cayenne would have no way of erasing this parameter.
 \subsection{Coercion assumptions}
 
 Cayenne has no support for equality assumptions. This means that it does
-not support GADTs (\pref{sec:gadts} or dependent pattern matching (\pref{sec:dependent-pattern-match}). Lacking these features significantly simplifies the
+not support GADTs (\pref{sec:gadts}) or dependent pattern matching (\pref{sec:dependent-pattern-match}). Lacking these features significantly simplifies the
 design of the language and implementation, meaning that many of the 
 type inference issues (specifically, untouchability of type variables)
 described by \citet{outsidein} are avoided. The lack of equality assumptions
@@ -563,7 +563,7 @@ It would be interesting future work to see how using relevance in this way
 might affect Dependent Haskell.
 
 Despite having support for these irrelevance annotations, it seems that Agda
-does not have any principles behind its type erasure, instead depending on
+does not have a well-articulated type erasure property, instead depending on
 the extraction mechanism used to run Agda code.
 
 \paragraph{Coq}

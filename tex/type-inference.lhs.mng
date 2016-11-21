@@ -91,7 +91,7 @@ are lists of possibly-dependent unification variables,\footnote{Depending on
 variables: types $[[au]]$ and coercions $[[cu]]$. The solver finds concrete
 types to substitute in for unification variables $[[au]]$ and concrete
 coercions to substitute in for unification variables $[[cu]]$. Implication
-constraints, a key innovation of \citet{outsidein}, are handled by classifying
+constraints~\cite{constraint-based-gadt,outsidein} are handled by classifying
 unification variables by quantified kinds and propositions. See
 \pref{sec:quantified-kinds-and-props}.
 
@@ -135,7 +135,7 @@ the body of a declaration and its type are generalized over $[[D]]$.
 
 Writing a type inference algorithm for a dependently typed language presents
 a challenge in that the type of an expression can be very intricate. Yet
-we still wish to infer (simple) types for unannotated expressions. To resolve
+we still wish to infer types for unannotated expressions. To resolve
 this tension, \bake/ adheres to the following:
 \theoremstyle{plain}
 \newtheorem*{guidingprinciple}{Guiding Principle}
@@ -145,7 +145,7 @@ In absence of other information, infer a simple type.
 \begin{guidingprinciple}
 Never make a guess.
 \end{guidingprinciple}
-For example, consider inferring a type for
+\noindent For example, consider inferring a type for
 \begin{code}
 compose f g = \x -> f (g x)
 \end{code}
@@ -570,7 +570,7 @@ instantiate the polymorphic |isNothing| with a unification variable $[[bu1]]$,
 so that the type of |isNothing| is |Maybe bu1 -> Bool|. We can now emit two equality
 constraints:
 \begin{itemize}
-\item The argument type to |isNothing| (|Maybe bu1|) must match the type of |n| (|[Int]|).
+\item The argument type to |isNothing| (|Maybe bu1|) must match the type of |n| (|Maybe Int|).
 \item The return
 type of the |case| expression ($[[bu0]]$) is the return type of |isNothing| (|Bool|).
 \end{itemize}
@@ -684,7 +684,8 @@ idea to bidirectional type-checking is that, sometimes, the type inference
 algorithm knows what type to look for. When this happens, the algorithm
 should take advantage of this knowledge.
 
-Bidirectional type-checking works by defining two separate algorithms: a type
+Bidirectional type-checking works by defining two mutually
+recursive algorithms: a type
 synthesis algorithm and a type checking algorithm. The former is used when
 we have no information about the type of an expression, and the latter is
 used when we do indeed know an expression's expected type. The algorithms
@@ -2187,7 +2188,7 @@ pattern matching. \bake/ chooses between these possibilities using
 the difference between checking and synthesis modes.
 
 \item While Gundry uses two separate judgments in synthesis mode,
-he uses only one checking judgment. The need for two judgments here
+he uses only one checking judgment. The need for two checking judgments here
 is an innovation that derives from the need for principal types, as
 explored in my prior work~\cite{visible-type-application}.
 

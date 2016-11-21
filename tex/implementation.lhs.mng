@@ -207,9 +207,9 @@ we will see Dependent Haskell released in early 2018. More likely, it will be
 delayed until 2019.
 
 During the process of writing this dissertation, I worked on merging my
-implementation of \ext{TypeInType} into the GHC main development stream.
-This process was \emph{much} harder than I anticipated, taking up two
-more nearly full-time months than expected. I am thus leery of over-promising
+implementation of \ext{TypeInType} into the GHC main development stream. This
+process was \emph{much} harder than I anticipated, taking up two more months
+than expected, working nearly full-time. I am thus leery of over-promising
 about the rest of the implementation task embodied in this dissertation.
 However, my success in emulating so many of the features in Dependent Haskell
 in \package{singletons} gives me hope that the worst of the implementation
@@ -304,7 +304,8 @@ that we can transform the typing rules for \pico/ to use $[[==]]$ where
 they currently use $=$. This argument relies on these first four properties.
 
 \pref{prop:de-proof-irrel} means that our new definition of $[[==]]$ indeed
-simplifies the implementation. After all, seeking a proof-irrelevant equality
+simplifies the implementation. After all, seeking a proof-irrelevant 
+(that is, coherent) equality
 is what started this whole line of inquiry. However, despite \pref{prop:de-proof-irrel} masquerading as only a \emph{desired} property, it turns out that with
 my proof technique, this is a \emph{necessary} property. Indeed, it seems
 that once $[[==]]$ is any relation strictly larger than $=$, it must be
