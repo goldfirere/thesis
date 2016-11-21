@@ -46,6 +46,9 @@ S |-tc H : D1 ; D2 ; H' :: :: Tc :: 'Tc_'
   {{ com \begin{minipage}{.7\textwidth}Type constant kinds, with universals [[D1]],\\ existentials [[D2]], and result [[H']]\end{minipage} }}
 by
 
+--------------- :: Type
+S |-tc Type : empty; empty; Type
+
 T : (as:ks) \in S
 ------------ :: ADT
 S |-tc T : empty; as:Rel ks; Type
@@ -53,9 +56,6 @@ S |-tc T : empty; as:Rel ks; Type
 K : (D; T) \in S  // T : (as:ks) \in S
 ----------------------------- :: DataCon
 S |-tc K : as:Irrel ks; D; T
-
---------------- :: Type
-S |-tc Type : empty; empty; Type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Types  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

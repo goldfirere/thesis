@@ -169,6 +169,17 @@ is included as a primer to these features for readers less experienced in
 Haskell, and also as a counterpoint to the features discussed as parts of
 Dependent Haskell.
 
+This dissertation is most closely based upon my prior work with
+Weirich and Hsu~\cite{nokinds}. That paper, focusing solely on
+the internal language, merges the type and
+kind languages but does not incorporate dependent types. This current
+work---particularly \pref{cha:type-inference}---also builds on a more recent paper with Weirich and Ahmed~\cite{visible-type-application}, which develops the theory around type inference where
+some arguments are visible (and must be supplied) and others are
+invisible (and may be omitted). Despite this background, almost
+the entirety of this dissertation is new work; none of my previous
+published work has dealt directly with dependent types in the way
+this dissertation does.
+
 \section{Implications beyond Haskell}
 
 This dissertation necessarily focuses quite narrowly on discussing

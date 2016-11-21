@@ -350,7 +350,7 @@ It is straightforward to write an interpreter for the simply typed
 $\lambda$-calculus (STLC) in Haskell. However, how can we be sure that our
 interpreter is written correctly? Using some features of dependent
 types---notably, generalized algebraic datatypes, or GADTs---we can
-incorporate the STLC's type discipline into our interpreter. Using the extra
+incorporate the STLC's type discipline into our interpreter.\footnote{The skeleton of this example---using GADTs to verify the implementation of the STLC---is not novel, but I am unaware of a canonical reference for it.} Using the extra
 features in Dependent Haskell, we can then write both a big-step semantics and
 a small-step semantics and have GHC check that they correspond.
 
@@ -397,8 +397,7 @@ it records the structure of our expression, \emph{and} it proves a property,
 namely that the expression is well-typed in context |ctx| with type |ty|.
 Indeed, with some practice, we can read off the typing rules for the simply
 typed $\lambda$-calculus direct from |Expr|'s definition. In this way, it is
-impossible to create an ill-typed |Expr| (ignoring the possibility of
-|undefined|).
+impossible to create an ill-typed |Expr|.
 
 \subsubsection{Big-step evaluator}
 
@@ -1558,7 +1557,7 @@ today, including types for definitions with no top-level annotation. Agda and
 Idris require a top-level type annotation for every function; Coq uses
 inference where possible for top-level definitions but is sometimes
 unpredictable. Furthermore, Haskellers expect the type inference engine
-to work hard on their behalf and should rarely resort to manual proving
+to work hard on their behalf; they wish to rarely rely on manual proving
 techniques.
 
 The requirement of backward compatibility ``keeps me honest'' in my design of

@@ -297,7 +297,7 @@ Dependent Haskell.
 
 \subsection{Constraint kinds}
 
-\citet{promotion} introduce one final extension to Haskell: constraint kinds.
+Bolingbroke introduced \emph{constraint kinds} to GHC.\footnote{\url{http://blog.omega-prime.co.uk/?p=127}}
 Haskell allows constraints to be given on types. For example, the type
 |Show a => a -> String| classifies a function that takes one argument, of type
 |a|. The |Show a =>| constraint means that |a| is required to be a member

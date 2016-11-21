@@ -35,7 +35,8 @@ class Applicative f => Monad f where
 \chapter{\Pico/: The intermediate language}
 \label{cha:pico}
 
-This chapter presents \pico/, the internal language Dependent Haskell compiles
+This chapter presents \pico/, the internal language that
+Dependent Haskell compiles
 into. I have proved type safety (via the usual preservation
 and progress theorems, \pref{thm:preservation} and \pref{thm:progress})
 and type erasure (\pref{thm:type-erasure} and \pref{thm:expr-eval}).
@@ -229,7 +230,7 @@ type family IntLike x where
   IntLike _        = !False
 \end{code}
 This ability for a function to inspect the choice of a type---and not a code
-for a type---is unique to Haskell, as far as I am aware. With the type families
+for a type---is unique among production languages to Haskell, as far as I am aware. With the type families
 in today's Haskell, discerning between types is done by simple pattern matching.
 However, if we compile type families to \ottkw{case} statements, we need a way
 to deal with this construct, even though |Type| is not an algebraic datatype.
@@ -315,7 +316,8 @@ different directions since the advent of FC. Historically, published
 versions of the language have greatly simplified certain details. 
 No previously published treatment of FC has included support for recursion,
 either through \ottkw{letrec} or \ottkw{fix}. In contrast, the implemented
-version of FC makes certain choices for efficiency; for example, applied
+version of FC (also called GHC Core)
+ makes certain choices for efficiency; for example, applied
 type constructors, such as |Either Int Bool|, have a different representation
 than do applied type variables, such as |a Int Bool|. The former is stored
 as the head constructor with a list of arguments, and the latter is stored
@@ -558,6 +560,58 @@ Similarly to the redundancy of application forms, tracking relevant types
 as compared to irrelevant types is also redundant with the kind of the
 function type; an implementation would not need to store this distinction.
 
+\begin{figure}[t!]
+\begin{mdframed}
+Coercions define the equivalence relation $[[~]]$ that is used
+in \pico/'s analogue of a traditional conversion rule, as
+presented in \pref{sec:conv-rule}. Here is a brief introduction
+to coercions. The full definition of coercion formation rules
+appears in \pref{app:rules-co}. The rules
+are explicated in \pref{sec:pico-coercions}.
+\begin{itemize}
+\item Coercions are heterogeneous (\pref{sec:pico-kind-coercion}). If a coercion $[[g]]$ proves
+$[[t1 (k1)~(k2) t2]]$, then we know that $[[t1]]$ is convertible
+with $[[t2]]$ and also that $[[k1]]$ is convertible with $[[k2]]$.
+The form $[[kind g]]$ extracts the kind equality from the type
+equality. I often elide the kinds when writing propositions, however.
+\item Equality may be assumed via a $\lambda$-abstraction over
+a coercion variable $[[c]]$, proving any arbitrary equality
+proposition. (\pref{sec:pico-hypothetical})
+\item Equality is coherent (\pref{sec:coherence}),
+meaning that a coercion relates any
+two types that are identical except for the coercions and casts
+within them. The coercion form $[[t1 ~={h} t2]]$ proves that
+$[[t1 [k1]~[k2] t2]]$ and is valid whenever $[[t1]]$ and $[[t2]]$
+are identical, ignoring internal coercions.
+(The coercion $[[h]]$ relates the types' kinds.)
+\item Equality is an equivalence (\pref{sec:equivalence-coercions}): $[[<t>]]$ is
+reflexive coercion over $[[t]]$; $[[sym g]]$ represents symmetry;
+and $[[g1 ;; g2]]$ represents transitivity.
+\item Equality is (almost) congruent (\pref{sec:congruence-coercions}),
+meaning that if we have
+a proof of $[[t1 [k1]~[k2] t2]]$, then we can derive a proof
+relating larger types containing $[[t1]]$ and $[[t2]]$ but are
+otherwise identical. The ``almost'' qualifier is due to a technical
+restriction that can be ignored on a first reading.
+\item Coercions can be decomposed (\pref{sec:pico-decomposition}). For example, if $[[g]]$ proves
+$[[(PI a1:rel k1. t1) [Type{}]~[Type{}] (PI a2:rel k2. t2)]]$,
+then $[[argk g]]$ proves $[[k1 [Type{}]~[Type{}] k2]]$. Other
+coercion forms decompose other type forms.
+\item The $[[step t]]$ coercion relates $[[t]]$ to its small-step
+reduct. (\pref{sec:reduction-coercion})
+\end{itemize}
+\end{mdframed}
+\caption{A brief introduction to coercions}
+\label{fig:coercion-primer}
+\end{figure}
+
+Coercions are the most distinctive and most intricate part of \pico/.
+Because the formation rules for coercions necessarily refer to many
+other parts of the language, a thorough treatment of coercions is
+delayed until the other constructs are covered. However, it may be
+helpful to readers unfamiliar with System FC to learn a few quick facts
+about coercions: see \pref{fig:coercion-primer}.
+
 As you will see in \pref{fig:pico-notation}, my presentation of \pico/ uses
 several abbreviations and elisions in its typesetting. In particular, I
 frequently write types like $[[PI D. t]]$ to represents a nested $[[PI]]$-type,
@@ -611,7 +665,7 @@ Note that this rule requires $[[a:Rel k \in G]]$, with a relevant binder.
 Thus, only variables that are considered relevant---that is, variables that
 will remain at runtime---can be used in an expression. As described briefly
 above, when we ``go up a level'', we reset the context, making all variables
-marked as relevant. This resetting is done by the $[[Rel(G)]]$ operation,
+relevant. This resetting is done by the $[[Rel(G)]]$ operation,
 defined recursively on the structure of $[[G]]$ as follows:
 \begin{align*}
 [[Rel(empty) &= empty]] \\
@@ -744,7 +798,7 @@ judgment:\\[\baselineskip]
 
 The judgment $[[S |-tc H : D1;D2;H']]$
 retrieves three pieces of data about a type constant
-$[[H]]$: its universals, its existentials, and the root of the result type.
+$[[H]]$: its universals, its existentials, and the head of the result type.
 This judgment is best understood in concert with the typing rule that handles
 type constants, which also uses the typing judgment on vectors---ordered
 lists of arguments---presented
@@ -1006,8 +1060,13 @@ equality between the scrutinee ($[[&&vx]]$, in this case) and the applied
 data constructor that introduces the case-branch. This coercion variable
 is bound in all matches, meaning that all pattern matching in \pico/
 is dependent pattern matching.\footnote{Contrast to \citet{gundry-thesis},
-which has two separate constructs, \ottkw{case} and \ottkw{dcase}, only
-the latter of which does dependent matching.}
+who use two separate constructs, \ottkw{case} and \ottkw{dcase}, only
+the latter of which does dependent matching. This separation is necessary
+in his language because not all expressions can be used in types and thus
+in dependent pattern matching. In particular, Gundry prevents
+$\lambda$-expressions in types, a limitation I have avoided by maintaining
+the distinction between matchable and unmatchable $[[PI]]$-types.}
+
 
 The behavior of \ottkw{case} can also be viewed through its operational
 semantics, as captured in the following rule, excerpted from
@@ -1418,9 +1477,10 @@ it fixes
 the length of $[[D4]]$ (and, hence, $[[D3]]$) and it also forces any
 renaming of bound variables necessary to line up the telescopes $[[D']]$
 and $[[D4]]$. Keeping the names of the bound variables consistent between
-these telescopes simplifies this rule. Note that, in the event that the
+these telescopes simplifies this rule. We see that in the event that the
 scrutinee is a fully-saturated datatype or data constructor,
-$[[D4 = D']] = [[empty]]$ and $[[D3 = D2[ss/dom(D1)] ]]$.
+$[[D4 = D']] = [[empty]]$ and $[[D3 = D2[ss/dom(D1)] ]]$; in this common
+case, then, unification is unnecessary.
 
 The next premise uses a one-way
 unification algorithm to make sure that the bound
@@ -1519,7 +1579,7 @@ data X where
   MkX :: a -> a -> X
     -- NB: |a| is existential; no universals here
 
-type family UnX x :: Bool where
+type family UnX (x :: Bool !-> X) :: Bool where
   UnX (!MkX y) = y
 \end{code}
 
@@ -1648,7 +1708,7 @@ could hardly be simpler.
 
 \subsubsection{Absurdity}
 
-We saw in |safeHead| example (\pref{sec:pico-example-absurd}) the need
+We saw in the |safeHead| example (\pref{sec:pico-example-absurd}) the need
 for absurdity elimination via the \ottkw{absurd} operator. Here is the
 typing rule:
 \[
@@ -1664,6 +1724,10 @@ $[[Rel]]$.
 As explained with the example, absurdity elimination is sometimes
 needed in the
 body of case alternatives that can never be reached.
+In a language that admits $[[undefined]]$, the \ottkw{absurd}
+construct is not strictly necessary. Yet by including it, we can
+definitively mark those alternatives that are unreachable.
+Simply returning $[[undefined]]$ would not be as informative.
 
 \section{Operational semantics}
 \label{sec:pico-op-sem}
@@ -1736,7 +1800,7 @@ Our definition of values also gives us this convenient property:
 If $[[S;G |-ty v : k]]$, then $[[k]]$ is a value.
 \end{lemma*}
 
-During compilation, we wish to erase irrelevant components of an expression
+During compilation, we erase irrelevant components of an expression
 completely. This includes irrelevant abstractions. Thus, the erasure operation,
 written $[[ ||.|| ]]$ and further explored in \pref{sec:type-erasure},
 includes this equation,
@@ -1748,12 +1812,18 @@ Yet we must make sure to maintain the following lemma, referring to the
 definition of values on erased expressions:
 
 \begin{lemma*}[Expression redexes {[\pref{lem:expr-redex}]}]
-If $[[||t||]]$ is not an expression value, then $[[t]]$ is not a type
+If $[[||t||]]$ is not a value, then $[[t]]$ is not a 
 value.
 \end{lemma*}
 
-If we erase irrelevant abstractions but call all irrelevant abstractions
-type values, then this lemma becomes false. We thus have a recursive
+If we have the equation above erasing irrelevant abstractions to
+the erasure of their bodies but call \emph{all} irrelevant abstractions
+values (that is, make $[[\ a:Irrel k.t]]$ a value for all $[[t]]$),
+then this lemma becomes false. To wit, suppose $[[t]]$ is not a value.
+Then $[[ ||\a:Irrel k.t||]]$ would not be a value, but
+$[[\a:Irrel k.t]]$ would be.
+Thus, in order to maintain this lemma,
+we have a recursive
 definition of values for irrelevant abstractions and, accordingly,
 evaluate under irrelevant abstractions as well. See rule
 \rul{S\_IrrelAbs\_Cong} in \pref{sec:step-congruence}.
@@ -1774,7 +1844,7 @@ Several of the small-step rules perform actual reduction in a type:
 Note that \rul{S\_BetaIrrel} requires a value $[[v1]]$ in the body
 of the abstraction in order to keep the rules deterministic. The only
 other surprising feature in these rules is the way that \rul{S\_Match}
-works, by applying the body of the alternative $[[t0]]$ to the actual
+works by applying the body of the alternative $[[t0]]$ to the actual
 existential arguments to $[[H{ts}]]$ and a reflexive coercion. This
 follows directly from my design of having \ottkw{case} alternatives
 avoid a special binding form and use the existing forms in the language.
@@ -1904,7 +1974,18 @@ types implies the equality between the kinds:
 As we can see, the \ottkw{kind} coercion form extracts a kind coercion
 from a type coercion.
 
-It's worth pausing here for a moment to consider two other meanings of
+Though I have described my equality relation following \citet{mcbride-thesis},
+he
+uses identity proofs in quite a different way than I do here. His
+language confirms that an identity proof is reflexive
+and then brings \emph{definitional} equalities of the types and kinds
+into scope. The surface Haskell version of heterogeneous equality works
+quite like McBride's. My invocation of ``John Major'' here is to
+recall that an equality between types implies the same relationship
+among the kinds.
+
+It's worth pausing here for a moment to consider two other meanings,
+among others, of
 heterogeneous equality:
 \paragraph{Trellys equality}
 The equality relation studied in the Trellys project~\cite{trellys} a
@@ -1917,7 +1998,8 @@ that coercion form is never needed in the metatheory. Omitting it would weaken
 
 \paragraph{Flexible homogeneous equality}
 Another potential meaning of heterogeneous equality is that $[[k1]]$ and $[[k2]]$
-might not be definitionally equal, but they are propositionally equal.\footnote{I
+might not be identical---as they would be in a traditional
+homogeneous equality relation---but they are propositionally equal.\footnote{I
 am distinguishing here between \emph{definitional} equality and \emph{propositional} equality. The former, in \pico/, refers to $\alpha$-equivalence. Definitional
 equality is the equality used implicitly in typing rules when we use the
 same metavariable twice. If written explicitly, it is sometimes written
@@ -1932,12 +2014,14 @@ an equality would use this rule (not part of \pico/):
 \ottpremise{[[S;G |-co g : k1 [Type{}]~[Type{}] k2]]}}{[[S]];[[G]] [[|-prop]] [[t1]] \mathrel{{}^{[[k1]]}\sim_{[[g]]}^{[[k2]]}} [[t2]] \ok}{\rul{Prop\_Homogeneous}}
 \]
 Note how |~| is indexed by $[[g]]$, the proof that the kinds are equal.
-I call this equality homogeneous, because even to form the equality |t1 ~ t2|,
+I call this equality homogeneous, because even to form the equality $[[t1 [k1]~[k2] t2]]$,
 we must know that the kinds are equal. Contrast to \rul{Prop\_Equality}, where
 the proposition itself is well-formed even when the kinds and/or types are
 not provably equal.
 
+
 \subsection{Equality is hypothetical}
+\label{sec:pico-hypothetical}
 
 A key property of equality in \pico/ is that programs can \emph{assume} an
 equality proof. This is how GADTs are implemented, by packing an equality
@@ -1956,7 +2040,7 @@ coercion binders.
 
 \Pico/'s equality relation is \emph{coherent}, in that the precise locations
 and structure
-of coercions within types is immaterial. This is a critical property,
+of coercions within types is immaterial. This is a critical property
 because it is intended for a compiler to create and place these coercions.
 Coherence is obtained through this coercion form:
 \[
@@ -2006,6 +2090,7 @@ is critical for my consistency proof. See \pref{sec:other-consistency-proofs}
 for more discussion.
 
 \subsection{Equality is an equivalence}
+\label{sec:equivalence-coercions}
 
 The equality relation |~| is explicitly an equivalence relation, via these
 rules:
@@ -2219,8 +2304,13 @@ then there exists $[[h]]$ such that $[[S;G |-co h : t[s1/a] (k0[s1/a])~(k0[s2/a]
 If we were to try to prove that equality is congruent,
 it seems natural to proceed by induction
 on the typing derivation for $[[t]]$. However, in the proof, we are stuck when
-$[[t = PI c:phi.t0]]$. The congruence form for $\Pi$-types over coercions is
-no help because of the coercion variable restriction. If we strengthen the
+$[[t = \ c:phi.t0]]$. The congruence form for $\lambda$-types over coercions is
+no help because of the coercion variable restriction.\footnote{Contrast
+to the proof of the lifting lemma in my prior work~\cite{nokinds-extended};
+that proof relies on a critical auxiliary lemma (their Lemma C.7) which
+requires a different coercion variable restriction than what I am
+using here. Furthermore, I show in \pref{sec:down-with-nokinds}
+that their restriction is too weak.} If we strengthen the
 induction hypothesis to provide what we need in this case, then other cases
 fail, unable to obey the restriction.
 
@@ -2256,11 +2346,13 @@ that no coercion abstractions are ``reachable'' from $[[t]]$, but defining
 such a property and then proving this claim seems not to pay its way.}
 
 \subsection{Equality can be decomposed}
+\label{sec:pico-decomposition}
 
 \Pico/ comes equipped with a large variety of ways of decomposing an equality
 to get out a smaller one---in some sense, these are the inverses of the
 congruence forms. We will approach these in batches.
 
+\pagebreak %% TODO: RAE: Check me.
 \subsubsection{The \ottkw{argk} forms}
 \label{sec:pico-argk-coercion}
 
@@ -2431,6 +2523,7 @@ considering that their omission in GHC 8.0 may be unsafe and that including
 them is conservative with respect to GHC 7.
 
 \subsection{Equality includes $\beta$-reduction}
+\label{sec:reduction-coercion}
 
 The last rule to consider in the $[[|-co]]$ judgment is the one that
 witnesses $\beta$-reduction:
@@ -3693,3 +3786,4 @@ work in that regard.
 %%  LocalWords:  HoTT MkG MkP unboxed VoidRep RuntimeRep PtrRepLifted IntRep
 %%  LocalWords:  PtrRepUnlifted thunked circ Succ matchability Erasability
 %%  LocalWords:  Vec VNil VCons fixpoints
+

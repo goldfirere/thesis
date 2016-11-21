@@ -125,7 +125,7 @@ runEval env expr = run (() :> () :> 123 :> env :> Empty) (eval expr)
 %
 The first argument to the \effects/ library function |run| is an
 environment of resources, where each resource is associated with
-a capability. While the order of capabilities goes not matter in the
+a capability. While the order of capabilities does not matter in the
 body of |eval|, its order must match up with the order of resources
 given when running an |Eff| computation. In this case, the
 |EXCEPTION String| and |STDIO| capabilities have no associated resource

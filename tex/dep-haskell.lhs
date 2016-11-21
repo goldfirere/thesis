@@ -176,6 +176,8 @@ To understand the range of quantifiers that the language offers, we must
 go through each of these properties. In the text that follows, I use the
 term \emph{quantifiee} to refer to the argument quantified over. The
 \emph{quantifier body} is the type ``to the right'' of the quantifier.
+The quantifiers introduced in this section are summarized in
+\pref{fig:quantifiers}.
 
 \subsection{Dependency}
 
@@ -663,8 +665,8 @@ pattern match? A naive answer might be to always do dependent pattern matching,
 as we can always feel free to ignore the extra, unused equality if we do not
 need it. However, this would not work in practice---with an equality assumption
 in scope, we cannot accurately infer the return type of a pattern match.
-Yet this last problem delivers us the solution: use dependent pattern matching
-only when we know a match's result type, as propagated down via a bidirectional
+Yet this last problem delivers us the solution: \emph{use dependent pattern matching
+only when we know a match's result type}, as propagated down via a bidirectional
 type system. (This is much the same way that today's Haskell allows inference
 in the presence of higher-rank types~\cite{practical-type-inference}. See
 \pref{sec:bidir-dependent-pattern-match} for the details.)
@@ -756,7 +758,7 @@ types than does the ornate approach in my prior work.
 
 Despite a published paper~\cite{boxy-types} and continued attempts at
 cracking this nut, GHC lacks support for impredicativity.\footnote{There does exist an extension \ext{ImpredicativeTypes}. However, it is
-unmaintained and quite broken.}
+unmaintained, deprecated, and quite broken.}
 Here, I use the following definitions in my meaning of impredicativity:
 \begin{definition*}[Simple types]
 A \emph{simple type} has no constraint, quantification, or dependency.
@@ -861,7 +863,7 @@ exports |Bool| with all of its constructors.
 \label{sec:type-checking-undec}
 
 In order to type-check a Dependent Haskell program, it is sometimes necesary
-to evaluate expression used in typed. Of course, these expressions might
+to evaluate expression used in types. Of course, these expressions might
 be non-terminating in Haskell. Accordingly, type-checking Dependent Haskell
 is undecidable.
 
