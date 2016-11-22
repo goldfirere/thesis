@@ -182,7 +182,7 @@ tailOrNil Nil = Nil
 tailOrNil (_ :> t) = t
 \end{code}
 %endif
-
+\pagebreak
 \paragraph{Anonymous functions in types}
 Types may now include $\lambda$-expressions:
 \begin{notyet}
@@ -618,6 +618,7 @@ through three examples of increasing complexity. All these examples will
 work over the somewhat hackneyed length-indexed vectors
 for simplicity and familiarity.
 
+\pagebreak
 \subsection{A simple pattern match}
 Naturally, Dependent Haskell retains the capability for simple pattern matches:
 \begin{code}

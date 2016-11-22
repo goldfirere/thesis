@@ -565,15 +565,14 @@ to return a custom datatype, marrying the result of stepping with evidence
 that the value of this result agrees with the value of the original expression:\footnote{This example fails for two reasons:
 \begin{itemize}
 \item It contains data constructors with constraints
-occurring after visible parameters, something currently unsupported by GHC,
-as GHC imposes rigid requirements on the shape of data constructor types.
-These requirements will be relaxed as I implement dependent types.
+occurring after visible parameters,
+but GHC imposes rigid requirements on the shape of data constructor types.
 \item Writing a type-level version of |shift| (automatic promotion with |!|
 is not yet implemented) is not yet possible. The problem is that one of
 the helper function's arguments has a type that mentions the |++| function,
-something that is not yet accepted.
+a feature that is not yet implemented.
 \end{itemize}
-I do not expect either of these problems to be significant.}
+I do not expect fixing either of these problems to be a significant challenge.}
 \begin{noway}
 \begin{spec}
 data StepResult :: Expr ![] ty -> Type where
@@ -1304,7 +1303,9 @@ The following examples show that |zipWith| indeed infers the arity:
 \begin{code}
 example1 = zipWith (&&) [False, True, False] [True, True, False]
 example2 = zipWith ((+) :: Int -> Int -> Int) [1,2,3] [4,5,6]
-
+\end{code}
+% force page break
+\begin{code}
 concat :: Int -> Char -> Double -> String
 concat a b c = (show a) ++ (show b) ++ (show c)
 example3 = zipWith concat  [1,2,3] ['a','b','c']
@@ -1452,8 +1453,7 @@ the |TypeRep| on the far end of the wire, but the equality tests above
 and other functions below can live outside the trusted code base.
 
 Suppose we were to send an
-object with a function type, say |Bool -> Int| over the network. For the time
-being, let's ignore the complexities of actually serializing a function---there
+object with a function type, say |Bool -> Int| over the network. Let's ignore here the complexities of actually serializing a function---there
 is a solution to that
 problem\footnote{\url{https://ghc.haskell.org/trac/ghc/wiki/StaticPointers}},
 but here we are concerned only with the types. We would want to apply the

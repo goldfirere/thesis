@@ -1488,6 +1488,7 @@ Note that the context must contain only \pico/ variables, never unification
 variables. This fact is what allows the larger $[[S;G |= J]]$ to imply
 the smaller $[[S;G |- J]]$.
 
+\pagebreak
 \subsubsection{Soundness of the solver}
 \label{sec:solver-soundness}
 
@@ -2017,7 +2018,7 @@ all the other types.
 \subsection{Further desirable properties of the solver}
 \label{sec:solver-properties}
 
-\begin{figure}
+\begin{figure}[t!]
 \begin{property}[Solver is guess-free]
 \label{prop:solver-guess-free}
 If $[[S;P |->solv O ~> D; Z]]$, then $[[S;P,O ||= D, E_ Z]]$,

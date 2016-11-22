@@ -393,6 +393,7 @@ statement of type |u| in a context extended by |t|. (The operator |:&|
 is the |cons| operator for |Vec|, here.)
 
 Here is how such a statement is interpreted:
+\pagebreak
 \begin{notyet}
 \begin{spec}
 interp :: forall g t. Imp g t -> Eff IO ![STDIO, RND, STATE (Vars g)] (!interpTy t)

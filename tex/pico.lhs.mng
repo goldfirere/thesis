@@ -226,6 +226,7 @@ of this feature from surface Haskell.
 
 Today's Haskell also has the ability, through its type families, to match on
 members of $[[Type]]$. For example:
+\pagebreak
 \begin{code}
 type family IntLike x where
   IntLike Integer  = !True
@@ -795,27 +796,26 @@ type system with ADTs.
 \subsection{Looking up type constants}
 \label{sec:ty-con}
 
-Information about type constants is retrieved via the following
-judgment:\\[\baselineskip]
-\ottdefnTc{}
-
 \begin{figure}
-\ottdefnVec{}
-\caption{Formation of vectors $[[ps]]$}
-\label{fig:vec-judgment}
-\end{figure}
-
-The judgment $[[S |-tc H : D1;D2;H']]$
-retrieves three pieces of data about a type constant
-$[[H]]$: its universals, its existentials, and the head of the result type.
-This judgment is best understood in concert with the typing rule that handles
-type constants, which also uses the typing judgment on vectors---ordered
-lists of arguments---presented
-in \pref{fig:vec-judgment}:
 \[
 \ottdruleTyXXCon{}
 \]
-Let's tackle these in order of complexity.
+\ottdefnTc{}
+\ottdefnVec{}
+\caption{Type constants $[[H]]$ and vectors $[[ps]]$}
+\label{fig:tc-judgment}
+\end{figure}
+
+Information about type constants is retrieved via the
+$[[S |-tc H : D1;D2;H']]$ judgment, presented in \pref{fig:tc-judgment}.
+This judgment
+retrieves three pieces of data about a type constant
+$[[H]]$: its universals, its existentials, and the head of the result type.
+It is best understood in concert with the typing rule that handles
+type constants, which also uses the typing judgment on vectors---ordered
+lists of arguments---also presented
+in \pref{fig:tc-judgment}.
+Let's tackle this all in order of complexity.
 
 \subsubsection{The constant $[[Type]]$}
 The constant $[[Type]]$ has no universals, no existentials, and $[[Type]]$'s
@@ -3057,6 +3057,7 @@ $[[t @~ p]]$. This fact allows us to conclude that matchable applications
 $[[t @_ p]]$ never undergo $\beta$-reduction, in turn allowing us to prove
 that the $[[left]]$ and $[[right]]$ coercions are sound.
 
+\pagebreak
 \subsubsection{Substitution}
 
 The relation $[[~>]]$ is almost a non-deterministic, strong version of normal reduction ($[[S;G |-s t --> t']]$). In all the congruence forms (toward the top of
