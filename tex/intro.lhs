@@ -34,10 +34,10 @@ describe the elaboration from the surface language to the internal language,
 including type inference through my novel algorithm \bake/.
 Along with the textual description contained in this
 dissertation, I have also partially implemented these ideas
-into GHC directly; indeed, my contributions were one of the key factors
+in GHC directly; indeed, my contributions were one of the key factors
 in making the current release of GHC a new major version. It is my expectation
 that I will implement the internal language and type inference algorithm described in this
-work into GHC in the near future.
+work in GHC in the near future.
 Much of my work builds upon the critical work of
 \citet{gundry-thesis}; one of my chief contributions is adapting his work
 to work with the GHC implementation and further features of Haskell.
@@ -51,15 +51,13 @@ I offer the following contributions:
   examples are divided into two categories: programs where rich types give a
   programmer more compile-time checks of her algorithms, and programs where
   rich types allow a programmer to express a more intricate algorithm that
-  may not be well-typed under a simpler system. \pref{sec:why-haskell} then
-  argues why dependent types in Haskell, in particular, are an interesting
-  and worthwhile subject of study.
+  may not be well typed under a simpler system. 
 
-Although no new results, as such, are presented in \pref{cha:motivation},
+Although no new results are presented in \pref{cha:motivation},
 these examples are a true contribution of this dissertation.
-Dependently-typed programs are still something of a rarity, as evidenced
-by the success at publishing novel dependently-typed programs~\cite{power-of-pi,keeping-neighbours-in-order,lookup-update-infir,algebraic-effects}. This chapter
-extends our knowledge of dependently-typed programming by showing how certain
+Dependently typed programs are still something of a rarity, as evidenced
+by the success at publishing novel dependently typed programs~\cite{power-of-pi,keeping-neighbours-in-order,lookup-update-infir,algebraic-effects}. This chapter
+extends our knowledge of depen\-dently typed programming by showing how certain
 programs might look in Haskell.
 The two most elaborate examples are:
 \begin{itemize}
@@ -67,9 +65,15 @@ The two most elaborate examples are:
 access library based on the design of \citet{power-of-pi} but with the
 ability to infer a database schema based on how its fields are used, and
 \item a translation of Idris's algebraic effects library~\cite{algebraic-effects}
-into Dependent Haskell (though runnable today) that allows for an easy-to-use
-alternative to monad transformer stacks.
+into Dependent Haskell that allows for an easy-to-use
+alternative to monad transformer stacks. With heavy use of singletons,
+it is possible to encode this library in today's Haskell due to my
+implementation work.
 \end{itemize}
+
+\pref{sec:why-haskell} then
+  argues why dependent types in Haskell, in particular, are an interesting
+  and worthwhile subject of study.
 
 \item Dependent Haskell (\pref{cha:dep-haskell}) is the surface language
 I have designed in this dissertation. This chapter is written to be useful
@@ -106,7 +110,7 @@ Haskell.
 \end{enumerate}
 
 \item \pico/ (pronounced ``$\Pi$-co'', never ``peek-o'') is
- a new dependently-typed
+ a new dependently typed
   $\lambda$-cal\-cu\-lus, intended as an internal language suitable as a target
   for compiling Dependent Haskell. (\pref{cha:pico})
 \Pico/ allows full dependent types, has
@@ -147,7 +151,7 @@ study of type inference in the context of dependent types.
   and contains a novel treatment for inferring types around dependent
   pattern matches, among a few other, smaller innovations.
   I prove that the elaborated program is always
-  well-typed in \pico/.
+  well typed in \pico/.
 
 \item A partial implementation of the type system in this dissertation
 is available in GHC~8.0. \pref{cha:implementation}
@@ -172,13 +176,16 @@ Dependent Haskell.
 This dissertation is most closely based upon my prior work with
 Weirich and Hsu~\cite{nokinds}. That paper, focusing solely on
 the internal language, merges the type and
-kind languages but does not incorporate dependent types. This current
+kind languages but does not incorporate dependent types.
+I wrote the implementation of these ideas as a component of GHC~8,
+incorporating Peyton Jones's extensive feedback.
+ This dissertation
 work---particularly \pref{cha:type-inference}---also builds on a more recent paper with Weirich and Ahmed~\cite{visible-type-application}, which develops the theory around type inference where
 some arguments are visible (and must be supplied) and others are
-invisible (and may be omitted). Despite this background, almost
+invisible (and may be omitted).
+Despite this background, almost
 the entirety of this dissertation is new work; none of my previous
-published work has dealt directly with dependent types in the way
-this dissertation does.
+published work has dealt directly with dependent types.
 
 \section{Implications beyond Haskell}
 
@@ -190,7 +197,7 @@ to someone uninterested in Haskell? I offer a few answers:
   believe that a dependently typed language must be total in order to be
   type-safe. Though Dependent Haskell is not the first counterexample to this
   mistaken notion (e.g., \cite{cardelli-type-in-type,cayenne}), the existence
-  of this type-safe, dependently-typed, non-total language may help to dispel
+  of this type-safe, dependently typed, non-total language may help to dispel
   this myth.
 \item This is the first work, to my knowledge, to address type inference
 with |let|-generalization (of top-level constructs only,
@@ -204,7 +211,7 @@ See \pref{sec:oi}.
 thorough treatment of type inference for dependent types. My
 bidirectional type inference algorithm infers whether or not a pattern
 match should be treated as a dependent or a traditional match, a feature
-that may wish to be ported to other languages.
+that could be ported to other languages.
 \item Once Dependent Haskell becomes available, I believe dependent
 types will become
 popular within the Haskell community, given the strong encouragement

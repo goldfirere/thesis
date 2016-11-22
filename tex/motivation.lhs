@@ -25,7 +25,7 @@ read = Read
 
 Functional programmers use dependent types in two primary ways, broadly
 speaking: in order to prevent erroneous programs from being accepted, and in
-order to write programs that a simply-typed language cannot accept.
+order to write programs that a simply typed language cannot accept.
 In this chapter, I will motivate the use of dependent types from both of
 these angles. The chapter concludes with a section motivating why Haskell, in
 particular, is ripe for dependent types.
@@ -37,7 +37,7 @@ every time the text is typeset.
 
 The code snippets throughout this dissertation are presented on a variety of
 background colors. A white background indicates code that works in GHC 7.10
-and (perhaps) below.
+and (perhaps) earlier.
 A \colorbox{working}{\workingcolorname} background
 highlights code that newly works in GHC~8.0 due to my implementations
 of previously published papers~\cite{nokinds,visible-type-application}.
@@ -99,7 +99,7 @@ are indeed available in types. However, since we lack simple definitions for
 |Integer| operations (for example, what is the body of |Integer|'s
 |+| operation?), it is hard to reason about them in types. This point
 is addressed more fully in \pref{sec:promoting-base-types}. For now,
-however, it is best to stick to the simpler |Nat| type.
+it is best to stick to the simpler |Nat| type.
 
 \subsubsection{|append|}
 \label{sec:tick-promotes-functions}
@@ -186,9 +186,8 @@ listReplicate :: Nat -> a -> [a]
 listReplicate Zero      _ = []
 listReplicate (Succ n)  x = x : listReplicate n x
 \end{code}
-It all seems quite simple.
 
-With vectors, though, what will the return type be? It surely will mention
+With vectors, what will the return type be? It surely will mention
 the element type |a|, but it also has to mention the desired length of the
 list. This means that we must give a name to the |Nat| passed in. Here
 is how it is written in Dependent Haskell:
@@ -214,7 +213,7 @@ an example of a dependent pattern match, and how this
 function is well-typed is considered is some depth in \pref{sec:dependent-pattern-match}.
 
 The ability to have an argument available for runtime pattern matching
-and compile time type checking is the other chief quality that makes
+and compile-time type checking is the other chief quality that makes
 Dependent Haskell dependently typed.
 
 \subsubsection{Invisibility in |replicate|}
@@ -241,7 +240,7 @@ arguments are omitted at function calls and definitions.
 On the other hand, the |->| in |pi (n :: Nat) ->| means that the argument
 is visible and must be provided at every function invocation and defining
 equation.
-This choice of syntax is due directly to \citet{gundry-thesis}.
+This choice of syntax is due to \citet{gundry-thesis}.
 Some readers may prefer the
 terms \emph{explicit} and \emph{implicit} to describe visibility; however,
 these terms are sometimes used in the literature (e.g.,~\cite{miquel-icc})
@@ -316,7 +315,7 @@ Accordingly, |lengthRel| can simply return this value. The one visible
 parameter, of type |Vec a n| is needed only so that type inference can infer
 the value of |n|. This value must be somehow known at runtime in the calling
 context, possibly because it is statically known (as in |lengthRel fourTrues|)
-or because |n| is avaiable relevantly in the calling function.
+or because |n| is available relevantly in the calling function.
 
 On the other hand, |lengthIrrel| does not need runtime access to |n|; the
 length is computed by walking down the vector and counting the elements.
@@ -325,13 +324,13 @@ should always return the same value. (In contrast, |lengthIrrel| is always avail
 to be called.)
 
 The choice of relevant vs.~irrelevant parameter is denoted by the use of
-|pi| or |forall| in the type. Note that |lengthRel| says |pi n| while
+|pi| or |forall| in the type: |lengthRel| says |pi n| while
 |lengthIrrel| says |forall n|. The programmer must choose between relevant
 and irrelevant quantification when writing or calling functions.
 (See \pref{sec:related-type-erasure} for a discussion of how this choice
 relates to decisions in other dependently typed languages.)
 
-As a smaller note, see also that |lengthRel| takes |n| before |a|. Both
+We see also that |lengthRel| takes |n| before |a|. Both
 are invisible, but the order is important because we wish to bind the
 first one in the body of |lengthRel|. If I had written |lengthRel|'s type
 beginning with |forall a. pi n.|, then the body would have to be
@@ -370,7 +369,7 @@ The |infixr| declaration declares that the constructor |:~>| is right-associativ
 as usual.
 
 We are then confronted quickly with the decision of how to encode bound
-variables. Let's choose de Bruijn indices~\cite{debruijn}, as these are well-known
+variables. Let's choose de Bruijn indices~\cite{debruijn}, as these are well known
 and conceptually simple. However, instead of using natural numbers to
 represent our variables, we'll use a custom |Elem| type:
 \begin{code}
@@ -392,7 +391,7 @@ data Expr :: [Ty] -> Ty -> Type where
   App  :: Expr ctx (arg !:~> res) -> Expr ctx arg  ->  Expr ctx res
   TT   ::                                              Expr ctx !Unit
 \end{code}
-Like with |Elem list elt|, a value of type |Expr ctx ty| serves two purposes:
+As with |Elem list elt|, a value of type |Expr ctx ty| serves two purposes:
 it records the structure of our expression, \emph{and} it proves a property,
 namely that the expression is well-typed in context |ctx| with type |ty|.
 Indeed, with some practice, we can read off the typing rules for the simply
@@ -414,12 +413,12 @@ Our big-step evaluator has a straightforward type:
 eval :: Expr ![] ty -> Val ty
 \end{code}
 This type says that a well-typed, closed expression (that is, the context
-is empty) can evaluate to a well-typed, closed value, of the same type |ty|.
+is empty) can evaluate to a well-typed value of the same type |ty|.
 Only a type-preserving evaluator will have that type, so GHC can check
 the type-soundness of our $\lambda$-calculus as it compiles our interpreter.
 
-Of course, to implement |eval|, we'll need several auxiliary functions, each
-with intriguing types:
+To implement |eval|, we'll need several auxiliary functions, each
+with an intriguing type:
 \begin{code}
 -- Shift the de Bruijn indices in an expression
 shift :: forall ctx ty x. Expr ctx ty -> Expr (x !: ctx) ty
@@ -441,8 +440,8 @@ an argument of type |arg|, producing a result of type |res|.
 
 The implementations of these functions, unsurprisingly, read much like
 the proof of the corresponding lemmas. We even have to ``strengthen the
-induction hypothesis'' for |shift| and |subst|; in this context, I mean
-that we need an internal recursive function with extra arguments.
+induction hypothesis'' for |shift| and |subst|; 
+we need an internal recursive function with extra arguments.
 Here are the first few lines of |shift| and |subst|:
 %if style == poly
 %format ctx0
@@ -531,7 +530,8 @@ is \emph{visible} in source programs; the empty list is passed in visibly
 in the invocation of |go|. (See also \pref{sec:visibility}.) The final interesting
 feature of these types is that they re-quantify |ty|. This is necessary because
 the recursive invocations of the functions may be at a different type than the
-outer invocation. The other type variables in the types are lexically bound
+outer invocation. The other type variables---which do not change during recursive
+calls to the |go| helper functions---are lexically bound
 by the |forall| in the type signature of the outer function.
 
 The implementation of these functions is fiddly and uninteresting, and is
@@ -606,7 +606,7 @@ step TT           = Value TTVal
 Due to GHC's ability to freely use equality assumptions, |step|
 requires no explicit manipulation of equality proofs. Let's look at the |App|
 case above. We first check whether or not |e1| can take a step. If it can,
-we get the result of the step |e1'|, \emph{and} a proof that |!eval e1 ~ !eval e1'|.
+we get the result of the step |e1'| \emph{and} a proof that |!eval e1 ~ !eval e1'|.
 This proof enters into the type-checking context and is invisible in the program
 text. On the right-hand side of the match, we conclude that |App e1 e2| steps to
 |App e1' e2|. This requires a proof that |!eval (App e1 e2) ~ !eval (App e1' e2)|.
@@ -619,7 +619,7 @@ Reducing |!eval| on both sides of that equality gives us
 heavy lifting for us. Similar reasoning proves the equality in the second branch
 of the |case|, and the other clauses of |step| are straightforward.
 
-The ease in which these equalities are solved is unique to Haskell. I have
+The ease with which these equalities are solved is unique to Haskell. I have
 translated this example to Coq, Agda, and Idris; each has its shortcomings:
 \begin{itemize}
 \item Coq deals quite poorly with indexed types, such as |Expr|. The problem appears
@@ -640,19 +640,19 @@ accept the function.
 implicit proof search. A key part of Haskell's elegance in this example is that
 pattern-matching on a |StepResult| reveals an equality proof to the type-checker,
 and this proof is then used to rewrite types in the body of the pattern match. This
-all happens without any direction from the programmer. In Agda, on the other hand,
+all happens without any direction from the programmer. In Agda,
 the equality proofs must be unpacked and used with Agda's \keyword{rewrite} tactic.
 
-Like Coq, Agda also requires that functions terminate. However, we can
+Like Coq, Agda normally also requires that functions terminate. However, we can
 easily disable the termination checker: just use
 @{-# NO_TERMINATION_CHECK #-}@.
 
 %{
 %format assert_total = "\keyword{assert\_total}"
-\item Idris also runs into some trouble with this example. Like Agda, Idris
-works well with indexed types. The |eval| function is unsurprisingly inferred
+\item Like Agda, Idris
+works well with indexed types. The |eval| function is, unsurprisingly, inferred
 to be partial, but this is easy enough to fix with a well-placed
-|assert_total|. However, Idris's proof search mechanism appears to be unable
+|assert_total|. However, Idris's proof search mechanism is unable
 to find proofs that |step| is correct in the |App| cases. (Using an \keyword{auto}
 variable, Idris is able to find the proofs automatically in the other |step|
 clauses.) Idris comes the closest to Haskell's brevity in this example, but
@@ -672,7 +672,7 @@ the rest of the arguments (the indices and the equality proofs) are erased.
 Furthermore, getting this all done is easier and more straightforward in
 Dependent Haskell than in the other three dependently typed languages I
 tried. Key to the ease of encoding in Haskell is that Haskell does not worry
-about termination (more discussion in \pref{sec:no-termination-check}) and
+about termination (see \pref{sec:no-termination-check}) and
 has an aggressive rewriting engine used to solve equality predicates.
 
 %% To pull this off, we will need a dependent pair, or $\Sigma$-type:
@@ -724,7 +724,7 @@ Haskellers naturally want their interface to the database to be well-typed,
 and there already exist libraries that use (non-dependent) Haskell's fancy
 types to good effect for database access. (See \package{opaleye}\footnote{\url{https://github.com/tomjaguarpaw/haskell-opaleye}} for an advanced, actively
 developed and actively used example of such a library.) Dependent Haskell
-allows us to go one step further, though, and use type inference to infer
+allows us to go one step further and use type inference to infer
 a database schema from the database access code.
 
 This example is inspired by the third example by \citet{power-of-pi};
@@ -793,7 +793,7 @@ Instead of starting with the library design, let's start with a concrete
 use case. Suppose we are writing an information system for a university.
 The current task is to write a function that, given the name of a professor,
 prints out the names of students in that professor's classes. There are
-two database tables of interest, as exemplified in \pref{fig:db-example}.
+two database tables of interest, exemplified in \pref{fig:db-example}.
 Our program will retrieve a professor's record and then look up the students
 by their ID number.
 
@@ -811,7 +811,7 @@ type NameSchema = [ Col "first" String, Col "last" String ]
 printName :: Row NameSchema -> IO ()
 printName (first ::> last ::> _) = putStrLn (first ++ " " ++ last)
 
-readDB classes_sch students_sch = do
+queryDB classes_sch students_sch = do
   classes_tab   <- loadTable "classes.table"   classes_sch
   students_tab  <- loadTable "students.table"  students_sch
 
@@ -828,17 +828,18 @@ readDB classes_sch students_sch = do
   mapM_ printName rows
 \end{code}
 \end{working}
-\caption{The |readDB| function}
-\label{fig:readDB}
+\caption{The |queryDB| function}
+\label{fig:queryDB}
 \end{figure}
 
 The main worker function that retrieves and processes the information of interest
-from the database is |readDB|, in \pref{fig:readDB}.
+from the database is |queryDB|, in \pref{fig:queryDB}.
 Note that this function is not assigned a type
 signature; we'll return to this interesting point in
-\pref{sec:inferring-schema}. It takes in the schemas for the two tables
-it will retrieve the data from. Our function loads the tables that correspond
-to the schemas; the |loadTable| function makes sure that the table does
+\pref{sec:inferring-schema}. The |queryDB| function takes in the schemas for the two tables
+it will retrieve the data from. It loads the tables that correspond
+to the schemas; the |loadTable| function makes sure that the table (as specified
+by its filename) does
 indeed correspond to the schema. An I/O interaction with the user then
 ensues, resulting in a variable |prof| of type |String| containing the
 desired professor's name.
@@ -909,12 +910,12 @@ only names.
 \label{sec:type-in-term}
 \label{sec:th-quote}
 
-Type inference works to infer the type of |readDB|, assigning it this
+Type inference works to infer the type of |queryDB|, assigning it this
 whopper:
 \begin{notyet}
 \begin{spec}
-ghci> :type readDB
-readDB
+ghci> :type queryDB
+queryDB
   ::  pi (s :: Schema) (s' :: Schema)
   ->  (  !disjoint s s' ~ !True, In "students" [Int] (s !++ s'),
          In "prof" String s, In "last" [Char] (s !++ s'),
@@ -924,11 +925,11 @@ readDB
 \end{notyet}
 The cavalcade of constraints are all inferred from the query above
 quite straightforwardly.\footnote{What may be more surprising to the
-incredulous reader is that a $\Pi$-type is inferred, especially if you
+skeptical reader is that a $\Pi$-type is inferred, especially if you
 have already read \pref{cha:type-inference}. However, I maintain that
-the \bake/ algorithm in \pref{cha:type-inference} would infer this type.
-The two parameters to |readDB| are clearly |Schema|s, and the body
-of |readDB| asserts constraints on these |Schema|s. Note that the
+the \bake/ algorithm in \pref{cha:type-inference} infers this type.
+The two parameters to |queryDB| are clearly |Schema|s, and the body
+of |queryDB| asserts constraints on these |Schema|s. Note that the
 type inference algorithm infers only relevant, visible parameters, but
 these arguments are indeed relevant and visible. The dependency comes
 in after solving, when the quantification telescope $\Delta$ output
@@ -938,16 +939,16 @@ As further justification for stating that \bake/ infers this type,
 GHC infers a type quite like this today, albeit using singletons. The
 appearance of singletons in the type inferred today is why this snippet
 is presented on a \notyetcolorname{} background.}
-But how can we call |readDB| satisfying all of these constraints?
+But how can we call |queryDB| satisfying all of these constraints?
 
-The call to |readDB| appears here:
+The call to |queryDB| appears here:
 %if style == newcode
 \begin{code}
 $(return [])
 main  :: IO ()
 main  =  withSchema "classes.schema"   $ \ classes_sch ->
          withSchema "students.schema"  $ \ students_sch ->
-         $(checkSchema !readDB [!classes_sch, !students_sch])
+         $(checkSchema !queryDB [!classes_sch, !students_sch])
 \end{code}
 %endif
 \begin{notyet}
@@ -955,7 +956,7 @@ main  =  withSchema "classes.schema"   $ \ classes_sch ->
 main  :: IO ()
 main  =  do  classes_sch   <- loadSchema "classes.schema"
              students_sch  <- loadSchema "students.schema"
-             $(checkSchema !readDB [!classes_sch, !students_sch])
+             $(checkSchema !queryDB [!classes_sch, !students_sch])
 \end{spec}
 \end{notyet}
 The two calls to |loadSchema| are uninteresting. The third line of |main|
@@ -964,18 +965,18 @@ GHC's metaprogramming facility. The quotes we see before the arguments to
 |checkSchema| are Template Haskell quotes, not the promotion |!| mark we
 have seen so much.
 
-The |checkSchema :: Name -> [Name] -> Q Exp| function takes the name of
-a function (|readDB|, in our case), names of schemas to be passed to
-the function (|classes_sch| and |students_sch|, in our case) and produces
+The function |checkSchema :: Name -> [Name] -> Q Exp| takes the name of
+a function (|queryDB|, in our case), names of schemas to be passed to
+the function (|classes_sch| and |students_sch|) and produces
 some Haskell code that arranges for an appropriate function call.
 (|Exp| is the Template Haskell type containing a Haskell expression, and
 |Q| is the name of the monad Template Haskell operates under.) In order
-to produce the right function call to |readDB|,
-|checkSchema| queries for the inferred type of |readDB|. It then examines
+to produce the right function call to |queryDB|,
+|checkSchema| queries for the inferred type of |queryDB|. It then examines
 this type and extracts out all of the constraints on the schemas.
 In the produced Haskell expression, |checkSchema| arranges for calls
-to several functions that establish the constraints before calling |readDB|.
-In order to be concrete, here is the result of the splice; the following
+to several functions that establish the constraints before calling |queryDB|.
+To be concrete, here is the result of the splice; the following
 code is spliced into the |main| function in place of the call to |checkSchema|:
 %
 \begin{notyet}
@@ -986,7 +987,7 @@ checkIn "prof" ^^      ^String   classes_sch                    $
 checkIn "last" ^^      ^[^Char]  (classes_sch ++ students_sch)  $
 checkIn "id" ^^        ^Int      (classes_sch ++ students_sch)  $
 checkIn "first" ^^     ^[^Char]  (classes_sch ++ students_sch)  $
-readDB classes_sch students_sch
+queryDB classes_sch students_sch
 \end{spec}
 \end{notyet}
 Before discussing |checkDisjoint| and |checkIn|, I must explain a new
@@ -997,7 +998,7 @@ applied to the type |Int|, not a one-element list (as it would otherwise
 appear).
 
 The |checkDisjoint| and |checkIn| functions establish the constraints
-necessary to call |readDB|. Here are their types:
+necessary to call |queryDB|. Here are their types:
 
 \begin{notyet}
 \begin{spec}
@@ -1078,14 +1079,17 @@ This example has highlighted several aspects of Dependent Haskell:
 \item Writing a well-typed database access is well within the reach of
 Dependent Haskell. Indeed, much of the work has already been done in
 released libraries.
-\item Inferring the type of |readDB| is a capability unique to Dependent
-Haskell among the dependently typed languages. Other dependently
+\item Inferring the type of |queryDB| is a capability unique to Dependent
+Haskell among dependently typed languages. Other dependently
 typed languages require type signatures on all top-level functions;
-this example makes critical use of Haskell's ability to infer a type.
+this example makes critical use of Haskell's ability to infer a type
+in deriving the type for |queryDB|.
 \item Having dependent types in a large language like Haskell sometimes
 shows synergies with other aspects of the language. In this example, we
 used Template Haskell to complement our dependent types to achieve something
-neither one could do alone.
+neither one could do alone: Template Haskell's ability to inspect an inferred
+type allowed us to synthesize the runtime checks necessary to prove that
+a call to |queryDB| was indeed safe.
 \end{itemize}
 
 %% \subsection{Units-of-measure}
@@ -1136,12 +1140,10 @@ the team notice bugs frequently appearing in a gnarly section of code
 (like a sorting algorithm, or more realistically, perhaps, an implementation
 of a cryptographic primitive), and they
 decide that they want extra assurances that the algorithm is correct.
-That one algorithm---and no other part of a large application---might be
-rewritten to use dependent types. Our team then gets the benefit of the
-extra checks that dependent types offer without the need to rewrite large
-parts of an application. Indeed any of the examples considered in this
+That one algorithm---and no other part of the large application---might be
+rewritten to use dependent types. Indeed any of the examples considered in this
 chapter can be hidden beneath simply typed interfaces and thus form
-just one component of a larger, simply typed application.
+just one component of a larger, \emph{simply} typed application.
 
 \section{Encoding hard-to-type programs}
 
@@ -1155,7 +1157,7 @@ zipWith3  ::  (a -> b -> c -> d) -> [a] -> [b] -> [c] -> [d]
 zipWith4  ::  (a -> b -> c -> d -> e) -> [a] -> [b] -> [c] -> [d] -> [e]
 ...
 \end{spec}
-Let's pretend renaming |map| to |zipWith1| and |zipWith| to |zipWith2|.
+Let's pretend to rename |map| to |zipWith1| and |zipWith| to |zipWith2|.
 This sequence continues up to |zipWith7|. The fact that these are different
 functions means that the user must choose which one to use, based on the
 arity of the function to be mapped over the lists. However, forcing the
@@ -1169,7 +1171,7 @@ Let's build up our solution one step at a time. We'll first focus
 on building a |zipWith| that is told what arity to be; then we'll
 worry about inferring this arity.
 
-Let's recall the definition of natural numbers from \pref{sec:example-nats}:
+Recall the definition of natural numbers from \pref{sec:example-nats}:
 \begin{spec}
 data Nat = Zero | Succ Nat
 \end{spec}
@@ -1187,10 +1189,10 @@ in this definition. Both of the following are sensible concrete types for a |zip
 over the function |f|:
 %
 \begin{spec}
-zipWith  :: (Int -> Bool -> Double)
-         -> [Int] -> [Bool -> Double]
-zipWith  :: (Int -> Bool -> Double)
-         -> [Int] -> [Bool] -> [Double]
+zipWith  ::  (Int   ->  Bool    ->  Double)
+         ->  [Int]  ->  [Bool   ->  Double]
+zipWith  ::  (Int   ->  Bool    ->  Double)
+         ->  [Int]  ->  [Bool]  ->  [Double]
 \end{spec}
 %
 The first of these is essentially |map|; the second is the classic function
@@ -1217,8 +1219,8 @@ on the |NumArgs| GADT, we get enough information to allow |Listify| to fully
 reduce.
 \begin{code}
 data NumArgs :: Nat -> Type -> Type where
-  NAZero  ::                 NumArgs  !Zero      a
-  NASucc  :: NumArgs n b ->  NumArgs  (!Succ n)  (a -> b)
+  NAZero  :: forall a.                               NumArgs  !Zero      a
+  NASucc  :: forall a b (n :: Nat). NumArgs n b  ->  NumArgs  (!Succ n)  (a -> b)
 \end{code}
 
 We now write the runtime workhorse |listApply|, with the following type:
@@ -1244,17 +1246,17 @@ listApply  (NASucc na)  fs =
          apply  (f:fs)  (x:xs)  = (f x : apply fs xs)
          apply  _       _       = []
 \end{code}
-It first pattern-matches on its first argument. In the |NAZero| case, the list
-of functions passed in has 0 arguments, so we just return them. In the
+It first pattern-matches on its first argument. In the |NAZero| case, each member of the list
+of functions passed in has 0 arguments, so we just return the list. In the
 |NASucc| case, we process one more argument (|args|), apply the list of
 functions |fs| respectively to the elements of |args|, and then recur. Note
-how the GADT pattern-matching is essential for this to type-check---the type
+how the GADT pattern matching is essential for this to type-check---the type
 checker gets just enough information for |Listify| to reduce enough so that
 the second case can expect one more argument than the first case.
 
 \paragraph{Inferring arity}
 In order to infer the arity, we need to have a function that counts
-up the number of arrows there are in a function type:
+up the number of arrows in a function type:
 \begin{code}
 type family CountArgs (f :: Type) :: Nat where
   CountArgs (a -> b)  = !Succ (CountArgs b)
@@ -1265,7 +1267,7 @@ where pattern-matching on proper types (of kind |Type|) is allowed.
 
 We need to connect this type-level function with the term-level
 GADT |NumArgs|. We use Haskell's method for reflecting type-level
-decisions on the term-level, type classes. The following definition
+decisions on the term level: type classes. The following definition
 essentially repeats the definition of |NumArgs|, but because this
 is a definition for a class, the instance is inferred rather than
 given explicitly:
@@ -1311,7 +1313,7 @@ example3 = zipWith concat  [1,2,3] ['a','b','c']
 In |example2|, we must specify the concrete instantiation of |(+)|. In Haskell,
 built-in numerical operations are generalized over a type class |Num|. In this case,
 the operator |(+)| has the type |Num a => a -> a -> a|. Because it is theoretically
-possible (but deeply strange!) for |a| to be instantiated with a function type,
+possible (though deeply strange!) for |a| to be instantiated with a function type,
 using |(+)| without an explicit type will not work---there is no way to infer an
 unambiguous arity. Specifically, |CountArgs| gets stuck. |CountArgs (a -> a -> a)|
 simplifies to |Succ (Succ (CountArgs a))| but can go no further; |CountArgs a| will
@@ -1322,7 +1324,7 @@ not simplify to |Zero|, because |a| is not apart from |b -> c|.
 
 \emph{Reflection} is the act of reasoning about a programming language from
 within programs written in that language.\footnote{Many passages in this
-  example come verbatim from a draft paper of mine~\cite{overabundance-of-equalities} and expanded upon in another, published piece of prior work~\cite{typerep}.} In
+  example are expanded upon in my prior work~\cite{typerep}.} In
 Haskell, we are naturally concerned with reflecting the rich language
 of Haskell types. A
 reflection facility such as the one described here will be immediately
@@ -1377,7 +1379,7 @@ data TypeRep (a :: k) where
   TyApp  :: TypeRep a -> TypeRep b -> TypeRep (a b)
 \end{code}
 %
-For every new type declared, the compiler would supply an appropriate value of
+The intent is that, for every new type declared, the compiler would supply an appropriate value of
 the |TyCon| datatype. The type representation library would supply also the
 following function, which computes equality over |TyCon|s, returning the
 heterogeneous equality witness:
@@ -1420,7 +1422,7 @@ eqT _              _              = Nothing
 
 Note the extra power we get by returning |Maybe (a :~~: b)| instead of just
 a |Bool|. When the types are indeed equal, we get evidence that GHC can use to
-be aware of this type equality during type-checking. A simple return type of
+be aware of this type equality during type checking. A simple return type of
 |Bool| would not give the type-checker any information.
 
 \subsubsection{Dynamic typing}
@@ -1440,12 +1442,12 @@ it is chosen at construction time and unpacked at pattern-match time.
 Because of the |TypeRep a| argument, we can learn more about |a| after
 unpacking. (Without the |TypeRep a| or some other type-level information
 about |a|, the unpacking code must treat |a| as an
-unknown type and must be parametric in the choice of type for |a|.)
+unknown type and must be parametric in the choice of |a|.)
 
 Using |Dyn|, we can pack up arbitrary
-data along with its type, and push that data across a network. The receiving
+data along with its type and push that data across a network. The receiving
 program can then make use of the data, without needing to subvert Haskell's
-type system. The type representation library must be trusted to recreate
+type system. This type representation library must be trusted to recreate
 the |TypeRep| on the far end of the wire, but the equality tests above
 and other functions below can live outside the trusted code base.
 
@@ -1503,8 +1505,8 @@ as we would know at that point that the types represented by |targ| and
 |targ'| are both of kind |Type|.
 
 In today's Haskell, the lack of heterogeneous equality means that |dynApply|
-must rely critically on |unsafeCoerce|. With heterogeneous equality, we can
-see that |dynApply| can remain safely outside the trusted code base.
+must rely critically on |unsafeCoerce|. With heterogeneous equality, 
+|dynApply| can remain safely outside the trusted code base.
 
 %if style == poly
 %include effects.lhs
@@ -1560,13 +1562,13 @@ unpredictable. Furthermore, Haskellers expect the type inference engine
 to work hard on their behalf; they wish to rarely rely on manual proving
 techniques.
 
-The requirement of backward compatibility ``keeps me honest'' in my design of
+The requirement of backward compatibility keeps me honest in my design of
 type inference---I cannot cheat by asking the user for more information. The
 technical content of this statement is discussed in \pref{cha:type-inference}
 by comparison with the work of \citet{outsidein} and \citet{visible-type-application}.
 See Sections~\ref{sec:oi} and~\ref{sec:sb}.
 A further advantage of
-working in Haskell is that the type inference of Haskell is well-studied in
+working in Haskell is that the type inference of Haskell is well studied in
 the literature. This dissertation continues this tradition in
 \pref{cha:type-inference}.
 
@@ -1574,7 +1576,7 @@ the literature. This dissertation continues this tradition in
 \label{sec:no-termination-check}
 \label{sec:no-proofs}
 
-Many dependently typed languages of today strive to be proof systems as well
+Many dependently typed languages today strive to be proof systems as well
 as programming languages. These care deeply about
 totality: that all pattern matches consider all possibilities and that
 every function can be proved to terminate. Coq does not accept a function
@@ -1595,14 +1597,14 @@ type family Any :: k  -- no instances
 \end{code}
 The type family |Any| can be used at any kind, and so inhabits all kinds.
 
-Furthermore, Dependent Haskell has the |Type :: Type| axiom, meaning that instead of
+Furthermore, Dependent Haskell has the |Type : Type| axiom, meaning that instead of
 having an infinite hierarchy of universes characteristic of Coq, Agda, and
-Idris, Dependent Haskell has just one universe which contains itself. It is
-well-known that self-containment of this form leads to logical inconsistency
+Idris, Dependent Haskell has just one universe, which contains itself. It is
+well known that self-containment of this form leads to logical inconsistency
 by enabling the construction of a looping term~\cite{girard-thesis}, but I am
 unbothered by this---Haskell has many other looping terms, too! (See
 \pref{sec:type-in-type} for more discussion on this point.)
-By allowing ourselves to have |Type :: Type|, the type system
+By allowing ourselves to have |Type : Type|, the type system
 is much simpler than in systems with a hierarchy of universes.
 
 There are two clear downsides of the lack of totality:
@@ -1621,7 +1623,7 @@ the work of \citet{liquid-haskell} for one approach toward this goal.
 Recent work by \citet{gadts-meet-their-match} is another key building block.)
 Unlike in other languages, though, the totality checker would be chiefly
 used in order to optimize away proofs, rather than to keep the language
-safe. Once the checker were working, we could also add compiler flags to
+safe. Once the checker is working, we could also add compiler flags to
 give programmers compile-time warnings or errors about partial functions,
 if requested.
 
@@ -1645,7 +1647,7 @@ there many surface language extensions that must be made to work with
 dependent types, but the back end must also be adapted. A dependently typed
 intermediate language must, for example, allow for optimizations. Working
 in the context of an industrial-strength compiler also forces the implementation
-to be more than just ``research quality'', but ready for a broad audience.
+to be more than just ``research quality,'' but ready for a broad audience.
 
 \subsection{Manifest type erasure properties}
 
@@ -1653,14 +1655,13 @@ A critical property of Haskell is that it can erase types. Despite all the
 machinery available in Haskell's type system, all type information can be
 dropped during compilation. In Dependent Haskell, this does not change.
 However, dependent types certainly blur the line between term and type, and
-so what, precisely, gets erased can be less clear. Dependent Haskell,
+so what, precisely, gets erased can be difficult to discern. Dependent Haskell,
 in a way different from other dependently typed languages, makes clear which
 arguments to functions (and data constructors) get erased. This is through
 the user's choice of relevant vs.~irrelevant quantifiers, as explored in
 \pref{sec:relevance}. Because erasure properties are manifestly available
 in types, a performance-conscious user can audit a Dependent Haskell program
-and see exactly what will be removed at runtime, aiming to meet any particular
-performance goals the user has.
+and see exactly what will be removed at runtime.
 
 It is possible that, with practice, this ability will become burdensome, in
 that the user has to figure out what to keep and what to discard. Idris's
@@ -1672,12 +1673,12 @@ Recent versions of GHC allow \emph{type-checker plugins},
 a feature that allows end users to write a custom
 solver for some domain of interest. For example, \citet{type-checker-plugins}
 uses a plugin to solve constraints arising from using Haskell's type system
-to check that a physical computation respects units-of-measure. As
+to check that a physical computation respects units of measure. As
 another example, \citet{diatchki-smt-plugin} has written a plugin that
 uses an SMT solver to work out certain numerical constraints that can
 arise using GHC's type-level numbers feature.
 
-Equipped with dependent types, the need for these plugins will only
+Once Haskell is equipped with dependent types, the need for these plugins will only
 increase. However, because GHC already has this accessible interface,
 the work of developing the best solvers for Dependent Haskell can be
 distributed over the Haskell community. This democratizes the development
@@ -1703,7 +1704,7 @@ to go to full dependency.
 %%  LocalWords:  editable DependentTypes MonoLocalBinds outsidein concat Exts
 %%  LocalWords:  SingTH TypeLits TL Vec Succ Num abs signum fromInteger fst
 %%  LocalWords:  listReplicate proj sig gradyear Morley Aimee Barnett Peng Qi
-%%  LocalWords:  Oliveira Chakraborty Sangeeta Kumar Xu NameSchema Col readDB
+%%  LocalWords:  Oliveira Chakraborty Sangeeta Kumar Xu NameSchema Col queryDB
 %%  LocalWords:  printName putStrLn sch loadTable putStr getLine mapM RA Eq
 %%  LocalWords:  elementOf ghci withSchema checkSchema loadSchema checkIn SI
 %%  LocalWords:  Buckwalter Listify NumArgs NAZero NASucc listApply args targ

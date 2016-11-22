@@ -584,6 +584,7 @@ nat, I {{ tex \ottnt{i} }}, NN {{ tex \ottnt{n} }}  :: 'Nat_' ::=
 | 2                         ::   :: Two
 | 3                         ::   :: Three
 | 4                         ::   :: Four
+| 5                         ::   :: Five
 | I1 - I2                   :: M :: Sub
 | I1 + I2                   :: M :: Plus
 | length D                  :: M :: TelescopeLength

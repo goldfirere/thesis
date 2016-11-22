@@ -25,7 +25,7 @@ relates the two languages by defining a type inference/elaboration algorithm,\fo
 algorithm, and a type checking algorithm. This is appropriate, as it is all three.
 In general, I do not differentiate between these descriptors.}
 \bake/,
-checking Dependent Haskell code and producing a well-typed \pico/ program.
+checking Dependent Haskell code and producing a well typed \pico/ program.
 
 At a high level, \bake/ is unsurprising. It simply combines the ideas
 of several pieces of prior
@@ -49,7 +49,7 @@ function |a -> b| can also accept a matchable one |a !-> b|.
 
 After presenting the elaboration algorithm, I discuss the metatheory
 in \pref{sec:bake-metatheory}. This section include a soundness result
-that the \pico/ program produced by \bake/ is well-typed. It also relates
+that the \pico/ program produced by \bake/ is well typed. It also relates
 \bake/ both to \outsidein/ and the bidirectional type system (``System SB'')
 from \citet{visible-type-application}, arguing that \bake/ is a conservative
 extension of both.
@@ -65,14 +65,14 @@ in \pref{app:inference}.
 \Bake/ is a bidirectional~\cite{local-type-inference}
 constraint-generation algorithm~\cite{remy-attapl}. It walks over
 the input syntax tree and generates constraints, which are later solved.
-It can operate in either a synthesis mode (when the type is unknown)
-or in checking mode (when the expected type of an expression is known). Like
+It can operate in either a synthesis mode (when the expected type of an expression is unknown)
+or in checking mode (when the type is known). Like
 prior work~\cite{outsidein,gundry-thesis}, I leave the details of the solver
 unspecified; any solver that obeys the properties described in
 \pref{sec:solver-properties} will do. In practice, the solver will be the one
 currently implemented in GHC. Despite the fact that the dependency tracking
 described here is omitted from \citet{outsidein}, the most detailed description of
-GHC's solver,\footnote{In the text of the paper describing
+GHC's solver,\footnote{In the paper describing
   \outsidein/~\cite{outsidein}, the authors separate out the constraint
   generation from the solver. They call the constraint-generation algorithm
   \outsidein/ and the solver remains unnamed. I use the moniker \outsidein/ to
@@ -81,12 +81,12 @@ the solver as implemented does indeed do dependency tracking and should
 support all of the innovations described in this chapter.
 
 Constraints in \bake/ are represented by \emph{unification telescopes}, which
-are lists of possibly-dependent unification variables,\footnote{Depending on
+are lists of possibly dependent unification variables,\footnote{Depending on
   the source, various works in the literature refer to unification variables
   as existential variables (e.g., \cite{simple-bidirectional}) or
   metavariables (e.g., \cite{gundry-thesis} and the GHC source code). I prefer
   unification variables here, as I do not wish to introduce confusion with
-  existentials of data constructors nor the metavariables of my developed
+  existentials of data constructors nor the metavariables of my
   metatheory.} with their types. Naturally, there are two sorts of unification
 variables: types $[[au]]$ and coercions $[[cu]]$. The solver finds concrete
 types to substitute in for unification variables $[[au]]$ and concrete
@@ -113,7 +113,7 @@ $[[~>]]$ is an input; everything to the right is an output. Most judgments
 also produce an output $[[O]]$, which is a unification telescope, containing
 bindings for only unification variables. This takes the place of the emitted
 constraints seen in other constraint-generation algorithms. It also serves
-as a context in which to type-check future parts of the syntax.
+as a context in which to type-check the remainder of the syntax tree.
 
 The solver's interface looks like this:
 \[
@@ -128,7 +128,7 @@ To understand the output $[[D]]$, consider checking the declaration
 |y = \x -> x|. The variable |x| gets assigned a unification variable type
 $[[au]]$. No constraints then get put on that type. When trying to solve
 the unification telescope $[[au :Irrel forall{}.Type{}]]$, we have nothing to do.
-The answer is, of course, to generalize. So we get $[[D = a :Irrel Type{}]]$
+The way forward is, of course, to generalize. So we get $[[D = a :Irrel Type{}]]$
 and $[[Z = a/au]]$. In the constraint-generation rules for declarations,
 the body of a declaration and its type are generalized over $[[D]]$.
 (See \rul{IDecl\_Synthesize} in \pref{sec:idecl}.)
@@ -140,7 +140,7 @@ this tension, \bake/ adheres to the following:
 \theoremstyle{plain}
 \newtheorem*{guidingprinciple}{Guiding Principle}
 \begin{guidingprinciple}
-In absence of other information, infer a simple type.
+In the absence of other information, infer a simple type.
 \end{guidingprinciple}
 \begin{guidingprinciple}
 Never make a guess.
@@ -182,10 +182,10 @@ However, we surely want inference to produce the first one. If inference
 did not tend toward simple types, there would be no hope of retaining
 principal types in the system. I do not prove that \bake/ infers principal
 types, as doing so is meaningless without some non-deterministic specification
-of the type system, which is beyond the scope of this work. However, I still
+of the type system, which is beyond the scope of this work. However, I
 wish to design Dependent Haskell with an eye toward establishing a
-principal types result in the future. Just like how inferring only rank-1 types
-still allows for higher-rank types in a bidirectional type system~\cite{practical-type-inference}, it is my hope that inferring only simple types will
+principal types result in the future. Inferring only rank-1 types
+still allows for higher-rank types in a bidirectional type system~\cite{practical-type-inference}. Accordingly, it is my hope that inferring only simple types will
 allow for Dependent Haskell to retain principal types.
 
 The second guiding principle is that \bake/ should never make guesses.
@@ -202,7 +202,8 @@ not guess the answer.
 A key consequence of not making any guesses is that \bake/ (more accurately,
 the solver it calls) does no higher-order unification. Consider this example:
 \begin{spec}
-fun :: a -> (f $ a)   -- NB: |f| is not a matchable function
+fun :: a -> (f $ a)  
+   -- NB: The use of |$| means that |f| is not a matchable function
 
 bad :: Bool -> Bool
 bad x = fun x
@@ -274,7 +275,7 @@ pattern matches. Haskell pattern matches can be nested, support guards,
 perhaps view patterns,
 perhaps pattern synonyms~\cite{pattern-synonyms}, etc. However, translating
 such a rich pattern syntax into a simple one
-is a well-studied problem with widely-used
+is a well studied problem with widely used
 solutions~\cite{augustsson-compiling-pattern-matching,wadler-pattern-matching}
 and I thus consider the algorithm as part of the preprocessor and do 
 not consider this further.
@@ -290,8 +291,9 @@ an orthogonal feature (visibility, matchability, relevance).
 Dependent Haskell uses an $\at$ prefix to denote an argument that would
 normally be invisible. It is used in two places in the grammar:
 \begin{itemize}
-\item An $\at$-sign before an argument indicates that the argument may
-be omitted and left to inference. This follows the treatment in my prior
+\item An $\at$-sign before an argument indicates that the argument is
+allowed to be omitted, yet the user has written it explicitly.
+ This follows the treatment in my prior
 work on invisible arguments~\cite{visible-type-application}.
 \item An $\at$-sign before a quantified variable (in the definition for
 $[[_qvar]]$) indicates that the actual argument may be omitted when
@@ -304,8 +306,8 @@ $\at$-sign is produced by the preprocessor when it encounters a
 
 \paragraph{Ticked quantifiers}
 Three of the quantifiers that can be written in Dependent Haskell
-come in two varieties: ticked and unticked. An ticked quantifier
-serves in the type of matchable (that is, generative and injective)
+come in two varieties: ticked and unticked. A ticked quantifier
+introduces matchable (that is, generative and injective)
 functions, whereas the unticked quantifier describes an unrestricted
 function space. Recall that type constructors and data constructors
 are typed by matchable functions, whereas ordinary $\lambda$-expressions
@@ -420,9 +422,9 @@ example = \ k a -> poly k a
 %
 Type inference can easily discover that the kind of |a| is |k|. But in order
 for the inference algorithm to do this, it must be aware that |k| is in
-scope before |a| is. Note that when we call the solver after type-checking
-the entire body of |example|, |k| is \emph{not} in scope. Thus, as we produce
-the unification telescope during constraint-generation over the body of
+scope before |a| is. Note that when we call the solver (after type-checking
+the entire body of |example|), |k| is \emph{not} in scope. Thus, as we produce
+the unification telescope during constraint generation over the body of
 |example|, we must somehow note that the unification variable $[[au]]$
 (the type of |a|) can mention |k|.
 
@@ -485,7 +487,7 @@ $[[au_&&kx]]$ to become $[[&&jx[&&kx/&&jx] ]]$ which is, of course
 $[[&&kx]]$ as desired.
 
 Note that the quantification we see here is very different from normal
-$\Pi$-quan\-ti\-fi\-ca\-tion in \pico/. These quantifications are fully second-class
+$\Pi$-quan\-ti\-fi\-ca\-tion in \pico/. These quantifications are fully second class
 and may be viewed almost as suspended substitutions.
 
 \subsection{Additions to \pico/ judgments}
@@ -590,7 +592,7 @@ Pulling this all together, we get the following unification telescope:
 
 Before we walk through what the solver does with such a telescope, what
 \emph{should} it do? That is, what's the type of our original expression?
-It turns out that this is not an easy question to answer! That expression
+It turns out that this is not an easy question to answer! The expression
 has no principal type. Both of the following are true:
 \[
 \begin{array}{l}
@@ -709,7 +711,7 @@ into scope makes some unification variables untouchable. In practice, this
 means that the result type of a GADT pattern match must be known; programmers
 must put type annotations on functions that perform a GADT pattern match.
 
-In a dependently-typed language, however, \emph{any} pattern match might
+In a dependently typed language, however, \emph{any} pattern match might
 bring equality constraints into scope, where the equality relates the scrutinee
 with the pattern. For example, if I say something as simple as
 |case b of { True -> x ; False -> y }|, I may want to use the fact that
@@ -717,7 +719,7 @@ with the pattern. For example, if I say something as simple as
 is, of course, dependent pattern matching (\pref{sec:dependent-pattern-match}).
 Our problem now is that it seems that \emph{every} pattern match introduces
 an equality constraint, meaning that the basic type inference of Haskell might
-no longer work.
+no longer work, stymied by untouchable variables.
 
 The solution is to take advantage of the equality available by dependent
 pattern matching only when the result type of the |case| expression is
@@ -753,7 +755,7 @@ takes two invisible arguments, |a|, and |b|. Which order should they appear
 in? Without the type signature for guidance, it is, in general, impossible
 to predict what order these will be generalized. See \citet[Section 3.1]{visible-type-application} for more discussion on this point.
 
-Despite the existence of functions like |isShorterThan| with fully-inferred
+Despite the existence of functions like |isShorterThan| with fully inferred
 type signatures, we wish to retain principal types in our type system---at
 least in the subset of the language that does not work with equality
 constraints.
@@ -784,7 +786,7 @@ does not. For example, a type produced by the $[[|->ty]]$ judgment in synthesis
 mode is guaranteed not to have any invisible (that is, specified or
 inferred) binders at the outermost level. Thus when synthesizing the type
 of $[[_t1]]$ in the expression $[[_t1 _t2]]$, we use the $[[|->ty]]$ judgment,
-as we want any invisible arguments to be inferred in preparation of applying
+as we want any invisible arguments to be inferred before applying
 $[[_t1]]$ to $[[_t2]]$. Considering the algorithm in checking mode,
 when processing a traditional $\lambda$-expression, we want the rule to be part of the $[[|->ty]]$ judgment,
 to be sure that the algorithm has already skolemized (\pref{sec:skolemization})
@@ -819,7 +821,8 @@ What we need here is a notion of \emph{subsumption}, whereby we say that
 \]
 For reasons well articulated in prior work~\cite[Section 4.6]{practical-type-inference}, my choice for the subsumption relation does \emph{deep skolemization}.
 This means that the types |forall a. Int -> a -> a| and |Int -> forall a. a -> a|
-are fully equivalent and is backward compatible with the current treatment
+are fully equivalent. This choice
+is furthermore backward compatible with the current treatment
 of non-prenex types in GHC.
 
 \begin{figure}[t!]
@@ -932,8 +935,8 @@ much like in the original syntax-directed version of the Hindley-Milner
 type system~\cite{damas-thesis,mini-ml}. In the subsumption check, we will
 want to set |alpha| to be |b|, the skolem created from |y|'s type
 signature. We will be unable to do so, however, because doing so would
-be ill-scoped: |alpha| occurs in the unification telescope before |b|
-is ever brought into scope. This means that it would be ill-scoped for
+be ill scoped: |alpha| occurs in the unification telescope before |b|
+is ever brought into scope. This means that it would be ill scoped for
 the value chosen for |alpha| to refer to |b|.\footnote{Saying
 that this example fails because of scoping is a vast improvement over
 the state of affairs in \citet{visible-type-application-extended}, where a delicate
@@ -1036,7 +1039,7 @@ The new construct $[[X]]$ is a \emph{generalizer}. It is a substitution-like
 construct that maps unification variables to vectors, which you may recall
 are lists of arguments $[[ps]]$. In this case, we simply use the domain
 of $[[D]]$ as the vector, where my use of $[[dom(D)]]$ as a list of arguments
-means to insert the irrelevance braces around irrelevantly-bound variables.
+means to insert the irrelevance braces around irrelevantly bound variables.
 Generalizers are necessary because generalizing changes the type of
 unification variables; we must then change the occurrences of them as well.
 
@@ -1056,7 +1059,7 @@ is defined by these equations:
 \]
 \end{definition*}
 Just like the generalization judgment (\pref{fig:generalization}), the
-generalization operation $[[ [X] ]]$ prepends the newly-generalized variables
+generalization operation $[[ [X] ]]$ prepends the newly generalized variables
 to those already there.
 
 \section{Type inference algorithm}
@@ -1204,7 +1207,7 @@ We see in \pref{fig:bake-judgments} that there are two judgments for checking
 expressions, one for synthesis (\rul{ITy\_Case})
 and one for checking (\rul{ITyC\_Case}). I refrain from including
 the actual rules here, as their myriad and ornate details would be
-distracting; the overly-curious can see \pref{app:inference-rules} for these
+distracting; the overly curious can see \pref{app:inference-rules} for these
 details.
 
 As discussed previously (Sections \ref{sec:dependent-pattern-match} and
@@ -1268,7 +1271,7 @@ One way to boil this problem down is to consider what type we check the expressi
 |P| against. When we are checking |P|, we clearly have |f :: Bool -> Bool|
 in scope. Yet the natural type to check |P| against is |Proxy !(g 5, g !True)|,
 which mentions |g|, not |f|. Even if the names were to be fixed, we would
-still have the problem that |g 5| is certainly not well-typed if
+still have the problem that |g 5| is certainly not well typed if
 |g| has type |Bool -> Bool|. We are stuck.
 
 Another way to see this problem is to think about elaborating the subsumption
@@ -1309,7 +1312,7 @@ the rules are a bit cluttered to present here.
 \end{figure}
 
 Up until now, this chapter has focused more on the gate-keeping services
-provided by \bake/, preventing ill-formed programs from being accepted.
+provided by \bake/, preventing ill formed programs from being accepted.
 In this section, we will discuss elaboration, the process of creating the
 \pico/ program that corresponds to an input Haskell program. Let's look
 in particular on the highest levels of elaboration, processing Haskell
@@ -1333,7 +1336,7 @@ binders as inferred, never specified.
 
 Rule \rul{IDecl\_Check} is a bit more involved. It first must check the
 type signature using the $[[|->pt]]$ judgment,
-to make sure $[[_s]]$ it is a well-formed polytype.
+to make sure $[[_s]]$ it is a well formed polytype.
 This process might emit constraints, and we must solve these before tackling
 the term-level expression. This would happen, for example, in the type
 |forall a. Proxy a -> ()|, as |a|'s kind is unspecified. The solver may
@@ -1384,7 +1387,7 @@ a separate, non-algorithmic form of \bake/, I present three results in this
 section:
 \begin{itemize}
 \item I prove that the elaborated \pico/ program produced by \bake/ is
-indeed a well-typed \pico/ program. This result---which I call soundness---marks
+indeed a well typed \pico/ program. This result---which I call soundness---marks
 an upper limit on the set of programs that \bake/ accepts. If it cannot
 be typed in \pico/, \bake/ must reject.\footnote{I do not prove a correspondence
 between the Haskell program and the \pico/ program produced by elaboration.
@@ -1426,10 +1429,10 @@ If $[[S |-ctx G]]$ and $[[S;G |->prog _prog ~> G'; theta]]$, then:
 \item $[[dom(_prog) \subseteq dom(G')]]$
 \end{enumerate}
 \end{theorem*}
-This theorem assumes that the starting environment is well-formed
+This theorem assumes that the starting environment is well formed
 $[[S |-ctx G]]$ and that \bake/ accepts the source language program
 $[[_prog]]$. In return, the theorem claims that the context extension
-$[[G']]$ is well-formed (assuming it is appended after $[[G]]$),
+$[[G']]$ is well formed (assuming it is appended after $[[G]]$),
 that the substitution $[[theta]]$ is a valid closing substitution (see below),
 and that indeed the new context $[[G']]$ binds the variables declared in
 $[[_prog]]$.
@@ -1856,7 +1859,7 @@ implementations of methods, and instances
 are record values (often called \emph{dictionaries}) (\pref{sec:type-classes}).
 As \pico/ supports datatypes, it also supports classes. Nothing about
 the type class system should matter at all in \pico/. Indeed, System FC
-as currently implemented in GHC 8 cares not about type classes, to no ill
+as currently implemented in does not GHC 8 cares about type classes, to no ill
 effect.
 
 During type inference, on the other hand, we need to care a bit about classes
@@ -1870,7 +1873,7 @@ user-written polytype into \pico/:
 \[
 \ottdruleIPtCXXConstrained{}
 \]
-This rule checks the constraint $[[_t]]$, making sure it is well-typed
+This rule checks the constraint $[[_t]]$, making sure it is well typed
 as a constraint (see \pref{sec:constraint-vs-type}) and then checks
 the rest of the type, assuming the constraint. The use of a $\$$ sign
 in the name of the constraint ($[[dollar a]]$) is meant to convey that
@@ -1945,7 +1948,7 @@ The design of \bake/ is already quite close to that of GHC's constraint-generati
 algorithm. \pref{fig:bake-ghc} lists correspondences between \bake/ judgments
 and functions already existent in GHC.
 
-Notably absent for \pref{fig:bake-ghc} are the main judgments such as
+Notably absent from \pref{fig:bake-ghc} are the main judgments such as
 $[[|->ty]]$. These are implemented in GHC via its |tcExpr| function,
 which handles both directions of the bidirectional type system at the same
 time through its use of \emph{expected types}, a mechanism there the

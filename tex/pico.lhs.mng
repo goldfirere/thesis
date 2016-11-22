@@ -81,7 +81,7 @@ the \emph{coercions} that provide the ``C'' in ``System FC''. Instead of relying
 on a non-syntax-directed equivalence relation, \pico/'s type equivalence
 requires evidence of equality in the form of coercions. Here is a simplified
 version of \pico/'s take
-of the \rul{Conv} rule:
+on the \rul{Conv} rule:
 \[
 \ottdrule{\ottpremise{[[t]] : [[k1]] \qquad [[g]] : [[k1 [Type{}]~[Type{}] k2]]}}{[[t |> g]] : [[k2]]}{\rul{Ty\_Cast}}
 \]
@@ -118,9 +118,9 @@ semantics deals with coercions in the form of \emph{push rules}, the
 small-step semantics is what you might expect for a call-by-name
 $\lambda$-calculus.
 
-The typing relations, however, have a few features worth mentioning up front;
-other unusual features are best explained after the detailed coverage of
-\pico/; see \pref{sec:pico-design-decisions}.
+The typing relations, however, have a few features worth mentioning up front
+(other unusual features are best explained after the detailed coverage of
+\pico/; see \pref{sec:pico-design-decisions}).
 
 \subsubsection{Relevance annotations and type erasure}
 A key concern when compiling a dependently typed language is type erasure.
@@ -131,13 +131,13 @@ detail at each quantifier (\pref{sec:pico-relevance}). In the formal grammar
 of \pico/, we distinguish between $[[PI]] [[a:Rel k]].\, ...$ and
 $[[PI]] [[a:Irrel k]].\, ...$. The former is the type of an abstraction
 that is retained at runtime, written with a |pi| in Haskell;
-the latter abstraction, written with |forall|, is fully erased.
+the latter, written with |forall|, is fully erased.
 In order to back up this claim of full erasure of irrelevant quantification,
 evaluation happens under irrelevant abstractions; see \pref{sec:evaluation-under-irrel-abs}.
 
 So that we can be sure a variable's relevance is respected at use sites,
 variable contexts $[[G]]$ track the relevance of bound variables. Only
-relevant variables may appear in the ``level'' in which they were bound;
+\emph{relevant} variables may appear in the ``level'' in which they were bound;
 when a typing premise refers to a higher ``level'', the context is altered to
 mark all variables as relevant. For example, the \ottkw{case} construct
 $[[case_k t of alts]]$ includes the return kind of the entire \ottkw{case}
@@ -153,13 +153,14 @@ by \citet{erasure-pure-type-systems}.
 \label{sec:unsaturated-match-example}
 \label{sec:two-pis}
 
-Dependent Haskell supports both matchable abstractions and unmatchable
+Dependent Haskell supports both matchable---that is, generative
+and injective---abstractions and unmatchable
 ones (\pref{sec:matchability}). Though at first it might appear that
 separating out these two modalities is necessary only to support type
 inference, \pico/ maintains this distinction. Every $\Pi$-type in \pico/
 is labeled as either matchable or unmatchable: $[[MPI]]$ denotes a matchable
 $\Pi$-type and $[[UPI]]$ denotes an unmatchable one. An unadorned $[[PI]]$
-is metavariable which
+is a metavariable which
 might be instantiated either to $[[MPI]]$ or $[[UPI]]$.
 We do not have to label
 $\lambda$-abstractions, however, because all $\lambda$-abstractions
@@ -176,10 +177,10 @@ $[[s1 [k1]~[k2] s2]]$. I would like to retain this ability in \pico/
 in order to support the claim that Dependent Haskell is a conservative
 extension over today's Haskell. However, decomposing an application as above
 in the
-presence of unsaturated $\lambda$-abstractions is clearly bogus.
+presence of unsaturated $\lambda$-abstractions is clearly bogus.\footnote{For example, we can prove $[[ (\ x :Rel &Int{} . #3{}) #4{} [&Int{}]~[&Int{}] (\x :Rel &Int{} . #3{}) #5{}]]$ but do not wish to be able to prove $[[#4{} [&Int{}]~[&Int{}] #5{}]]$.}
 
 The solution here is to keep matchable applications separate from unmatchable
-ones, and we allow decomposition only of matchable applications. The
+ones, and allow decomposition only of matchable applications. The
 two application forms comprise different nodes in the \pico/ grammar.
 Decomposing only matchable applications is a
 backward-compatible treatment, as today's Haskell has only matchable
@@ -192,20 +193,22 @@ makes over Gundry's \emph{evidence} language~\cite{gundry-thesis}.
 See \pref{sec:gundry} for more discussion of the comparison of my
 work to Gundry's.
 
-\paragraph{Matching on partially-applied constants}
+\paragraph{Matching on partially applied constants}
 
 \Pico/ does not contain type families. Instead, it uses $\lambda$-abstractions
 and \ottkw{case} expressions, as these are more familiar to functional programmers.
 And yet, I wish for \pico/ to support the variety of ways in which type families
 are used in today's Haskell. One curiosity of today's Haskell is that it allows
-matching on partially-applied data constructors:
+matching on partially applied data constructors:
 \begin{code}
 type family IsLeft a where
   IsLeft !Left   = !True
   IsLeft !Right  = !False
 \end{code}
 The type family |IsLeft| is inferred to have kind
-|forall k. (k -> Either k k) -> Bool|. That is, it matches on the |Left|
+|forall k. (k -> Either k k) -> Bool|. (Note that |k -> Either k k| is what
+you get when unifying the kind of |Left| with that of |Right|.)
+That is, it matches on the |Left|
 and |Right| constructors, even though these are not applied to arguments.
 While it may seem that |IsLeft| is matching on a \emph{function}---after all,
 the type of |IsLeft|'s argument appears to be an arrow type---it is not.
@@ -273,13 +276,13 @@ to aid in making free design decisions. The chief motivator for the design
 of \pico/ is that it should be suitable for use as the internal language
 of a Haskell compiler. This use case provides several desiderata:
 
-\paragraph{Decidable, syntax-directed, efficient type-checking}
+\paragraph{Decidable, syntax-directed, efficient type checking}
 The use of types in a compiler's intermediate language serves only as a check
 of the correctness of the compiler. Any programmer errors are caught before
 the intermediate language code is emitted, and so a correct compiler should
-only produce well-typed intermediate-language programs, if it produces such
+only produce well typed intermediate-language programs, if it produces such
 programs at all. In addition, a correct compiler performing program transformations
-on the intermediate language should take a well-typed program to a well-typed
+on the intermediate language should take a well typed program to a well typed
 program. However, not all compilers are correct, and thus it is helpful
 to have a way to check that intermediate-language program generation and
 transformation is at least type-preserving. To check this property, we need
@@ -288,14 +291,14 @@ produced and after every transformation. It thus must be easy and efficient
 to do so.
 
 \Pico/ essentially encodes a typing derivation right in the syntax of types
-and coercions. It is thus very easy to write a type-checker for the language.
+and coercions. It is thus very easy to write a type checker for the language.
 Type-checking is manifestly decidable and can be done in one pass over the
 program text, with no constraint solving.\footnote{I do not claim that it
 is strictly linear, as a formal analysis of its running time is beyond the
 scope of this dissertation. In particular, one rule
 (see \pref{sec:pico-case}) requires the use of a unification algorithm
 and likely breaks linearity.} \Pico/'s lack of a termination requirement
-also significantly lowers the burden of implementation of a type-checker
+also significantly lowers the burden of implementation of a type checker
 for the language.
 
 \paragraph{Erasability}
@@ -359,7 +362,7 @@ it, I have tried to permit certain Haskell idioms (call-by-name semantics,
 the extra capabilities of \ottkw{case} expressions outlined above) while
 still retaining a general enough flavor that it could be adapted to other
 settings. I believe that the arguments above about \pico/'s design mean
-that it is a suitable starting-point for the design of an
+that it is a suitable starting point for the design of an
 intermediate language for any dependently typed surface language. Other uses
 might want call-by-value instead of call-by-name or to remove the somewhat
 fiddly distinction between $[[MPI]]$ and $[[UPI]]$. These changes should be
@@ -623,8 +626,8 @@ and so I elide them in those cases.
 All of the metatheory in this dissertation is typeset using
 \package{ott}~\cite{ott}. This tool effectively type-checks my work,
 preventing me from writing, say, the nonsense $[[a]]{:}[[phi]]$, which is
-rightly a parsing error.\footnote{Indeed, to include that example in the text,
-  I had to avoid rendering the example in \package{ott} syntax.} In addition,
+rightly a \package{ott} parsing error.\footnote{Indeed, to include that example in the text,
+  I had to avoid rendering it in \package{ott} syntax.} In addition,
 I have configured my use of \package{ott} to require me to write the kinds
 of an equality proposition even when I intend for them to be elided in the
 rendered output, as a check to make sure these parameters can indeed be written
@@ -634,15 +637,21 @@ This chapter proceeds by explaining all of the various typing judgments
 individually. \pref{sec:contexts-rel-annots} explains contexts $[[G]]$,
 along with relevance annotations. \pref{sec:signatures} explains
 signatures $[[S]]$, which contain specifications for constants $[[H]]$.
-Having explained the more unexpected aspects of the syntax, I then
-present examples of \pico/ programs in \pref{sec:pico-examples}.
+Having covered the more unexpected aspects of the syntax, \pref{sec:pico-examples}
+then
+presents examples of \pico/ programs.
 Types come next, in \pref{sec:pico-types}, followed by the operational
 semantics in \pref{sec:operational-semantics}.
 Now having an thorough understanding of the rest of \pico/,
 we are prepared to tackle coercions, the thorniest part,
-in \pref{sec:pico-coercions}. The metatheory is discussed in
-Sections~\ref{sec:metatheory-one} and~\ref{sec:metatheory-two}.
-I describe certain, perhaps unexpected design decisions in \pref{sec:pico-design-decisions}.
+in \pref{sec:pico-coercions}.
+\pref{sec:pico-kpush} covers one final rule from the operational
+semantics (\rul{S\_KPush}), too challenging to describe before coercions
+are fully explained.
+ Sections~\ref{sec:metatheory-one} and~\ref{sec:metatheory-two}
+cover the metatheory.
+\pref{sec:pico-design-decisions}
+describes certain, perhaps unexpected design decisions.
 The chapter concludes in \pref{sec:pico-extensions}
 by considering a variety of extensions to \pico/ that are needed for
 full, backward-compatible support for Haskell as embodied in GHC~8.
@@ -664,7 +673,7 @@ annotations come into play only in the rule for checking variable occurrences:
 Note that this rule requires $[[a:Rel k \in G]]$, with a relevant binder.
 Thus, only variables that are considered relevant---that is, variables that
 will remain at runtime---can be used in an expression. As described briefly
-above, when we ``go up a level'', we reset the context, making all variables
+above, when we ``go up a level'', we reset the context, marking all variables
 relevant. This resetting is done by the $[[Rel(G)]]$ operation,
 defined recursively on the structure of $[[G]]$ as follows:
 \begin{align*}
@@ -677,7 +686,7 @@ contexts for validity:\\[\baselineskip]
 \ottdefnCtx{}
 
 Here, we see that a binding $[[a :rel k]]$ can be appended onto a context
-$[[G]]$ when the $[[a]]$ is fresh and the $[[k]]$ is well-typed at $[[Type{}]]$
+$[[G]]$ when the $[[a]]$ is fresh and the $[[k]]$ is well typed at $[[Type{}]]$
 in $[[Rel(G)]]$. The reason for using $[[Rel(G)]]$ instead of $[[G]]$ here
 is that the kind $[[k]]$ does not exist at runtime, regardless of the
 relevance annotation on $[[a]]$. We are thus free to essentially ignore
@@ -701,16 +710,16 @@ Regularity is an important property of \pico/, allowing us to easily
 assume well-formed contexts and signatures:
 
 \begin{lemma*}[Context regularity {[\pref{lem:ctx-reg}]}]
-If:
+If
 \begin{enumerate}
-\item $[[S;G |-ty t : k]]$, OR
-\item $[[S;G |-co g : phi]]$, OR
-\item $[[S;G |-prop phi]]$, OR
-\item $[[S;G;s0;t0 |-alt alt : k]]$, OR
-\item $[[S;G |-vec ps : D]]$, OR
-\item $[[S |-ctx G]]$
+\item $[[S;G |-ty t : k]]$, or
+\item $[[S;G |-co g : phi]]$, or
+\item $[[S;G |-prop phi]]$, or
+\item $[[S;G;s0;t0 |-alt alt : k]]$, or
+\item $[[S;G |-vec ps : D]]$, or
+\item $[[S |-ctx G]]$,
 \end{enumerate}
-Then $[[S |-ctx prefix(G)]]$ and $[[|-sig S]]$, where $[[prefix(G)]]$ is an
+then $[[S |-ctx prefix(G)]]$ and $[[|-sig S]]$, where $[[prefix(G)]]$ is an
 arbitrary prefix of $[[G]]$. Furthermore, both resulting derivations are no
 larger than the input derivations.
 \end{lemma*}
@@ -732,7 +741,7 @@ here to make dependency on this signature explicit.
 The judgment to check the validity of a signature follows:\\[\baselineskip]
 \ottdefnSig{}
 
-We see here the two different entities that can be added to a signature,
+We see here the two different entities that can belong to a signature,
 an algebraic datatype (ADT) $[[T]]$ or a data constructor $[[K]]$.
 
 An ADT is classified only by its list of universally quantified variables
@@ -772,7 +781,7 @@ data Ex a where
 If I have a value of type |Tuple Double|, then I know the types of the data
 stored in a |MkTuple|, but I do not know the |Int|, the |Char|, or the
 |Double|---these are the existentials. Similarly, if I have a value of type
-|Ex Char|, then I know that the type of one argument to |MkEx|, but I do not
+|Ex Char|, then I know the type of one argument to |MkEx|, but I do not
 know the type of the other; I also know neither value. In this case, the
 second type, |b|, is existential, as are both values (of types |b| and |a|,
 respectively).
@@ -846,7 +855,8 @@ data Type where
 \end{spec}
 %
 Thinking of ADTs this way, we can see why the argument to |Maybe| is
-existential, just like other arguments to constructors. We can also see
+existential, just like other arguments to constructors (see \pref{sec:term-arguments-are-existentials} for an explanation of the unusual use of the word
+\emph{existential} here). We can also see
 that the kind parameter |k| to |Proxy| is also considered an existential
 in this context.
 
@@ -896,7 +906,7 @@ to get the type of |Left True| in a syntax-directed way.
 \paragraph{Universal argument saturation}
 The grammar for type constant occurrences in types requires them to appear
 fully saturated with respect to universals but perhaps unsaturated with
-respect to existentials. There are several reasons for this seemingly-peculiar
+respect to existentials. There are several reasons for this seemingly peculiar
 design:
 \begin{itemize}
 \item It is helpful to separate universals from existentials in a variety of
@@ -905,14 +915,14 @@ design:
   is also essential in the step rule \rul{S\_KPush}.
 
 \item If \pico/ did not allow matching on unsaturated constants, it might
-be most natural to require saturation with respect to both universals
+be most natural to require saturation with respect to \emph{both} universals
 and existentials (while still keeping these different arguments separate).
 This would allow, for example, for a simple statement of the canonical
 forms lemma (\pref{lem:canon-form}),
 because only a $[[\ ]]$-expression would have a $[[PI]]$-type.
 
 However, since \pico/ does allow matching on unsaturated constants, the
-grammar must permit this form. Because of \pico/'s discernment between
+grammar must permit this form. Because \pico/ tracks the difference  between
 matchable $[[MPI]]$ and unmatchable $[[UPI]]$, we retain the simplicity
 of the canonical forms lemma, as any expression classified by a $[[MPI]]$
 must be a partially applied constant and any expression classified by a
@@ -952,7 +962,8 @@ to all of the universals.
 \label{sec:pico-examples}
 \label{sec:pico-gadt-example}
 
-Though these may make sense more fully after reading the sections below, it
+Though these examples may make sense more fully
+after reading the sections below, it
 may be helpful at this point to see a few short examples of \pico/ programs. 
 
 We will work with a definition of length-indexed vectors, a tried-and-true
@@ -1050,14 +1061,14 @@ and scoping
 rules for pattern matches, because it removes a binding site in the grammar
 (leaving us with two: $[[PI]]$ and $[[\ ]]$). Because of the typing rule
 for \ottkw{case} expressions (\pref{sec:pico-case}),
-we still must bind all of the existentials
+we \emph{still} must bind all of the existentials
 of a data constructor when matching against it---even when these existentials
 are ignored, as we see here.
 
 The matches also bind a variable not mentioned in the data constructors'
 existentials: the coercion variable $[[c0]]$. This coercion witnesses the
 equality between the scrutinee ($[[&&vx]]$, in this case) and the applied
-data constructor that introduces the case-branch. This coercion variable
+data constructor that introduces the case branch. This coercion variable
 is bound in all matches, meaning that all pattern matching in \pico/
 is dependent pattern matching.\footnote{Contrast to \citet{gundry-thesis},
 who use two separate constructs, \ottkw{case} and \ottkw{dcase}, only
@@ -1115,8 +1126,8 @@ Now, in \pico/:
 \begin{array}{@@{}l}
 [[case_{{&Vec{} &&ax &&nx}} &&nx of blank]] \\
 \quad \begin{array}{l@@{\,}l}
-[[&Zero]] &[[->]] [[\ c0 : &&nx [&Nat{}]~[&Nat{}] &Zero{}. &VNil{&&ax,&&nx} c0]] \\
-[[&Succ]] &[[->]] [[\ &&mx :Rel &Nat{}, c0 : &&nx [&Nat{}]~[&Nat{}] &Succ{} &&mx. &VCons{&&ax,&&nx} {&&mx} c0 &&xx (&&rx &&mx &&xx)]]
+[[&Zero]] &[[->]] [[\ c0 : (&&nx [&Nat{}]~[&Nat{}] &Zero{}). &VNil{&&ax,&&nx} c0]] \\
+[[&Succ]] &[[->]] [[\ &&mx :Rel &Nat{}, c0 : (&&nx [&Nat{}]~[&Nat{}] &Succ{} &&mx). &VCons{&&ax,&&nx} {&&mx} c0 &&xx (&&rx &&mx &&xx)]]
 \end{array}
 \end{array}}
 \end{array}
@@ -1124,7 +1135,7 @@ Now, in \pico/:
 \]
 
 This example shows the (standard) use of \ottkw{fix} as well as some of the
-more exotic features of \pico/. In the case-branches, we see how we pass
+more exotic features of \pico/. In the case branches, we see how we pass
 universal arguments to the data constructors |VNil| and |VCons|. We also
 see how we have to wrap irrelevant arguments (the $[[{&&mx}]]$ in the last
 line) in braces. This example also shows where the coercion variable
@@ -1132,15 +1143,15 @@ $[[c0]]$ comes into play: it's needed to provide the coercion to the
 |VNil| and |VCons| constructors to prove that the universal argument
 $[[&&nx]]$ is indeed of the shape required for these constructors.
 Without the ability to do a dependent pattern match, this example would
-be impossible to write.\footnote{Unless you fake dependent types using
-singletons or some other technique.}
+be impossible to write, unless you fake dependent types using
+singletons or some other technique.
 
 \subsection{|append|}
 \label{sec:example-with-stepn}
 
 We'll now examine how to append two vectors. This operation will also
 require the use of an addition operation, defined using prefix notation
-so as not to provide a parsing challenge:
+so as not to pose a parsing challenge:
 %
 \begin{notyet}
 \begin{spec}
@@ -1353,7 +1364,7 @@ type system, including both a $[[PI]]$-form and a $[[\ ]]$-form:
 %
 The only novel component of these rules is the use of $[[Rel(G)]]$ in the
 premise to \rul{Ty\_Pi}. Resetting the context here is appropriate because
-we still wish to use irrelevant variables in types. As an example, the
+we wish to use irrelevant variables in types. As an example, the
 use of $[[Rel(G)]]$ here is necessary to allow
 the type of Haskell's |undefined|: $[[UPI a:Irrel Type{}. a]]$.
 
@@ -1400,7 +1411,8 @@ kind regularity\footnote{Both regularity lemmas are stated in \pref{fig:pico-jud
 \ottdruleTyXXFix{}
 \]
 The rule requires type $[[t]]$ to have an unmatchable $[[UPI]]$ so that
-we can be sure that $[[t]]$'s canonical form is indeed a $[[\ ]]$; otherwise
+we can be sure that $[[t]]$'s canonical form is indeed a $[[\ ]]$ (as
+opposed to an unsaturated constant); otherwise
 the progress theorem (\pref{sec:progress-thm-statement}) would not hold.
 
 \subsection{\ottkw{case}}
@@ -1418,7 +1430,8 @@ the progress theorem (\pref{sec:progress-thm-statement}) would not hold.
 \end{figure}
 
 Unsurprisingly, the typing rules to support pattern matching are the most
-involved, presented in \pref{fig:case-rules} with the rules to type-check \ottkw{case}
+involved and
+are presented in \pref{fig:case-rules} with the rules to type-check \ottkw{case}
 branches.
 
 Most of the premises of \rul{Ty\_Case} are easy enough to explain:
@@ -1450,7 +1463,7 @@ judgment.
 
 \subsubsection{Checking \ottkw{case} alternatives}
 
-The rule \rul{Alt\_Match} is intricate. This rule assumes we have
+The rule \rul{Alt\_Match} is intricate. It assumes we have
 a scrutinee $[[t0]]$ of type $[[MPI D'. H'{} ss]]$, and we are checking
 a case alternative $[[H -> t]]$.
 
@@ -1478,7 +1491,7 @@ the length of $[[D4]]$ (and, hence, $[[D3]]$) and it also forces any
 renaming of bound variables necessary to line up the telescopes $[[D']]$
 and $[[D4]]$. Keeping the names of the bound variables consistent between
 these telescopes simplifies this rule. We see that in the event that the
-scrutinee is a fully-saturated datatype or data constructor,
+scrutinee is a fully saturated datatype or data constructor,
 $[[D4 = D']] = [[empty]]$ and $[[D3 = D2[ss/dom(D1)] ]]$; in this common
 case, then, unification is unnecessary.
 
@@ -1512,7 +1525,7 @@ the worked out examples above (\pref{sec:pico-examples}).
 
 Let's examine the use of unification in \rul{Alt\_Match} more carefully.
 We will proceed by examining two examples, a simple one where unification
-is unnecessary and a more involved one showing why we need this.
+is unnecessary and a more involved one showing why we sometimes need it.
 
 Our first example was given above, when first describing unsaturated matching
 (\pref{sec:unsaturated-match-example}):
@@ -1527,7 +1540,7 @@ type family IsLeft x where
 \end{code}
 %}
 The translation of |Either| into \pico/ appears in \pref{sec:pico-either}.
-This type family translated into the following \pico/ function (rewritten
+This type family translated to the following \pico/ function (rewritten
 to be lowercase according to Haskell naming requirements):
 \[
 \begin{array}{r@@{\,}c@@{\,}l}
@@ -1536,8 +1549,8 @@ to be lowercase according to Haskell naming requirements):
 && [[case_&Bool{} &&xx of blank]] \\
 && \quad
 \begin{array}{l@@{\,}l}
-[[&Left]] &[[->]] [[\ (c0 : &&xx [MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax]~[MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax] &Left{&&ax,&&ax}). &True{}]] \\
-[[&Right]] &[[->]] [[\ (c0 : &&xx [MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax]~[MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax] &Right{&&ax,&&ax}). &False{}]]
+[[&Left]] &[[->]] [[\ c0 : (&&xx [MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax]~[MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax] &Left{&&ax,&&ax}). &True{}]] \\
+[[&Right]] &[[->]] [[\ c0 : (&&xx [MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax]~[MPI (&&yx :Rel &&ax). &Either{} &&ax &&ax] &Right{&&ax,&&ax}). &False{}]]
 \end{array}
 \end{array}
 \]
@@ -1567,7 +1580,7 @@ concrete instantiations of metavariables:
 
 In this example, the constructor is not applied to any existential variables, and
 so $[[D3]]$, the telescope of binders that are to be bound by the match, is empty.
-The only variable bound in the match body is the $[[c0]]$ dependent-match coercion
+The only variable bound in the match body is $[[c0]]$, the dependent-match coercion
 variable. Also note that $[[D4]]$, the instantiated suffix of the telescope of
 existential arguments to |Left|, and $[[D']]$, the telescope of binders in the type
 of the scrutinee, coincide. Accordingly, the match operation succeeds with an empty
@@ -1654,7 +1667,7 @@ there are no universals at all (the datatype |X| takes no arguments), and
 so this instantiation is a no-op. (The lack of universals shows up in the
 equations above via an empty $[[D1]]$ and an empty $[[ss]]$.)
 We thus have $[[D3,D4 = D2]]$, where the length of $[[D4]]$ must match
-the length of $[[D']]$, the telescope of variable bound in the type
+the length of $[[D']]$, the telescope of variables bound in the type
 of the scrutinee. We see that the scrutinee $[[&&xx]]$ has type
 $[[MPI (&&zx :Rel &Bool{}). &&Xx{}]]$ and so $[[D' = &&zx :Rel &Bool{}]]$.
 Thus $[[D3]]$---the existentials bound by the pattern match---has two
@@ -1666,9 +1679,9 @@ instance of $[[D4]]$, as determined by a unification algorithm
 (discussed in more depth in \pref{sec:unification}). In this case,
 the unification succeeds, assigning the type variable |a| to be |Bool|,
 as shown in the choice for $[[theta]]$, above. Accordingly, the match
-is well-typed.
+is well typed.
 
-Requiring this unification simply reduces the set of well-typed programs. It
+Requiring this unification simply reduces the set of well typed programs. It
 is thus important to understand why the restriction is necessary. What goes
 wrong if we omit it? The problem comes up in the proof for progress, in the
 case where the scrutinee has a top-level cast. We will use step rule
@@ -1694,9 +1707,9 @@ a function returning a $[[Type]]$), it would be
 impossible to enumerate all possibilities of this open type. Such
 matches must have a default alternative.
 \item If a scrutinee is partially applied, the typing rules dictate
-a delicate unification process to make sure alternatives are well-typed.
+a delicate unification process to make sure alternatives are well typed.
 (See \pref{sec:alt-match-matching}.) Given the design of \rul{Alt\_Match},
-it is possible some of the constructors of a datatype would be ill-typed
+it is possible some of the constructors of a datatype would be ill typed
 as patterns in an unsaturated match. It might therefore be challenging to
 detect whether an unsaturated match is exhaustive. To avoid this problem,
 unsaturated matches may use a default alternative in order to be
@@ -1716,7 +1729,7 @@ typing rule:
 \]
 This rule requires that the coercion argument to \ottkw{absurd},
 $[[g]]$, relate two unequal type constants $[[H1]]$ and $[[H2]]$.
-The type $[[absurd g t]]$ can have any well-formed kind,
+The type $[[absurd g t]]$ can have any well formed kind,
 as chosen by $[[t]]$. Because $[[t]]$ is needed only to choose
 the overall kind of the type, it is checked a context reset by
 $[[Rel]]$.
@@ -1734,12 +1747,12 @@ Simply returning $[[undefined]]$ would not be as informative.
 \label{sec:progress-thm-statement}
 \label{sec:operational-semantics}
 
-Now that we have seen the static semantics of types, we are well-placed
+Now that we have seen the static semantics of types, we are well placed
 to explore their dynamic semantics---how the types can reduce to values.
 The dynamic semantics of types is expressed in \pico/ via a small-step
 operational semantics, captured in the judgment
 $[[S;G |-s t --> t']]$. Rules in this judgment are prefixed by
-``\rul{S\_}''. It must be parameterized over typing environment because
+``\rul{S\_}''. It must be parameterized over a typing environment because
 of the push rules, as explained in \pref{sec:push-rules}.
 
 The operational semantics obeys preservation and
@@ -1866,7 +1879,7 @@ used to prove consistency (\pref{sec:parallel-rewrite-relation}).
 \ottdruleSXXCaseXXCong{}\rulesep
 \ottdruleSXXFixXXCong{}
 \end{gather*}
-and one more unusual one,
+and one more unusual one:
 \[
 \ottdruleSXXIrrelAbsXXCong{}
 \]
@@ -1949,7 +1962,7 @@ speed of compilation and is not central to the theory or metatheory of
 the language.
 
 All coercions are erased before runtime (\pref{sec:type-erasure}). Accordingly,
-we check for well-typed coercions (via the judgment
+we check for well typed coercions (via the judgment
 $[[S;G |-co g : phi]]$) only in contexts reset by the $[[Rel]](\cdot)$ operator.
 
 \subsection{Equality is heterogeneous}
@@ -1984,7 +1997,7 @@ quite like McBride's. My invocation of ``John Major'' here is to
 recall that an equality between types implies the same relationship
 among the kinds.
 
-It's worth pausing here for a moment to consider two other meanings,
+It's worth pausing here for a moment to consider two other possible meanings,
 among others, of
 heterogeneous equality:
 \paragraph{Trellys equality}
@@ -2016,7 +2029,7 @@ an equality would use this rule (not part of \pico/):
 Note how |~| is indexed by $[[g]]$, the proof that the kinds are equal.
 I call this equality homogeneous, because even to form the equality $[[t1 [k1]~[k2] t2]]$,
 we must know that the kinds are equal. Contrast to \rul{Prop\_Equality}, where
-the proposition itself is well-formed even when the kinds and/or types are
+the proposition itself is well formed even when the kinds and/or types are
 not provably equal.
 
 
@@ -2042,18 +2055,19 @@ coercion binders.
 and structure
 of coercions within types is immaterial. This is a critical property
 because it is intended for a compiler to create and place these coercions.
+The type system must be agnostic to where, precisely, they are placed.
 Coherence is obtained through this coercion form:
 \[
 \ottdruleCoXXCoherence{}
 \]
-This coercion form requires two well-kinded types $[[t1]]$ and $[[t2]]$
+This coercion form requires two well kinded types $[[t1]]$ and $[[t2]]$
 as well as a coercion $[[h]]$ that relates their kinds. It also requires
 the critical premise that $[[|t1| = |t2|]]$, where $\lfloor \cdot \rfloor$
 is a \emph{coercion erasure} operation. This operation is separate
 from (though
 similar to) the type erasure operation spelled $[[||.||]]$ and discussed
 several times thus far. The full definition of this operation is given
-in \pref{defn:co-erasure}. More briefly, coercion erasure is defined
+in \pref{defn:co-erasure}. Briefly, coercion erasure is defined
 recursively on types, binders, case alternatives, and propositions
 by the following equations, treating other forms homomorphically:
 \begin{align*}
@@ -2076,11 +2090,11 @@ The coherence rule implies that any two proofs of equality are considered
 interchangeable. In other words, \pico/ assumes the uniqueness of identity
 proofs (UIP)~\cite{hofmann-streicher}. This choice makes \pico/ ``anti-HoTT'',
 that is, incompatible with homotopy type theory~\cite{hott}, which takes
-as a key premise that there is more than one way to prove the identity
+as a key premise that there may be more than one way to prove the identity
 between two types. While baking UIP into the language may limit its applicability,
 \pico/'s intended role as an intermediate language, where the coercions are
 inferred by the compiler, makes this choice necessary. We would not want
-the static semantics of our programs to depend on the whims of how the
+the static semantics of our programs to depend on the vagaries of how the
 compiler placed its equality proofs.
 
 Note that the coherence form in \pico/
@@ -2100,9 +2114,7 @@ rules:
 \ottdruleCoXXTrans{}
 \end{gather*}
 Note the use of $[[<t>]]$ to denote a reflexive coercion over the type
-$[[t]]$.\footnote{Reflexivity is actually admissible, given the coherence
-  coercion form (\pref{sec:coherence}); it is retained here as it is
-  exceedingly common in programs and conceptually simple.}
+$[[t]]$.
 
 \subsection{Equality is (almost) congruent}
 \label{sec:congruence-coercions}
@@ -2145,7 +2157,7 @@ subtler; they appear in \pref{fig:binding-cong-rules}.
 
 The simple congruence rules simply build up larger coercions from smaller ones.
 With the exception of \rul{Co\_Absurd}, they assert that the types related
-by the coercion are well-formed; it is easier simply to check the types than
+by the coercion are well formed; it is easier simply to check the types than
 to repeat all the conditions in the relevant typing rules. The typing premises
 for \ottkw{absurd} are simple enough on their own, however.
 
@@ -2156,6 +2168,19 @@ never $\beta$-reduces to become some $[[g[g2/c] ]]$. Similarly, the
 $\lambda$-coercion (one of the binding congruence forms) does \emph{not}
 define a $\lambda$-abstraction over coercions; it witnesses the equality
 between two $\lambda$-abstraction types.
+
+Two of the congruence rules---\rul{Co\_CApp} and \rul{Co\_Absurd}---relate
+types that mention coercions. In these congruence rules, the coercion
+$[[g]]$ must explicitly mention the two coercions that appear in the
+respective locations in the related types, as we do not have a
+coercion form that relates coercions. For example, examine
+\rul{Co\_CApp}, declaring that $[[g0 (g1,g2)]]$ relates
+$[[t1 g1]]$ and $[[t2 g2]]$, given that $[[g0]]$ relates
+$[[t1]]$ and $[[t2]]$. Instead of $[[(g1,g2)]]$ appearing in the
+coercion, we might naively expect some $[[h]]$ that relates
+$[[g1]]$ and $[[g2]]$; since such an $[[h]]$ does not exist in
+the grammar, we just list the two coercions $[[g1]]$ and $[[g2]]$.
+The syntax for \rul{Co\_Absurd} is similar.
 
 \subsubsection{Binding congruence forms}
 \label{sec:binding-cong-forms}
@@ -2174,21 +2199,21 @@ In \pico/, I have chosen to favor the left-hand kind in the context
 and do a substitution in the result. Let's examine \rul{Co\_PiTy}
 closely. The coercion $[[h]]$ indeed relates $[[k1]]$ and $[[k2]]$.
 The coercion $[[g]]$ is checked in the context $[[G, a:Rel k1]]$---note 
-the use of $[[k1]]$ there.\footnote{Regardless of the relevance annotation
+the use of $[[k1]]$ there. Regardless of the relevance annotation
 $[[rel]]$ on the coercion, the context is extended with a binding marked
 $[[Rel]]$, echoing the use of $[[Rel(d)]]$ in the premise to \rul{Ty\_Pi}
-(\pref{sec:pico-type-abstractions}).}
-Accordingly, the types related by $[[g]]$ ($[[s1]]$ and $[[s2]]$) might
+(\pref{sec:pico-type-abstractions}).
+The types related by $[[g]]$ ($[[s1]]$ and $[[s2]]$) might
 mention $[[a]]$, assumed to be of type $[[k1]]$. For $[[s1]]$, that assumption
 is correct; the left-hand type in the result is $[[PI a:rel k1.s1]]$.
 However, for $[[s2]]$, this assumption is wrong: we wish $[[a]]$ to have
 kind $[[k2]]$ in the right-hand result type. In order to fix up the mess,
 the conclusion of \rul{Co\_PiTy} does an unusual substitution, mentioning the
-type $[[ s2[a |> sym h/a] ]]$. This takes $[[s2]]$---well-typed in a context
+type $[[ s2[a |> sym h/a] ]]$. This takes $[[s2]]$---well typed in a context
 where $[[a]]$ has kind $[[k1]]$---and changes it to expect $[[a]]$ to have
 kind $[[k2]]$. It does this by casting $[[a]]$ by $[[sym h]]$, a coercion
 from $[[k2]]$ to $[[k1]]$. We can thus use the (standard) substitution lemma
-(\pref{lem:ty-subst}) to show that this result type is itself well-typed,
+(\pref{lem:ty-subst}) to show that this result type is itself well typed,
 as needed to prove regularity (\pref{lem:prop-reg}). The other binding
 congruence forms use similar substitutions in their conclusions, for
 similar reasons.
@@ -2211,13 +2236,12 @@ overhead of extra variables, the three-variable version also requires
 us to introduce a coercion variable even when making a congruence coercion
 over a $\Pi$-type over a type variable. Coercion variables in the context
 cause trouble (as discussed in \pref{sec:covar-restriction}), and my one-variable version helps to
-contain the trouble.\footnote{See \pref{sec:one-var-no-covar}
-for more discussion.}
+contain the trouble. See \pref{sec:one-var-no-covar} for more discussion.
 
 As a further support to my choice of a one-variable binding form with an
 asymmetrical rule, I have implemented both versions in GHC. Initially, I
 implemented the three-variable form from \citet{nokinds}. This worked, but
-it was often hard to construct the coercions, and it was sometimes a small
+it was often hard to construct the coercions, and it was sometimes a
 struggle to find names guaranteed to be fresh. When I refactored the code
 to use the one-variable version formalized here, the code became simpler.
 
@@ -2225,7 +2249,7 @@ to use the one-variable version formalized here, the code became simpler.
 \label{sec:almost-devoid}
 
 The congruence forms over types that bind coercion variables 
-(rules \rul{Co\_PiCo} and \rul{Co\_CLam}) have yet two
+(rules \rul{Co\_PiCo} and \rul{Co\_CLam}) have two
 more wrinkles. The first is that there is no equivalent of
 \rul{Co\_PiTy}'s $[[h]]$ coercion that relates two propositions; we must
 settle for the pair of coercions $([[h1]],[[h2]])$ that appear in
@@ -2256,7 +2280,7 @@ to prove consistency while allowing it. See \pref{sec:other-consistency-proofs}
 for a discussion of other approaches.
 
 Happily, this restriction is not likely to
-bite when considering translating Dependent Haskell programs into \pico/,
+bite when translating Dependent Haskell programs to \pico/,
 as we can write functions witnessing the isomorphism between the two types
 related above:
 \[
@@ -2273,7 +2297,7 @@ in \pref{sec:subsumption}. In other words, while we don't have
 $[[(PI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Int{}) [Type{}]~[Type{}] (PI c:&Int{} [Type{}]~[Type{}] &Bool{}. &Bool{})]]$, these two types are related by $[[<=]]$, in
 both directions. This mean that
 a Dependent Haskell program that expects one of these types
-in a certain context, but gets the other type, is still well-typed.
+in a certain context, but gets the other type, is still well typed.
 
 When can the lack of the equality proof bite? Only when that proof is needed
 as a coercion argument to some function or GADT constructor. As we've just
@@ -2286,7 +2310,7 @@ is considered a use of impredicativity, which is not supported.
 |((Int ~ Bool) => Int) ~ ((Int ~ Bool) => Bool)| is malformed in Dependent
 Haskell, because it passes polytypes as arguments to |~|. I thus conjecture
 that no Dependent Haskell program is ruled out because of the coercion variable
-restriction. Proving such a claim in all cases seems challenging, however,
+restriction. Proving such a claim seems challenging, however,
 and remains as an exercise for the reader.
 
 \subsubsection{(Almost) Congruence}
@@ -2298,7 +2322,7 @@ according to the following definition:
 \begin{definition*}[Congruence]
 Equality is congruent
 if, whenever $[[S;G |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:rel k |-ty t : k0]]$,
-then there exists $[[h]]$ such that $[[S;G |-co h : t[s1/a] (k0[s1/a])~(k0[s2/a]) t[s2/a] ]]$.
+there exists $[[h]]$ such that $[[S;G |-co h : t[s1/a] (k0[s1/a])~(k0[s2/a]) t[s2/a] ]]$.
 \end{definition*}
 
 If we were to try to prove that equality is congruent,
@@ -2388,7 +2412,7 @@ would need something that looks like $[[phi1]] [[~]] [[phi2]]$,
 which does not exist in \pico/. So, we have to extract either the
 left side of the propositions or the right side.
 
-Note that these rules are still syntax-directed even though their
+Note that these rules are syntax-directed even though their
 conclusions overlap: we can always find the proposition a coercion
 proves and then decide which \ottkw{argk} rule to use.
 
@@ -2418,7 +2442,7 @@ rules for these coercions are in \pref{fig:inst-rules}.
 These rules are essentially concrete instances of two rule schemas,
 one for instantiation coercions built with $[[@]]$, and the other
 for ``result'' coercions built with \ottkw{res}. The instantiation
-coercions can work with one of three arguments types (relevant type,
+coercions can work with one of three argument types (relevant type,
 irrelevant type, and coercion) and one of two forms ($\Pi$ and $\lambda$),
 leading to six very similar rules. Along the same lines, \ottkw{res}
 coercions work with both $\Pi$ and $\lambda$, though this form is
@@ -2434,13 +2458,13 @@ and so I took the opportunity to make the equality relation stronger.}
 The \ottkw{res} coercions are a form of degenerate instantiation, usable
 when the body of an abstraction (either $\Pi$ or $\lambda$) does not
 mention the bound variable(s). Note that both \ottkw{res} rules require
-that the body types ($[[t1]]$ and $[[t2]]$) are well-typed without any
+that the body types ($[[t1]]$ and $[[t2]]$) are well typed without any
 of the bound variables in $[[D1]]$ or $[[D2]]$. These coercions also
 allow for the possibility of looking through multiple binders. This ability
 cannot be emulated by repeated use of \ottkw{res} because of the possibility
 of an intermediate dependency. For example, consider the reflexive coercion
 $[[g = <PI (a :Irrel Type{}), (b :Rel a). Type{}>]]$. We can see that
-$[[res^2 g]]$ is well-typed, even though $[[res^1 g]]$ is not (because of
+$[[res^2 g]]$ is well typed, even though $[[res^1 g]]$ is not (because of
 the appearance of $[[a]]$ in the type of $[[b]]$).
 
 We must use \ottkw{res} instead of instantiation when we don't have a
@@ -2468,9 +2492,11 @@ in the result proposition, where the kinds are elided in the typesetting.
 Injectivity of type constants is sometimes
 controversial~\cite{weirich-paradoxical-typecase} and is known to be
 anti-classical~\cite{hur-injective-anti-classical}. However, in a type
-system with $[[Type{}]] : [[Type{}]]$, yet another way to prove
-absurdity does not weaken any property of the language. Injectivity
-is vital in the \rul{S\_KPush} rule and thus remains part of the
+system with $[[Type{}]] : [[Type{}]]$, being able to prove
+absurdity by combining type constant injectivity with, say,
+the Law of the Excluded Middle,
+does not weaken any property of the language. Injectivity
+is vital in the \rul{S\_KPush} rule and is thus a part of the
 language.
 
 \subsubsection{Matchable types are generative and injective}
@@ -2494,7 +2520,7 @@ Note that the applications in the proposition proved by $[[g]]$ are
 matchable applications $[[t @_ p]]$, distinct from unmatchable
 applications $[[t @~ p]]$.
 
-Interestingly, these coercions require the extra coercion $[[h]]$
+Interestingly, these coercions require an extra coercion $[[h]]$
 that proves that the kinds of the output types are equal. This kind
 coercion is necessary to prove the consistency of the \ottkw{kind}
 coercion (\pref{sec:pico-kind-coercion}). It is curiously absent
@@ -2549,7 +2575,7 @@ form that performs $n$ steps at once. Indeed, this is what I plan to implement.
 It is easier, however, to prove properties about single-step reduction.}
 
 You will see that the rule requires both the redex and the reduct to be
-well-kinded at kind $[[k]]$. The requirement on the reduct is implied by
+well kinded at kind $[[k]]$. The requirement on the reduct is implied by
 the preservation theorem (\pref{thm:preservation}), but omitting it from
 the rule means that the proofs of proposition regularity (\pref{lem:prop-reg})
 and preservation would have to be mutually inductive. It seems simpler
@@ -2573,8 +2599,8 @@ needed somewhere in the push rules (\pref{sec:push-rules}).\footnote{I am
   considering here a version of \pico/ without unsaturated matches. If we wish
   to include unsaturated matches, we would also need \ottkw{res} over $\Pi$.}
 Assumptions and $\beta$-reduction, however, make \pico/ what it is; the
-language would be near-useless as a candidate for an internal
-dependently-typed language without these.
+language would be near useless as a candidate for an internal
+dependently typed language without these.
 
 The rest of the forms merely enrich the equality relation, while remaining
 inessential. I have decided to include them to make the equality relation
@@ -2589,6 +2615,10 @@ possibility of more coercions as \pico/ gets used in practice.
 
 \section{The \rul{S\_KPush} rule}
 \label{sec:pico-kpush}
+
+\[
+\ottdruleSXXKPush{}
+\]
 
 The \rul{S\_KPush} rule handles the case where the scrutinee of a \ottkw{case}
 expression is headed by a cast. As in all previous work on System FC, this
@@ -2702,7 +2732,7 @@ In this example, there are no universals of the type in question (|Bool|), and
 so ``pushing'' is extraordinarily simple: just drop the coercion. We can see
 this in terms of \rul{S\_KPush} in that both $[[ts]]$ and $[[ps]]$ are empty.
 Note that if we had a non-reflexive coercion in the scrutinee---that is, if
-the scrutinee were, say, $[[&True{} |> g]]$ with $[[S;G |-co g : &Bool{} [Type{}]~[Type{}] &&ax]]$---the \ottkw{case} expression would not be well-typed.
+the scrutinee were, say, $[[&True{} |> g]]$ with $[[S;G |-co g : &Bool{} [Type{}]~[Type{}] &&ax]]$---the \ottkw{case} expression would not be well typed.
 Rule \rul{Ty\_Case} requires the type of a scrutinee to be of the form
 $[[MPI D.H{} ss]]$. The type |a| does not have this form, and so such a
 scrutinee is disallowed.
@@ -2711,7 +2741,7 @@ Also note that we cannot have $[[&True{} |> g]]$ with $[[S;G |-co g : &Bool{} [T
 \paragraph{Example (2)}
 This is the simplest non-trivial example. We need to push a coercion
 $[[g]]$ proving |Maybe Int ~ Maybe b| into $[[&&Justx{&Int{}} #3{}]]$.
-This casted scrutinee has type |Maybe b|; the pushed scrutinee must have the
+This coerced scrutinee has type |Maybe b|; the pushed scrutinee must have the
 same type. We thus know it must start with $[[&&Justx{&&bx}]]$.
 The only challenge left is to cast the argument, |3|, with a coercion
 that proves |Int ~ b|. We will always be able to extract this coercion
@@ -2740,7 +2770,7 @@ In this work, I instantiate the type using the $[[@]]$ operator
 the helper metatheory functions $[[build_kpush_co]]$ and $[[cast_kpush_arg]]$,
 presented in \pref{fig:kpush-func}.
 
-In our case---pushing a coercion into $|Just| : [[MPI &&ax :Irrel Type{}, &&xx :Rel &&ax. &Maybe{} &&ax]]$---we take |Just|'s type
+In the present case---pushing a coercion into $|Just| : [[MPI &&ax :Irrel Type{}, &&xx :Rel &&ax. &Maybe{} &&ax]]$---we take |Just|'s type
 and instantiate
 |a| by the coercion $[[nth 1 g]]$, which proves |Int ~ b|.
 We are thus left with a coercion that proves
@@ -2753,8 +2783,8 @@ Then, all we have to do is use \ottkw{argk} to extract the coercion proving
 Seeing the above action in the definition for \rul{S\_KPush} may be
 challenging. Let's take another look, focusing on the metavariables
 in the definition of the rule (presented in \pref{fig:push-rules}).
-The type $[[s]]$ is the type of the underlying (uncasted) scrutinee, and
-$[[s']]$ is the type of the casted scrutinee. In our example, we have
+The type $[[s]]$ is the type of the underlying (uncoerced) scrutinee, and
+$[[s']]$ is the type of the coerced scrutinee. In our example, we have
 $[[s = &Maybe{} &Int{}]]$ and $[[s' = &Maybe{} &&bx]]$. Note that neither
 of these are $[[MPI]]$-types, and thus the telescope $[[D2]]$ from the rule
 is empty, with $n = 0$. The $[[k]]$ metavariable in the rule is the type
@@ -2872,7 +2902,8 @@ is as expected.
 On the other hand, progress is a challenge, as it has been
 in previous proofs of type safety of System FC.
 We proceed, as before, by proving consistency
-and then using that to prove progress.
+and then using that to prove progress. (The definition for
+$[[!]]$ is in the next subsection.)
 
 \begin{lemma*}[Consistency {[\pref{lem:consistency}]}]
 If $[[G]]$ contains only irrelevant type variable bindings and
@@ -2903,7 +2934,7 @@ $[[H]]$ are the same. The universals ($[[ts]]$/$[[ts']]$) and existentials
 ($[[ps]]$/$[[ps']]$) are allowed to differ. The one exception to this general
 scheme is in the \rul{C\_PiTy} rule, where we require the bodies $[[t]]$/$[[t']]$
 also to be compatible. This is necessary because irrelevant binders are erased,
-and we thus must be sure that any exposed types are also compatible.
+and we must thus be sure that any exposed types are also compatible.
 
 Consistency is used in the progress proof mainly in order to establish the
 typing premises of the push rules (\pref{sec:push-rules}). A representative
@@ -2921,10 +2952,10 @@ a $\Pi$-type because it is the function in an application. But the only way
 we can show that the left-hand type is a $\Pi$-type is by appealing to
 consistency.
 
-We know, at this point, that the type being casted is a value; thus its
+We know, at this point, that the type being coerced is a value; thus its
 type is also a value (\pref{lem:val-type}, also introduced in
 \pref{sec:value-defn}). At this point, now that we know that both types
-involved in the type of the coercion $[[g]]$ are not values, compatibility
+involved in the type of the coercion $[[g]]$ are values, compatibility
 becomes a much stronger definition, allowing us to conclude that if the
 types are compatible and if one is a $\Pi$-type, the other must surely also
 be a $\Pi$-type. Because we can rule out non-values in the places where we
@@ -2936,7 +2967,7 @@ does not get in our way.
 
 To prove consistency, I (following prior work) define a parallel rewrite
 relation, written $[[t1 ~> t2]]$, and show that this relation includes pairs
-of only compatible types. A small wrinkle with this definition is that the
+of compatible types only. A small wrinkle with this definition is that the
 rewrite relation works over only types whose coercions have been erased, as
 per the $\lfloor \cdot \rfloor$ operation, initially introduced along with
 coherence coercions in
@@ -2988,16 +3019,16 @@ The rewrite relation $[[~>]]$ appears in \pref{fig:rewrite-rel-ty}
 and \pref{fig:rewrite-rel-aux}. Following
 conventions in the rewriting literature, I write $[[t1 ~> t3 <~ t2]]$ to
 mean that $[[t1 ~> t3]]$ and $[[t2 ~> t3]]$, and I write $[[t1 ~>* t2]]$ to
-mean the transitive closure of $[[~>]]$.
+mean the reflexive, transitive closure of $[[~>]]$.
 
 Note the \rul{Beta} rules, which work over only unmatchable applications
-$[[t @~ p]]$. This fact allows us to conclude that an matchable applications
+$[[t @~ p]]$. This fact allows us to conclude that matchable applications
 $[[t @_ p]]$ never undergo $\beta$-reduction, in turn allowing us to prove
 that the $[[left]]$ and $[[right]]$ coercions are sound.
 
 \subsubsection{Substitution}
 
-The relation is almost a non-deterministic, strong version of normal reduction ($[[S;G |-s t --> t']]$). In all the congruence forms (toward the top of
+The relation $[[~>]]$ is almost a non-deterministic, strong version of normal reduction ($[[S;G |-s t --> t']]$). In all the congruence forms (toward the top of
 \pref{fig:rewrite-rel-ty}), the relation definition recurs in every component,
 as necessary to support the following lemma:
 
@@ -3071,14 +3102,15 @@ restriction allows us to skip the impossible \rul{Co\_Var} case while still
 allowing induction in the \rul{Co\_PiCo} case.
 
 The definition of $[[c ~# g]]$ allows $[[c]]$ to appear in the types related
-by a coherence $[[~=]]$ coercion. Happily in the \rul{Co\_Coherence} case
+by a coherence $[[~=]]$ coercion. Happily, in the \rul{Co\_Coherence} case
 (when proving clause 1 of the lemma), we do not need to use the induction
 hypothesis, as a premise of \rul{Co\_Coherence} states that the erased types
 are, in fact, already equal. It is for precisely this reason that $[[c ~# g]]$
 can allow $[[c]]$ in the types in a coherence coercion.
 
 We also see that the statement of the completeness lemma requires us to prove
-both that the types are joinable under $[[~>]]$ and also the kinds. Otherwise,
+both that the types are joinable under $[[~>]]$ and also that the kinds are.
+Otherwise,
 there would be no way to handle the \ottkw{kind} case.
 
 Having strengthened the induction hypothesis appropriately, the actual proof
@@ -3120,8 +3152,9 @@ stated near the top of this section.
 \label{sec:other-consistency-proofs}
 
 There are a few aspects of the consistency proof where it may be helpful to
-highlight the differences between my proof here and those in prior work.\footnote{The comments below dispute other, published proofs of consistency. The authors of these proofs have conceded to me in private communication
-that their proofs were incorrect and do not disagree with my assertions below.}
+highlight the differences between my proof here and those in prior work.
+The comments below dispute other, published proofs of consistency. The authors of these proofs have conceded to me in private communication
+that their proofs were incorrect and do not disagree with my assertions here.
 
 \subsubsection{Non-linear, non-terminating rewrite systems are not confluent}
 
@@ -3177,7 +3210,7 @@ its consistency proof must be wrong. (\Pico/ rules out $[[g]]$ for using
 $[[c]]$ in an illegal spot---the kind coercion in the subscript for $[[~=]]$.)
 Note that the language in that work might indeed be consistent (I have
 no counterexample to consistency), but its consistency
-is surely not proved via the use of a rewrite relation in the way presented
+surely cannot be proved via the use of a rewrite relation in the way presented
 in that paper.
 
 \subsubsection{A one-variable version of \rul{Co\_PiTy} simplifies the consistency proof}
@@ -3216,7 +3249,7 @@ language does not have the coercion variable restriction inherent in \pico/'s
 \rul{Co\_PiCo} rule. Gundry's language thus allows more coercions than
 does \pico/.
 
-Can a System FC-like language be proven consistent without a coercion variable
+Can a System-FC-like language be proven consistent without a coercion variable
 restriction on its analogue of \rul{Co\_PiCo}? My personal belief is ``yes''---given that I believe such a language is, in fact, consistent---but researchers
 have yet to show it.
 
@@ -3229,8 +3262,8 @@ its ability to support type erasure. Haskell takes pride in erasing all of
 its complicated, helpful types before runtime, and the intermediate language
 must show that this is possible. \Pico/ achieves this goal through its
 relevance annotations, where irrelevant abstractions and applications
-are erased. In previous, non-dependent intermediate languages for Haskell,
-irrelevant abstractions and applications are also erased, but these were
+can be erased. In previous, non-dependent intermediate languages for Haskell,
+irrelevant abstractions and applications were also erased, but these were
 easier to spot, as they dealt with types instead of terms. In \pico/, types
 and terms are indistinguishable, so we are required to use relevance
 annotations.
@@ -3282,8 +3315,9 @@ Erasure operation, $[[e = ||t||]]$:
 
 The definition of our erased calculus appears in \pref{fig:erased-calculus}.
 It is an untyped $\lambda$-calculus with datatypes (allowing for default
-patterns) and \ottkw{fix}. The language also contains a fixed constant\footnote{Actually, two fixed constants, $[[MPI]]$ and $[[UPI]]$.}
-$[[PI]]$, here only to have something for $\Pi$-types to erase to.
+patterns) and \ottkw{fix}. The language also contains two fixed constants,
+$[[MPI]]$ and $[[UPI]]$,
+here only to have something for $\Pi$-types to erase to.
 
 The calculus also supports ``coercion abstraction''
 via its $[[\o.e]]$ and $[[e o]]$ forms. The existence of these forms mean that
@@ -3323,7 +3357,7 @@ two reasons: to preserve the simplified treatment of \ottkw{case} that does
 not bind variables, and in order to enable floating. An optimizer
 may decide to common up two branches of a \ottkw{case} expression (i.e., float
 the branches out), both of
-which bind the same coercion variable. Yet, if there were no coercion
+which bind the same coercion variable. If there were no coercion
 abstraction form, this would be impossible. It is a correctness property
 of the optimizer (well beyond the scope of this dissertation) to make sure
 that the floated coercion abstraction does not halt evaluation prematurely.
@@ -3372,12 +3406,12 @@ and then the proof of the theorem above simply stitches together the pieces.
 \section{Design decisions}
 \label{sec:pico-design-decisions}
 
-In the course of writing \pico/, I have had to make quite a number of
+In the course of designing \pico/, I have had to make quite a number of
 design decisions. Some of these are forced by external constraints
 (such as the need for two $\Pi$-forms), but others have been relatively
 free choices. In this section, I revisit some of these decisions and try
 to motivate why I have built \pico/ in the way that I have. It is my
-hope that this section will empower readers who wish to extend/alter
+hope that this section will empower readers who wish to extend or alter
 \pico/ to understand its design better.
 
 \subsection{Coercions are not types}
@@ -3391,9 +3425,9 @@ kinds $[[k]]$, and we would have a rule such as
 \ottdrule{\ottpremise{[[S;G |-co g : phi]]}}{[[S]];[[G]] [[|-ty]] [[g]] : [[phi]]}{\rul{Ty\_Coercion}}
 \]
 This alternative design does not cause trouble with type safety, because
-we are injecting the safe coercions into the unsafe types;
-the other way around would be
-chaos.
+we are injecting the safe coercions into the unsafe types.
+The other way around---injecting potentially non-terminating types
+into coercions---would lead to chaos.
 
 This injection would simplify aspects of the grammar and rules. For example,
 the $\ottkw{argk}_1$ and $\ottkw{argk}_2$ coercions could be rewritten in
@@ -3412,7 +3446,7 @@ proof obligations, and that seems to be a win.
 
 A similar design decision was to put braces around irrelevant arguments.
 The syntactic distinction between relevant arguments and irrelevant ones
-is not necessary for syntax-direction, because we can always look up the
+is not necessary for syntax-directedness, because we can always look up the
 type of the function to see whether we should consider the type application
 to be relevant or irrelevant. Yet putting this distinction directly in
 the syntax makes certain parts of the metatheory cleaner, when relevant
@@ -3452,7 +3486,7 @@ to make to \pico/ to support a few more features of Haskell.
 
 Haskell allows binding variables with \ottkw{let}, and it would be convenient
 to do so in \pico/ as well. We shall consider the non-recursive case first and
-then move onto the complexities of \ottkw{letrec}. Below, flouting Haskell
+then move on to the complexities of \ottkw{letrec}. Below, flouting Haskell
 convention, I use \ottkw{let} to refer exclusively to the non-recursive case
 and use \ottkw{letrec} when considering recursive bindings.
 
@@ -3467,7 +3501,7 @@ adding \ottkw{let} as a new proper type form
 would be straightforward. We could additionally incorporate the ability
 to bind a coercion variable proving that, say, $[[x [k]~[k] t]]$ in $[[s]]$.
 We would also add a new rule to the operational semantics expanding out
-all \ottkw{let} definitions directly; a running implementation may wish to
+all \ottkw{let} definitions directly; an implementation may wish to
 optimize this, however. The only real challenge we would run into is adding
 a congruence coercion for \ottkw{let}, which would share the complications
 of the other binding forms (see \pref{sec:binding-cong-forms}).
@@ -3621,7 +3655,7 @@ The type $[[s1]]$ would thus be
 the result kind. Note the $[[MPI]]$ in the type of $[[b1]]$, meaning that
 we can break apart only matchable applications. This is a good thing, because
 we would not want to be able to separate arbitrary functions from their
-arguments to inspect one of the other.
+arguments to inspect one or the other.
 In this formulation, the kind of $[[s2]]$ would just be $[[k2]]$.
 
 
@@ -3663,7 +3697,7 @@ The idea here is that instead of having one sort, |Type|, the language
 would have a family of sorts, all headed by |TYPE| and indexed by an element
 of type |RuntimeRep|. At runtime, each sort corresponds to a different
 representation: values of a type of kind |TYPE ![PtrRep]| are represented
-by pointers to potentially-thunked data, whereas values of a type of kind
+by pointers to potentially thunked data, whereas values of a type of kind
 |TYPE ![IntRep]| are represented directly as machine integers.
 The use of a list to index |TYPE| is to support GHC's \emph{unboxed tuples},
 which group together values that would be passed in several registers;
@@ -3671,14 +3705,14 @@ see a more detailed description in my concurrent work~\cite{levity-polymorphism}
 
 As described in my concurrent work (and too much of a diversion here to repeat in
 detail),
-abstracting over runtime representations is quite restricted, lest the
+abstracting over runtime representations must be quite restricted, lest the
 code generator be hamstrung when trying to compile code involving an unknown
 runtime representation.
 
 Levity polymorphism is useful in Haskell because a number of constructs
 are truly flexible in which representation they work over. Two telling examples
 are |error| and |(->)|. Regardless of the representation of the result of a
-function, |error| is always well-typed, and |(->)| works to connect types
+function, |error| is always well typed, and |(->)| works to connect types
 of varying representations (like |Int# -> Bool|, where |Int#| has kind
 |TYPE ![IntRep]| and |Bool| has kind |Type|---that is, |TYPE ![PtrRep]|.)
 
@@ -3734,7 +3768,7 @@ instance Monad ((->) x) where
 
 Unfortunately, \pico/ cannot, as written, easily accommodate |(->)|.
 A non-de\-pen\-dent arrow is rightly seen as a degenerate form of $\Pi$:
-|a -> b| is the same as $[[UPI _:Rel &&ax. &&bx]]$. Without introducing
+the type |a -> b| is the same as $[[UPI _:Rel &&ax. &&bx]]$. Without introducing
 yet a new function type (on top of the six we already have) and argument
 syntax, it seems hard to abstract over this degenerate form of $\Pi$.
 
@@ -3758,7 +3792,7 @@ To repair the damage, we can alter the coercion erasure operation to
 also rewrite saturated arrow forms to be $\Pi$ forms, where the following
 equation is tried before other application forms:
 \[
-|(->) t1 t2| = UPI a:Rel |t1|.|t2|
+[[|(->){} t1 t2| = UPI a:Rel |t1|.|t2|]]
 \]
 Now, completeness for \rul{Co\_Arrow} is trivial.
 
@@ -3789,8 +3823,8 @@ is intended to be useful to implementors of the language and researchers
 interested in adapting \pico/ to be used as the internal language for
 a surface language other than Haskell. I believe \pico/ is a viable
 candidate as a general-purpose intermediate language for dependently
-typed surface languages, and would be excited to see it be adapted to
-work in that regard.
+typed surface languages.
+
 
 
 

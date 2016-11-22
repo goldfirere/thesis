@@ -59,7 +59,7 @@ this and other examples to work with naturals only. This restriction is
 in place solely to play nicely with the use of singletons to translate
 the Idris library into a form compatible with GHC 8. In a full
 Dependent Haskell implementation, this restriction would not be necessary.}
-additions, variable references, and naturals randomly generated up to
+addition, variable references, and naturals randomly generated up to
 some specified limit. In the version we will consider, the interpreter
 is instrumented to print out the value of every random number generated.
 Thus the interpreter needs four different effectful capabilities:
@@ -71,7 +71,7 @@ variable names to their values:
 \begin{code}
 type Vars = [(String, Nat)]
 \end{code}
-With all that in hand, here is the evaluator:
+With all that in mind, here is the evaluator:
 \begin{working}
 \begin{code}
 eval  ::  Handler StdIO e
@@ -110,7 +110,7 @@ in this list is immaterial. Fancy footwork done by the types of
 the operations provided by the capabilities (like |get| or |rndNat|)
 looks up the capability in the list, regardless of order.
 
-Once we've absorbed the type of |eval|, its body is rather uninteresting---but
+Once we've absorbed the type of |eval|, its body is rather uninteresting---and
 that's exactly the point! We need not |lift| one capability through another
 (as must be done with monad transformers) nor give any indication of
 how our capabilities are structured. It all just works.
@@ -181,12 +181,12 @@ the proof search I have encapsulated into |findSubListProof|. While it
 is conceivable to consider adding such an implicits feature to Haskell,
 doing so is well beyond this dissertation. In the case of my translation
 of \effects/, the lack of implicits bites, but not in a particularly
-damning way; the types of basic operations like |get|
+troublesome way; the types of basic operations like |get|
 just get a little more involved.
 
 \subsubsection{Example 2: Working with files}
 
-\citet[Section 2.2.5]{algebraic-effects} includes also an example
+\citet[Section 2.2.5]{algebraic-effects} also includes an example
 of how \effects/ can help us work with files. We first define
 a |readLines| function that reads all of the lines in a file.
 This uses primitive operations |readLine| and |eof|.
@@ -410,7 +410,7 @@ interp (Let (at t') e sc)
 I will skip over most of the details here, making only these points:
 \begin{itemize}
 \item It is necessary to use the $\at$ invisibility override (\pref{sec:visible-type-pat}) several times so that the automatic lifting mechanism knows what to
-look for. An alternatives to the approach seen here include using explicit labels
+look for. Alternatives to the approach seen here include using explicit labels
 on capabilities (see \citet[Section 2.1.2]{algebraic-effects}), writing down
 the index of the capability desired, or implementing a type-checker plugin to
 help do automatic lifting.

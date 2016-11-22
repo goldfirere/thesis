@@ -40,9 +40,9 @@ Gundry and I keep coercion typing so separate from other typing judgments
 that I am excluding it here.} runtime, compile time, or shared (Gundry's 
 Section 6.2). Gundry
 describes an \emph{access policy} (Gundry's Section 6.2.1) whereby an
-expression well-typed at the shared phase can also be used in either the
+expression well typed at the shared phase can also be used in either the
 runtime or compile-time phases. Gundry's use of phases is not unlike my
-use of relevance, where an expression well-typed at
+use of relevance, where an expression well typed at
 Gundry's compile-time phase would be irrelevant in my formulation.
 
 The big difference between my treatment and Gundry's is that I essentially
@@ -78,7 +78,7 @@ pattern-matching on elements of |Type|. Gundry's treatment requires a
 scrutinee to be a member of a closed algebraic datatype.
 \paragraph{Unsaturated matching}
 Haskell type families can match on unsaturated uses of data and type
-constructors, something not supported in Gundry's work but is supported
+constructors, something not supported in Gundry's work but supported
 in \pico/.
 
 
@@ -140,7 +140,7 @@ Pushing on this idea a bit more, for a project to be started in Idris,
 the programmers must decide, at the outset, that they wish to use dependent
 types, as its type system is Idris's most distinctive feature. With
 Dependent Haskell, on the other hand, developers can choose to take a part of
-larger Haskell application and rewrite just that part with dependent types.
+a larger Haskell application and rewrite just that part with dependent types.
 This allows for gradual adoption, something that is much easier for the
 general public to swallow.
 
@@ -220,7 +220,7 @@ and |h| are accepted in Dependent Haskell and today's approximation thereof
 using \package{singletons}.) 
 
 Beyond just having a specification, Dependent Haskell also retains
-Hindley-Milner |let|-generalization for top-level expressions (as implemented
+Damas-Milner |let|-generalization for top-level expressions (as implemented
 by the \rul{IDecl\_Syn\-the\-size} rule of \bake/). This means that simply typed
 functions and local declarations need not have type ascriptions. Indeed, in
 translating Idris's \package{Effects} library to Dependent Haskell
@@ -254,7 +254,7 @@ Cayenne is a language introduced in 1998 by Augustsson essentially as a
 dependently typed variant of Haskell. Of particular interest,
 it shares Dependent Haskell's
 cavalier attitude toward termination: Cayenne supports general recursion
-and all types are thus inhabited by $\bot$. As such, Augustsson admits
+and all types are thus inhabited by $\bot$. Accordingly, Augustsson admits
 that Cayenne is not useful as a proof assistant. However, he also argues
 that this admission does not mean it is useless as a programming language.
 My argument in support of allowing general recursion in a dependently typed
@@ -274,8 +274,7 @@ however:
 \begin{description}
 \item[Cayenne erases too much] Because every expression of type |Type|
 is lost, Cayenne must restrict its pattern-match facility not to work
-over scrutinees of type |Type|. Dependent Haskell allows matching on |Type|,
-in contrast.
+over scrutinees of type |Type|. Dependent Haskell allows matching on |Type|.
 \item[Cayenne erases too little] Sometimes expressions of a type other
 than |Type| can be erased. For example, consider this function over length-indexed
 vectors (\pref{sec:length-indexed-vectors}):
@@ -356,7 +355,7 @@ Agda and Idris.
 
 Liquid Haskell~\cite{bounded-refinement-types,liquid-haskell-experience,liquid-haskell} is an ongoing project seeking to add \emph{refinement types}
 to Haskell. A refinement type specifies a head type and a condition; any
-value of that type is asserted to meet the condition. For example, we might
+value of the refinement type is asserted to meet the condition. For example, we might
 write the type of the |length| function thus:
 \begin{spec}
 length :: [a] -> { n : Int | n >= 0 }
@@ -388,10 +387,10 @@ matches its specification is fully automatic---something very much not
 true of Dependent Haskell programs. The project has shown without a doubt
 that using an SMT solver to help type-checking will lessen users' proof
 burden. (Liquid Haskell is hardly the only tool that uses an SMT solver
-for type-checking. See also, for example, \citet{dafny,dependent-f-star},
+for type-checking. See also, for example, \citet{dafny} and \citet{dependent-f-star},
 among others.) 
 
-It is my hope that, someday, Dependent Haskell can aspire to be the
+It is my hope that, someday, Dependent Haskell can be the
 backend for Liquid Haskell. The merged language would have the type
 refinement syntax much like Liquid Haskell's current syntax, but it would
 desugar to proper dependent types under the hood. An SMT solver would remain
@@ -401,31 +400,31 @@ is already possible: a type like |{n : Int || n >= 0}| can be encoded
 as a dependent parameter |n| and a Haskell constraint. Much more problematic
 is a refined return type. For that same refinement, we would need a
 existential package, saying that a function returns \emph{some} |n| with
-|n >= 0|. While Dependent Haskell support existentials, naturally, packing
+|n >= 0|. While Dependent Haskell supports existentials, packing
 and unpacking these must be done manually. In practice, this packing
 and unpacking clutters the code considerably and makes the refinement
 approach distasteful. Perhaps worse, the packing and unpacking would be
 performed at runtime, making end users pay a cost for this compile-time
 checking. Overcoming these barriers---coming up with a lightweight syntax
 for existentials as well as zero runtime overhead---is important future work,
-perhaps my highest priority new research direction.
+perhaps my highest-priority new research direction.
 
 \section{Comparison to Trellys}
 
 The Trellys project~\cite{trellys,programming-up-to-congruence,combining-proofs-and-programs} aims toward a similar goal to my work here: including
 dependent types in a language with non-termination. However, the Trellys
-approach is quite different to what I have done here, in that the language
+approach is quite different from what I have done here, in that the language
 is formed of two fragments: a logical fragment and a programmatic fragment.
 The two halves share a syntax, but some constructs (such as general recursion)
 are allowed only in the programmatic fragment. Proofs in the logical fragment
 can be trusted (and never have to be run) but can still mention definitions
 in the programmatic fragment in limited ways.
 
-The Zombie language~\cite{programming-up-to-congruence}, one of the languages
+Zombie~\cite{programming-up-to-congruence}, one of the languages
 of the Trellys project, allows potentially non-terminating functions in
 types but retains decidable type-checking by forcing the user to indicate
 how much to $\beta$-reduce the types. This stands in contract to Dependent
-Haskell, where type-checking is undecidable and might not terminate.
+Haskell, where type-checking is undecidable.
 
 \section{Invisibility in other languages}
 \label{sec:vis-other-lang}
@@ -462,7 +461,7 @@ argument in single braces |{ ... }| is solved via unification, just like in
 Agda. But a programmer may insert a proof script in the braces as well to
 trigger that proof script whenever the invisible parameter needs to be
 instantiated. For example, a type signature like
-|func : {default proof { trivial } pf : tau } -> ...| names a (possibly-dependent)
+|func : {default proof { trivial } pf : tau } -> ...| names a (possibly dependent)
 parameter |pf|, of type |tau|. When |func| is called, Idris will run the
 |trivial| tactic to solve for a value of type |tau|. This value will then
 be inserted in for |pf|. Because a default proof script of |trivial| is so
@@ -470,7 +469,7 @@ common, Idris offers an abbreviation |auto| which means |default proof { trivial
 %}
 \paragraph{Coq}
 Coq has quite a different view of invisible arguments than do Dependent Haskell,
-Agda, or Idris. In all three of those languages, the visibility of an argument
+Agda, and Idris. In all three of those languages, the visibility of an argument
 is part of a type. In Coq, top-level directives allow the programmer to change
 the visibility of arguments to already-defined functions. For example, if we
 have the definition
@@ -533,7 +532,7 @@ The Agda wiki contains a comprehensive page on Agda's support for irrelevance
 annotations.\footnote{\url{http://wiki.portal.chalmers.se/agda/pmwiki.php?n=ReferenceManual.Irrelevance}} The user can annotate certain definitions
 and parameters as irrelevant, by preceding them with a |.| prefix. Irrelevant
 values can be used in irrelevant contexts only, much like how \pico/ treats
-irrelevantly-bound variables. Irrelevant fields to a data constructor are
+irrelevantly bound variables. Irrelevant fields to a data constructor are
 ignored in an equality check, a feature that \pico/ does not currently support.
 For example, consider the following Agda program:
 %format AgdaNat = "\mathbb{N}"
@@ -557,13 +556,13 @@ irrelevant contexts, if we remove the |.| prefix to the parameter to
 |mkT|, the constructor type for |mkS| would fail to type-check, because it
 uses its irrelevant argument |n| in a relevant context (as the argument
 to the now-relevant |mkT| constructor). Conversely, dropping the |.| in
-the type of |mkS| would not affect type-checking.
+the type of |mkS| would not affect type checking.
 
 It would be interesting future work to see how using relevance in this way
 might affect Dependent Haskell.
 
 Despite having support for these irrelevance annotations, it seems that Agda
-does not have a well-articulated type erasure property, instead depending on
+does not have a well articulated type erasure property, instead depending on
 the extraction mechanism used to run Agda code.
 
 \paragraph{Coq}
@@ -604,7 +603,7 @@ to keep visibility and relevance quite separate in this dissertation.)
 to ICC expressions by erasing irrelevant arguments. In order to enforce
 appropriate use of irrelevant arguments,
 irrelevantly bound variables are forbidden from appearing in the erased, ICC-form
-of body of an abstraction. This restriction is enforced by a simple
+of the body of an abstraction. This restriction is enforced by a simple
 check for free variables in the typing rule of the irrelevant
 $\lambda$-abstraction, in contrast to \pico/'s approach of tracking
 relevance in contexts. The \pico/ equivalent to \iccstar/'s approach would

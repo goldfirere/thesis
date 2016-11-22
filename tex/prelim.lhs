@@ -19,9 +19,9 @@ import Data.Kind ( type (*) )
 \chapter{Preliminaries}
 \label{cha:prelim}
 
-This chapter is a primer of type-level programming facilities that exist
+This chapter is a primer for type-level programming facilities that exist
 in today's Haskell. It serves both as a way for readers less experienced
-in Haskell to understand the remainder of the dissertation, and as a point
+in Haskell to understand the remainder of the dissertation and as a point
 of comparison against the Dependent Haskell language I describe in
 \pref{cha:dep-haskell}. Those more experienced with Haskell may easily
 skip this chapter. However, all readers may wish to consult \pref{app:typo}
@@ -161,7 +161,7 @@ Associated type families are essentially syntactic sugar for regular
 open type families.
 
 \paragraph{Partiality in type families}
-A type family may be \emph{partial}, in that it is not defined over
+A type family may optionally be \emph{partial}, in that it is not defined over
 all possible inputs. This poses no problems in the theory or
 practice of type families. If a type family is used at a type for
 which it is not defined, the type family application is considered
@@ -173,11 +173,14 @@ type instance F2 Int = Bool
 Suppose there are no further instances of |F2|. Then, the type |F2 Char|
 is stuck. It does not evaluate, and is equal only to itself.
 
-Because type family applications cannot be used on the left-hand side
-of type family equations, it is impossible for a Haskell program to
-detect whether or not a type is stuck. This is correct behavior, because
+It is impossible for a Haskell program to
+detect whether or not a type is stuck, as doing so would require
+pattern-matching on a type family application---this is not possible.
+This is a good design because
 a stuck open type family might become unstuck with the inclusion of more
-modules, defining more type family instances.
+modules, defining more type family instances. Stuckness is therefore
+fragile and may depend on what modules are in scope; it would be disastrous
+if a type family could branch on whether or not a type is stuck.
 
 \subsection{Data families}
 
@@ -195,6 +198,7 @@ with more traditional parameterized types.
 Data families do not play a large role in this dissertation.
 
 \section{Rich kinds}
+\label{sec:old-kinds}
 
 \subsection{Kinds in Haskell98}
 \label{sec:haskell98-kinds}
@@ -230,6 +234,19 @@ grammar $\kappa \bnfeq |*| \bnfor \kappa |->| \kappa$, and that's it.
 When we start writing interesting type-level programs, this almost-unityped
 limitation bites.
 
+For example, previous to recent innovations, Haskellers wishing to work with
+natural numbers in types would use these declarations:
+%
+\begin{code}
+data Zero
+data Succ a
+\end{code}
+%
+We can now discuss |Succ (Succ Zero)| in a type and treat it as the number 2.
+However, we could also write hogwash such as |Succ Bool| and |Maybe Zero|.
+These errors do not imperil type safety, but it is natural for a programmer
+who values strong typing to also pine for strong kinding.
+
 Accordingly, \citet{promotion} introduce promoted datatypes. The central
 idea behind promoted datatypes is that when we say
 \begin{code}
@@ -241,7 +258,7 @@ and a kind |Bool| inhabited by types |!False| and |!True|.\footnote{The new
   promoted data constructor |!X| from a declared type |X|; Haskell maintains
   separate type and term namespaces. The ticks are optional if there is no
   ambiguity, but I will always use them throughout this dissertation.} We can
-then use the promoted datatypes for more richly-kinded type-level programming.
+then use the promoted datatypes for more richly kinded type-level programming.
 
 A nice, simple example is type-level addition over promoted unary natural
 numbers:
@@ -282,7 +299,7 @@ data T f a = MkT (f a)
 \end{code}
 With the \ext{PolyKinds} extension enabled, GHC will infer a most-general kind
 |forall k. (k -> *) -> k -> *| for |T|. In Haskell98, on the other hand, this
-type would have kind |(* -> *) -> * -> *|, which is strictly less general.
+type would have kind |(* -> *) -> * -> *|, which is less general.
 
 A kind-polymorphic type has extra, invisible parameters that correspond to
 kind arguments. When I say \emph{invisible} here, I mean that the arguments
@@ -515,7 +532,7 @@ instance Pred (!Succ n)  n
 In the declaration for class |Pred| (``predecessor''), we say that the first parameter, |a|,
 determines the second one, |b|. In other words, |b| has a functional dependency on |a|.
 The two instance declarations respect the functional dependency, because there are no
-two instances where the same choice for |a| but differing choices for |b| could be made.
+two instances where the same choice for |a| but differing choices for |b| are made.
 
 Functional dependencies are, in some ways, more powerful than type families. For
 example, consider this definition of |Plus|:
@@ -531,14 +548,14 @@ just like the arguments to a type family determine the result, but also that
 |r| and |a| determine |b|. Using this second declared functional dependency,
 if we know |Plus a b r| and |Plus a b' r|, we can conclude $|b| = |b'|$.
 Although the functional dependency |r b -> a| also holds, GHC is unable to
-prove this.
+prove this and thus we cannot declare it.
 
 Functional dependencies have enjoyed a rich history of aiding type-level programming~\cite{faking-it, hlist, instant-insanity}. Yet, they require a different paradigm to much of
 functional programming. When writing term-level definitions, functional programmers
 think in terms of functions that take a set of arguments and produce a result. Functional
 dependencies, however, encode type-level programming through relations, not
 proper functions. Though both functional dependencies and type families have their
-proper place in the Haskell ecosystem, I have followed the path taken by other
+place in the Haskell ecosystem, I have followed the path taken by other
 dependently typed languages and use type-level functions as the main building blocks
 of Dependent Haskell, as opposed to functional dependencies.
 

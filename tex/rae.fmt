@@ -51,7 +51,7 @@
 %format Type = "\ottkw{Type}"
 %format <$> = "\mathop{{\langle}{\$}{\rangle}}"
 %format <*> = "\mathop{{\langle}{*}{\rangle}}"
-%format ^ = "\string^"
+%format ^ = "\string^\hspace{-.2ex}"
 
 % suppress some built-in formatting of lhs2TeX:
 %format not = "\id{not}"

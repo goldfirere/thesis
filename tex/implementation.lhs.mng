@@ -25,7 +25,7 @@ does not simply check for $\alpha$-equivalence; see \pref{sec:picod}.
 
 \section{Current state of implementation}
 
-As of this writing (August 2016), a only portion of the improvements to Haskell
+As of this writing (August 2016), only a portion of the improvements to Haskell
 described in this dissertation are implemented. This section describes the current
 state of play and future plans.
 
@@ -124,7 +124,7 @@ features in types:
 \begin{itemize}
 \item All term-level constructs supported by Template Haskell except:
 view patterns, |do|, list comprehensions,
-arithmetic sequences. (Template Haskell does not support GHC's arrow-notation.)
+arithmetic sequences. (Template Haskell does not support GHC's arrow notation.)
 The library specifically \emph{does} support |case|,
 |let| (including recursive definitions) and $\lambda$-expressions. See
 my prior work for the details~\cite{promoting-type-families}.
@@ -174,8 +174,8 @@ when it is all done, as one algorithm will serve where there is currently
 two---and both are quite complex.
 \item Interleave type-checking with desugaring. Currently, GHC maintains
 two separate phases when compiling terms: type-checking ensures that the
-source expression is well-typed and also produces information necessary
-for elaboration into its intermediate language. Afterwards, GHC then
+source expression is well typed and also produces information necessary
+for elaboration into its intermediate language. Afterwards, GHC
 desugars the type-checked program, translating it to the intermediate language.
 Desugaring today is done only after the whole module is type-checked. However,
 if some declarations depend on evaluating other declarations (because the
@@ -184,7 +184,7 @@ will have to be interleaved. I do not expect this to be a challenge, however,
 for two reasons:
 \begin{itemize}
 \item Type-checking and desugaring are \emph{already} interleaved, at least
-in types. Indeed, the kind-checker for types produces a type in the intermediate
+in types. Indeed, the kind checker for types produces a type in the intermediate
 language today, effectively type-checking and desugaring all at once.
 \item Type-checking happens by going in order through a sequence of mutually
 recursive groups. One expression cannot depend on another within the same
@@ -230,7 +230,7 @@ That is, $|Int ||> refl Type| \neq |Int|$. This is true despite the fact
 that the $\sim$ relation \emph{is} proof-irrelevant.
 
 The proof-relevant nature of $=$ poses a challenge in transforming \pico/
-expressions into other well-typed \pico/ expressions. This challenge
+expressions into other well typed \pico/ expressions. This challenge
 comes to a head in the unifier (\pref{sec:unification}) where, given
 $[[t1]]$ and $[[t2]]$, we must
 find a substitution $[[theta]]$ such that $[[t1 = t2]]$. Unification is
@@ -247,8 +247,7 @@ presented in \pico/. In particular, I did not have the $[[~=]]$ coercion
 form, instead having the much more restricted version of coherence that appears
 in my prior work~\cite{nokinds}. The new form $[[~=]]$ is admissible
 given the older form, but it is not easy to derive. It is conceivable that,
-with $[[~=]]$ this implementation task would now be easier. This fact
-does not call into question, however, the results later on in this section.}
+with $[[~=]]$, this implementation task would now be easier.}
 
 \subsection{Properties of a new definitional equality $[[==]]$}
 
@@ -365,10 +364,10 @@ Corollary of \pref{prop:de-bigger-eq} of the definition of $[[==]]$.
 
 We also need a lemma where a result in \picod/ implies one in \pico/.
 This is harder to state, as it requires an operation that translates
-a term $[[t]]$ that is well-typed in \picod/ into one well-typed in \pico/.
+a term $[[t]]$ that is well typed in \picod/ into one well typed in \pico/.
 We write the latter as $[[^t^]]$. The translation operation $[[^\cdot^]]$
 is actually a deterministic operation on the typing derivation in \picod/; the conversion
-is valid only when the original type is well-formed in \picod/.
+is valid only when the original type is well formed in \picod/.
 The full statement of the lemma relating \picod/ to \pico/ appears in
 \pref{app:picod-proofs}, but the following informal statement will serve
 us well here:
@@ -428,7 +427,7 @@ $[[(t |> g1)/a, (s |> g2)/b]]$ for appropriate $[[g1]]$ and $[[g2]]$.
 
 My approach, then, is for the algorithm to take three inputs: the two types
 to unify and a coercion between their kinds. At the leaves (matching a variable
-against a type), we insert this coercion to make the substitution well-kinded.
+against a type), we insert this coercion to make the substitution well kinded.
 At interior nodes, we simply ensure that we have a new kind coercion to pass
 to recursive calls.
 
@@ -587,7 +586,7 @@ because, by the time we are unifying the types, we know that the ambient
 substitution unifies the kinds. The coercion relating the types' kinds is
 thus now reflexive.
 \item In the $[[H{ts}]]$ case, the algorithm does not make a separate call
-to unify kinds. This is because the $[[ts]]$ are always well-typed under
+to unify kinds. This is because the $[[ts]]$ are always well typed under
 a \emph{closed} telescope. Since |unifyTys| works left-to-right, the kinds
 of any later arguments must be unified by the time those types are
 considered.

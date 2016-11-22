@@ -22,9 +22,8 @@ import Data.Singletons.TH hiding ( (:~:)(..) )
 \label{cha:dep-haskell}
 
 
-This chapter provides an overview of Dependent Haskell, focusing on the
-aspects of Dependent Haskell that are different from the Haskell implemented
-in GHC 8 and described in \pref{cha:prelim}. I will review the new
+This chapter provides an overview of Dependent Haskell.
+I will review the new
 features of the type language (\pref{sec:new-type-features}), introduce
 the small menagerie of quantifiers available in Dependent Haskell
 (\pref{sec:quantifiers}), explain pattern matching in the presence
@@ -32,7 +31,7 @@ of dependent types
 (\pref{sec:pattern-matching}), and conclude the chapter by
 discussing several further points of interest in the design of the language.
 
-There are many examples throughout this chapter, many of which depend on
+There are many examples throughout this chapter, building on
 the following definitions:
 \begin{code}
 -- Length-indexed vectors, from \pref{sec:length-indexed-vectors}
@@ -56,11 +55,70 @@ infixr 5 :::
 \section{Dependent Haskell is dependently typed}
 \label{sec:new-type-features}
 The most noticeable change when going from Haskell to Dependent Haskell
-is that the latter is, of course, a full-spectrum dependently typed language.
+is that the latter is a full-spectrum dependently typed language.
 Expressions and types intermix. This actually is not too great a shock
 to the Haskell programmer, as the syntax of Haskell expressions and Haskell
 types is so similar. However, by utterly dropping the distinction, Dependent
 Haskell has many more possibilities in types, as seen in the last chapter.
+
+\paragraph{No distinction between types and kinds}
+The kind system of GHC~7.10 and earlier is described in
+\pref{sec:old-kinds}. It maintained a distinction between types, which
+classify terms, and kinds, which classify types. \citet{promotion}
+enriched the language of kinds, allowing for some types to be promoted
+into kinds, but it did not mix the two levels.
+
+My prior work~\cite{nokinds} goes one step further than \citet{promotion}
+and \emph{does} merge types with kinds by allowing non-trivial equalities
+to exist among kinds. See my prior work for the details; this feature
+does not come through saliently in this dissertation, as I never consider
+any distinction between types and kinds.
+It is this work that is implemented
+and released
+in GHC~8. Removing the distinction between types and kinds has opened up
+new possibilities to the Haskell programmer. Below are brief examples
+of these new capabilities:
+\begin{itemize}
+\item \emph{Explicit kind quantification}. Previously, kind variables
+were all quantified implicitly. GHC~8 allows explicit kind quantification:
+\begin{working}
+\begin{code}
+data Proxy k (a :: k) = Proxy  
+  -- NB: |Proxy| takes both kind and type arguments
+f :: forall k (a :: k). Proxy k a -> ()
+\end{code}
+\end{working}
+
+\item \emph{Kind-indexed GADTs}. Previously, a GADT could vary the return
+types of constructors only in its type variables, never its kind variables;
+this restriction is lifted.
+Here is a contrived example:
+\begin{working}
+\begin{code}
+data G (a :: k) where
+  MkG1 :: G Int
+  MkG2 :: G Maybe
+\end{code}
+\end{working}
+Notice that |Int| and |Maybe| have different kinds, and thus that the
+instantiation of the |G|'s |k| parameter is non-uniform between
+the constructors. Some recent prior work~\cite{typerep} explores 
+applying a kind-indexed to enabling dynamic types within Haskell.
+
+\item \emph{Universal promotion}. As outlined by \citet[Section 3.3]{promotion},
+only some types were promoted to kinds in GHC~7.10 and below. In contrast,
+GHC~8 allows all types to be used in kinds. This includes type synonyms
+and type families, allowing computation in kinds for the first time.
+
+\item \emph{GADT constructors in types}. A constructor for a GADT packs
+an equality proof, which is then exposed when the constructor is matched
+against. Because GHC~7.10 and earlier lacked informative equality proofs
+among kinds, GADT constructors could not be used in types. (They were
+simply
+not promoted.) However, with the rich kind equalities permitted in
+GHC~8, GADT constructors can be used freely in types, and type families
+may perform GADT pattern matching.
+\end{itemize}
 
 \paragraph{Expression variables in types}
 Dependent Haskell obviates the need for most closed type families by allowing
@@ -92,7 +150,7 @@ append (h :> t) v = h :> (append t v)
 \end{code}
 %endif
 Note that this ability does not eliminate all closed type families, as
-term-level function definitions cannot use non-linear patterns nor can
+term-level function definitions cannot use non-linear patterns, nor can
 they perform unsaturated matches (see \pref{sec:unsaturated-match-example}).
 
 \paragraph{Type names in terms}
@@ -227,7 +285,8 @@ pred x = x-1
 \end{code}
 Note that |x|, a relevant quantifiee, is used in a relevant position on the
 right-hand side. Relevant positions include all places in a term or type that
-are not within a type annotation or other type-level context, as will be
+are not within a type annotation, other type-level context, or irrelevant
+argument context, as will be
 demonstrated in the next example.
 
 Today's Haskell uses |forall| for irrelevant quantification. For example,
@@ -419,7 +478,11 @@ The reason it is sensible to reduce |m a ~ Maybe Int| to |m ~ Maybe| and
 injective, according to these definitions:
 \begin{definition*}[Generativity]
 If |f| and |g| are \emph{generative}, then |f a ~ g b| implies
-|f ~ g|.
+|f ~ g|.\footnote{As we see in this definition, \emph{generativity} is
+really a relation between pairs of types. We can consider the type
+constructors to be a set such that any pair are generative w.r.t.~the
+other. When I talk about a type being generative, it is in relation to
+this set.}
 \end{definition*}
 \begin{definition*}[Injectivity]
 If |f| is \emph{injective}, then |f a ~ f b| implies |a ~ b|.
@@ -438,7 +501,9 @@ matchable. The inability to reduce |f a ~ g b| to |f ~ g| and |a ~ b|
 for arbitrary functions is precisely why type families must be saturated
 in today's Haskell. If they were allowed to appear unsaturated, then
 the type inference algorithm could no longer assume that higher-kinded types
-are always matchable, and inference would grind to a halt.
+are always matchable,\footnote{For example, unifying |a b| with
+|Maybe Int| would no longer have a unique solution.}
+and inference would grind to a halt.
 
 The solution is to separate out matchable functions from unmatchable ones,
 classifying each by their own
@@ -522,7 +587,8 @@ consider this:
 \begin{spec}
 frob :: forall a. F a -> F [a]
 \end{spec}
-This type signature is inherently ambiguous, and GHC reports an error
+This type signature is inherently ambiguous---we cannot know the
+choice of |a| even if we know we want |a| such that |frob :: Int -> Bool|---and GHC reports an error
 when it is written. Suppose that we know we
 want a particular use of |frob| to have type |Int -> Bool|. Even with
 that knowledge, there is no way to determine how to instantiate |a|.
@@ -562,9 +628,9 @@ isEmpty v = case v of
 \end{code}
 A simple pattern match looks at a \emph{scrutinee}---in this case, |v|---and
 chooses a |case| alternative depending on the value of the scrutinee.
-The bodies of the |case| alternatives need no extra information to be well-typed.
+The bodies of the |case| alternatives need no extra information to be well typed.
 In this case, every body is clearly a |Bool|, with no dependency on which
-case has been chosen. Indeed, swapping the bodies would yield a well-typed
+case has been chosen. Indeed, swapping the bodies would yield a well typed
 pattern match, too. In a simple pattern match, no type signature is required.\footnote{Expert readers may be puzzled why this example is accepted without a type
 signature. After all, pattern-matching against |Nil| indeed \emph{does}
 introduce a type equality, making the result type of the match hard to infer.
@@ -604,13 +670,13 @@ and in the last example, I use the more typical syntax of defining a function
 via pattern matching. The reasoning is the same as if I had used an 
 explicit |case|.) Let's examine the two pattern match bodies individually:
 \begin{itemize}
-\item For |Left Refl| to be well-typed at |Either (n :~: !Zero) tau|,
+\item For |Left Refl| to be well typed at |Either (n :~: !Zero) tau|,
 we need to know that |n| is indeed |!Zero|. This fact is known only
 because we have pattern-matched on |Nil|. Note that the type of
 |Nil| is |Vec a !Zero|. Because we have discovered that our argument
 of type |Vec a n| is |Nil :: Vec a !Zero|, it must be that |n ~ !Zero|,
 as desired.
-\item For |Right t| to be well-typed at |Either tau (Vec a (!pred n))|
+\item For |Right t| to be well typed at |Either tau (Vec a (!pred n))|
 (where |t :: Vec a n'| for some |n'|), we need to know that |n ~ !Succ n'|,
 so that we can simplify |!pred n| to |!pred (!Succ n')| to |n'|. The
 equality |n ~ !Succ n'| is exactly what we get by pattern-matching on
@@ -644,10 +710,10 @@ replicate (SSucc n) x = x :> replicate n x
 Let's again consider the function bodies one at a time:
 \begin{itemize}
 \item Its type signature tells us |Nil| has type |Vec a !Zero|. Thus
-for |Nil| to be well-typed in |replicate|, we must know that |n ~ !Zero|.
+for |Nil| to be well typed in |replicate|, we must know that |n ~ !Zero|.
 We indeed do know this, as we have scrutinized |n| and found that |n|
 is |!Zero|.
-\item For the recursive call to be well-typed, we need to know that
+\item For the recursive call to be well typed, we need to know that
 |n ~ !Succ n'|, which is, once again, what we know by the pattern match.
 \end{itemize}
 Note the difference between this case of dependent pattern match and
@@ -739,12 +805,12 @@ in my prior, unpublished work~\cite{overabundance-of-equalities}.
 Instead of addressing this issue head-on, I am deferring the resolution
 until we can find a better solution than what was proposed in that prior
 work. That approach, unworthy of being repeated here, is far too ornate
-and hard-to-predict. Instead, I make a simplifying assumption that all
-coercions used in types have a nominal role.\footnote{If you are unfamiliar
+and hard to predict. Instead, I make a simplifying assumption that all
+coercions used in types have a nominal role.\footnote{If you are not familiar
 with roles, do not fret. Instead, safely skip the rest of this subsection.}
 This choice restricts the way Haskell |newtype|s can work with dependent types
 if the |coerce| function has been used. A violation of this restriction
-(still yet to be nailed down, exactly) can be detected after type-checking
+(yet to be nailed down, exactly) can be detected after type-checking
 and does not affect the larger type system. It is my hope that, once the
 rest of Dependent Haskell is implemented, a solution to this thorny problem
 will present itself. A leading, unexplored candidate is to have two
@@ -759,7 +825,8 @@ types than does the ornate approach in my prior work.
 Despite a published paper~\cite{boxy-types} and continued attempts at
 cracking this nut, GHC lacks support for impredicativity.\footnote{There does exist an extension \ext{ImpredicativeTypes}. However, it is
 unmaintained, deprecated, and quite broken.}
-Here, I use the following definitions in my meaning of impredicativity:
+Here, I use the following definitions in my meaning of impredicativity,
+which has admittedly drifted somewhat from its philosophical origins:
 \begin{definition*}[Simple types]
 A \emph{simple type} has no constraint, quantification, or dependency.
 \end{definition*}
@@ -796,7 +863,7 @@ idea, we may be able to relax the impredicativity restriction substantially.
 Haskell is a partial language. It has a multitude of ways of introducing a
 computation that does not reduce to a value: |undefined|/|error|, general
 recursion, incomplete pattern matches, non-strictly-positive datatypes,
-baked-in type representations~\cite{typerep}, possibly Girard's
+baked-in type representations~\cite{typerep}, and possibly Girard's
 paradox~\cite{girard-thesis,simplification-girard-paradox}, among others.
 This is in sharp contrast to many other dependently typed language, which
 are total. (An important exception is Cayenne. See \pref{sec:cayenne}.)
@@ -808,7 +875,7 @@ that language, you are assured that |pf| will always terminate, and thus running
 |pf| yields no information.
 
 On the other hand, in a partial language like Haskell, it is always possible
-that |pf| diverges or errors. We are thus required to run |pf|, every time, to
+that |pf| diverges or errors. We are thus required to run |pf| to
 make sure that it terminates. This is disappointing, as the only point of
 running |pf| is to prove a type equality, and types are supposed to be erased.
 However, the Haskell function |pf| has two possible outcomes: an uninformative
@@ -822,8 +889,8 @@ that looks like a proof to actually be a proof---but the language would
 remain type safe.}
 
 Despite not having an easy, sound workaround, GHC already comes with an easy,
-unsound workaround: rewrite rules~\cite{rules}. A rewrite rule (written with a
-|RULES| pragma in GHC) instructs GHC to exchange one fragment of a program in
+\emph{un}sound workaround: rewrite rules~\cite{rules}. A rewrite rule (written with a
+|RULES| pragma) instructs GHC to exchange one fragment of a program in
 its intermediate language with another, by pattern matching on the program
 structure. For example, a user can write a rule to change |map id| to |id|. To
 the case in point, a user could write a rule that changes |pf ...| to
@@ -863,16 +930,16 @@ exports |Bool| with all of its constructors.
 \label{sec:type-checking-undec}
 
 In order to type-check a Dependent Haskell program, it is sometimes necesary
-to evaluate expression used in types. Of course, these expressions might
+to evaluate expressions used in types. Of course, these expressions might
 be non-terminating in Haskell. Accordingly, type-checking Dependent Haskell
 is undecidable.
 
 This fact, however, is not worrisome. Indeed, GHC's type-checker has
 had the potential to loop for some time. Assuming that the solver's own
 algorithm terminates, type-checking will loop only when the user has
-written a type-level program that loops. Programmers are unsurprised when
+written a type-level program that loops. Programmers are not surprised when
 they write an ordinary term-level program that loops at runtime; they
-should be similarly unsurprised when they write a type-level program
+should be similarly not surprised when they write a type-level program
 that loops at compile time. In order to provide a better user experience,
 GHC counts reduction steps and halts with an error message if the
 count gets too high; users can disable this check or increase the limit

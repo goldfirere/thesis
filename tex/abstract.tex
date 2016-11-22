@@ -14,8 +14,8 @@ Advisor: \Advisor \\
 \vspace*{1in}
 
 Haskell, as implemented in the Glasgow Haskell Compiler (GHC), has been adding
-new type-level programming features for some time. Many of these features---chiefly: generalized algebraic datatypes (GADTs), type families, kind
-polymorphism, and promoted datatypes---have brought Haskell to the doorstep
+new type-level programming features for some time. Many of these features---gener\-al\-ized algebraic datatypes (GADTs), type families, kind
+polymorphism, and promoted data\-types---have brought Haskell to the doorstep
 of dependent types. Many dependently typed programs can even currently be
 encoded, but often the constructions are painful.
 
@@ -27,11 +27,12 @@ Haskell, with the rest to follow. The features I have implemented are already
 released, in GHC 8.0.
 This dissertation contains several practical examples of Dependent Haskell code,
 a full description of the differences between
-Dependent Haskell and today's Haskell, a novel type-safe dependently typed
+Dependent Haskell and today's Haskell, a novel dependently typed
 lambda-calculus (called \pico/) suitable for use as an intermediate language
 for compiling Dependent Haskell, and a type inference and elaboration
 algorithm, \bake/, that translates Dependent Haskell to type-correct
-\pico/.
+\pico/. Full proofs of type safety of \pico/ and the soundness of \bake/ are
+included in the appendix.
 
 \end{doublespace}
 
