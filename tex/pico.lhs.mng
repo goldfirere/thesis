@@ -3865,5 +3865,6 @@ typed surface languages.
 %%  LocalWords:  isEmpty ys xs safeHead MkX UnX unX formedness Trellys UIP
 %%  LocalWords:  HoTT MkG MkP unboxed VoidRep RuntimeRep PtrRepLifted IntRep
 %%  LocalWords:  PtrRepUnlifted thunked circ Succ matchability Erasability
-%%  LocalWords:  Vec VNil VCons fixpoints
+%%  LocalWords:  Vec VNil VCons fixpoints uncoerced directedness UnaryRep
 
+%%  LocalWords:  PtrRep

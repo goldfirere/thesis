@@ -78,7 +78,7 @@ infixr 5 :>
 \end{code}
 \end{working}
 I will use ordinary numerals as elements of |Nat| in this text.\footnote{In
-constrast, numerals used in types in GHC are elements of a built-in type |Nat| that uses
+contrast, numerals used in types in GHC are elements of a built-in type |Nat| that uses
 a more efficient binary representation. It cannot be pattern-matched against.}
 The |Vec| type is parameterized by both the type of the vector elements
 and the length of the vector. Thus |True :> Nil| has type |Vec Bool 1| and

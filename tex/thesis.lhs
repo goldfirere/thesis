@@ -80,4 +80,4 @@
 
 \end{document}
 
-%%  LocalWords:  pageanchor lhs prelim dep
+%%  LocalWords:  pageanchor lhs prelim dep haskell pico itemsep

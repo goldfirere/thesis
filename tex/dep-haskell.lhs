@@ -964,4 +964,4 @@ needs.
 %%  LocalWords:  mytrue bool Vec theSimons FromNat Succ infixr SNat SZero Num
 %%  LocalWords:  SSucc fromInteger unsafeCoerce abs signum MkAge newtype frob
 %%  LocalWords:  gundry TypeError ErrorMessage Refl HList HNil tailOrNil Exts
-%%  LocalWords:  PredOrZero eitherize
+%%  LocalWords:  PredOrZero eitherize MkG

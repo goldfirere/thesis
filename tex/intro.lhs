@@ -231,4 +231,4 @@ to seeing how the Haskell community builds on top of my work and discovers
 more and more applications of dependent types.
 
 %%  LocalWords:  newcode rae fmt endif cha FCD Haskellers GHC Agda Idris FC
-%%  LocalWords:  GHC's Idris's Coq Gundry's
+%%  LocalWords:  GHC's Idris's Coq Gundry's Hsu Jones's Ahmed

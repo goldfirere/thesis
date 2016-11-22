@@ -243,7 +243,7 @@ data Succ a
 \end{code}
 %
 We can now discuss |Succ (Succ Zero)| in a type and treat it as the number 2.
-However, we could also write hogwash such as |Succ Bool| and |Maybe Zero|.
+However, we could also write nonsense such as |Succ Bool| and |Maybe Zero|.
 These errors do not imperil type safety, but it is natural for a programmer
 who values strong typing to also pine for strong kinding.
 
@@ -564,4 +564,4 @@ of Dependent Haskell, as opposed to functional dependencies.
 %%  LocalWords:  showDictBool useF MkArrayBool MkArrayInt unityped Succ MkT
 %%  LocalWords:  PolyKinds fprint showSomething heteroList printList ghci HM
 %%  LocalWords:  putStrLn Refl syb higherRank ScopedTypeVariables foldl lgo
-%%  LocalWords:  Pred
+%%  LocalWords:  Pred concat Stuckness Bolingbroke
