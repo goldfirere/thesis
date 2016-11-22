@@ -1951,7 +1951,7 @@ and functions already existent in GHC.
 Notably absent from \pref{fig:bake-ghc} are the main judgments such as
 $[[|->ty]]$. These are implemented in GHC via its |tcExpr| function,
 which handles both directions of the bidirectional type system at the same
-time through its use of \emph{expected types}, a mechanism there the
+time through its use of \emph{expected types}, a mechanism where the
 synthesis judgment is implemented by checking against a \emph{hole}---essentially,
 a unification variable that can unify with a polytype. A full accounting
 of GHC's expected types and holes is out of scope here, but there should be

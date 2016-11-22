@@ -1362,10 +1362,11 @@ type system, including both a $[[PI]]$-form and a $[[\ ]]$-form:
 \ottdruleTyXXLam{}
 \end{gather*}
 %
-The only novel component of these rules is the use of $[[Rel(G)]]$ in the
-premise to \rul{Ty\_Pi}. Resetting the context here is appropriate because
-we wish to use irrelevant variables in types. As an example, the
-use of $[[Rel(G)]]$ here is necessary to allow
+The only novel component of these rules is the use of $[[Rel(d)]]$ in the
+premise to \rul{Ty\_Pi}. This is done to allow the bound variable to
+appear in $[[k]]$, regardless of whether it is relevant or not.
+As an example, the
+use of $[[Rel(d)]]$ here is necessary to allow
 the type of Haskell's |undefined|: $[[UPI a:Irrel Type{}. a]]$.
 
 \subsection{Applications}
@@ -2375,6 +2376,36 @@ hard to state precisely, because of the possibility that the contexts have
 abstractions over coercions. We would somehow need a premise that states
 that no coercion abstractions are ``reachable'' from $[[t]]$, but defining
 such a property and then proving this claim seems not to pay its way.}
+
+\subsubsection{Consequences of congruence}
+
+Congruence is not, thankfully, a necessary property of \pico/. Nowhere
+in the metatheory do we rely on this result (or lack thereof). 
+
+In the
+implementation, however, congruence\footnote{What I call congruence
+here has been called the \emph{lifting lemma} in the literature.}
+is used to perform some coercion optimizations~\cite{coercion-optimization}.
+After desugaring Haskell into its Core language (currently based on
+the version of System FC as described in my prior work~\cite{nokinds}),
+GHC optionally performs coercion optimization, in the hope of converting
+large coercions into smaller ones that prove the same propositions.
+This speeds up compilation and reduces the size of the interface files
+that GHC writes to disk to store information about compiled modules;
+the optimization has no effect at runtime, however, because coercions
+are fully erased before execution.
+
+Congruence comes into play when optimizing a coercion such as
+$[[(PI a:rel h.g1)@\g2]]$, where $[[g1 @\ g2]]$ is a decomposition form
+that instantiates a $\Pi$-type (\pref{sec:co-inst}). Without
+going into further detail, in order to
+perform the instantiation requested, we must find exactly the coercion
+suggested in the definition of congruence above. Since \pico/ lacks
+congruence, the updated coercion optimizer sometimes fails to optimize
+these coercions. The troublesome case---when we would run afoul of the
+$[[c ~# g]]$ restrictions in \rul{Co\_PiCo} and \rul{Co\_CLam}---is
+easy to detect, and the optimization is simply skipped when this were
+to happen. The lack of congruence does not otherwise bite.
 
 \subsection{Equality can be decomposed}
 \label{sec:pico-decomposition}
