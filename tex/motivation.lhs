@@ -643,8 +643,8 @@ and this proof is then used to rewrite types in the body of the pattern match. T
 all happens without any direction from the programmer. In Agda,
 the equality proofs must be unpacked and used with Agda's \keyword{rewrite} tactic.
 
-Like Coq, Agda normally also requires that functions terminate. However, we can
-easily disable the termination checker: just use
+Like Coq, Agda normally requires that functions terminate. However, we can
+easily disable the termination checker: use
 @{-# NO_TERMINATION_CHECK #-}@.
 
 %{

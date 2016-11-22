@@ -1464,7 +1464,7 @@ judgment.
 
 \subsubsection{Checking \ottkw{case} alternatives}
 
-The rule \rul{Alt\_Match} is intricate. It assumes we have
+The rule \rul{Alt\_Match} is intricate. It assumes
 a scrutinee $[[t0]]$ of type $[[MPI D'. H'{} ss]]$, and we are checking
 a case alternative $[[H -> t]]$.
 

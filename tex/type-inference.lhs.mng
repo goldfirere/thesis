@@ -572,7 +572,8 @@ instantiate the polymorphic |isNothing| with a unification variable $[[bu1]]$,
 so that the type of |isNothing| is |Maybe bu1 -> Bool|. We can now emit two equality
 constraints:
 \begin{itemize}
-\item The argument type to |isNothing| (|Maybe bu1|) must match the type of |n| (|Maybe Int|).
+\item The argument type to |isNothing|, |Maybe bu1|, must match the type of |n|,
+|Maybe Int|.
 \item The return
 type of the |case| expression ($[[bu0]]$) is the return type of |isNothing| (|Bool|).
 \end{itemize}
