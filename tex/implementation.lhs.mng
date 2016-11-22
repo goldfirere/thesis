@@ -39,7 +39,7 @@ I have had feedback and bug reports from many users,\footnote{According to
 the GHC bug tracker, 19 users (excluding myself) have posted bugs against my
 implementation.} indicating that my new
 features are already gaining traction in the community.
-Here are its features:
+Here are its features, in summary:
 
 \begin{itemize}
 \item The core language is very closely as described in my prior work~\cite{nokinds}.

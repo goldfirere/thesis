@@ -1564,22 +1564,22 @@ $[[S;P |=ty t : UPI x:Rel (UPI D. k'). k]]$.
 Assume $[[S;Rel(P) |=ty k1 : Type{}]]$ and $[[S;Rel(P) |=ty k2 : Type{}]]$.
 If either
 \begin{enumerate}
-\item $[[k1 *<= k2 ~> t -| O]]$, OR
-\item $[[k1 <= k2 ~> t -| O]]$
+\item $[[k1 *<= k2 ~> t -| O]]$, or
+\item $[[k1 <= k2 ~> t -| O]]$,
 \end{enumerate}
-Then $[[S;P,O |=ty t : UPI x:Rel k1. k2]]$.
+then $[[S;P,O |=ty t : UPI x:Rel k1. k2]]$.
 \end{lemma*}
 
 \begin{lemma*}[Type elaboration is sound {[\pref{lem:isound}]}] ~
 \begin{enumerate}
 \item If any of the following:
 \begin{enumerate}
-\item $[[S |=ctx P]]$ and $[[S;P |->ty _t ~> t : k -| O]]$, OR
-\item $[[S |=ctx P]]$ and $[[S;P *|->ty _t ~> t : k -| O]]$, OR
-\item $[[S;Rel(P) |=ty k : Type{}]]$ and $[[S;P |->ty _t : k ~> t -| O]]$, OR
-\item $[[S;Rel(P) |=ty k : Type{}]]$ and $[[S;P *|->ty _t : k ~> t -| O]]$
+\item $[[S |=ctx P]]$ and $[[S;P |->ty _t ~> t : k -| O]]$, or
+\item $[[S |=ctx P]]$ and $[[S;P *|->ty _t ~> t : k -| O]]$, or
+\item $[[S;Rel(P) |=ty k : Type{}]]$ and $[[S;P |->ty _t : k ~> t -| O]]$, or
+\item $[[S;Rel(P) |=ty k : Type{}]]$ and $[[S;P *|->ty _t : k ~> t -| O]]$,
 \end{enumerate}
-Then $[[S;P,O |=ty t : k]]$.
+then $[[S;P,O |=ty t : k]]$.
 \item
 If $[[S |=ctx P]]$ and $[[S;P |->pt _s ~> s -| O]]$,
 then $[[S;Rel(P,O) |=ty s : Type{}]]$.
