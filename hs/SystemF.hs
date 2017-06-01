@@ -1,9 +1,10 @@
 {-# LANGUAGE DataKinds, PolyKinds, GADTs, TypeOperators, TypeFamilies,
-             UndecidableInstances, ScopedTypeVariables #-}
+             UndecidableInstances, ScopedTypeVariables, TypeInType #-}
 {-# OPTIONS_GHC -fwarn-unticked-promoted-constructors #-}
 
 module SystemF where
 
+import Data.Kind
 import Data.Type.Bool
 import GHC.Exts ( Any )
 import Data.Type.Equality
@@ -54,7 +55,7 @@ type family StrengthenFin (f :: Fin ('Succ n)) :: Fin n where
   StrengthenFin 'FZ = 'FZ
   StrengthenFin ('FS f) = 'FS (StrengthenFin f)
 
-data SFin :: Fin n -> * where
+data SFin :: forall n. Fin n -> * where
   SFZ :: SFin 'FZ
   SFS :: SFin n -> SFin ('FS n)
 
@@ -64,7 +65,7 @@ data Ty n where
   (:~>) :: Ty n -> Ty n -> Ty n
 infixr 0 :~>
 
-data STy :: Ty n -> * where
+data STy :: forall n. Ty n -> * where
   STVar :: SFin n -> STy ('TVar n)
   STForall :: STy ty -> STy ('TForall ty)
   (:%~>) :: STy t1 -> STy t2 -> STy (t1 ':~> t2)
