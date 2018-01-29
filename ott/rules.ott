@@ -536,6 +536,7 @@ h' = g1 ;; h ;; sym g2  //  g3 = g0@(h', h)
 --------------------------------------------- :: CPush
 S;G |-s (v |> g0) h --> v h' |> g3
 
+S;Rel(G), a :Rel k |-co g : k0 [Type{}]~[Type{}] k1
 g1 = UPI a:Irrel <k>. g // g2 = t1 ~={<Type{}> } t2
 t1 = UPI a:Irrel k. (k1[a |> sym <k>/a]) // t2 = UPI a:Irrel k.k1
 ----------------------------------- :: APush

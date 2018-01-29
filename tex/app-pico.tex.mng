@@ -1198,7 +1198,7 @@ Inversion and typing rules then give us the following facts:
 \begin{itemize}
 \item $[[S;G |-ty \a:Irrel k. (v |> g) : UPI a:Irrel k. k1]]$
 \item $[[S;G,a :Irrel k |-ty v |> g : k1]]$
-\item $[[S;Rel(G), a :Rel k |-co g : k0 [Type{}]~[Type{}] k1]]$
+\item $[[S;Rel(G), a :Rel k |-co g : k0 [Type{}]~[Type{}] k1]]$ (this is actually a premise to the step rule)
 \item $[[S;G, a:Irrel k |-ty v : k0]]$
 \item $[[S;G |-ty \a:Irrel k.v : UPI a:Irrel k. k0]]$
 \item $[[S;Rel(G) |-ty k : Type{}]]$ (by \pref{lem:ctx-reg} and
@@ -2321,7 +2321,11 @@ $[[t = \a :Irrel k0.t0]]$. Using the induction hypothesis on $[[t0]]$ gives
 us several cases:
 \begin{description}
 \item[Case $[[t0 = v]]$:] We are done, as $[[\a :Irrel k0. v]]$ is a value.
-\item[Case $[[t0 = v |> g]]$:] We are done by \rul{S\_APush}.
+\item[Case $[[t0 = v |> g]]$:] We wish to use \rul{S\_APush}, but
+we first must prove its typing premise, $[[S;Rel(G), a :Rel k0 |-co g : k2 [Type{}]~[Type{}] k1]]$
+for some $[[k2]]$ and $[[k1]]$. This is easily proved by inversion on the typing
+derivation for $[[t]]$, given the lack of constraints on $[[k2]]$ and $[[k1]]$.
+We are done by \rul{S\_APush}.
 \item[Case $[[S;G,a:Irrel k0 |-s t0 --> t0']]$:] We are done by \rul{S\_IrrelAbs\_Cong}.
 \end{description}
 \item[Case \rul{Ty\_Fix}:] We know that $[[t = fix t0]]$. Using the induction
