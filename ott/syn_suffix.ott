@@ -146,6 +146,7 @@ terminals :: 'terminals_' ::=
 | =>=                                  ::   :: extract {{ tex \stackrel{\to}{\equiv} }}
 | 'left'                               ::   :: lft     {{ tex \ottkw{left} }}
 | 'right'                              ::   :: rght    {{ tex \ottkw{right} }}
+| lift                                 ::   :: lift    {{ tex \mathsf{lift} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}

@@ -2553,11 +2553,60 @@ If $[[S;G |-co* g : phi]]$, then $[[S;G |-prop phi]]$.
 Identical to the proof for \pref{lem:prop-reg}.
 \end{proof}
 
+%% \begin{definition}[Lifting context]
+%% \label{defn:lifting-context}
+%% Let $[[LC]]$ denote a \emph{lifting context}.
+%% A lifting context contains a mapping from type
+%% variables $[[a]]$ to triples $[[(s1, s2, g)]]$
+%% and from coercion variables $[[c]]$ to pairs $[[(h1, h2)]]$.
+%% Let $[[LC^1]]$ and $[[LC^2]]$
+%% denote regular substitutions mapping type/coercion variables to the left-hand
+%% types/coercions or the right-hand types/coercions, respectively,
+%% in $[[LC]]$, and let $[[LC^co(a)]]$
+%% denote the coercion mapped to by the type variable $[[a]]$ in $[[LC]]$.
+%% \end{definition}
+
+\begin{definition}[Lifting]
+Define \emph{lifting}, written $[[lift(t,G,a,g)]]$, to be function that
+produces a coercion $[[h]]$. This function is homomorphically lifted to lists,
+such that $[[lift(ts,G,a,g)]]$ produces a list of coercions $[[hs]]$.
+The function is defined recursively on types by the following equations:
+\begin{align*}
+[[ lift(a,G,a,g) &= g ]] \\
+[[ lift(b,G,a,g) &= (b ~={h} (b |> h)) ]] & \text{where } [[ b:rel k \in G]] \text{ and } [[ h = lift(k,G,a,g) ]] \\
+
+
+
+
+%% [[ LC(b) &= <b> ]] & [[b \notin dom(LC)]] \\
+%% [[ LC(b) &= LC^co(b) ]] & [[b \in dom(LC)]] \\
+%% [[ LC(H{ts}) &= H{LC(ts)} ]] \\
+%% [[ LC(t s) &= LC(t) LC(s) ]] \\
+%% [[ LC(t {s}) &= LC(t) {LC(s)} ]]  \\
+%% [[ LC(t g) &= LC(t) (LC^1(g), LC^2(g)) ]] \\
+%% [[ LC(PI a:rel k.t) &= PI a :rel LC(k). LC'(t) ]]  &  \text{where } [[LC' = LC, a |-> (a, a |> LC(k), a ~={LC(k)} (a |> LC(k)))]] \\
+%% [[ LC(PI c: s1 [k1]~[k2] s2. t) &= PI c:(LC^1( ]]
+
+
+%% \begin{lemma}[Lifting context domain]
+%% \label{lem:lc-dom}
+%% If $[[S;G |-lc LC : G']]$, then $[[dom(LC) = dom(G)]]$.
+%% \end{lemma}
+
+%% \begin{proof}
+%% TODO
+%% \end{proof}
+
 \begin{theorem}[(Almost) Congruence]
 \label{thm:almost-congruence}
-If $[[S;Rel(G) |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:rel k,G' |-ty t : k0]]$,
+If
+\begin{enumerate}
+\item $[[S;Rel(G) |-co g : s1 (k)~(k) s2]]$, 
+\item $[[S;G,a:rel k,G' |-ty t : k0]]$, and
+\item $[[S;G |-lc LC : G']]$
+\end{enumerate}
 then there exists $[[h]]$ such that
-$[[S;Rel(G,G'[s1/a]) |-co* h : t[s1/a] (k0[s1/a])~(k0[s2/a]) t[s2/a] ]]$.
+$[[S;Rel(G,G'[s1/a]) |-co* h : LC^1(t)[s1/a] (LC^1(k0)[s1/a])~(LC^2(k0)[s2/a]) LC^1(t)[s2/a] ]]$.
 \end{theorem}
 
 \begin{proof}
@@ -2570,15 +2619,18 @@ typing relations.
 Here $[[t = b]]$. We have several cases:
 \begin{description}
 \item[Case $[[b \in dom(G)]]$:]
-By \pref{lem:scoping}, $[[a # k0]]$. We are done, choosing $[[h = <b>]]$.
+By \pref{lem:scoping}, $[[a # k0]]$ and $[[fv(k0) \inter dom(G') = \emptyset]]$.
+By \pref{lem:lc-dom}, the lifting context substitutions have no effect.
+We are done, choosing $[[h = <b>]]$.
 \item[Case $[[b = a]]$:]
 By \pref{lem:scoping}, $[[a # k0]]$. We are done, choosing $[[h = g]]$.
+As above, the lifting context substitutions have no effect.
 \item[Case $[[b \in dom(G')]]$:]
 We know $[[G' = G1,b :Rel k0,G2]]$.
 \pref{lem:ctx-reg} and \pref{lem:tyvar-reg} give us
 $[[S;Rel(G,a:rel k,G1) |-ty k0 : Type{}]]$ with a derivation smaller than that
 with which we started. Use the induction hypothesis to get
-$[[S;Rel(G,G1[s1/a]) |-co* h0 : k0[s1/a] [Type{}]~[Type{}] k0[s2/a] ]]$.
+$[[S;Rel(G,G1[s1/a]) |-co* h0 : LC^1(k0)[s1/a] [Type{}]~[Type{}] LC^2(k0)[s2/a] ]]$.
 Choose $[[h = b ~={h0} b |> h0]]$ and we are done.
 \end{description}
 \item[Case \rul{Ty\_Con}:]

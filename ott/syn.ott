@@ -259,6 +259,9 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
   {{ tex [[au]] }}
 | \cdot                        :: M :: Blank
   {{ tex \cdot }}
+| lift ( t ; G ; a ; g )       :: M :: lift
+  {{ tex [[lift]]([[t]];[[G]];[[a]];[[g]]) }}
+
 
 | t [ theta ]                  :: M :: Subst
 | t [ Z ]                      :: M :: Zonk
@@ -501,6 +504,10 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
   {{ tex [[theta]] }}
 | theta [ Z ]                       :: M :: Zonk
 | theta [ X ]                       :: M :: Gen
+| LC ^ 1                            :: M :: LC_Left
+  {{ tex [[LC]]^{\leftarrow} }}
+| LC ^ 2                            :: M :: LC_Right
+  {{ tex [[LC]]^{\rightarrow} }}
 
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
@@ -511,6 +518,22 @@ unif_result :: 'UnifResult_' ::=
 | Just theta                  ::   :: Just      {{ coq (Just ([[theta]])) }}
 | match _ V ( ts1 ; ts2 ) :: M :: match
   {{ tex [[match]]_{[[V]]}([[ts1]];[[ts2]]) }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  Lifting contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LC {{ tex \Xi }} :: 'LC_' ::=
+| LC_bind                ::   :: One
+| LC1 , .... , LCi       ::   :: Many
+| nil                    :: M :: Nil
+
+LC_pair :: 'LCPair_' ::=
+| ( s1 , s2 )   :: :: Pair
+
+LC_bind :: 'LCBind_' ::=
+| a |-> LC_pair     :: :: Bind
+  {{ tex [[a]] \mapsto [[LC_pair]] }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Expressions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
