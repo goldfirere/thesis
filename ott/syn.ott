@@ -259,9 +259,6 @@ typ, t {{ tex \tau }}, s {{ tex \sigma }}, k {{ tex \kappa }}, v,
   {{ tex [[au]] }}
 | \cdot                        :: M :: Blank
   {{ tex \cdot }}
-| lift ( t ; G ; a ; g )       :: M :: lift
-  {{ tex [[lift]]([[t]];[[G]];[[a]];[[g]]) }}
-
 
 | t [ theta ]                  :: M :: Subst
 | t [ Z ]                      :: M :: Zonk
@@ -390,6 +387,9 @@ coercion, g {{ tex \gamma }}, h {{ tex \eta }}
 | cu _{}                       :: M :: UnifVarPlain
   {{ tex [[cu]] }}
 
+| lift ( t ; G ; a ; g ; s1 ; s2 )       :: M :: lift
+  {{ tex [[lift]]([[t]];[[G]];[[a]];[[g]];[[s1]];[[s2]]) }}
+
 coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
   :: 'cos_' ::=
 | g                            ::   :: One
@@ -397,6 +397,8 @@ coercions, gs {{ tex \overline{\gamma} }}, hs {{ tex \overline{\eta} }}
 | nil                          :: M :: Empty
 | ( gs )                       :: M :: Parens
 | nths g                       :: M :: Nths
+| lift ( ts ; G ; a ; g ; s1 ; s2 )      :: M :: lifts
+  {{ tex [[lift]]([[ts]];[[G]];[[a]];[[g]];[[s1]];[[s2]]) }}
 
 calt :: 'CAlt_' ::=
 | pat -> g                        ::   :: Alt
@@ -504,10 +506,8 @@ substs, theta {{ tex \theta }} :: 'Substs_' ::=
   {{ tex [[theta]] }}
 | theta [ Z ]                       :: M :: Zonk
 | theta [ X ]                       :: M :: Gen
-| LC ^ 1                            :: M :: LC_Left
-  {{ tex [[LC]]^{\leftarrow} }}
-| LC ^ 2                            :: M :: LC_Right
-  {{ tex [[LC]]^{\rightarrow} }}
+| right_subst ( G ; a ; s )         :: M :: right_subst
+  {{ tex [[right_subst]]([[G]];[[a]];[[s]]) }}
 
 subst :: 'Subst_' ::=
 | t / a                  ::   :: TyVar
@@ -518,22 +518,6 @@ unif_result :: 'UnifResult_' ::=
 | Just theta                  ::   :: Just      {{ coq (Just ([[theta]])) }}
 | match _ V ( ts1 ; ts2 ) :: M :: match
   {{ tex [[match]]_{[[V]]}([[ts1]];[[ts2]]) }}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  Lifting contexts  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-LC {{ tex \Xi }} :: 'LC_' ::=
-| LC_bind                ::   :: One
-| LC1 , .... , LCi       ::   :: Many
-| nil                    :: M :: Nil
-
-LC_pair :: 'LCPair_' ::=
-| ( s1 , s2 )   :: :: Pair
-
-LC_bind :: 'LCBind_' ::=
-| a |-> LC_pair     :: :: Bind
-  {{ tex [[a]] \mapsto [[LC_pair]] }}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Expressions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

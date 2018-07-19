@@ -2553,60 +2553,76 @@ If $[[S;G |-co* g : phi]]$, then $[[S;G |-prop phi]]$.
 Identical to the proof for \pref{lem:prop-reg}.
 \end{proof}
 
-%% \begin{definition}[Lifting context]
-%% \label{defn:lifting-context}
-%% Let $[[LC]]$ denote a \emph{lifting context}.
-%% A lifting context contains a mapping from type
-%% variables $[[a]]$ to triples $[[(s1, s2, g)]]$
-%% and from coercion variables $[[c]]$ to pairs $[[(h1, h2)]]$.
-%% Let $[[LC^1]]$ and $[[LC^2]]$
-%% denote regular substitutions mapping type/coercion variables to the left-hand
-%% types/coercions or the right-hand types/coercions, respectively,
-%% in $[[LC]]$, and let $[[LC^co(a)]]$
-%% denote the coercion mapped to by the type variable $[[a]]$ in $[[LC]]$.
-%% \end{definition}
-
 \begin{definition}[Lifting]
-Define \emph{lifting}, written $[[lift(t,G,a,g)]]$, to be function that
+Define \emph{lifting}, written $[[lift(t;G;a;g;s1;s2)]]$, to be function that
 produces a coercion $[[h]]$. This function is homomorphically lifted to lists,
-such that $[[lift(ts,G,a,g)]]$ produces a list of coercions $[[hs]]$.
-The function is defined recursively on types by the following equations:
+such that $[[lift(ts;G;a;g;s1;s2)]]$ produces a list of coercions $[[hs]]$. Define also
+the \emph{right-substitution}, $[[right_subst(G;a;s2)]]$, to be a function that
+produces a substitution $[[theta]]$.
+These functions are defined mutually recursively on types by the following equations, meant
+to be tried in order:
 \begin{align*}
-[[ lift(a,G,a,g) &= g ]] \\
-[[ lift(b,G,a,g) &= (b ~={h} (b |> h)) ]] & \text{where } [[ b:rel k \in G]] \text{ and } [[ h = lift(k,G,a,g) ]] \\
-
-
-
-
-%% [[ LC(b) &= <b> ]] & [[b \notin dom(LC)]] \\
-%% [[ LC(b) &= LC^co(b) ]] & [[b \in dom(LC)]] \\
-%% [[ LC(H{ts}) &= H{LC(ts)} ]] \\
-%% [[ LC(t s) &= LC(t) LC(s) ]] \\
-%% [[ LC(t {s}) &= LC(t) {LC(s)} ]]  \\
-%% [[ LC(t g) &= LC(t) (LC^1(g), LC^2(g)) ]] \\
-%% [[ LC(PI a:rel k.t) &= PI a :rel LC(k). LC'(t) ]]  &  \text{where } [[LC' = LC, a |-> (a, a |> LC(k), a ~={LC(k)} (a |> LC(k)))]] \\
-%% [[ LC(PI c: s1 [k1]~[k2] s2. t) &= PI c:(LC^1( ]]
-
-
-%% \begin{lemma}[Lifting context domain]
-%% \label{lem:lc-dom}
-%% If $[[S;G |-lc LC : G']]$, then $[[dom(LC) = dom(G)]]$.
-%% \end{lemma}
-
-%% \begin{proof}
-%% TODO
-%% \end{proof}
+[[ lift(a;G;a;g;s1;s2) &= g ]] \\
+[[ lift(b;G;a;g;s1;s2) &= (b ~={h} (b |> h)) ]] \\
+ \multicolumn{2}{l}{$\qquad \text{where } \begin{array}[t]{r@{\;}l} [[ b:rel k ]] & [[\in]] [[G]] \\ [[ h &= lift(k;G;a;g;s1;s2) ]] \end{array}$} \\[1ex]
+[[ lift(b;G;a;g;s1;s2) &= <b> ]] \\
+[[ lift(H{ts};G;a;g;s1;s2) &= H{lift(ts;G;a;g;s1;s2)} ]] \\
+[[ lift(t1 t2;G;a;g;s1;s2) &= lift(t1;G;a;g;s1;s2) lift(t2;G;a;g;s1;s2) ]] \\
+[[ lift(t1 {t2};G;a;g;s1;s2) &= lift(t1;G;a;g;s1;s2) {lift(t2;G;a;g;s1;s2)} ]] \\
+[[ lift(t h;G;a;g;s1;s2) &= lift(t;G;a;g;s1;s2) (h[s1/a], h[right_subst(G;a;s2)]) ]] \\
+[[ lift(PI b:rel k. t;G;a;g;s1;s2) &= (PI b:rel h1. lift(t;G,b:rel k;a;g;s1;s2)) ;; h2 ]] \\
+\multicolumn{2}{l}{$\qquad \text{where } \begin{array}[t]{r@{\;}l}
+   [[ h1 &= lift(k;G;a;g;s1;s2) ]] \\
+   [[h2 &= t1 ~={<Type{}>} t2 ]] \\
+   [[ t1 &= PI b: rel k[theta].(t[theta'][b |> sym h1/b]) ]] \\
+   [[ t2 &= PI b :rel k[theta]. (t[theta]) ]] \\
+   [[ theta &= right_subst(G;a;s2) ]] \\
+   [[ theta' &= right_subst(G,b:rel k;a;s2) ]]
+ \end{array}$} \\[1ex]
+[[ lift(PI c:t1 [k1]~[k2] t2. t;G;a;g;s1;s2) &= (PI c: (h1, h2). lift(t;G,c:t1 [k1]~[k2] t2;a;g;s1;s2)) ;; h3 ]] \\
+\multicolumn{2}{l}{$\qquad \text{where } \begin{array}[t]{r@{\;}l}
+ [[ h1 &= lift(t1;G;a;g;s1;s2) ]] \\
+ [[ h2 &= lift(t2;G;a;g;s1;s2) ]] \\
+ [[ h3 &= t3 ~={<Type{}>} t4 ]] \\
+ [[ t3 &= PI c: t1[theta] [k1[theta] ]~[k2[theta] ] t2[theta]. (t[theta'][h1 ;; c ;; sym h2 / c]) ]] \\
+ [[ t4 &= PI c: t1[theta] [k1[theta] ]~[k2[theta] ] t2[theta]. (t[theta]) ]] \\
+ [[ theta &= right_subst(G;a;s2) ]] \\
+ [[ theta' &= right_subst(G,c:t1 [k1]~[k2] t2;a;s2) ]]
+\end{array}$} \\[1ex]
+[[ lift(t |> h;G;a;g;s1;s2) &= h2 ;; h1 ;; h3 ]] \\
+\multicolumn{2}{l}{$\qquad \text{where } \begin{array}[t]{r@{\;}l}
+  [[ h1 &= lift(t;G;a;g;s1;s2) ]] \\
+  [[ h2 &= (t[s1/a] |> h[s1/a]) ~={sym h[s1/a]} t[s1/a] ]] \\
+  [[ h3 &= t[theta] ~={h[theta]} (t[theta] |> h[theta]) ]] \\
+  [[ theta &= right_subst(G;a;s2) ]]
+\end{array}$} \\[1ex]
+\multicolumn{2}{l}{$[[ lift(case_k t of list of pat -> t';G;a;g;s1;s2) = case_h1 h2 of calts ]]$} \\
+\multicolumn{2}{l}{$\qquad \text{where } \begin{array}[t]{r@{\;}l}
+  [[ h1 &= lift(k;G;a;g;s1;s2) ]] \\
+  [[ h2 &= lift(t;G;a;g;s1;s2) ]] \\
+  [[ calti &= pati -> lift(t'i;G;a;g;s1;s2) ]]
+\end{array}$} \\[1ex]
+[[ lift(\ b:rel k. t;G;a;g;s1;s2) &= (\ b:rel h1. lift(t;G,b:rel k;a;g;s1;s2)) ;; h2 ]] \\
+\multicolumn{2}{l}{$\qquad \text{where } \begin{array}[t]{r@{\;}l}
+   [[ h1 &= lift(k;G;a;g;s1;s2) ]] \\
+   [[ h2 &= t1 ~={<PI b:rel k[theta]. k2>} t2 ]] \\
+   [[ t1 &= \ b: rel k[theta].(t[theta'][b |> sym h1/b]) ]] \\
+   [[ t2 &= \ b :rel k[theta]. (t[theta]) ]] \\
+   [[ theta &= right_subst(G;a;s2) ]] \\
+   [[ theta' &= right_subst(G,b:rel k;a;s2) ]] \\
+   [[ k2 ]] &= \longleftarrow \text{\textrm{I gave up here. Needs to look up a type. Argh.}}
+ \end{array}$} \\[1ex]
+\end{align*}
+\end{definition}
 
 \begin{theorem}[(Almost) Congruence]
 \label{thm:almost-congruence}
-If
-\begin{enumerate}
-\item $[[S;Rel(G) |-co g : s1 (k)~(k) s2]]$, 
-\item $[[S;G,a:rel k,G' |-ty t : k0]]$, and
-\item $[[S;G |-lc LC : G']]$
-\end{enumerate}
+If $[[S;Rel(G) |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:rel k,G' |-ty t : k0]]$
+where none of $[[t]]$, $[[k0]]$, $[[k]]$ and the types in $[[G]]$ and $[[G']]$
+bind any coercion variables,
 then there exists $[[h]]$ such that
-$[[S;Rel(G,G'[s1/a]) |-co* h : LC^1(t)[s1/a] (LC^1(k0)[s1/a])~(LC^2(k0)[s2/a]) LC^1(t)[s2/a] ]]$.
+$[[S;Rel(G,G'[s1/a]) |-co* h : t[s1/a] (k0[s1/a])~(k0[theta]) t[theta] ]]$
+where $[[theta = right_subst(G';a;s2)]]$.
 \end{theorem}
 
 \begin{proof}

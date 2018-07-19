@@ -147,6 +147,7 @@ terminals :: 'terminals_' ::=
 | 'left'                               ::   :: lft     {{ tex \ottkw{left} }}
 | 'right'                              ::   :: rght    {{ tex \ottkw{right} }}
 | lift                                 ::   :: lift    {{ tex \mathsf{lift} }}
+| right_subst                          ::   :: rsubst  {{ tex \mathsf{right\_subst} }}
 
 | |-ty                                 ::   :: Ty_ent  {{ tex \vdashy{ty} }}
 | |-co                                 ::   :: Co_ent  {{ tex \vdashy{co} }}
