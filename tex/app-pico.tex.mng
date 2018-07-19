@@ -2560,6 +2560,16 @@ then there exists $[[h]]$ such that
 $[[S;Rel(G,G'[s1/a]) |-co* h : t[s1/a] (k0[s1/a])~(k0[s2/a]) t[s2/a] ]]$.
 \end{theorem}
 
+\textcolor{red}{\textbf{This theorem statement and proof are wrong. They do not
+take proper account of local variables added to the context. This means that,
+if the type of a local variable mentions $[[a]]$, the application rules will
+fail to type-check. You can find the start of a solution on the \texttt{lifting}
+branch of \url{https://github.com/goldfirere/thesis/}, but I stopped as writing
+it all out didn't seem worth it. \emph{However}, the (almost) congruence property
+as stated in the main text still holds, I believe---it's just that this proof
+(with its strengthened induction hypothesis) is wrong. \\[2ex]
+See \citet{nokinds} for a more correct approach to this.}}
+
 \begin{proof}
 By induction on the size of the derivation of $[[S;G,a:rel k,G' |-ty t : k0]]$,
 using \pref{lem:subsumption-co} frequently to convert between the coercion
