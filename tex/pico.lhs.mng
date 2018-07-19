@@ -935,7 +935,7 @@ these from existentials in the grammar.
 
 As with many design decisions, it is possible to redesign \pico/ and
 avoid this unusual choice, but in my opinion, this design pays its
-weight nicely.
+way nicely.
 
 \paragraph{Typing rules for data constructors}
 The \rul{Tc\_DataCon} rule looks up a data constructor $[[K]]$ in the
@@ -2188,7 +2188,7 @@ The syntax for \rul{Co\_Absurd} is similar.
 \label{sec:lambda-coercion}
 \label{sec:pico-co-pity}
 
-The binding coercions forms (\pref{fig:binding-cong-rules}) all have a
+The binding congruence forms (\pref{fig:binding-cong-rules}) all have a
 particular challenge to meet. Suppose we know that
 $[[S;G |-co h : k1 [Type{}]~[Type{}] k2]]$ and we wish to prove equality
 between $[[PI a:rel k1. t1]]$ and $[[PI a:rel k2. t2]]$. We surely must
@@ -2231,7 +2231,7 @@ instead of trying to treat $[[a]]$ as a variable with two different kinds,
 they invent fresh variables. What I write as $[[PI a:rel h.g]]$, they would
 write as $[[PI]]_{[[h]]} ([[a1]],[[a2]],[[c]]).[[g]]$, binding $[[a1]] : [[k1]]$
 and $[[a2]] : [[k2]]$, as well as a coercion $[[c]] : [[a1 [k1]~[k2] a2]]$.
-You can see either of those works for the details, but I have found this 
+You can see any of those works for the details, but I have found this 
 construction worse than the asymmetrical version. Other than the bookkeeping
 overhead of extra variables, the three-variable version also requires
 us to introduce a coercion variable even when making a congruence coercion

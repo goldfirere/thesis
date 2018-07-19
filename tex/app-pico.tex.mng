@@ -2555,9 +2555,7 @@ Identical to the proof for \pref{lem:prop-reg}.
 
 \begin{theorem}[(Almost) Congruence]
 \label{thm:almost-congruence}
-If $[[S;Rel(G) |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:rel k,G' |-ty t : k0]]$
-where none of $[[t]]$, $[[k0]]$, $[[k]]$ and the types in $[[G]]$ and $[[G']]$
-bind any coercion variables,
+If $[[S;Rel(G) |-co g : s1 (k)~(k) s2]]$ and $[[S;G,a:rel k,G' |-ty t : k0]]$,
 then there exists $[[h]]$ such that
 $[[S;Rel(G,G'[s1/a]) |-co* h : t[s1/a] (k0[s1/a])~(k0[s2/a]) t[s2/a] ]]$.
 \end{theorem}
